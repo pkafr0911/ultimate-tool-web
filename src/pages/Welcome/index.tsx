@@ -13,6 +13,7 @@ const pages = [
   { name: 'Password Generator', path: '/password' },
   { name: 'Base64 Converter', path: '/base64' },
   { name: 'JWT Encrypt/Decrypt', path: '/jwt' },
+  { name: 'Color Picker', path: '/colorpicker' },
   { name: 'Docs', path: '/docs' },
 ];
 

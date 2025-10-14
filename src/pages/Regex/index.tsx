@@ -29,10 +29,12 @@ const RegexTester: React.FC = () => {
         <Input.TextArea
           placeholder="test text"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            run();
+          }}
           rows={8}
         />
-        <Button onClick={run}>Test</Button>
         <Alert
           message={result || 'No result'}
           type={result.startsWith('Error') ? 'error' : 'info'}

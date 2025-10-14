@@ -45,6 +45,11 @@
     component: './JWT',
   },
   {
+    path: '/colorpicker',
+    name: 'Color Picker',
+    component: './ColorPicker',
+  },
+  {
     path: '/docs',
     name: 'Docs',
     component: './Docs',
