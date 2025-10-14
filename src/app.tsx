@@ -10,9 +10,9 @@ import { errorConfig } from './requestErrorConfig';
 import { isPlainObject } from 'lodash';
 import UnauthorizedPage from '@/pages/403';
 import './libs/iconfont';
+import GlobalSearchBar from './components/GlobalSearchBar';
 
 const isDev = process.env.NODE_ENV === 'development';
-const loginPath = '/user/login';
 
 /**
  * Fetch initial state, including user info and settings
@@ -48,6 +48,12 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     bgLayoutImgList: [],
 
     menuHeaderRender: undefined,
+    rightContentRender: () => (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginRight: 16 }}>
+        <GlobalSearchBar />
+        <AvatarDropdown />
+      </div>
+    ),
     // Custom 403 page if necessary
     unAccessible: <UnauthorizedPage />,
     childrenRender: (children) => {
