@@ -1,0 +1,17 @@
+version: '3.9'
+services:
+  # docker build --no-cache -f Dockerfile -t new-edu-web .
+  new-edu:
+    image: new-edu-web
+    # restart: always
+    environment:
+      - NGINX_ENVSUBST_TEMPLATE_SUFFIX=.template
+      - API_ADDRESS=http://172.17.0.1:8001
+
+    ports:
+      - 8000:8000
+    volumes:
+      # - ./nginx/nginx_template.conf:/etc/nginx/templates/default.conf.template
+      - ./public/scripts/env.js:/usr/local/new-edu/scripts/env.js
+      - ./public/scripts/embed.js:/usr/local/new-edu/scripts/embed.js
+      - ./nginx/logs:/var/log/nginx
