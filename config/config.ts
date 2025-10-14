@@ -12,7 +12,6 @@ const { REACT_APP_ENV = 'dev' } = process.env;
  * @description The base path when deployed. If the app is deployed in a subdirectory, this should be configured.
  * @doc https://umijs.org/docs/api/config#publicpath
  */
-const PUBLIC_PATH: string = '/';
 
 export default defineConfig({
   /**
@@ -22,7 +21,18 @@ export default defineConfig({
    */
   hash: true,
 
-  publicPath: PUBLIC_PATH,
+  /**
+   * @name Base Path
+   * @description All routes will automatically be prefixed with /path
+   * e.g., history.push('/welcome') → /path/welcome
+   */
+  base: defaultSettings.basePath,
+
+  /**
+   * @name Public Path
+   * @description All static assets will be loaded from /path/
+   */
+  publicPath: defaultSettings.publicPath,
 
   /**
    * @name Compatibility Settings
@@ -143,8 +153,8 @@ export default defineConfig({
    */
   headScripts: [
     // Resolves white screen issue on first load
-    { src: join(PUBLIC_PATH, 'scripts/loading.js'), async: true },
-    { src: join(PUBLIC_PATH, 'scripts/env.js'), async: true },
+    { src: join(defaultSettings.publicPath, 'scripts/loading.js'), async: true },
+    { src: join(defaultSettings.publicPath, 'scripts/env.js'), async: true },
   ],
 
   //================ Pro Plugin Configurations =================

@@ -9,6 +9,8 @@ const Settings: ProLayoutProps & {
   serveUrlMap: {
     dev: string;
   };
+  basePath: string;
+  publicPath: string;
 } = {
   navTheme: 'light', // Theme color of the navigation bar (light mode)
   colorPrimary: '#002e70', // Primary color for the theme (Dawn Blue)
@@ -19,7 +21,7 @@ const Settings: ProLayoutProps & {
   colorWeak: false, // Whether to enable color weakness mode
   title: 'Ultimate tool', // Application title
   pwa: true, // Enable Progressive Web App (PWA) support
-  logo: '/qr_icon.png', // Path to the logo/favicon image
+  logo: 'https://pkafr0911.github.io/ultimate-tool-web/qr_icon.png', // Path to the logo/favicon image
   iconfontUrl: '', // Custom icon font URL (empty for default)
   token: {
     // Token configuration for theme customization
@@ -29,6 +31,9 @@ const Settings: ProLayoutProps & {
   serveUrlMap: {
     dev: 'http://localhost:9080',
   },
+  // Deployment base path
+  basePath: '/ultimate-tool-web/',
+  publicPath: '/ultimate-tool-web/',
 };
 
 export default Settings;
