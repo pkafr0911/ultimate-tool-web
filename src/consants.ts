@@ -33,5 +33,7 @@ export const pages = [
   { name: 'JWT Encrypt/Decrypt', path: '/jwt' },
   { name: 'Color Picker', path: '/colorpicker' },
   { name: '🎡 Wheel of Names', path: '/wheel-of-names' },
+  { name: 'Random Generator', path: '/random' },
+  { name: 'Playground', path: '/playground' },
   { name: 'Docs', path: '/docs' },
 ];

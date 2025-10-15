@@ -55,6 +55,17 @@
     component: './WheelOfNames',
   },
   {
+    path: '/random',
+    name: 'Random Generator',
+    component: './Random',
+  },
+  {
+    path: '/playground',
+    name: 'Playground',
+    component: './Playground',
+  },
+
+  {
     path: '/docs',
     name: 'Docs',
     component: './Docs',
