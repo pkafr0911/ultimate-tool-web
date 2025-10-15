@@ -61,11 +61,15 @@ const dockerCommands: CommandItem[] = [
   },
 ];
 
-// Highlight text using <mark>
+// ✅ Escape HTML entities before highlighting
+const escapeHtml = (text: string) => text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// ✅ Highlight search term safely
 const highlightText = (text: string, search: string) => {
-  if (!search) return text;
+  const safeText = escapeHtml(text);
+  if (!search) return safeText;
   const regex = new RegExp(`(${search})`, 'gi');
-  return text.replace(regex, '<mark>$1</mark>');
+  return safeText.replace(regex, '<mark>$1</mark>');
 };
 
 const DocsPage: React.FC = () => {
