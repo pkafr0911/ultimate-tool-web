@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, Input, Tabs, Typography, Alert } from 'antd';
+import { Card, Input, Tabs, Typography, Alert, Tag, Space, Tooltip } from 'antd';
 import './styles.less';
+import { commonPatterns } from './constants';
+import { handleCopy } from '@/helpers';
 
-const { TextArea } = Input;
+const { TextArea, Search } = Input;
 const { Paragraph } = Typography;
 
-// Generate explanations for regex pattern
 const explainRegex = (pattern: string): string[] => {
   const explanations: string[] = [];
 
@@ -82,6 +83,7 @@ const RegexTester: React.FC = () => {
   const [error, setError] = useState('');
   const [highlightedHTML, setHighlightedHTML] = useState('');
   const [explanation, setExplanation] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
 
@@ -95,15 +97,12 @@ const RegexTester: React.FC = () => {
       let lastIndex = 0;
       let match: RegExpExecArray | null;
 
-      // Build highlighted HTML manually using exec()
       while ((match = re.exec(t)) !== null) {
         const start = match.index;
         const end = start + match[0].length;
         highlighted += t.slice(lastIndex, start);
         highlighted += `<mark>${match[0]}</mark>`;
         lastIndex = end;
-
-        // Prevent infinite loops with zero-length matches
         if (re.lastIndex === match.index) re.lastIndex++;
       }
 
@@ -124,6 +123,17 @@ const RegexTester: React.FC = () => {
     if (!textAreaRef.current || !highlightRef.current) return;
     highlightRef.current.scrollTop = textAreaRef.current.scrollTop;
   };
+
+  const handlePatternClick = (newPattern: string) => {
+    setPattern(newPattern);
+    handleCopy(newPattern);
+  };
+
+  const filteredPatterns = commonPatterns.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.pattern.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
 
   return (
     <Card className="regex-card-light" title="🧩 Regex Tester" bordered={false}>
@@ -183,6 +193,37 @@ const RegexTester: React.FC = () => {
       />
 
       {error && <Alert message={`Error: ${error}`} type="error" showIcon />}
+
+      {/* 🔹 Common Patterns Section */}
+      <div className="regex-common-section">
+        <h4>Common Regex Patterns</h4>
+
+        {/* Search bar */}
+        <Search
+          placeholder="Search regex patterns..."
+          allowClear
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ maxWidth: 400, marginBottom: 12 }}
+        />
+
+        {/* Filtered results */}
+        <div>
+          <Space wrap>
+            {filteredPatterns.map((item) => (
+              <Tooltip key={item.name} title={item.pattern}>
+                <Tag
+                  color="cyan"
+                  onClick={() => handlePatternClick(item.pattern)}
+                  style={{ cursor: 'pointer', fontSize: 13, padding: '4px 8px' }}
+                >
+                  {item.name}
+                </Tag>
+              </Tooltip>
+            ))}
+            {filteredPatterns.length === 0 && <Paragraph>No matching patterns found.</Paragraph>}
+          </Space>
+        </div>
+      </div>
     </Card>
   );
 };

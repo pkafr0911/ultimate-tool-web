@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { Upload, Button, Input, Typography, Space, message, Card, Image } from 'antd';
-import { UploadOutlined, CopyOutlined, DeleteOutlined } from '@ant-design/icons';
-import { PageContainer } from '@ant-design/pro-components';
+import { Upload, Button, message, Card, Image, Space, Typography, Divider } from 'antd';
+import { UploadOutlined, CopyOutlined, DeleteOutlined, PictureOutlined } from '@ant-design/icons';
+import { Editor } from '@monaco-editor/react';
+import { handleCopy } from '@/helpers';
 
-const { TextArea } = Input;
 const { Title, Text } = Typography;
 
 const Base64Converter: React.FC = () => {
-  const [base64, setBase64] = useState<string>('');
+  const [base64, setBase64] = useState<string>('data:image/png;base64,...');
   const [imageUrl, setImageUrl] = useState<string>('');
 
   const handleUpload = (file: File) => {
@@ -29,9 +29,8 @@ const Base64Converter: React.FC = () => {
     setImageUrl(base64);
   };
 
-  const copyToClipboard = async () => {
-    await navigator.clipboard.writeText(base64);
-    message.success('Copied Base64 string to clipboard!');
+  const copyToClipboard = () => {
+    handleCopy(base64, 'Copied Base64 string to clipboard!');
   };
 
   const clearAll = () => {
@@ -40,24 +39,72 @@ const Base64Converter: React.FC = () => {
   };
 
   return (
-    <Card title="🖼️ Image ↔ Base64 Converter" bordered={false}>
+    <Card
+      title="🖼️ Image ↔ Base64 Converter"
+      bordered={false}
+      style={{
+        borderRadius: 16,
+        boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
+      }}
+    >
       <Space direction="vertical" style={{ width: '100%' }} size="large">
         <Upload beforeUpload={handleUpload} showUploadList={false} accept="image/*">
           <Button icon={<UploadOutlined />}>Upload Image</Button>
         </Upload>
 
         {imageUrl && (
-          <Image src={imageUrl} alt="Converted" style={{ maxWidth: '100%', borderRadius: 8 }} />
+          <Card
+            size="small"
+            style={{
+              background: '#fafafa',
+              border: '1px solid #f0f0f0',
+              borderRadius: 12,
+              padding: 8,
+            }}
+          >
+            <Image
+              src={imageUrl}
+              alt="Converted"
+              style={{ maxWidth: '100%', borderRadius: 8 }}
+              preview
+            />
+          </Card>
         )}
 
-        <TextArea
-          rows={6}
-          placeholder="Paste Base64 string here..."
-          value={base64}
-          onChange={(e) => setBase64(e.target.value)}
-        />
+        <Divider />
 
-        <Space>
+        <div>
+          <Title level={5} style={{ marginBottom: 8 }}>
+            <PictureOutlined /> Base64 Data
+          </Title>
+          <Card
+            size="small"
+            style={{
+              borderRadius: 12,
+              background: '#1e1e1e',
+              overflow: 'hidden',
+              boxShadow: 'inset 0 0 8px rgba(0,0,0,0.2)',
+            }}
+          >
+            <Editor
+              height="250px"
+              defaultLanguage="plaintext"
+              value={base64}
+              onChange={(val) => setBase64(val || '')}
+              theme="vs-dark"
+              options={{
+                wordWrap: 'on',
+                minimap: { enabled: false },
+                lineNumbers: 'off',
+                scrollBeyondLastLine: false,
+                fontSize: 13,
+                padding: { top: 10 },
+              }}
+            />
+          </Card>
+        </div>
+
+        <Space wrap>
           <Button type="primary" onClick={copyToClipboard} icon={<CopyOutlined />}>
             Copy Base64
           </Button>

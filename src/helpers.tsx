@@ -26,7 +26,7 @@ export const generateParams = (obj: any) => {
   return '';
 };
 
-export const handleCopy = (content: string) => {
+export const handleCopy = (content: string, noti?: string) => {
   const unsecuredCopyToClipboard = (item: string) => {
     const textArea = document.createElement('textarea');
     textArea.value = item;
@@ -45,5 +45,5 @@ export const handleCopy = (content: string) => {
   } else {
     unsecuredCopyToClipboard(content);
   }
-  message.success(`Copied: ${content}`);
+  message.success(noti || `Copied: ${content}`);
 };

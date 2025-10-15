@@ -1,5 +1,4 @@
 .regex-card-light {
-  background: #fff;
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
@@ -18,6 +17,16 @@
   font-size: 14px;
 }
 
+/* Flags input */
+.regex-flags-light {
+  width: 100px;
+  text-align: center;
+  background: #fff;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
 /* Highlight layer under the TextArea */
 .regex-highlights {
   position: absolute;
@@ -30,7 +39,6 @@
   pointer-events: none;
   border: 1px solid #ddd;
   border-radius: 6px;
-  background: #fff;
   z-index: 0;
 }
 
@@ -38,8 +46,6 @@
 .regex-textarea-overlay {
   position: relative;
   background: transparent !important;
-  color: #222;
-  caret-color: #222;
   font-family: monospace;
   line-height: 1.5;
   font-size: 14px;
@@ -64,4 +70,25 @@
 
 .regex-explain-line {
   margin: 0;
+}
+
+.regex-common-section {
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+
+  h4 {
+    color: #333;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .ant-tag {
+    transition: all 0.2s;
+  }
+
+  .ant-tag:hover {
+    background: #e6f4ff;
+    color: #1677ff;
+  }
 }
