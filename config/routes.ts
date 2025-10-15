@@ -1,73 +1,72 @@
 ﻿export default [
   {
     path: '/',
-    name: 'Welcome',
+    name: 'welcome',
     component: './Welcome',
   },
   {
     path: '/qr',
-    name: 'QR Generator',
+    name: 'qr',
     component: './QR',
   },
   {
     path: '/videowatch',
-    name: 'Video Watch',
+    name: 'videowatch',
     component: './VideoWatch',
   },
   {
     path: '/epoch',
-    name: 'Epoch Converter',
+    name: 'epoch',
     component: './Epoch',
   },
   {
     path: '/regex',
-    name: 'Regex Tester',
+    name: 'regex',
     component: './Regex',
   },
   {
     path: '/uuid',
-    name: 'UUID Generator',
+    name: 'uuid',
     component: './UUID',
   },
   {
     path: '/password',
-    name: 'Password Generator',
+    name: 'password',
     component: './Password',
   },
   {
     path: '/base64',
-    name: 'Image Base64 Converter',
+    name: 'base64',
     component: './Base64',
   },
   {
     path: '/jwt',
-    name: 'JWT Encrypt / Decrypt',
+    name: 'jwt',
     component: './JWT',
   },
   {
     path: '/colorpicker',
-    name: 'Color Picker',
+    name: 'colorpicker',
     component: './ColorPicker',
   },
   {
     path: '/wheel-of-names',
-    name: 'Wheel of Names',
+    name: 'wheel-of-names',
     component: './WheelOfNames',
   },
   {
     path: '/random',
-    name: 'Random Generator',
+    name: 'random',
     component: './Random',
   },
   {
     path: '/playground',
-    name: 'Playground',
+    name: 'playground',
     component: './Playground',
   },
-
   {
     path: '/docs',
-    name: 'Docs',
+    name: 'docs',
     component: './Docs',
   },
 ];
