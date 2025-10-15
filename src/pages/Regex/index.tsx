@@ -1,45 +1,188 @@
-import React, { useState } from 'react';
-import { Card, Input, Button, Space, Alert } from 'antd';
+import React, { useState, useEffect, useRef } from 'react';
+import { Card, Input, Tabs, Typography, Alert } from 'antd';
+import './styles.less';
+
+const { TextArea } = Input;
+const { Paragraph } = Typography;
+
+// Generate explanations for regex pattern
+const explainRegex = (pattern: string): string[] => {
+  const explanations: string[] = [];
+
+  if (!pattern) return ['No regex pattern entered.'];
+
+  try {
+    const tokens = pattern.match(/\\.|(\[\^?.*?\])|(\(\?:?.*?\))|([*+?^$|(){}])/g) || [];
+
+    for (const token of tokens) {
+      switch (token) {
+        case '^':
+          explanations.push('^ → Matches the start of a line or string.');
+          break;
+        case '$':
+          explanations.push('$ → Matches the end of a line or string.');
+          break;
+        case '.':
+          explanations.push('. → Matches any character except newline.');
+          break;
+        case '*':
+          explanations.push('* → Matches 0 or more repetitions.');
+          break;
+        case '+':
+          explanations.push('+ → Matches 1 or more repetitions.');
+          break;
+        case '?':
+          explanations.push('? → Makes the previous token optional (0 or 1 times).');
+          break;
+        case '|':
+          explanations.push('| → Acts as OR between patterns.');
+          break;
+        case '\\d':
+          explanations.push('\\d → Matches any digit (0–9).');
+          break;
+        case '\\D':
+          explanations.push('\\D → Matches any non-digit.');
+          break;
+        case '\\w':
+          explanations.push('\\w → Matches any word character (letters, digits, underscore).');
+          break;
+        case '\\W':
+          explanations.push('\\W → Matches any non-word character.');
+          break;
+        case '\\s':
+          explanations.push('\\s → Matches whitespace (space, tab, newline).');
+          break;
+        case '\\S':
+          explanations.push('\\S → Matches any non-whitespace character.');
+          break;
+        default:
+          if (token.startsWith('[')) explanations.push(`${token} → Character set or range.`);
+          else if (token.startsWith('('))
+            explanations.push(`${token} → Capturing or non-capturing group.`);
+          else if (token.startsWith('\\'))
+            explanations.push(`${token} → Escaped character or special sequence.`);
+          else explanations.push(`${token} → Literal character.`);
+          break;
+      }
+    }
+
+    if (explanations.length === 0)
+      explanations.push('No special tokens found. Probably a literal string.');
+  } catch (e: any) {
+    explanations.push(`Error parsing regex: ${e.message}`);
+  }
+
+  return explanations;
+};
 
 const RegexTester: React.FC = () => {
-  const [pattern, setPattern] = useState('');
-  const [flags, setFlags] = useState('g');
-  const [text, setText] = useState('');
-  const [result, setResult] = useState<string>('');
+  const [pattern, setPattern] = useState('^\\w+$');
+  const [flags, setFlags] = useState('gm');
+  const [text, setText] = useState('asdasd\n1234\n@hello');
+  const [error, setError] = useState('');
+  const [highlightedHTML, setHighlightedHTML] = useState('');
+  const [explanation, setExplanation] = useState<string[]>([]);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const highlightRef = useRef<HTMLDivElement>(null);
 
-  const run = () => {
+  const updateHighlight = (p = pattern, f = flags, t = text) => {
     try {
-      const re = new RegExp(pattern, flags);
-      const matches = text.match(re) || [];
-      setResult(JSON.stringify(matches, null, 2));
+      const re = new RegExp(p, f);
+      setError('');
+      setExplanation(explainRegex(p));
+
+      let highlighted = '';
+      let lastIndex = 0;
+      let match: RegExpExecArray | null;
+
+      // Build highlighted HTML manually using exec()
+      while ((match = re.exec(t)) !== null) {
+        const start = match.index;
+        const end = start + match[0].length;
+        highlighted += t.slice(lastIndex, start);
+        highlighted += `<mark>${match[0]}</mark>`;
+        lastIndex = end;
+
+        // Prevent infinite loops with zero-length matches
+        if (re.lastIndex === match.index) re.lastIndex++;
+      }
+
+      highlighted += t.slice(lastIndex);
+      setHighlightedHTML(highlighted.replace(/\n/g, '<br/>'));
     } catch (e: any) {
-      setResult('Error: ' + e.message);
+      setError(e.message);
+      setHighlightedHTML(t.replace(/\n/g, '<br/>'));
+      setExplanation([`Error: ${e.message}`]);
     }
   };
 
+  useEffect(() => {
+    updateHighlight(pattern, flags, text);
+  }, [pattern, flags, text]);
+
+  const syncScroll = () => {
+    if (!textAreaRef.current || !highlightRef.current) return;
+    highlightRef.current.scrollTop = textAreaRef.current.scrollTop;
+  };
+
   return (
-    <Card title="Regex Tester">
-      <Space direction="vertical" style={{ width: '100%' }}>
-        <Input placeholder="pattern" value={pattern} onChange={(e) => setPattern(e.target.value)} />
+    <Card className="regex-card-light" title="🧩 Regex Tester" bordered={false}>
+      <div className="regex-header">
         <Input
-          placeholder="flags (eg: g,i,m)"
+          className="regex-input-light"
+          placeholder="Enter regex pattern (without / /)"
+          value={pattern}
+          onChange={(e) => setPattern(e.target.value)}
+        />
+        <Input
+          className="regex-flags-light"
+          placeholder="Flags (e.g. gim)"
           value={flags}
           onChange={(e) => setFlags(e.target.value)}
         />
-        <Input.TextArea
-          placeholder="test text"
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-            run();
-          }}
-          rows={8}
-        />
-        <Alert
-          message={result || 'No result'}
-          type={result.startsWith('Error') ? 'error' : 'info'}
-        />
-      </Space>
+      </div>
+
+      <Tabs
+        defaultActiveKey="1"
+        items={[
+          {
+            key: '1',
+            label: 'Text',
+            children: (
+              <div className="regex-textarea-wrapper">
+                <div
+                  ref={highlightRef}
+                  className="regex-highlights"
+                  dangerouslySetInnerHTML={{ __html: highlightedHTML }}
+                />
+                <TextArea
+                  ref={textAreaRef}
+                  value={text}
+                  onScroll={syncScroll}
+                  onChange={(e) => setText(e.target.value)}
+                  rows={8}
+                  className="regex-textarea-overlay"
+                />
+              </div>
+            ),
+          },
+          {
+            key: '2',
+            label: 'Explanation',
+            children: (
+              <div className="regex-explanation">
+                {explanation.map((line, i) => (
+                  <Paragraph key={i} className="regex-explain-line">
+                    {line}
+                  </Paragraph>
+                ))}
+              </div>
+            ),
+          },
+        ]}
+      />
+
+      {error && <Alert message={`Error: ${error}`} type="error" showIcon />}
     </Card>
   );
 };

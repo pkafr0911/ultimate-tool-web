@@ -1,0 +1,67 @@
+.regex-card-light {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.regex-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.regex-textarea-wrapper {
+  position: relative;
+  width: 100%;
+  font-family: monospace;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+/* Highlight layer under the TextArea */
+.regex-highlights {
+  position: absolute;
+  inset: 0;
+  padding: 8px 11px;
+  color: transparent;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow: hidden;
+  pointer-events: none;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  z-index: 0;
+}
+
+/* Actual TextArea on top */
+.regex-textarea-overlay {
+  position: relative;
+  background: transparent !important;
+  color: #222;
+  caret-color: #222;
+  font-family: monospace;
+  line-height: 1.5;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  z-index: 1;
+}
+
+/* Highlight mark styling */
+.regex-highlights mark {
+  background: #fff6a1;
+  color: transparent;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+.regex-explanation {
+  background: #fafafa;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.regex-explain-line {
+  margin: 0;
+}
