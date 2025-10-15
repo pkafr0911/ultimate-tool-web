@@ -2,21 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { AutoComplete, Input } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { useNavigate } from '@umijs/max';
-
-// Define available routes (can import dynamically later)
-const routes = [
-  { path: '/', name: 'Welcome' },
-  { path: '/qr', name: 'QR Generator' },
-  { path: '/videowatch', name: 'Video Watch' },
-  { path: '/epoch', name: 'Epoch Converter' },
-  { path: '/regex', name: 'Regex Tester' },
-  { path: '/uuid', name: 'UUID Generator' },
-  { path: '/password', name: 'Password Generator' },
-  { path: '/base64', name: 'Image Base64 Converter' },
-  { path: '/jwt', name: 'JWT Encrypt / Decrypt' },
-  { path: '/colorpicker', name: 'Color Picker' },
-  { path: '/docs', name: 'Docs' },
-];
+import { pages } from '@/consants';
 
 // highlight matched text inside label
 const highlightMatch = (text: string, query: string) => {
@@ -42,21 +28,21 @@ const GlobalSearchBar: React.FC = () => {
     if (!value) return [];
     const lower = value.toLowerCase();
 
-    return routes
-      .filter((r) => r.name.toLowerCase().includes(lower))
-      .map((r) => ({
-        value: r.name,
+    return pages
+      .filter((p) => p.name.toLowerCase().includes(lower))
+      .map((p) => ({
+        value: p.name,
         label: (
           <div>
-            <div style={{ fontSize: 14 }}>{highlightMatch(r.name, value)}</div>
-            <div style={{ fontSize: 12, color: '#888' }}>{r.path}</div>
+            <div style={{ fontSize: 14 }}>{highlightMatch(p.name, value)}</div>
+            <div style={{ fontSize: 12, color: '#888' }}>{p.path}</div>
           </div>
         ),
       }));
   }, [value]);
 
   const onSelect = (routeName: string) => {
-    const selected = routes.find((r) => r.name === routeName);
+    const selected = pages.find((p) => p.name === routeName);
     if (selected) navigate(selected.path);
   };
 

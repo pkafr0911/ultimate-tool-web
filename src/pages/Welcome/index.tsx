@@ -1,21 +1,9 @@
 import React from 'react';
 import { Card, Typography, List, Space, Button } from 'antd';
 import { history } from 'umi';
+import { pages } from '@/consants';
 
 const { Title, Paragraph } = Typography;
-
-const pages = [
-  { name: 'QR Generator', path: '/qr' },
-  { name: 'Video Watch', path: '/videowatch' },
-  { name: 'Epoch Converter', path: '/epoch' },
-  { name: 'Regex Tester', path: '/regex' },
-  { name: 'UUID Generator', path: '/uuid' },
-  { name: 'Password Generator', path: '/password' },
-  { name: 'Base64 Converter', path: '/base64' },
-  { name: 'JWT Encrypt/Decrypt', path: '/jwt' },
-  { name: 'Color Picker', path: '/colorpicker' },
-  { name: 'Docs', path: '/docs' },
-];
 
 const WelcomePage: React.FC = () => {
   return (

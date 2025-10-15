@@ -22,13 +22,15 @@ export const codeMessage = {
   504: 'Gateway timed out.',
 };
 
-export const SYSTEM_ROLE = {
-  1: 'Super Admin',
-  2: 'Admin',
-  3: 'User',
-};
-
-export enum Action {
-  ACTIVATE = 'Activate',
-  DEACTIVATE = 'Deactivate',
-}
+export const pages = [
+  { name: 'QR Generator', path: '/qr' },
+  { name: 'Video Watch', path: '/videowatch' },
+  { name: 'Epoch Converter', path: '/epoch' },
+  { name: 'Regex Tester', path: '/regex' },
+  { name: 'UUID Generator', path: '/uuid' },
+  { name: 'Password Generator', path: '/password' },
+  { name: 'Base64 Converter', path: '/base64' },
+  { name: 'JWT Encrypt/Decrypt', path: '/jwt' },
+  { name: 'Color Picker', path: '/colorpicker' },
+  { name: 'Docs', path: '/docs' },
+];
