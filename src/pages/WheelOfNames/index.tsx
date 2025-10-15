@@ -149,7 +149,6 @@ const WheelOfNames: React.FC = () => {
             {/* Spin button */}
             Spin the Wheel
           </Button>
-          {winner && <Title level={3}>Winner: {winner}</Title>}
 
           {winner && (
             <>
