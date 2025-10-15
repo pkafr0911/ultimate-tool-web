@@ -65,6 +65,11 @@
     component: './Playground',
   },
   {
+    path: '/svg-viewer',
+    name: 'SVG Viewer',
+    component: './SVGViewer',
+  },
+  {
     path: '/docs',
     name: 'docs',
     component: './Docs',

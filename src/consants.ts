@@ -36,4 +36,5 @@ export const pages = [
   { name: 'Random Generator', path: '/random' },
   { name: 'Playground', path: '/playground' },
   { name: 'Docs', path: '/docs' },
+  { name: 'SVG Viewer', path: '/svg-viewer' },
 ];

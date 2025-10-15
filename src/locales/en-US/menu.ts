@@ -12,5 +12,6 @@ export default {
   'menu.wheel-of-names': 'Wheel of Names',
   'menu.random': 'Random Generator',
   'menu.playground': 'Playground',
+  'menu.svg-viewer': 'SVG Viewer',
   'menu.docs': 'Docs',
 };
