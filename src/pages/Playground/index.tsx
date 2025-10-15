@@ -11,15 +11,38 @@ const PlaygroundPage: React.FC = () => {
   const [output, setOutput] = useState<string>('');
 
   const runCode = () => {
+    let capturedOutput: string[] = [];
+
+    // Temporary override console methods
+    const originalLog = console.log;
+    const originalError = console.error;
+
+    console.log = (...args: any[]) => {
+      capturedOutput.push(args.join(' '));
+      originalLog(...args);
+    };
+
+    console.error = (...args: any[]) => {
+      capturedOutput.push('❌ ' + args.join(' '));
+      originalError(...args);
+    };
+
     try {
-      // Reset output
-      setOutput('');
-      // Run JS code safely in sandboxed Function
+      // eslint-disable-next-line no-new-func
       const result = new Function(code)();
-      if (result !== undefined) setOutput(String(result));
+      if (result !== undefined) {
+        capturedOutput.push(`➡️ ${String(result)}`);
+      }
     } catch (err: any) {
-      setOutput(`❌ Error: ${err.message}`);
+      capturedOutput.push(`❌ Error: ${err.message}`);
     }
+
+    // Restore console
+    console.log = originalLog;
+    console.error = originalError;
+
+    // Update output area
+    setOutput(capturedOutput.join('\n'));
   };
 
   return (
@@ -45,7 +68,6 @@ const PlaygroundPage: React.FC = () => {
 
         <Editor
           height="400px"
-          defaultLanguage={language}
           language={language}
           value={code}
           onChange={(val) => setCode(val || '')}
