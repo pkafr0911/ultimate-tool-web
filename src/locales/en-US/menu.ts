@@ -13,5 +13,6 @@ export default {
   'menu.random': 'Random Generator',
   'menu.playground': 'Playground',
   'menu.svg-viewer': 'SVG Viewer',
+  'menu.image-to-svg': 'Image To Svg Converter',
   'menu.docs': 'Docs',
 };

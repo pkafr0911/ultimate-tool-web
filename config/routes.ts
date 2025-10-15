@@ -66,8 +66,13 @@
   },
   {
     path: '/svg-viewer',
-    name: 'SVG Viewer',
+    name: 'svg-viewer',
     component: './SVGViewer',
+  },
+  {
+    path: '/image-to-svg',
+    name: 'image-to-svg',
+    component: './ImageToSvg',
   },
   {
     path: '/docs',

@@ -50,6 +50,7 @@
     "highcharts": "^12.1.2",
     "highcharts-react-official": "^3.2.1",
     "hls.js": "^1.1.5",
+    "imagetracerjs": "^1.2.6",
     "jose": "^6.1.0",
     "js-base64": "^3.7.2",
     "moment": "^2.30.1",
