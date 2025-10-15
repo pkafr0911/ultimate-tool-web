@@ -63,6 +63,7 @@ const GlobalSearchBar: React.FC = () => {
   return (
     <AutoComplete
       style={{ width: 260 }}
+      defaultActiveFirstOption
       options={options}
       onSelect={onSelect}
       onSearch={setValue}
