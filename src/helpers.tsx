@@ -1,3 +1,4 @@
+import { message } from 'antd';
 import querystring from 'query-string';
 
 //get curent params in url
@@ -23,4 +24,26 @@ export const generateParams = (obj: any) => {
     return result;
   }
   return '';
+};
+
+export const handleCopy = (content: string) => {
+  const unsecuredCopyToClipboard = (item: string) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = item;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+      document.execCommand('copy');
+    } catch (err) {
+      console.error('Unable to copy to clipboard', err);
+      message.error('Unable to copy to clipboard');
+    }
+    document.body.removeChild(textArea);
+  };
+  if (window.isSecureContext && navigator.clipboard) {
+    navigator.clipboard.writeText(content);
+  } else {
+    unsecuredCopyToClipboard(content);
+  }
+  message.success(`Copied: ${content}`);
 };

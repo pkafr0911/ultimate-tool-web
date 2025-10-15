@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Input, Button, Typography, Space, message } from 'antd';
 import { CopyOutlined, SearchOutlined } from '@ant-design/icons';
+import { handleCopy } from '@/helpers';
 
 const { Title, Text } = Typography;
 
@@ -74,11 +75,6 @@ const highlightText = (text: string, search: string) => {
 
 const DocsPage: React.FC = () => {
   const [search, setSearch] = useState('');
-
-  const handleCopy = (cmd: string) => {
-    navigator.clipboard.writeText(cmd);
-    message.success(`Copied: ${cmd}`);
-  };
 
   const allCommands = [...ubuntuCommands, ...gitCommands, ...dockerCommands];
   const filteredCommands = allCommands.filter(
