@@ -1,0 +1,37 @@
+.wheel-container {
+  position: relative;
+  width: 500px; /* Increased wheel size */
+  height: 500px; /* Increased wheel size */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wheel {
+  border-radius: 50%;
+  background: #f8f8f8;
+  border: 4px solid #333;
+}
+
+.wheel-pointer {
+  position: absolute;
+  top: 232px;
+  left: 100%;
+  transform: translateX(-50%) rotate(-90deg); /* Rotates it to point towards the wheel */
+  width: 25px;
+  height: 35px;
+  background: red;
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+.container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.list-container {
+  max-width: 300px;
+  margin-left: 20px;
+}

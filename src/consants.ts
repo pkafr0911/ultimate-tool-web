@@ -32,5 +32,6 @@ export const pages = [
   { name: 'Base64 Converter', path: '/base64' },
   { name: 'JWT Encrypt/Decrypt', path: '/jwt' },
   { name: 'Color Picker', path: '/colorpicker' },
+  { name: '🎡 Wheel of Names', path: '/wheel-of-names' },
   { name: 'Docs', path: '/docs' },
 ];

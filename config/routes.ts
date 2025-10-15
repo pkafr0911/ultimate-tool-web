@@ -50,6 +50,11 @@
     component: './ColorPicker',
   },
   {
+    path: '/wheel-of-names',
+    name: 'Wheel of Names',
+    component: './WheelOfNames',
+  },
+  {
     path: '/docs',
     name: 'Docs',
     component: './Docs',
