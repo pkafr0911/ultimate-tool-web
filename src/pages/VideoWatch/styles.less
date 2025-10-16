@@ -1,0 +1,52 @@
+.custom-video-container {
+  position: relative;
+  width: 100%;
+  max-height: 480px;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.custom-video-container video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 8px;
+  opacity: 0.95; // slightly transparent
+  outline: none;
+}
+
+/* Overlay gradient (bottom area for controls) */
+.custom-video-container::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 80px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  pointer-events: none;
+}
+
+/* Change progress bar color in WebKit browsers */
+video::-webkit-media-controls-timeline {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+video::-webkit-media-controls-current-time-display,
+video::-webkit-media-controls-time-remaining-display {
+  color: #ff718b; // custom text color
+}
+
+video::-webkit-media-controls-play-button,
+video::-webkit-media-controls-pause-button {
+  background-color: rgba(255, 82, 82, 0.2);
+  border-radius: 50%;
+}
+
+// video::-webkit-media-controls-volume-slider {
+//   background-color: rgba(255, 82, 82, 0.3);
+// }
+
+// video::-webkit-media-controls-mute-button {
+//   background-color: rgba(255, 82, 82, 0.2);
+// }

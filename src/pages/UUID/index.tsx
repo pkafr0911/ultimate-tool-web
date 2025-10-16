@@ -3,7 +3,7 @@ import { Card, Button, Typography, Space } from 'antd';
 import { v4 as uuidv4 } from 'uuid';
 import './styles.less';
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 const UUIDPage: React.FC = () => {
   const [value, setValue] = React.useState(uuidv4());
