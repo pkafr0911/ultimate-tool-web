@@ -11,7 +11,6 @@ export default {
   'menu.utility.password': 'Password Generator',
   'menu.utility.jwt': 'JWT Encrypt / Decrypt',
   'menu.utility.colorpicker': 'Color Picker',
-  'menu.utility.base64': 'Image Base64 Converter',
 
   // Randomizer
   'menu.randomizer': 'Randomizer',
@@ -21,7 +20,8 @@ export default {
   // Image Converter
   'menu.imageConverter': 'Image Converter',
   'menu.imageConverter.svg-viewer': 'SVG Viewer',
-  'menu.imageConverter.image-to-svg': 'Image To Svg Converter',
+  'menu.imageConverter.pnj-jpeg': 'PNG / JPEG Converter',
+  'menu.imageConverter.base64': 'Base64 Converter',
 
   // Playground
   'menu.playground': 'Playground',

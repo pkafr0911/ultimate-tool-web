@@ -34,7 +34,7 @@
     icon: 'picture',
     routes: [
       { path: '/imageConverter/svg-viewer', name: 'svg-viewer', component: './SVGViewer' },
-      { path: '/imageConverter/image-to-svg', name: 'image-to-svg', component: './ImageToSvg' },
+      { path: '/imageConverter/pnj-jpeg', name: 'pnj-jpeg', component: './PNGJPEG' },
       { path: '/imageConverter/base64', name: 'base64', component: './Base64' },
     ],
   },

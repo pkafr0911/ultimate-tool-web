@@ -32,7 +32,6 @@ export const pages = [
   { name: 'Password Generator', path: '/utility/password' },
   { name: 'JWT Encrypt/Decrypt', path: '/utility/jwt' },
   { name: 'Color Picker', path: '/utility/colorpicker' },
-  { name: 'Image Base64 Converter', path: '/utility/base64' },
 
   // Randomizer
   { name: '🎡 Wheel of Names', path: '/randomizer/wheel-of-names' },
@@ -40,7 +39,8 @@ export const pages = [
 
   // Image Converter
   { name: 'SVG Viewer', path: '/imageConverter/svg-viewer' },
-  { name: 'Image To Svg Converter', path: '/imageConverter/image-to-svg' },
+  { name: 'PNG / JPEG Converter', path: '/imageConverter/pnj-jpeg' },
+  { name: 'Image Base64 Converter', path: '/imageConverter/base64' },
 
   // Playground
   { name: 'Playground', path: '/playground' },

@@ -10,6 +10,7 @@ import {
   Row,
   Col,
   Tooltip,
+  Tabs,
 } from 'antd';
 import { PageContainer } from '@ant-design/pro-components';
 import {
@@ -22,8 +23,9 @@ import ImageTracer from 'imagetracerjs';
 import { handleCopy } from '@/helpers';
 
 const { Title } = Typography;
+const { TabPane } = Tabs;
 
-const ImageToSvg: React.FC = () => {
+const PNGJPEG: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [svgContent, setSvgContent] = useState<string | null>(null);
@@ -46,7 +48,7 @@ const ImageToSvg: React.FC = () => {
     reader.readAsDataURL(file);
     setDragging(false);
     dragCounter.current = 0;
-    return false; // Prevent auto-upload
+    return false;
   };
 
   const handleConvert = () => {
@@ -69,12 +71,11 @@ const ImageToSvg: React.FC = () => {
     }
   };
 
-  const handleDownload = () => {
-    if (!svgContent) return;
-    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+  const handleDownload = (content: string, filename: string) => {
+    const blob = new Blob([content], { type: 'image/svg+xml' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = file?.name.replace(/\.(jpg|jpeg|png)$/i, '.svg') || 'image.svg';
+    link.download = filename;
     link.click();
   };
 
@@ -85,9 +86,12 @@ const ImageToSvg: React.FC = () => {
     message.info('Image and SVG cleared.');
   };
 
+  // Generate Base64 and Data URI
+  const svgBase64 = svgContent ? btoa(unescape(encodeURIComponent(svgContent))) : '';
+  const svgDataURI = svgContent ? `data:image/svg+xml;base64,${svgBase64}` : '';
+
   return (
     <PageContainer>
-      {/* Full-screen drag area */}
       <div
         onDragEnter={(e) => {
           e.preventDefault();
@@ -120,14 +124,12 @@ const ImageToSvg: React.FC = () => {
       >
         <Card title="🖼️ Image to SVG Converter" bordered={false}>
           <Space direction="vertical" style={{ width: '100%' }} size="large">
-            {/* Show Upload button when not dragging */}
             {!dragging && (
               <Upload beforeUpload={handleUpload} showUploadList={false} accept=".png,.jpg,.jpeg">
                 <Button icon={<UploadOutlined />}>Upload Image (PNG/JPG)</Button>
               </Upload>
             )}
 
-            {/* Full-screen Dragger overlay while dragging */}
             {dragging && (
               <div
                 style={{
@@ -240,55 +242,101 @@ const ImageToSvg: React.FC = () => {
               <Button type="primary" onClick={handleConvert} disabled={!file}>
                 Convert to SVG
               </Button>
-              <Button onClick={handleDownload} icon={<DownloadOutlined />} disabled={!svgContent}>
-                Download SVG
-              </Button>
-              <Button
-                onClick={() => {
-                  if (!svgContent) return;
-                  handleCopy(svgContent, 'SVG copied to clipboard!');
-                }}
-                icon={<CopyOutlined />}
-                disabled={!svgContent}
-              >
-                Copy SVG
-              </Button>
               <Button onClick={handleClear} danger disabled={!file && !svgContent}>
                 Clear Image
               </Button>
             </Space>
 
-            {/* SVG Viewer */}
+            {/* Tabs for SVG formats */}
             {svgContent && (
-              <>
-                <Title level={5}>SVG Output Preview:</Title>
-                <div
-                  style={{
-                    textAlign: 'center',
-                    border: '1px solid #eee',
-                    borderRadius: 6,
-                    padding: 12,
-                    overflow: 'auto',
-                  }}
-                >
-                  <div dangerouslySetInnerHTML={{ __html: svgContent }} />
-                </div>
+              <Tabs defaultActiveKey="svg" type="card" style={{ marginTop: 16 }}>
+                <TabPane tab="SVG" key="svg">
+                  <Space style={{ marginBottom: 8 }}>
+                    <Button
+                      onClick={() => handleDownload(svgContent, 'image.svg')}
+                      icon={<DownloadOutlined />}
+                    >
+                      Download
+                    </Button>
+                    <Button
+                      onClick={() => handleCopy(svgContent, 'SVG copied!')}
+                      icon={<CopyOutlined />}
+                    >
+                      Copy
+                    </Button>
+                  </Space>
+                  <div
+                    style={{
+                      border: '1px solid #eee',
+                      borderRadius: 6,
+                      padding: 12,
+                      overflow: 'auto',
+                    }}
+                  >
+                    <div dangerouslySetInnerHTML={{ __html: svgContent }} />
+                  </div>
+                </TabPane>
 
-                <Title level={5}>SVG Code:</Title>
-                <pre
-                  style={{
-                    background: '#f7f7f7',
-                    padding: 12,
-                    borderRadius: 6,
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                    maxHeight: 300,
-                    overflow: 'auto',
-                  }}
-                >
-                  {svgContent}
-                </pre>
-              </>
+                <TabPane tab="Base64" key="base64">
+                  <Space style={{ marginBottom: 8 }}>
+                    <Button
+                      onClick={() => handleCopy(svgBase64, 'Base64 copied!')}
+                      icon={<CopyOutlined />}
+                    >
+                      Copy Base64
+                    </Button>
+                    <Button
+                      onClick={() => handleDownload(svgBase64, 'image-base64.txt')}
+                      icon={<DownloadOutlined />}
+                    >
+                      Download Base64
+                    </Button>
+                  </Space>
+                  <pre
+                    style={{
+                      background: '#f7f7f7',
+                      padding: 12,
+                      borderRadius: 6,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      maxHeight: 300,
+                      overflow: 'auto',
+                    }}
+                  >
+                    {svgBase64}
+                  </pre>
+                </TabPane>
+
+                <TabPane tab="Data URI" key="datauri">
+                  <Space style={{ marginBottom: 8 }}>
+                    <Button
+                      onClick={() => handleCopy(svgDataURI, 'Data URI copied!')}
+                      icon={<CopyOutlined />}
+                    >
+                      Copy Data URI
+                    </Button>
+                    <Button
+                      onClick={() => handleDownload(svgDataURI, 'image-datauri.txt')}
+                      icon={<DownloadOutlined />}
+                    >
+                      Download Data URI
+                    </Button>
+                  </Space>
+                  <pre
+                    style={{
+                      background: '#f7f7f7',
+                      padding: 12,
+                      borderRadius: 6,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      maxHeight: 300,
+                      overflow: 'auto',
+                    }}
+                  >
+                    {svgDataURI}
+                  </pre>
+                </TabPane>
+              </Tabs>
             )}
           </Space>
         </Card>
@@ -297,4 +345,4 @@ const ImageToSvg: React.FC = () => {
   );
 };
 
-export default ImageToSvg;
+export default PNGJPEG;
