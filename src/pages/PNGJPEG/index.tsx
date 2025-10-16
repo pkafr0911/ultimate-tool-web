@@ -11,6 +11,7 @@ import {
   Col,
   Tooltip,
   Tabs,
+  Spin,
 } from 'antd';
 import { PageContainer } from '@ant-design/pro-components';
 import {
@@ -18,6 +19,7 @@ import {
   DownloadOutlined,
   CopyOutlined,
   InfoCircleOutlined,
+  LoadingOutlined,
 } from '@ant-design/icons';
 import ImageTracer from 'imagetracerjs';
 import { handleCopy } from '@/helpers';
@@ -30,6 +32,7 @@ const PNGJPEG: React.FC = () => {
   const [preview, setPreview] = useState<string | null>(null);
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
   const dragCounter = useRef(0);
 
@@ -56,17 +59,21 @@ const PNGJPEG: React.FC = () => {
       message.error('Please upload an image first.');
       return;
     }
+
+    setProcessing(true); // 👈 start loading animation
     try {
       ImageTracer.imageToSVG(
         preview,
         (svgString) => {
           setSvgContent(svgString);
+          setProcessing(false); // 👈 stop loading
           message.success('Image converted to SVG successfully!');
         },
         { scale, ltres, qtres, pathomit, colorsampling, strokewidth },
       );
     } catch (err: any) {
       console.error(err);
+      setProcessing(false); // 👈 stop loading on error
       message.error('Error converting image to SVG.');
     }
   };
@@ -166,6 +173,31 @@ const PNGJPEG: React.FC = () => {
                     borderRadius: 6,
                     border: '1px solid #eee',
                   }}
+                />
+              </div>
+            )}
+
+            {/* === PROCESSING OVERLAY === */}
+            {processing && (
+              <div
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  background: 'rgba(255, 255, 255, 0.7)',
+                  zIndex: 10000,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flexDirection: 'column',
+                }}
+              >
+                <Spin
+                  indicator={<LoadingOutlined style={{ fontSize: 48, color: '#1890ff' }} spin />}
+                  tip="Converting image to SVG..."
+                  size="large"
                 />
               </div>
             )}

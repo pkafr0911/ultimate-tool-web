@@ -10,6 +10,7 @@ import {
   Tabs,
   Input,
   Tooltip,
+  Splitter,
 } from 'antd'; // Import Ant Design components
 import {
   UploadOutlined,
@@ -20,6 +21,8 @@ import {
   CompressOutlined,
   SwapOutlined,
   SyncOutlined,
+  PlusOutlined,
+  MinusOutlined,
 } from '@ant-design/icons'; // Import icons
 import { Editor } from '@monaco-editor/react'; // Import Monaco Editor component
 import { optimize } from 'svgo'; // Import SVG optimizer
@@ -42,6 +45,12 @@ const SVGViewer: React.FC = () => {
     width: '',
     height: '',
   }); // Store detected or custom SVG width/height
+
+  const [zoom, setZoom] = useState(1); // 1 = 100%
+  const handleZoomIn = () => setZoom((z) => Math.min(z + 0.1, 3)); // up to 300%
+  const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 0.2)); // down to 20%
+  const handleResetZoom = () => setZoom(1);
+
   const dragCounter = useRef(0);
   // place this near the top of your component, under useState declarations:
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -351,199 +360,226 @@ const SVGViewer: React.FC = () => {
     >
       <Card title="🧩 SVG Viewer" bordered={false} className={styles.container}>
         <div className={styles.content}>
-          {/* Left Side - Editor */}
-          <div className={styles.editorSection}>
-            <Space className={styles.topActions} style={{ marginTop: 12, marginBottom: 8 }} wrap>
-              <Upload beforeUpload={handleUpload} showUploadList={false} accept=".svg">
-                <Button icon={<UploadOutlined />}>Upload SVG</Button>
-              </Upload>
-              <Button onClick={prettifySVG} icon={<HighlightOutlined />}>
-                Prettify
-              </Button>
-              <Button onClick={handleOptimize} icon={<CompressOutlined />}>
-                Optimize
-              </Button>
-            </Space>
+          <Splitter>
+            <Splitter.Panel defaultSize="50%" min="20%" max="70%" style={{ padding: '0px 10px' }}>
+              {/* Left Side - Editor */}
+              <div className={styles.editorSection}>
+                <Space
+                  className={styles.topActions}
+                  style={{ marginTop: 12, marginBottom: 8 }}
+                  wrap
+                >
+                  <Upload beforeUpload={handleUpload} showUploadList={false} accept=".svg">
+                    <Button icon={<UploadOutlined />}>Upload SVG</Button>
+                  </Upload>
+                  <Button onClick={prettifySVG} icon={<HighlightOutlined />}>
+                    Prettify
+                  </Button>
+                  <Button onClick={handleOptimize} icon={<CompressOutlined />}>
+                    Optimize
+                  </Button>
+                </Space>
 
-            {/* Show size info */}
-            {sizeInfo && (
-              <Text type="secondary" className="mb-2 block">
-                Size: <b>{(sizeInfo.before / 1024).toFixed(2)} KB</b>
-                {sizeInfo.after && (
-                  <>
-                    {' '}
-                    → <b>{(sizeInfo.after / 1024).toFixed(2)} KB</b> (
-                    {(((sizeInfo.before - sizeInfo.after) / sizeInfo.before) * 100).toFixed(1)}%
-                    smaller)
-                  </>
+                {/* Show size info */}
+                {sizeInfo && (
+                  <Text type="secondary" className="mb-2 block">
+                    Size: <b>{(sizeInfo.before / 1024).toFixed(2)} KB</b>
+                    {sizeInfo.after && (
+                      <>
+                        {' '}
+                        → <b>{(sizeInfo.after / 1024).toFixed(2)} KB</b> (
+                        {(((sizeInfo.before - sizeInfo.after) / sizeInfo.before) * 100).toFixed(1)}%
+                        smaller)
+                      </>
+                    )}
+                  </Text>
                 )}
-              </Text>
-            )}
 
-            {/* Editor */}
-            <div className={styles.editorBox}>
-              <Editor
-                height="100%"
-                defaultLanguage="xml"
-                value={svgCode}
-                onChange={(val) => {
-                  const code = val || '';
-                  setSvgCode(code);
-                  setPreview(code);
-                  extractSize(code);
-                }}
-                theme="vs-light"
-                options={{ minimap: { enabled: false }, wordWrap: 'on', fontSize: 14 }}
-              />
-            </div>
+                {/* Editor */}
+                <div className={styles.editorBox}>
+                  <Editor
+                    height="100%"
+                    defaultLanguage="xml"
+                    value={svgCode}
+                    onChange={(val) => {
+                      const code = val || '';
+                      setSvgCode(code);
+                      setPreview(code);
+                      extractSize(code);
+                    }}
+                    theme="vs-light"
+                    options={{ minimap: { enabled: false }, wordWrap: 'on', fontSize: 14 }}
+                  />
+                </div>
 
-            {/* Editor actions */}
-            <Space className={styles.actions} wrap>
-              <Button type="primary" onClick={handleCopyCode} icon={<CopyOutlined />}>
-                Copy
-              </Button>
-              <Button danger onClick={handleClear} icon={<DeleteOutlined />}>
-                Clear
-              </Button>
-            </Space>
-            {/* Resize controls */}
-            <Space style={{ float: 'right', marginTop: 16 }}>
-              <Text strong>Resize:</Text>
-              <Input
-                size="small"
-                prefix={<CompressOutlined />}
-                placeholder="W"
-                style={{ width: 90 }}
-                value={svgSize.width}
-                onChange={(e) => {
-                  const width = e.target.value;
-                  setSvgSize((prev) => ({ ...prev, width }));
-                  if (width && svgSize.height) debouncedResize(width, svgSize.height);
-                }}
-              />
-              x
-              <Input
-                size="small"
-                prefix={<CompressOutlined />}
-                placeholder="H"
-                style={{ width: 90 }}
-                value={svgSize.height}
-                onChange={(e) => {
-                  const height = e.target.value;
-                  setSvgSize((prev) => ({ ...prev, height }));
-                  if (height && svgSize.width) debouncedResize(svgSize.width, height);
-                }}
-              />
-              <Tooltip title={'Flip H'}>
-                <Button onClick={flipHorizontal} icon={<SwapOutlined />} />
-              </Tooltip>
-              <Tooltip title={'Flip V'}>
-                <Button
-                  onClick={flipVertical}
-                  icon={<SwapOutlined style={{ transform: 'rotate(90deg)' }} />}
-                />
-              </Tooltip>
-            </Space>
-          </div>
-
-          {/* Right Side - Preview */}
-          <div className={styles.previewWrapper}>
-            <Tabs
-              activeKey={activeTab}
-              onChange={(key) => setActiveTab(key)}
-              items={[
-                {
-                  key: 'svg',
-                  label: 'SVG',
-                  children: (
-                    <div
-                      className={`${styles.previewSection} ${styles[bgMode]}`}
-                      dangerouslySetInnerHTML={{
-                        __html: preview
-                          .split('<!-- New SVG appended -->')
-                          .map((part, i) => `<div>${part}</div>`)
-                          .join(''),
-                      }}
+                {/* Editor actions */}
+                <Space className={styles.actions} wrap>
+                  <Button type="primary" onClick={handleCopyCode} icon={<CopyOutlined />}>
+                    Copy
+                  </Button>
+                  <Button danger onClick={handleClear} icon={<DeleteOutlined />}>
+                    Clear
+                  </Button>
+                </Space>
+                {/* Resize controls */}
+                <Space style={{ float: 'right', marginTop: 16 }}>
+                  <Text strong>Resize:</Text>
+                  <Input
+                    size="small"
+                    prefix={<CompressOutlined />}
+                    placeholder="W"
+                    style={{ width: 90 }}
+                    value={svgSize.width}
+                    onChange={(e) => {
+                      const width = e.target.value;
+                      setSvgSize((prev) => ({ ...prev, width }));
+                      if (width && svgSize.height) debouncedResize(width, svgSize.height);
+                    }}
+                  />
+                  x
+                  <Input
+                    size="small"
+                    prefix={<CompressOutlined />}
+                    placeholder="H"
+                    style={{ width: 90 }}
+                    value={svgSize.height}
+                    onChange={(e) => {
+                      const height = e.target.value;
+                      setSvgSize((prev) => ({ ...prev, height }));
+                      if (height && svgSize.width) debouncedResize(svgSize.width, height);
+                    }}
+                  />
+                  <Tooltip title={'Flip H'}>
+                    <Button onClick={flipHorizontal} icon={<SwapOutlined />} />
+                  </Tooltip>
+                  <Tooltip title={'Flip V'}>
+                    <Button
+                      onClick={flipVertical}
+                      icon={<SwapOutlined style={{ transform: 'rotate(90deg)' }} />}
                     />
-                  ),
-                },
-                {
-                  key: 'png',
-                  label: 'PNG',
-                  children: (
-                    <div className={`${styles.previewSection} ${styles[bgMode]}`}>
-                      <img src={getDataURI()} alt="PNG preview" style={{ maxWidth: '100%' }} />
-                    </div>
-                  ),
-                },
-                {
-                  key: 'ico',
-                  label: 'ICO',
-                  children: (
-                    <div className={`${styles.previewSection} ${styles[bgMode]}`}>
-                      <img src={getDataURI()} alt="ICO preview" style={{ maxWidth: '100%' }} />
-                    </div>
-                  ),
-                },
-                {
-                  key: 'datauri',
-                  label: 'Data URI',
-                  children: <pre className={styles.previewCodeBox}>{getDataURI()}</pre>,
-                },
-                {
-                  key: 'base64',
-                  label: 'Base64',
-                  children: <pre className={styles.previewCodeBox}>{getBase64()}</pre>,
-                },
-              ]}
-            />
+                  </Tooltip>
+                </Space>
+              </div>
+            </Splitter.Panel>
+            <Splitter.Panel style={{ padding: '0px 10px' }}>
+              {/* Right Side - Preview */}
+              <div className={styles.previewWrapper}>
+                <Tabs
+                  activeKey={activeTab}
+                  onChange={(key) => setActiveTab(key)}
+                  items={[
+                    {
+                      key: 'svg',
+                      label: 'SVG',
+                      children: (
+                        <div className={`${styles.previewSection} ${styles[bgMode]}`}>
+                          <div
+                            style={{
+                              transform: `scale(${zoom})`,
+                              transformOrigin: 'center center',
+                              transition: 'transform 0.2s ease',
+                            }}
+                            dangerouslySetInnerHTML={{
+                              __html: preview
+                                .split('<!-- New SVG appended -->')
+                                .map((part, i) => `<div>${part}</div>`)
+                                .join(''),
+                            }}
+                          />
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'png',
+                      label: 'PNG',
+                      children: (
+                        <div className={`${styles.previewSection} ${styles[bgMode]}`}>
+                          <img src={getDataURI()} alt="PNG preview" style={{ maxWidth: '100%' }} />
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'ico',
+                      label: 'ICO',
+                      children: (
+                        <div className={`${styles.previewSection} ${styles[bgMode]}`}>
+                          <img src={getDataURI()} alt="ICO preview" style={{ maxWidth: '100%' }} />
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'datauri',
+                      label: 'Data URI',
+                      children: <pre className={styles.previewCodeBox}>{getDataURI()}</pre>,
+                    },
+                    {
+                      key: 'base64',
+                      label: 'Base64',
+                      children: <pre className={styles.previewCodeBox}>{getBase64()}</pre>,
+                    },
+                  ]}
+                />
 
-            {/* Bottom-left: background mode switch */}
-            <div className={styles.previewFooter}>
-              <Segmented
-                options={[
-                  { label: 'Transparent', value: 'transparent' },
-                  { label: 'White', value: 'white' },
-                  { label: 'Grey', value: 'grey' },
-                  { label: 'Black', value: 'black' },
-                ]}
-                value={bgMode}
-                onChange={(val) => setBgMode(val as any)}
-              />
-            </div>
+                {/* Bottom-left: background mode switch */}
+                <div className={styles.previewFooter}>
+                  <Space>
+                    <Segmented
+                      options={[
+                        { label: 'Transparent', value: 'transparent' },
+                        { label: 'White', value: 'white' },
+                        { label: 'Grey', value: 'grey' },
+                        { label: 'Black', value: 'black' },
+                      ]}
+                      value={bgMode}
+                      onChange={(val) => setBgMode(val as any)}
+                    />
+                    <Tooltip title="Zoom Out">
+                      <Button icon={<MinusOutlined />} onClick={handleZoomOut} />
+                    </Tooltip>
+                    <Tooltip title="Zoom In">
+                      <Button icon={<PlusOutlined />} onClick={handleZoomIn} />
+                    </Tooltip>
+                    <Tooltip title="Reset Zoom">
+                      <Button icon={<SyncOutlined />} onClick={handleResetZoom} />
+                    </Tooltip>
+                    <Text type="secondary">{Math.round(zoom * 100)}%</Text>
+                  </Space>
+                </div>
 
-            {/* Bottom-right: download / copy actions */}
-            <div className={styles.previewActions}>
-              {['svg', 'png', 'ico'].includes(activeTab) && (
-                <Button
-                  type="primary"
-                  icon={<DownloadOutlined />}
-                  onClick={
-                    activeTab === 'svg'
-                      ? () => handleDownload(svgCode, 'image.svg', 'image/svg+xml')
-                      : activeTab === 'png'
-                        ? handleDownloadPng
-                        : handleDownloadIco
-                  }
-                >
-                  Download {activeTab.toUpperCase()}
-                </Button>
-              )}
-              {['datauri', 'base64'].includes(activeTab) && (
-                <Button
-                  icon={<CopyOutlined />}
-                  onClick={() =>
-                    handleCopy(
-                      activeTab === 'datauri' ? getDataURI() : getBase64(),
-                      `Copied ${activeTab.toUpperCase()} to clipboard!`,
-                    )
-                  }
-                >
-                  Copy {activeTab.toUpperCase()}
-                </Button>
-              )}
-            </div>
-          </div>
+                {/* Bottom-right: download / copy actions */}
+                <div className={styles.previewActions}>
+                  {['svg', 'png', 'ico'].includes(activeTab) && (
+                    <Button
+                      type="primary"
+                      icon={<DownloadOutlined />}
+                      onClick={
+                        activeTab === 'svg'
+                          ? () => handleDownload(svgCode, 'image.svg', 'image/svg+xml')
+                          : activeTab === 'png'
+                            ? handleDownloadPng
+                            : handleDownloadIco
+                      }
+                    >
+                      Download {activeTab.toUpperCase()}
+                    </Button>
+                  )}
+                  {['datauri', 'base64'].includes(activeTab) && (
+                    <Button
+                      icon={<CopyOutlined />}
+                      onClick={() =>
+                        handleCopy(
+                          activeTab === 'datauri' ? getDataURI() : getBase64(),
+                          `Copied ${activeTab.toUpperCase()} to clipboard!`,
+                        )
+                      }
+                    >
+                      Copy {activeTab.toUpperCase()}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </Splitter.Panel>
+          </Splitter>
         </div>
       </Card>
 
