@@ -1,11 +1,5 @@
 import { AvatarDropdown, AvatarName, Footer, Question, SelectLang } from '@/components';
-import {
-  AppstoreOutlined,
-  FileTextOutlined,
-  LinkOutlined,
-  PictureOutlined,
-  ToolOutlined,
-} from '@ant-design/icons';
+
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
 import type { RunTimeLayoutConfig } from '@umijs/max';
@@ -17,7 +11,6 @@ import { isPlainObject } from 'lodash';
 import UnauthorizedPage from '@/pages/403';
 import './libs/iconfont';
 import GlobalSearchBar from './components/GlobalSearchBar';
-import { menuDataRender } from './helpers';
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -51,24 +44,16 @@ export async function getInitialState(): Promise<{
 export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) => {
   return {
     footerRender: () => <Footer />,
-
     bgLayoutImgList: [],
-
     menuHeaderRender: undefined,
-
     rightContentRender: () => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginRight: 16 }}>
         <GlobalSearchBar />
         <AvatarDropdown />
       </div>
     ),
-
     // Custom 403 page if necessary
     unAccessible: <UnauthorizedPage />,
-
-    menuDataRender: menuDataRender,
-    defaultOpenAll: true,
-
     childrenRender: (children) => (
       <>
         {children}

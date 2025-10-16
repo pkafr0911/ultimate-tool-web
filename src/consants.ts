@@ -23,19 +23,28 @@ export const codeMessage = {
 };
 
 export const pages = [
-  { name: 'QR Generator', path: '/qr' },
-  { name: 'Video Watch', path: '/videowatch' },
-  { name: 'Epoch Converter', path: '/epoch' },
-  { name: 'Regex Tester', path: '/regex' },
-  { name: 'UUID Generator', path: '/uuid' },
-  { name: 'Password Generator', path: '/password' },
-  { name: 'Base64 Converter', path: '/base64' },
-  { name: 'JWT Encrypt/Decrypt', path: '/jwt' },
-  { name: 'Color Picker', path: '/colorpicker' },
-  { name: '🎡 Wheel of Names', path: '/wheel-of-names' },
-  { name: 'Random Generator', path: '/random' },
+  // Utility Tools
+  { name: 'QR Generator', path: '/utility/qr' },
+  { name: 'Video Watch', path: '/utility/videowatch' },
+  { name: 'Epoch Converter', path: '/utility/epoch' },
+  { name: 'Regex Tester', path: '/utility/regex' },
+  { name: 'UUID Generator', path: '/utility/uuid' },
+  { name: 'Password Generator', path: '/utility/password' },
+  { name: 'JWT Encrypt/Decrypt', path: '/utility/jwt' },
+  { name: 'Color Picker', path: '/utility/colorpicker' },
+  { name: 'Image Base64 Converter', path: '/utility/base64' },
+
+  // Randomizer
+  { name: '🎡 Wheel of Names', path: '/randomizer/wheel-of-names' },
+  { name: 'Random Generator', path: '/randomizer/random' },
+
+  // Image Converter
+  { name: 'SVG Viewer', path: '/imageConverter/svg-viewer' },
+  { name: 'Image To Svg Converter', path: '/imageConverter/image-to-svg' },
+
+  // Playground
   { name: 'Playground', path: '/playground' },
-  { name: 'SVG Viewer', path: '/svg-viewer' },
-  { name: 'Image To Svg Converter', path: '/image-to-svg' },
-  { name: 'Docs', path: '/docs' },
+
+  // Docs / Commands
+  { name: 'Commands', path: '/docs/commands' },
 ];

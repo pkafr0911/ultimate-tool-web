@@ -73,7 +73,7 @@ const highlightText = (text: string, search: string) => {
   return safeText.replace(regex, '<mark>$1</mark>');
 };
 
-const DocsPage: React.FC = () => {
+const CommandsPage: React.FC = () => {
   const [search, setSearch] = useState('');
 
   const allCommands = [...ubuntuCommands, ...gitCommands, ...dockerCommands];
@@ -151,4 +151,4 @@ const DocsPage: React.FC = () => {
   );
 };
 
-export default DocsPage;
+export default CommandsPage;
