@@ -43,7 +43,8 @@ export const pages = [
   { name: 'Image Base64 Converter', path: '/imageConverter/base64' },
 
   // Randomizer
-  { name: 'ReadmeEditor', path: '/editor/readme-editor' },
+  { name: 'Readme Editor', path: '/editor/readme-editor' },
+  { name: 'Json Formatter', path: '/editor/json-formatter' },
 
   // Playground
   { name: 'Playground', path: '/playground' },

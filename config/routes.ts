@@ -43,7 +43,10 @@
     key: 'editor',
     name: 'editor',
     icon: 'edit',
-    routes: [{ path: '/editor/readme-editor', name: 'readme-editor', component: './ReadmeEditor' }],
+    routes: [
+      { path: '/editor/readme-editor', name: 'readme-editor', component: './ReadmeEditor' },
+      { path: '/editor/json-formatter', name: 'json-formatter', component: './JsonFormatter' },
+    ],
   },
   {
     path: '/playground',
