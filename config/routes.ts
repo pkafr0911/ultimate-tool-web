@@ -2,6 +2,7 @@
   {
     path: '/',
     name: 'welcome',
+    icon: 'smile',
     component: './Welcome',
   },
   {
