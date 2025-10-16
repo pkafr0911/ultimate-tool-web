@@ -35,6 +35,7 @@ export const pages = [
   { name: '🎡 Wheel of Names', path: '/wheel-of-names' },
   { name: 'Random Generator', path: '/random' },
   { name: 'Playground', path: '/playground' },
-  { name: 'Docs', path: '/docs' },
   { name: 'SVG Viewer', path: '/svg-viewer' },
+  { name: 'Image To Svg Converter', path: '/image-to-svg' },
+  { name: 'Docs', path: '/docs' },
 ];

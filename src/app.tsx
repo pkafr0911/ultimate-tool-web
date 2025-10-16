@@ -1,5 +1,11 @@
 import { AvatarDropdown, AvatarName, Footer, Question, SelectLang } from '@/components';
-import { LinkOutlined } from '@ant-design/icons';
+import {
+  AppstoreOutlined,
+  FileTextOutlined,
+  LinkOutlined,
+  PictureOutlined,
+  ToolOutlined,
+} from '@ant-design/icons';
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
 import type { RunTimeLayoutConfig } from '@umijs/max';
@@ -11,6 +17,7 @@ import { isPlainObject } from 'lodash';
 import UnauthorizedPage from '@/pages/403';
 import './libs/iconfont';
 import GlobalSearchBar from './components/GlobalSearchBar';
+import { menuDataRender } from './helpers';
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -48,39 +55,42 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     bgLayoutImgList: [],
 
     menuHeaderRender: undefined,
+
     rightContentRender: () => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginRight: 16 }}>
         <GlobalSearchBar />
         <AvatarDropdown />
       </div>
     ),
+
     // Custom 403 page if necessary
     unAccessible: <UnauthorizedPage />,
-    childrenRender: (children) => {
-      // Render children and the settings drawer in development
-      return (
-        <>
-          {children}
-          {isDev && (
-            <SettingDrawer
-              disableUrlParams
-              enableDarkTheme
-              settings={initialState?.settings}
-              onSettingChange={(settings) => {
-                setInitialState((preInitialState) => ({
-                  ...preInitialState,
-                  settings,
-                }));
-              }}
-            />
-          )}
-        </>
-      );
-    },
+
+    menuDataRender: menuDataRender,
+    defaultOpenAll: true,
+
+    childrenRender: (children) => (
+      <>
+        {children}
+        {isDev && (
+          <SettingDrawer
+            disableUrlParams
+            enableDarkTheme
+            settings={initialState?.settings}
+            onSettingChange={(settings) => {
+              setInitialState((preInitialState) => ({
+                ...preInitialState,
+                settings,
+              }));
+            }}
+          />
+        )}
+      </>
+    ),
+
     ...initialState?.settings,
   };
 };
-
 /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["obj"] }] */
 const nullValueFilter = (obj: Record<string, any>) => {
   Object.entries(obj).forEach(([key, value]) => {
