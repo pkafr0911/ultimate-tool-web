@@ -40,6 +40,12 @@
     ],
   },
   {
+    key: 'editor',
+    name: 'editor',
+    icon: 'edit',
+    routes: [{ path: '/editor/readme-editor', name: 'readme-editor', component: './ReadmeEditor' }],
+  },
+  {
     path: '/playground',
     name: 'playground',
     icon: 'appstore',

@@ -23,6 +23,10 @@ export default {
   'menu.imageConverter.pnj-jpeg': 'PNG / JPEG Converter',
   'menu.imageConverter.base64': 'Base64 Converter',
 
+  // Editor
+  'menu.editor': 'Editor',
+  'menu.editor.readme-editor': 'Readme Editor',
+
   // Playground
   'menu.playground': 'Playground',
 

@@ -42,6 +42,9 @@ export const pages = [
   { name: 'PNG / JPEG Converter', path: '/imageConverter/pnj-jpeg' },
   { name: 'Image Base64 Converter', path: '/imageConverter/base64' },
 
+  // Randomizer
+  { name: 'ReadmeEditor', path: '/editor/readme-editor' },
+
   // Playground
   { name: 'Playground', path: '/playground' },
 

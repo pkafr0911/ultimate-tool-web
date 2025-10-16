@@ -53,6 +53,7 @@
     "imagetracerjs": "^1.2.6",
     "jose": "^6.1.0",
     "js-base64": "^3.7.2",
+    "markdown-it": "^14.1.0",
     "moment": "^2.30.1",
     "qrcode.react": "^1.0.0",
     "query-string": "^9.1.1",
@@ -63,6 +64,7 @@
     "react-google-recaptcha": "^3.1.0",
     "react-quill": "^2.0.0",
     "react-tilt": "^1.0.2",
+    "turndown": "^7.2.1",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
