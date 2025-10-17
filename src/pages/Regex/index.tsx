@@ -124,9 +124,12 @@ const RegexTester: React.FC = () => {
     highlightRef.current.scrollTop = textAreaRef.current.scrollTop;
   };
 
-  const handlePatternClick = (newPattern: string) => {
+  const handlePatternClick = (newPattern: string, examples: string[]) => {
     setPattern(newPattern);
     handleCopy(newPattern);
+    if (examples?.length) {
+      setText(examples.join('\n'));
+    }
   };
 
   const filteredPatterns = commonPatterns.filter(
@@ -213,7 +216,7 @@ const RegexTester: React.FC = () => {
               <Tooltip key={item.name} title={item.pattern}>
                 <Tag
                   color="cyan"
-                  onClick={() => handlePatternClick(item.pattern)}
+                  onClick={() => handlePatternClick(item.pattern, item.examples || [])}
                   style={{ cursor: 'pointer', fontSize: 13, padding: '4px 8px' }}
                 >
                   {item.name}
