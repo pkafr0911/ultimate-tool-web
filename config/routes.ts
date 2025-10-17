@@ -21,15 +21,6 @@
     ],
   },
   {
-    key: 'randomizer',
-    name: 'randomizer',
-    icon: '🎲',
-    routes: [
-      { path: '/randomizer/wheel-of-names', name: 'wheel-of-names', component: './WheelOfNames' },
-      { path: '/randomizer/random', name: 'random', component: './Random' },
-    ],
-  },
-  {
     key: 'imageConverter',
     name: 'imageConverter',
     icon: 'picture',
@@ -46,6 +37,15 @@
     routes: [
       { path: '/editor/readme-editor', name: 'readme-editor', component: './ReadmeEditor' },
       { path: '/editor/json-formatter', name: 'json-formatter', component: './JsonFormatter' },
+    ],
+  },
+  {
+    key: 'randomizer',
+    name: 'randomizer',
+    icon: '🎲',
+    routes: [
+      { path: '/randomizer/wheel-of-names', name: 'wheel-of-names', component: './WheelOfNames' },
+      { path: '/randomizer/random', name: 'random', component: './Random' },
     ],
   },
   {

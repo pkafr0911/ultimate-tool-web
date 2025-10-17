@@ -33,24 +33,25 @@ export const pages = [
   { name: 'JWT Encrypt/Decrypt', path: '/utility/jwt' },
   { name: 'Color Picker', path: '/utility/colorpicker' },
 
-  // Randomizer
-  { name: '🎡 Wheel of Names', path: '/randomizer/wheel-of-names' },
-  { name: 'Random Generator', path: '/randomizer/random' },
-
   // Image Converter
   { name: 'SVG Viewer', path: '/imageConverter/svg-viewer' },
   { name: 'PNG / JPEG Converter', path: '/imageConverter/pnj-jpeg' },
   { name: 'Image Base64 Converter', path: '/imageConverter/base64' },
 
-  // Randomizer
+  // Editor
   { name: 'Readme Editor', path: '/editor/readme-editor' },
   { name: 'Json Formatter', path: '/editor/json-formatter' },
+
+  // Randomizer
+  { name: '🎡 Wheel of Names', path: '/randomizer/wheel-of-names' },
+  { name: 'Random Generator', path: '/randomizer/random' },
 
   // Playground
   { name: 'Playground', path: '/playground' },
 
   // Game
   { name: 'Tic-Tac-Toe', path: '/game/tic-tac-toe' },
+  { name: 'snake-xenzia', path: '/game/snake-xenzia' },
 
   // Docs / Commands
   { name: 'Commands', path: '/docs/commands' },
