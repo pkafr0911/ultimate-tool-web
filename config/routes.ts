@@ -58,7 +58,10 @@
     key: 'game',
     name: 'game',
     icon: '🎮',
-    routes: [{ path: '/game/tic-tac-toe', name: 'tic-tac-toe', component: './TicTacToe' }],
+    routes: [
+      { path: '/game/tic-tac-toe', name: 'tic-tac-toe', component: './TicTacToe' },
+      { path: '/game/snake-xenzia', name: 'snake-xenzia', component: './SnakeXenzia' },
+    ],
   },
   {
     key: 'docs',

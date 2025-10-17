@@ -34,6 +34,7 @@ export default {
   // Game
   'menu.game': 'Game',
   'menu.game.tic-tac-toe': 'Tic-Tac-Toe',
+  'menu.game.snake-xenzia': 'Snake Xenzia',
 
   // Docs / Commands
   'menu.docs': 'Documentation',
