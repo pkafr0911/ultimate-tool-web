@@ -369,7 +369,10 @@ const SVGViewer: React.FC = () => {
     >
       <Card title="🧩 SVG Viewer" bordered={false} className={styles.container}>
         <div className={styles.content}>
-          <Splitter layout={isMobile ? 'vertical' : 'horizontal'}>
+          <Splitter
+            layout={isMobile ? 'vertical' : 'horizontal'}
+            style={isMobile ? { height: 1600 } : {}}
+          >
             <Splitter.Panel defaultSize="50%" min="20%" max="70%" style={{ padding: '0px 10px' }}>
               {/* Left Side - Editor */}
               <div className={styles.editorSection}>
@@ -485,8 +488,10 @@ const SVGViewer: React.FC = () => {
                           <div
                             style={{
                               transform: `scale(${zoom})`,
-                              transformOrigin: 'center center',
-                              transition: 'transform 0.2s ease',
+                              transformOrigin: 'top left', // ensure scaling doesn't cut off top-left
+                              maxWidth: '100%',
+                              maxHeight: '100%',
+                              display: 'inline-block',
                             }}
                             dangerouslySetInnerHTML={{
                               __html: preview
