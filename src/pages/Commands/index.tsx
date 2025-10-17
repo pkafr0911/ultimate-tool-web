@@ -2,65 +2,9 @@ import React, { useState } from 'react';
 import { Card, Input, Button, Typography, Space, message } from 'antd';
 import { CopyOutlined, SearchOutlined } from '@ant-design/icons';
 import { handleCopy } from '@/helpers';
+import { dockerCommands, gitCommands, ubuntuCommands } from './constants';
 
 const { Title, Text } = Typography;
-
-type CommandItem = {
-  category: string;
-  cmd: string;
-  desc: string;
-};
-
-const ubuntuCommands: CommandItem[] = [
-  { category: 'Ubuntu', cmd: 'sudo apt update', desc: 'Update package lists' },
-  { category: 'Ubuntu', cmd: 'sudo apt upgrade', desc: 'Upgrade installed packages' },
-  { category: 'Ubuntu', cmd: 'ls -la', desc: 'List files with details' },
-  { category: 'Ubuntu', cmd: 'cd /path/to/dir', desc: 'Change directory' },
-  { category: 'Ubuntu', cmd: 'rm -rf folder', desc: 'Force remove a folder recursively' },
-  { category: 'Ubuntu', cmd: 'cp file1 file2', desc: 'Copy file1 to file2' },
-  {
-    category: 'Ubuntu',
-    cmd: 'sudo kill -9 $(sudo lsof -t -i:<port_number>)',
-    desc: 'Kill a process running on a specific port',
-  },
-];
-
-const gitCommands: CommandItem[] = [
-  { category: 'Git', cmd: 'git clone <url>', desc: 'Clone a repository' },
-  { category: 'Git', cmd: 'git status', desc: 'Show working tree status' },
-  { category: 'Git', cmd: 'git add .', desc: 'Stage all changes' },
-  { category: 'Git', cmd: 'git commit -m "message"', desc: 'Commit staged changes' },
-  { category: 'Git', cmd: 'git push', desc: 'Push commits to remote' },
-  { category: 'Git', cmd: 'git reset --hard HEAD~1', desc: 'Undo last commit completely' },
-  { category: 'Git', cmd: 'git branch', desc: 'List all local branches' },
-  { category: 'Git', cmd: 'git checkout -b <branch>', desc: 'Create and switch to a new branch' },
-];
-
-const dockerCommands: CommandItem[] = [
-  { category: 'Docker', cmd: 'docker ps', desc: 'List running containers' },
-  { category: 'Docker', cmd: 'docker ps -a', desc: 'List all containers (including stopped)' },
-  { category: 'Docker', cmd: 'docker images', desc: 'List local Docker images' },
-  { category: 'Docker', cmd: 'docker pull <image>', desc: 'Pull image from Docker Hub' },
-  { category: 'Docker', cmd: 'docker run -d <image>', desc: 'Run container in detached mode' },
-  { category: 'Docker', cmd: 'docker stop <container>', desc: 'Stop a running container' },
-  { category: 'Docker', cmd: 'docker rm <container>', desc: 'Remove a stopped container' },
-  { category: 'Docker', cmd: 'docker rmi <image>', desc: 'Remove an image' },
-  {
-    category: 'Docker',
-    cmd: 'docker exec -it <container> bash',
-    desc: 'Run bash inside container',
-  },
-  {
-    category: 'Docker',
-    cmd: 'docker cp <src> <container>:<dest>',
-    desc: 'Copy files into a container',
-  },
-  {
-    category: 'Docker',
-    cmd: 'docker system prune',
-    desc: 'Remove all unused containers, networks, and images',
-  },
-];
 
 // ✅ Escape HTML entities before highlighting
 const escapeHtml = (text: string) => text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
