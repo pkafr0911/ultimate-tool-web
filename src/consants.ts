@@ -41,6 +41,7 @@ export const pages = [
   // Editor
   { name: 'Readme Editor', path: '/editor/readme-editor' },
   { name: 'Json Formatter', path: '/editor/json-formatter' },
+  { name: 'HTML Editor', path: '/editor/html-editor' },
 
   // Randomizer
   { name: '🎡 Wheel of Names', path: '/randomizer/wheel-of-names' },

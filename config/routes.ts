@@ -37,6 +37,7 @@
     routes: [
       { path: '/editor/readme-editor', name: 'readme-editor', component: './ReadmeEditor' },
       { path: '/editor/json-formatter', name: 'json-formatter', component: './JsonFormatter' },
+      { path: '/editor/html-editor', name: 'html-editor', component: './HtmlEditor' },
     ],
   },
   {
