@@ -66,4 +66,6 @@
     icon: 'fileText',
     routes: [{ path: '/docs/commands', name: 'commands', component: './Commands' }],
   },
+
+  { path: '*', component: './404' },
 ];

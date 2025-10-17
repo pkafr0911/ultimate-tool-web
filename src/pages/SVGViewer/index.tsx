@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'; // Import React and useState hook
+import React, { useEffect, useRef, useState } from 'react'; // Import React and useState hook
 import {
   Upload,
   Button,
@@ -50,6 +50,15 @@ const SVGViewer: React.FC = () => {
   const handleZoomIn = () => setZoom((z) => Math.min(z + 0.1, 3)); // up to 300%
   const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 0.2)); // down to 20%
   const handleResetZoom = () => setZoom(1);
+
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const dragCounter = useRef(0);
   // place this near the top of your component, under useState declarations:
@@ -360,7 +369,7 @@ const SVGViewer: React.FC = () => {
     >
       <Card title="🧩 SVG Viewer" bordered={false} className={styles.container}>
         <div className={styles.content}>
-          <Splitter>
+          <Splitter layout={isMobile ? 'vertical' : 'horizontal'}>
             <Splitter.Panel defaultSize="50%" min="20%" max="70%" style={{ padding: '0px 10px' }}>
               {/* Left Side - Editor */}
               <div className={styles.editorSection}>
