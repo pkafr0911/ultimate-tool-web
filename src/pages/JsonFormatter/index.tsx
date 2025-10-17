@@ -36,16 +36,39 @@ const JsonFormatterPage: React.FC = () => {
 
   const formatJson = () => {
     try {
-      const parsed = JSON.parse(input);
+      let text = input.trim();
+
+      // 1️⃣ Try normal JSON.parse first
+      try {
+        const parsed = JSON.parse(text);
+        const formatted = JSON.stringify(parsed, null, 2);
+        setOutput(formatted);
+        setError('');
+        setIsValid(true);
+        message.success('Formatted successfully!');
+        return;
+      } catch {
+        // continue to next fallback
+      }
+
+      // 2️⃣ If JSON.parse fails, try to fix JavaScript-like syntax
+      // Convert single quotes → double quotes
+      text = text
+        .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":') // add quotes around keys
+        .replace(/'/g, '"') // replace single quotes with double
+        .replace(/,(\s*[}\]])/g, '$1'); // remove trailing commas
+
+      const parsed = JSON.parse(text);
       const formatted = JSON.stringify(parsed, null, 2);
+
       setOutput(formatted);
       setError('');
       setIsValid(true);
-      message.success('Formatted successfully!');
+      message.success('Converted & formatted successfully!');
     } catch (err: any) {
       setError(err.message);
       setIsValid(false);
-      message.error('Invalid JSON input');
+      message.error('Invalid input, cannot convert to JSON');
     }
   };
 
