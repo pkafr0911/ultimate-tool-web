@@ -162,24 +162,6 @@ export default defineConfig({
   presets: ['umi-presets-pro'],
 
   /**
-   * @name OpenAPI Plugin Configuration
-   * @description Generates server and mock APIs based on OpenAPI specifications, reducing boilerplate code.
-   * @doc https://pro.ant.design/zh-cn/docs/openapi/
-   */
-  openAPI: [
-    {
-      requestLibPath: "import { request } from '@umijs/max'",
-      schemaPath: join(__dirname, 'oneapi.json'),
-      mock: false,
-    },
-    {
-      requestLibPath: "import { request } from '@umijs/max'",
-      schemaPath: 'https://gw.alipayobjects.com/os/antfincdn/CA1dOm%2631B/openapi.json',
-      projectName: 'swagger',
-    },
-  ],
-
-  /**
    * @name Mako Plugin
    * @description Enables Mako for rapid development.
    * @doc https://umijs.org/docs/api/config#mako

@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react';
-import { AutoComplete, Input } from 'antd';
+import { pages } from '@/consants';
 import { SearchOutlined } from '@ant-design/icons';
 import { useNavigate } from '@umijs/max';
-import { pages } from '@/consants';
+import { AutoComplete, Input } from 'antd';
+import React, { useMemo, useState } from 'react';
 
 // highlight matched text inside label
 const highlightMatch = (text: string, query: string) => {
@@ -11,7 +11,7 @@ const highlightMatch = (text: string, query: string) => {
   const parts = text.split(regex);
   return parts.map((part, i) =>
     regex.test(part) ? (
-      <span key={i} style={{ color: '#ff4d4f', fontWeight: 600 }}>
+      <span key={i} style={{ color: '#002e70', fontWeight: 600 }}>
         {part}
       </span>
     ) : (

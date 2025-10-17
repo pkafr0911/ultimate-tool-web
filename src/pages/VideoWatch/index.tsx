@@ -1,7 +1,8 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { Card, Input, Typography, Table, Col, Row, message, Space, Button } from 'antd';
-import Hls, { FragLoadedData, Events, ErrorData } from 'hls.js';
+import { Button, Card, Col, Input, Row, Space, Table, Typography } from 'antd';
 import dashjs from 'dashjs';
+import Hls, { ErrorData, Events, FragLoadedData } from 'hls.js';
+import React, { useEffect, useRef, useState } from 'react';
+import { DEFAULT_URL } from './constants';
 import './styles.less';
 
 const { Text } = Typography;
@@ -21,7 +22,7 @@ const VideoWatch: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const thumbnailsContainerRef = useRef<HTMLDivElement>(null);
 
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState(DEFAULT_URL);
   const [type, setType] = useState('unknown');
   const [segments, setSegments] = useState<SegmentInfo[]>([]);
   const [totalData, setTotalData] = useState(0);
@@ -90,6 +91,10 @@ const VideoWatch: React.FC = () => {
       hls.attachMedia(videoRef.current!);
       setType('HLS');
 
+      hls.on(Events.MANIFEST_PARSED, () => {
+        videoRef.current?.play().catch(() => addLog('Autoplay blocked by browser'));
+      });
+
       hls.on(Events.FRAG_LOADED, (_e, data: FragLoadedData) => {
         const size = data.frag.stats.total;
         const duration = data.frag.duration;
@@ -134,6 +139,7 @@ const VideoWatch: React.FC = () => {
       const dashPlayer = dashjs.MediaPlayer().create();
       dashPlayer.initialize(videoRef.current!, url, true);
       setType('DASH');
+      videoRef.current?.play().catch(() => addLog('Autoplay blocked by browser'));
 
       // Disable info table + thumbnails for DASH
       setSegments([]);
@@ -186,6 +192,7 @@ const VideoWatch: React.FC = () => {
     // --- Native fallback ---
     videoRef.current.src = url;
     setType('native');
+    videoRef.current.play().catch(() => addLog('Autoplay blocked by browser'));
   }, [url]);
 
   // --- Clear function ---
