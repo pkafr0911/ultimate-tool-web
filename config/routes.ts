@@ -55,6 +55,12 @@
     component: './Playground',
   },
   {
+    key: 'game',
+    name: 'game',
+    icon: '🎮',
+    routes: [{ path: '/game/tic-tac-toe', name: 'tic-tac-toe', component: './TicTacToe' }],
+  },
+  {
     key: 'docs',
     name: 'docs',
     icon: 'fileText',

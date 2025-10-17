@@ -49,6 +49,9 @@ export const pages = [
   // Playground
   { name: 'Playground', path: '/playground' },
 
+  // Game
+  { name: 'Tic-Tac-Toe', path: '/game/tic-tac-toe' },
+
   // Docs / Commands
   { name: 'Commands', path: '/docs/commands' },
 ];

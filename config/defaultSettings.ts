@@ -32,12 +32,12 @@ const Settings: ProLayoutProps & {
     dev: 'http://localhost:9080',
   },
   //// Deployment base path - decomment this when run yarn deploy
-  basePath: '/ultimate-tool-web/',
-  publicPath: '/ultimate-tool-web/',
+  // basePath: '/ultimate-tool-web/',
+  // publicPath: '/ultimate-tool-web/',
 
   //// Dev base path
-  // basePath: '/',
-  // publicPath: '/',
+  basePath: '/',
+  publicPath: '/',
 };
 
 export default Settings;

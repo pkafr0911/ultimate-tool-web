@@ -31,6 +31,10 @@ export default {
   // Playground
   'menu.playground': 'Playground',
 
+  // Game
+  'menu.game': 'Game',
+  'menu.game.tic-tac-toe': 'Tic-Tac-Toe',
+
   // Docs / Commands
   'menu.docs': 'Documentation',
   'menu.docs.commands': 'Commands',
