@@ -31,7 +31,7 @@ const Settings: ProLayoutProps & {
   serveUrlMap: {
     dev: 'http://localhost:9080',
   },
-  //// Deployment base path - decomment this when run yarn deploy
+  //// Deployment base path - decomment this when run yarn deploy on  github
   // basePath: '/ultimate-tool-web/',
   // publicPath: '/ultimate-tool-web/',
 
