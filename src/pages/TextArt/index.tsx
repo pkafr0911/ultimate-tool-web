@@ -29,9 +29,19 @@ const { Text } = Typography;
 
 // Character sets for ASCII / text art generation
 const CHARSETS = {
+  // Classic gradient from dense to light
   classic: '@%#*+=-:. ',
+
+  // Blocky style
   blocks: '█▓▒░ ',
+
+  // Braille/dot style
   dots: '⠿⠾⠷⠶⠦⠤⠒⠂ ',
+
+  // Punctuation for strong contrast
+  punctuation: '@#$%&*?!;:,. ',
+
+  // Emoji fun
   emoji: '😀😄😆😅😂🤣😊🙂😉😋😎🤩😍🥰😘😗😙😚',
 };
 
