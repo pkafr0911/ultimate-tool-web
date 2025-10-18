@@ -22,6 +22,7 @@ export default {
   'menu.imageConverter.svg-viewer': 'SVG Viewer',
   'menu.imageConverter.pnj-jpeg': 'PNG / JPEG Converter',
   'menu.imageConverter.base64': 'Base64 Converter',
+  'menu.imageConverter.text-art': 'Text Art Generator',
 
   // Editor
   'menu.editor': 'Editor',

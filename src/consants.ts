@@ -37,6 +37,7 @@ export const pages = [
   { name: 'SVG Viewer', path: '/imageConverter/svg-viewer' },
   { name: 'PNG / JPEG Converter', path: '/imageConverter/pnj-jpeg' },
   { name: 'Image Base64 Converter', path: '/imageConverter/base64' },
+  { name: 'Text Art Generator', path: '/imageConverter/text-art' },
 
   // Editor
   { name: 'Readme Editor', path: '/editor/readme-editor' },

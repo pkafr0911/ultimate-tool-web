@@ -28,6 +28,7 @@
       { path: '/imageConverter/svg-viewer', name: 'svg-viewer', component: './SVGViewer' },
       { path: '/imageConverter/pnj-jpeg', name: 'pnj-jpeg', component: './PNGJPEG' },
       { path: '/imageConverter/base64', name: 'base64', component: './Base64' },
+      { path: '/imageConverter/text-art', name: 'text-art', component: './TextArt' },
     ],
   },
   {
