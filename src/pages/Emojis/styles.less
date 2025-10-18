@@ -1,0 +1,132 @@
+/* src/pages/Emoji/styles.less */
+.emoji-page-container {
+  min-height: 100vh;
+  padding: 20px;
+  color: #2c2c2c;
+  background: #f9fafc;
+
+  .emoji-card-root {
+    background: linear-gradient(180deg, #ffffff, #f5f7fa);
+    border: 1px solid #eaeaea;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .category-block {
+    margin-bottom: 20px;
+
+    .category-header {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin: 8px 0 12px;
+    }
+
+    .category-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      color: #ff8a00;
+      background: rgba(0, 0, 0, 0.04);
+      border-radius: 8px;
+    }
+
+    .category-title {
+      color: #333;
+      font-weight: 600;
+      font-size: 14px;
+    }
+  }
+
+  .emoji-row,
+  .kaomoji-row {
+    .ant-col {
+      display: flex;
+      justify-content: center;
+    }
+  }
+
+  .emoji-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 56px;
+    padding: 0;
+    color: #000;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(245, 245, 245, 0.9));
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
+
+    &:hover {
+      background: linear-gradient(180deg, #fff, #f2f2f2);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12), 0 0 12px rgba(255, 255, 255, 0.2) inset;
+      transform: translateY(-6%);
+    }
+
+    .emoji-text {
+      font-size: 26px;
+      line-height: 1;
+    }
+  }
+
+  .kaomoji-btn {
+    width: 100%;
+    min-height: 48px;
+    padding: 6px 8px;
+    overflow: hidden;
+    color: #333;
+    font-size: 13px;
+    font-family: 'Courier New', monospace;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+
+    &:hover {
+      background: #f4f6f8;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transform: translateY(-5%);
+    }
+
+    .kaomoji-text {
+      display: block;
+      text-align: center;
+    }
+  }
+
+  .tab-content {
+    padding: 8px 6px;
+  }
+}
+
+/* responsive adjustments */
+@media (max-width: 768px) {
+  .emoji-page-container {
+    padding: 10px;
+
+    .emoji-btn {
+      height: 48px;
+      .emoji-text {
+        font-size: 22px;
+      }
+    }
+
+    .kaomoji-btn {
+      min-height: 44px;
+      font-size: 12px;
+    }
+  }
+}

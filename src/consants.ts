@@ -56,4 +56,5 @@ export const pages = [
 
   // Docs / Commands
   { name: 'Commands', path: '/docs/commands' },
+  { name: 'Emojis /  Kaomojis ', path: '/docs/emojis' },
 ];

@@ -68,7 +68,10 @@
     key: 'docs',
     name: 'docs',
     icon: 'fileText',
-    routes: [{ path: '/docs/commands', name: 'commands', component: './Commands' }],
+    routes: [
+      { path: '/docs/commands', name: 'commands', component: './Commands' },
+      { path: '/docs/emojis', name: 'emojis', component: './Emojis' },
+    ],
   },
 
   { path: '*', component: './404' },

@@ -16,8 +16,16 @@ declare module '@antv/data-set';
 declare module 'mockjs';
 declare module 'react-fittext';
 declare module 'bizcharts-plugin-slider';
+declare module '*.txt?raw';
 
 declare const REACT_APP_ENV: 'test' | 'dev' | 'pre' | false;
+
+declare module '*?worker' {
+  const WorkerFactory: {
+    new (): Worker;
+  };
+  export default WorkerFactory;
+}
 
 type Res<T> = {
   code: number;

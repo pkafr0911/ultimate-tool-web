@@ -40,4 +40,5 @@ export default {
   // Docs / Commands
   'menu.docs': 'Documentation',
   'menu.docs.commands': 'Commands',
+  'menu.docs.emojis': 'Emojis /  Kaomojis ',
 };

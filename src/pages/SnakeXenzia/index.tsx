@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Card, InputNumber, Button, Space, Typography, Switch, message } from 'antd';
+import { Button, Card, InputNumber, Space, Switch, Typography, message } from 'antd';
+import React, { useEffect, useRef, useState } from 'react';
 import Confetti from 'react-confetti';
 import './styles.less';
 
@@ -196,7 +196,7 @@ const SnakeXenziaPage: React.FC = () => {
             <div>
               <Text strong>Speed (ms):</Text>
               <InputNumber
-                min={50}
+                min={10}
                 max={500}
                 step={10}
                 value={speed}
@@ -254,10 +254,10 @@ const SnakeXenziaPage: React.FC = () => {
                         backgroundColor: isHead
                           ? '#52c41a'
                           : isSnake
-                            ? '#73d13d'
-                            : isFood
-                              ? '#ff7875'
-                              : '#f0f0f0',
+                          ? '#73d13d'
+                          : isFood
+                          ? '#ff7875'
+                          : '#f0f0f0',
                         borderRadius: isFood ? '50%' : 2,
                       }}
                     />
