@@ -1,5 +1,5 @@
+import { Button, Card, InputNumber, Space, Switch, Typography, message } from 'antd';
 import React, { useState } from 'react';
-import { Card, InputNumber, Button, Space, Typography, Switch, message } from 'antd';
 import Confetti from 'react-confetti';
 import './styles.less';
 
@@ -164,7 +164,7 @@ const TicTacToePage: React.FC = () => {
       {/* Show confetti when a player wins */}
       {showConfetti && winner && winner !== 'Draw' && <Confetti />}
 
-      <Card className="tic-card" bordered={false}>
+      <Card className="tic-card" variant={'borderless'}>
         <Title level={3}>🎯 Tic-Tac-Toe</Title>
 
         {/* Game setup panel */}
@@ -207,8 +207,8 @@ const TicTacToePage: React.FC = () => {
                 {boardSize < 10
                   ? 'Only available for board ≥10'
                   : blockBothSides
-                    ? 'Enabled'
-                    : 'Disabled'}
+                  ? 'Enabled'
+                  : 'Disabled'}
               </Text>
             </div>
 

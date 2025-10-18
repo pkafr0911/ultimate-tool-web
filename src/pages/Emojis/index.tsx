@@ -120,7 +120,7 @@ const EmojisPage: React.FC = () => {
 
   return (
     <div className="emoji-page-container">
-      <Card title="✨ Emoji & Kaomoji Picker" bordered={false} className="emoji-card-root">
+      <Card title="✨ Emoji & Kaomoji Picker" variant={'borderless'} className="emoji-card-root">
         <div className="controls">
           <Search
             placeholder="Search emoji or kaomoji..."

@@ -175,7 +175,7 @@ const SnakeXenziaPage: React.FC = () => {
   return (
     <div className="tic-container">
       {showConfetti && gameOver && <Confetti />}
-      <Card className="tic-card" bordered={false}>
+      <Card className="tic-card" variant={'borderless'}>
         <Title level={3}>🐍 Snake Xenzia</Title>
 
         {!started ? (

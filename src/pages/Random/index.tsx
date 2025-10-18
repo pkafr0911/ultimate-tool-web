@@ -1,5 +1,5 @@
+import { Button, Card, InputNumber, Space, Typography } from 'antd';
 import React, { useState } from 'react';
-import { Card, InputNumber, Button, Space, Typography } from 'antd';
 import Confetti from 'react-confetti';
 import './styles.less';
 
@@ -23,7 +23,7 @@ const RandomNumber: React.FC = () => {
   return (
     <div className="random-light-container">
       {showConfetti && <Confetti />} {/* Show confetti animation when there's a winner */}
-      <Card className="random-light-card" bordered={false}>
+      <Card className="random-light-card" variant={'borderless'}>
         {/* Page Title */}
         <Title level={2} className="random-light-title">
           🎲 Random Number Generator

@@ -1,28 +1,28 @@
-import React, { useState, useRef } from 'react';
+import { handleCopy } from '@/helpers';
 import {
-  Upload,
-  Button,
-  Card,
-  Typography,
-  Space,
-  message,
-  InputNumber,
-  Row,
-  Col,
-  Tooltip,
-  Tabs,
-  Spin,
-} from 'antd';
-import { PageContainer } from '@ant-design/pro-components';
-import {
-  UploadOutlined,
-  DownloadOutlined,
   CopyOutlined,
+  DownloadOutlined,
   InfoCircleOutlined,
   LoadingOutlined,
+  UploadOutlined,
 } from '@ant-design/icons';
+import { PageContainer } from '@ant-design/pro-components';
+import {
+  Button,
+  Card,
+  Col,
+  InputNumber,
+  Row,
+  Space,
+  Spin,
+  Tabs,
+  Tooltip,
+  Typography,
+  Upload,
+  message,
+} from 'antd';
 import ImageTracer from 'imagetracerjs';
-import { handleCopy } from '@/helpers';
+import React, { useRef, useState } from 'react';
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
@@ -129,7 +129,7 @@ const PNGJPEG: React.FC = () => {
         }}
         style={{ position: 'relative', minHeight: '100vh' }}
       >
-        <Card title="🖼️ Image to SVG Converter" bordered={false}>
+        <Card title="🖼️ Image to SVG Converter" variant={'borderless'}>
           <Space direction="vertical" style={{ width: '100%' }} size="large">
             {!dragging && (
               <Upload beforeUpload={handleUpload} showUploadList={false} accept=".png,.jpg,.jpeg">

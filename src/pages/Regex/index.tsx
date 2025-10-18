@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Card, Input, Tabs, Typography, Alert, Tag, Space, Tooltip } from 'antd';
-import './styles.less';
-import { commonPatterns } from './constants';
 import { handleCopy } from '@/helpers';
+import { Alert, Card, Input, Space, Tabs, Tag, Tooltip, Typography } from 'antd';
+import React, { useEffect, useRef, useState } from 'react';
+import { commonPatterns } from './constants';
+import './styles.less';
 
 const { TextArea, Search } = Input;
 const { Paragraph } = Typography;
@@ -139,7 +139,7 @@ const RegexTester: React.FC = () => {
   );
 
   return (
-    <Card className="regex-card-light" title="🧩 Regex Tester" bordered={false}>
+    <Card className="regex-card-light" title="🧩 Regex Tester" variant={'borderless'}>
       <div className="regex-header">
         <Input
           className="regex-input-light"

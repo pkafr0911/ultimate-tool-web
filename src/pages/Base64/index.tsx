@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Upload, Button, message, Card, Image, Space, Typography, Divider } from 'antd';
-import { UploadOutlined, CopyOutlined, DeleteOutlined, PictureOutlined } from '@ant-design/icons';
-import { Editor } from '@monaco-editor/react';
 import { handleCopy } from '@/helpers';
+import { CopyOutlined, DeleteOutlined, PictureOutlined, UploadOutlined } from '@ant-design/icons';
+import { Editor } from '@monaco-editor/react';
+import { Button, Card, Divider, Image, message, Space, Typography, Upload } from 'antd';
+import React, { useState } from 'react';
 
 const { Title, Text } = Typography;
 
@@ -41,7 +41,7 @@ const Base64Converter: React.FC = () => {
   return (
     <Card
       title="🖼️ Image ↔ Base64 Converter"
-      bordered={false}
+      variant={'borderless'}
       style={{
         borderRadius: 16,
         boxShadow: '0 2px 10px rgba(0,0,0,0.08)',

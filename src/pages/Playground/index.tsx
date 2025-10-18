@@ -155,7 +155,7 @@ const PlaygroundPage: React.FC = () => {
       />
 
       {mode === 'html' ? (
-        <Card className="html-card" bordered={false}>
+        <Card className="html-card" variant={'borderless'}>
           <Tabs
             defaultActiveKey="html"
             items={[
@@ -269,7 +269,7 @@ const PlaygroundPage: React.FC = () => {
           </div>
         </Card>
       ) : (
-        <Card className="playground-card" bordered={false}>
+        <Card className="playground-card" variant={'borderless'}>
           <Space style={{ marginBottom: 16 }}>
             <Select
               value={language}

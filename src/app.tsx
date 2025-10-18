@@ -1,23 +1,18 @@
-import { AvatarDropdown, AvatarName, Footer, Question, SelectLang } from '@/components';
+import { Footer } from '@/components';
 
+import UnauthorizedPage from '@/pages/403';
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
 import type { RunTimeLayoutConfig } from '@umijs/max';
-import { history, Link, setLocale } from '@umijs/max';
-import React from 'react';
-import defaultSettings from '../config/defaultSettings';
-import { errorConfig } from './requestErrorConfig';
+import { setLocale } from '@umijs/max';
 import { isPlainObject } from 'lodash';
-import UnauthorizedPage from '@/pages/403';
-import './libs/iconfont';
+import defaultSettings from '../config/defaultSettings';
 import GlobalSearchBar from './components/GlobalSearchBar';
+import './libs/iconfont';
+import { errorConfig } from './requestErrorConfig';
 
 const isDev = process.env.NODE_ENV === 'development';
 
-/**
- * Fetch initial state, including user info and settings
- * @see  https://umijs.org/zh-CN/plugins/plugin-initial-state
- */
 export async function getInitialState(): Promise<{
   settings?: Partial<LayoutSettings>;
   currentUser?: any;
@@ -49,7 +44,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     rightContentRender: () => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginRight: 16 }}>
         <GlobalSearchBar />
-        <AvatarDropdown />
+        {/* <AvatarDropdown /> */}
       </div>
     ),
     // Custom 403 page if necessary

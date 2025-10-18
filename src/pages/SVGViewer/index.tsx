@@ -1,32 +1,32 @@
-import React, { useEffect, useRef, useState } from 'react'; // Import React and useState hook
+import { handleCopy } from '@/helpers'; // Import custom copy helper
 import {
-  Upload,
-  Button,
-  Card,
-  Space,
-  message,
-  Segmented,
-  Typography,
-  Tabs,
-  Input,
-  Tooltip,
-  Splitter,
-} from 'antd'; // Import Ant Design components
-import {
-  UploadOutlined,
+  CompressOutlined,
   CopyOutlined,
   DeleteOutlined,
   DownloadOutlined,
   HighlightOutlined,
-  CompressOutlined,
+  MinusOutlined,
+  PlusOutlined,
   SwapOutlined,
   SyncOutlined,
-  PlusOutlined,
-  MinusOutlined,
+  UploadOutlined,
 } from '@ant-design/icons'; // Import icons
 import { Editor } from '@monaco-editor/react'; // Import Monaco Editor component
+import {
+  Button,
+  Card,
+  Input,
+  message,
+  Segmented,
+  Space,
+  Splitter,
+  Tabs,
+  Tooltip,
+  Typography,
+  Upload,
+} from 'antd'; // Import Ant Design components
+import React, { useEffect, useRef, useState } from 'react'; // Import React and useState hook
 import { optimize } from 'svgo'; // Import SVG optimizer
-import { handleCopy } from '@/helpers'; // Import custom copy helper
 import styles from './styles.less'; // Import CSS module
 
 const { Text } = Typography; // Destructure Text component from Typography
@@ -367,7 +367,7 @@ const SVGViewer: React.FC = () => {
       }}
       style={{ position: 'relative', minHeight: '100vh' }}
     >
-      <Card title="🧩 SVG Viewer" bordered={false} className={styles.container}>
+      <Card title="🧩 SVG Viewer" variant={'borderless'} className={styles.container}>
         <div className={styles.content}>
           <Splitter
             layout={isMobile ? 'vertical' : 'horizontal'}
@@ -570,8 +570,8 @@ const SVGViewer: React.FC = () => {
                         activeTab === 'svg'
                           ? () => handleDownload(svgCode, 'image.svg', 'image/svg+xml')
                           : activeTab === 'png'
-                            ? handleDownloadPng
-                            : handleDownloadIco
+                          ? handleDownloadPng
+                          : handleDownloadIco
                       }
                     >
                       Download {activeTab.toUpperCase()}

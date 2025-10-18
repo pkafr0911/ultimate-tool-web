@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { Button, Card, Input, message, Space, Typography } from 'antd';
+import { useEffect, useRef, useState } from 'react';
 import Confetti from 'react-confetti';
-import { Button, Input, message, Space, Typography, Card } from 'antd';
 import './styles.less';
 
 const { Title } = Typography;
@@ -107,7 +107,7 @@ const WheelOfNames: React.FC = () => {
   return (
     <div className="wheel-light-container">
       {showConfetti && <Confetti />}
-      <Card className="wheel-light-card" bordered={false}>
+      <Card className="wheel-light-card" variant={'borderless'}>
         <Title level={3} className="wheel-light-title">
           🎡 Wheel of Names
         </Title>

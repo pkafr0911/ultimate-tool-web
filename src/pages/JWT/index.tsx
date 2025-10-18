@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Input, Button, Card, Typography, Space, message } from 'antd';
 import { PageContainer } from '@ant-design/pro-components';
+import { Button, Card, Input, Space, Typography, message } from 'antd';
 import { SignJWT, jwtVerify } from 'jose';
+import React, { useState } from 'react';
 
 const { TextArea } = Input;
 const { Title } = Typography;
@@ -71,7 +71,7 @@ const JWTTool: React.FC = () => {
 
   return (
     <PageContainer>
-      <Card title="🔐 JWT Encrypt / Decrypt Tool" bordered={false}>
+      <Card title="🔐 JWT Encrypt / Decrypt Tool" variant={'borderless'}>
         <Space direction="vertical" style={{ width: '100%' }} size="large">
           <Input.Password
             placeholder="Enter Secret Key"
