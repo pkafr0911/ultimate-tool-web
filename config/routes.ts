@@ -10,14 +10,24 @@
     name: 'utility',
     icon: 'tool',
     routes: [
-      { path: '/utility/qr', name: 'qr', component: './QR' },
-      { path: '/utility/videowatch', name: 'videowatch', component: './VideoWatch' },
-      { path: '/utility/epoch', name: 'epoch', component: './Epoch' },
-      { path: '/utility/regex', name: 'regex', component: './Regex' },
-      { path: '/utility/uuid', name: 'uuid', component: './UUID' },
-      { path: '/utility/password', name: 'password', component: './Password' },
-      { path: '/utility/jwt', name: 'jwt', component: './JWT' },
-      { path: '/utility/colorpicker', name: 'colorpicker', component: './ColorPicker' },
+      { path: '/utility/qr', name: 'qr', icon: 'qrcode', component: './QR' },
+      {
+        path: '/utility/videowatch',
+        name: 'videowatch',
+        icon: 'playCircle',
+        component: './VideoWatch',
+      },
+      { path: '/utility/epoch', name: 'epoch', icon: 'clockCircle', component: './Epoch' },
+      { path: '/utility/regex', name: 'regex', icon: 'code', component: './Regex' },
+      { path: '/utility/uuid', name: 'uuid', icon: 'barcode', component: './UUID' },
+      { path: '/utility/password', name: 'password', icon: 'key', component: './Password' },
+      { path: '/utility/jwt', name: 'jwt', icon: 'idcard', component: './JWT' },
+      {
+        path: '/utility/colorpicker',
+        name: 'colorpicker',
+        icon: 'bgColors',
+        component: './ColorPicker',
+      },
     ],
   },
   {
@@ -25,10 +35,25 @@
     name: 'imageConverter',
     icon: 'picture',
     routes: [
-      { path: '/imageConverter/svg-viewer', name: 'svg-viewer', component: './SVGViewer' },
-      { path: '/imageConverter/pnj-jpeg', name: 'pnj-jpeg', component: './PNGJPEG' },
-      { path: '/imageConverter/base64', name: 'base64', component: './Base64' },
-      { path: '/imageConverter/text-art', name: 'text-art', component: './TextArt' },
+      {
+        path: '/imageConverter/svg-viewer',
+        name: 'svg-viewer',
+        icon: 'fileImage',
+        component: './SVGViewer',
+      },
+      {
+        path: '/imageConverter/pnj-jpeg',
+        name: 'pnj-jpeg',
+        icon: 'fileImage',
+        component: './PNGJPEG',
+      },
+      { path: '/imageConverter/base64', name: 'base64', icon: 'fileText', component: './Base64' },
+      {
+        path: '/imageConverter/text-art',
+        name: 'text-art',
+        icon: 'fontColors',
+        component: './TextArt',
+      },
     ],
   },
   {
@@ -36,9 +61,24 @@
     name: 'editor',
     icon: 'edit',
     routes: [
-      { path: '/editor/readme-editor', name: 'readme-editor', component: './ReadmeEditor' },
-      { path: '/editor/json-formatter', name: 'json-formatter', component: './JsonFormatter' },
-      { path: '/editor/html-editor', name: 'html-editor', component: './HtmlEditor' },
+      {
+        path: '/editor/readme-editor',
+        name: 'readme-editor',
+        icon: 'fileMarkdown',
+        component: './ReadmeEditor',
+      },
+      {
+        path: '/editor/json-formatter',
+        name: 'json-formatter',
+        icon: 'fileText',
+        component: './JsonFormatter',
+      },
+      {
+        path: '/editor/html-editor',
+        name: 'html-editor',
+        icon: 'file',
+        component: './HtmlEditor',
+      },
     ],
   },
   {
@@ -46,8 +86,18 @@
     name: 'randomizer',
     icon: '🎲',
     routes: [
-      { path: '/randomizer/wheel-of-names', name: 'wheel-of-names', component: './WheelOfNames' },
-      { path: '/randomizer/random', name: 'random', component: './Random' },
+      {
+        path: '/randomizer/wheel-of-names',
+        name: 'wheel-of-names',
+        icon: 'sync',
+        component: './WheelOfNames',
+      },
+      {
+        path: '/randomizer/random',
+        name: 'random',
+        icon: 'questionCircle',
+        component: './Random',
+      },
     ],
   },
   {
@@ -61,8 +111,18 @@
     name: 'game',
     icon: '🎮',
     routes: [
-      { path: '/game/tic-tac-toe', name: 'tic-tac-toe', component: './TicTacToe' },
-      { path: '/game/snake-xenzia', name: 'snake-xenzia', component: './SnakeXenzia' },
+      {
+        path: '/game/tic-tac-toe',
+        name: 'tic-tac-toe',
+        icon: '❌',
+        component: './TicTacToe',
+      },
+      {
+        path: '/game/snake-xenzia',
+        name: 'snake-xenzia',
+        icon: '🐍',
+        component: './SnakeXenzia',
+      },
     ],
   },
   {
@@ -70,10 +130,10 @@
     name: 'docs',
     icon: 'fileText',
     routes: [
-      { path: '/docs/commands', name: 'commands', component: './Commands' },
-      { path: '/docs/emojis', name: 'emojis', component: './Emojis' },
+      { path: '/docs/commands', name: 'commands', icon: 'fileText', component: './Commands' },
+      { path: '/docs/emojis', name: 'emojis', icon: 'smile', component: './Emojis' },
     ],
   },
 
-  { path: '*', component: './404' },
+  { path: '*', component: './404', icon: 'frown' },
 ];

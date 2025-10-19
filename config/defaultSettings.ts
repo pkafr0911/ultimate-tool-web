@@ -14,7 +14,7 @@ const Settings: ProLayoutProps & {
 } = {
   navTheme: 'light', // Theme color of the navigation bar (light mode)
   colorPrimary: '#002e70', // Primary color for the theme (Dawn Blue)
-  layout: 'mix', // Layout type (mixed layout with sidebar and top navigation)
+  layout: 'top', // Layout type (mixed layout with sidebar and top navigation)
   contentWidth: 'Fluid', // Fluid content width for responsiveness
   fixedHeader: false, // Whether to fix the header (false for a non-fixed header)
   fixSiderbar: true, // Whether to fix the sidebar (true to keep it fixed)
@@ -28,6 +28,8 @@ const Settings: ProLayoutProps & {
     // See the official documentation for theme customization via token:
     // https://procomponents.ant.design/components/layout#%E9%80%9A%E8%BF%87-token-%E4%BF%AE%E6%94%B9%E6%A0%B7%E5%BC%8F
   },
+  siderMenuType: 'group',
+  // splitMenus: true,
   serveUrlMap: {
     dev: 'http://localhost:9080',
   },

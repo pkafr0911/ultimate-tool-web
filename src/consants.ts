@@ -24,38 +24,148 @@ export const codeMessage = {
 
 export const pages = [
   // Utility Tools
-  { name: 'QR Generator', path: '/utility/qr' },
-  { name: 'Video Watch', path: '/utility/videowatch' },
-  { name: 'Epoch Converter', path: '/utility/epoch' },
-  { name: 'Regex Tester', path: '/utility/regex' },
-  { name: 'UUID Generator', path: '/utility/uuid' },
-  { name: 'Password Generator', path: '/utility/password' },
-  { name: 'JWT Encrypt/Decrypt', path: '/utility/jwt' },
-  { name: 'Color Picker', path: '/utility/colorpicker' },
+  {
+    name: 'QR Generator',
+    path: '/utility/qr',
+    icon: '🔳',
+    desc: 'Create QR codes easily from text or links.',
+  },
+  {
+    name: 'Video Watch',
+    path: '/utility/videowatch',
+    icon: '📺',
+    desc: 'Watch and stream videos in a simple player.',
+  },
+  {
+    name: 'Epoch Converter',
+    path: '/utility/epoch',
+    icon: '⏱️',
+    desc: 'Convert timestamps to human-readable dates.',
+  },
+  {
+    name: 'Regex Tester',
+    path: '/utility/regex',
+    icon: '🔍',
+    desc: 'Test and debug regular expressions quickly.',
+  },
+  {
+    name: 'UUID Generator',
+    path: '/utility/uuid',
+    icon: '🆔',
+    desc: 'Generate unique identifiers for your projects.',
+  },
+  {
+    name: 'Password Generator',
+    path: '/utility/password',
+    icon: '🔑',
+    desc: 'Create secure and random passwords.',
+  },
+  {
+    name: 'JWT Encrypt/Decrypt',
+    path: '/utility/jwt',
+    icon: '🔐',
+    desc: 'Encode or decode JSON Web Tokens easily.',
+  },
+  {
+    name: 'Color Picker',
+    path: '/utility/colorpicker',
+    icon: '🎨',
+    desc: 'Pick colors and see HEX/RGB values instantly.',
+  },
 
   // Image Converter
-  { name: 'SVG Viewer', path: '/imageConverter/svg-viewer' },
-  { name: 'PNG / JPEG Converter', path: '/imageConverter/pnj-jpeg' },
-  { name: 'Image Base64 Converter', path: '/imageConverter/base64' },
-  { name: 'Text Art Generator', path: '/imageConverter/text-art' },
+  {
+    name: 'SVG Viewer',
+    path: '/imageConverter/svg-viewer',
+    icon: '🖼️',
+    desc: 'View and inspect SVG files in the browser.',
+  },
+  {
+    name: 'PNG / JPEG Converter',
+    path: '/imageConverter/pnj-jpeg',
+    icon: '🖌️',
+    desc: 'Convert images between PNG and JPEG.',
+  },
+  {
+    name: 'Image Base64 Converter',
+    path: '/imageConverter/base64',
+    icon: '💾',
+    desc: 'Encode images to Base64 and decode back.',
+  },
+  {
+    name: 'Text Art Generator',
+    path: '/imageConverter/text-art',
+    icon: '🖋️',
+    desc: 'Turn images into ASCII / text art.',
+  },
 
   // Editor
-  { name: 'Readme Editor', path: '/editor/readme-editor' },
-  { name: 'Json Formatter', path: '/editor/json-formatter' },
-  { name: 'HTML Editor', path: '/editor/html-editor' },
+  {
+    name: 'Readme Editor',
+    path: '/editor/readme-editor',
+    icon: '📄',
+    desc: 'Edit and preview README.md files.',
+  },
+  {
+    name: 'Json Formatter',
+    path: '/editor/json-formatter',
+    icon: '🔧',
+    desc: 'Format and validate JSON data quickly.',
+  },
+  {
+    name: 'HTML Editor',
+    path: '/editor/html-editor',
+    icon: '🌐',
+    desc: 'Edit HTML with live preview support.',
+  },
 
   // Randomizer
-  { name: '🎡 Wheel of Names', path: '/randomizer/wheel-of-names' },
-  { name: 'Random Generator', path: '/randomizer/random' },
+  {
+    name: '🎡 Wheel of Names',
+    path: '/randomizer/wheel-of-names',
+    icon: '🎡',
+    desc: 'Pick random names using a spinning wheel.',
+  },
+  {
+    name: 'Random Generator',
+    path: '/randomizer/random',
+    icon: '🎲',
+    desc: 'Generate random numbers, items, or selections.',
+  },
 
   // Playground
-  { name: 'Playground', path: '/playground' },
+  {
+    name: 'Playground',
+    path: '/playground',
+    icon: '🧩',
+    desc: 'Test small scripts or ideas instantly.',
+  },
 
   // Game
-  { name: 'Tic-Tac-Toe', path: '/game/tic-tac-toe' },
-  { name: 'snake-xenzia', path: '/game/snake-xenzia' },
+  {
+    name: 'Tic-Tac-Toe',
+    path: '/game/tic-tac-toe',
+    icon: '❌⭕',
+    desc: 'Play the classic Tic-Tac-Toe game.',
+  },
+  {
+    name: 'snake-xenzia',
+    path: '/game/snake-xenzia',
+    icon: '🐍',
+    desc: 'Classic Snake game for fun and practice.',
+  },
 
   // Docs / Commands
-  { name: 'Commands', path: '/docs/commands' },
-  { name: 'Emojis /  Kaomojis ', path: '/docs/emojis' },
+  {
+    name: 'Commands',
+    path: '/docs/commands',
+    icon: '📚',
+    desc: 'View all available commands and usage.',
+  },
+  {
+    name: 'Emojis /  Kaomojis ',
+    path: '/docs/emojis',
+    icon: '😄',
+    desc: 'Find and copy emojis and kaomojis.',
+  },
 ];
