@@ -1,2 +1,0 @@
-.tic-container{display:flex;align-items:center;justify-content:center;padding:40px 16px;overflow:hidden;background:linear-gradient(135deg,#fdfbfb,#ebedee);overscroll-behavior:contain}@media(max-width:768px){.tic-container{touch-action:none}}.tic-card{width:100%;max-width:500px;padding:24px;text-align:center;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,8%)}.snake-board{display:grid;margin:0 auto;touch-action:none}.snake-cell{transition:background-color.1s ease}
-/*# sourceMappingURL=f2b179e1-async.2db7d540.css.map*/
