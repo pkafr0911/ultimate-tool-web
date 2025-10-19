@@ -5,40 +5,48 @@ import './styles.less';
 
 const { Title, Text } = Typography;
 
-// --- Define Types ---
+// --- Define basic types ---
 type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 type Cell = { x: number; y: number };
 
 const SnakeXenziaPage: React.FC = () => {
-  // --- Game States ---
-  const [gridSize, setGridSize] = useState<number>(20); // The board width/height (square grid)
-  const [speed, setSpeed] = useState<number>(75); // How fast the snake moves (ms per move)
-  const [snake, setSnake] = useState<Cell[]>([{ x: 10, y: 10 }]); // Array of snake segments
-  const [direction, setDirection] = useState<Direction>('RIGHT'); // Current movement direction
+  // --- Game configuration states ---
+  const [gridSize, setGridSize] = useState<number>(20); // Board size (number of rows/columns)
+  const [speed, setSpeed] = useState<number>(75); // Snake speed in milliseconds per move
+  const [snake, setSnake] = useState<Cell[]>([{ x: 10, y: 10 }]); // Array of cells (snake body)
+  const [direction, setDirection] = useState<Direction>('RIGHT'); // Snake’s current direction
   const [food, setFood] = useState<Cell>({ x: 5, y: 5 }); // Position of the food
   const [started, setStarted] = useState<boolean>(false); // Whether the game has started
-  const [gameOver, setGameOver] = useState<boolean>(false); // Whether the game is over
-  const [score, setScore] = useState<number>(0); // Player’s c urrent score
-  const [showConfetti, setShowConfetti] = useState<boolean>(false); // Show confetti on Game Over
-  const [wallsEnabled, setWallsEnabled] = useState<boolean>(true); // Wall mode toggle (wrap-around)
+  const [gameOver, setGameOver] = useState<boolean>(false); // Whether the player lost
+  const [score, setScore] = useState<number>(0); // Player’s score
+  const [showConfetti, setShowConfetti] = useState<boolean>(false); // Confetti animation toggle
+  const [wallsEnabled, setWallsEnabled] = useState<boolean>(true); // Whether hitting walls ends the game
 
+  // A ref to hold the movement interval ID (so we can clear it later)
   const moveRef = useRef<any>(null);
 
-  // --- Generate random food position ---
+  // --- Refs for swipe gesture tracking ---
+  const touchStartX = useRef<number>(0);
+  const touchStartY = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
+  const touchEndY = useRef<number>(0);
+
+  // --- Generate a random food position within grid ---
   const randomFood = (): Cell => ({
     x: Math.floor(Math.random() * gridSize),
     y: Math.floor(Math.random() * gridSize),
   });
 
-  // --- Start or Restart the Game ---
+  // --- Start or restart the game ---
   const startGame = () => {
     if (gridSize < 10) {
       message.error('Grid size must be at least 10!');
       return;
     }
 
-    setSnake([{ x: Math.floor(gridSize / 2), y: Math.floor(gridSize / 2) }]);
-    setFood(randomFood());
+    // Reset all gameplay-related states
+    setSnake([{ x: Math.floor(gridSize / 2), y: Math.floor(gridSize / 2) }]); // Start from center
+    setFood(randomFood()); // Place food randomly
     setScore(0);
     setGameOver(false);
     setStarted(true);
@@ -46,13 +54,13 @@ const SnakeXenziaPage: React.FC = () => {
     setDirection('RIGHT');
   };
 
-  // --- Move Snake Each Frame ---
+  // --- Core snake movement logic ---
   const moveSnake = () => {
     setSnake((prevSnake) => {
       const newSnake = [...prevSnake];
-      const head = { ...newSnake[0] };
+      const head = { ...newSnake[0] }; // Copy the snake’s head
 
-      // Move head based on direction
+      // Move head in the current direction
       switch (direction) {
         case 'UP':
           head.y -= 1;
@@ -68,44 +76,47 @@ const SnakeXenziaPage: React.FC = () => {
           break;
       }
 
-      // Handle walls or wrap-around
+      // --- Wall collision or wrap-around logic ---
       if (wallsEnabled) {
+        // If walls are active, hitting the edge ends the game
         if (head.x < 0 || head.y < 0 || head.x >= gridSize || head.y >= gridSize) {
           setGameOver(true);
           return prevSnake;
         }
       } else {
+        // Otherwise, snake wraps around edges
         if (head.x < 0) head.x = gridSize - 1;
         if (head.x >= gridSize) head.x = 0;
         if (head.y < 0) head.y = gridSize - 1;
         if (head.y >= gridSize) head.y = 0;
       }
 
-      // Check self-collision
+      // --- Check self-collision ---
       if (newSnake.some((seg) => seg.x === head.x && seg.y === head.y)) {
         setGameOver(true);
         return prevSnake;
       }
 
+      // Move head to front of snake array
       newSnake.unshift(head);
 
-      // Check food
+      // --- Check if snake eats food ---
       if (head.x === food.x && head.y === food.y) {
-        setScore((s) => s + 10);
-        setFood(randomFood());
+        setScore((s) => s + 10); // Add score
+        setFood(randomFood()); // Generate new food
       } else {
-        newSnake.pop();
+        newSnake.pop(); // Otherwise remove tail segment
       }
 
       return newSnake;
     });
   };
 
-  // --- Handle Keyboard Input ---
+  // --- Keyboard input for movement (desktop controls) ---
   const handleKeyDown = (e: KeyboardEvent) => {
     if (!started || gameOver) return;
-
     const key = e.key.toLowerCase();
+
     switch (key) {
       case 'arrowup':
       case 'w':
@@ -126,7 +137,39 @@ const SnakeXenziaPage: React.FC = () => {
     }
   };
 
-  // --- Manual Direction Change ---
+  // --- Touch event handlers for mobile swipe control ---
+  const handleTouchStart = (e: React.TouchEvent) => {
+    // Save the start position of touch
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    // Update last known touch position (used on touch end)
+    touchEndX.current = e.touches[0].clientX;
+    touchEndY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = () => {
+    if (!started || gameOver) return;
+
+    // Calculate the distance swiped in both axes
+    const dx = touchEndX.current - touchStartX.current;
+    const dy = touchEndY.current - touchStartY.current;
+
+    // Check whether swipe was more horizontal or vertical
+    if (Math.abs(dx) > Math.abs(dy)) {
+      // Horizontal swipe
+      if (dx > 30 && direction !== 'LEFT') setDirection('RIGHT'); // Swipe right
+      else if (dx < -30 && direction !== 'RIGHT') setDirection('LEFT'); // Swipe left
+    } else {
+      // Vertical swipe
+      if (dy > 30 && direction !== 'UP') setDirection('DOWN'); // Swipe down
+      else if (dy < -30 && direction !== 'DOWN') setDirection('UP'); // Swipe up
+    }
+  };
+
+  // --- Manual directional button control (optional UI buttons) ---
   const handleManualMove = (dir: Direction) => {
     if (!started || gameOver) return;
     if (
@@ -139,7 +182,7 @@ const SnakeXenziaPage: React.FC = () => {
     }
   };
 
-  // --- Main Game Loop ---
+  // --- Main game loop: move the snake at set intervals ---
   useEffect(() => {
     if (started && !gameOver) {
       moveRef.current = setInterval(moveSnake, speed);
@@ -147,13 +190,13 @@ const SnakeXenziaPage: React.FC = () => {
     return () => clearInterval(moveRef.current);
   }, [started, speed, direction, gameOver]);
 
-  // --- Keyboard Event Listener ---
+  // --- Attach keyboard event listener ---
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [started, direction, gameOver]);
 
-  // --- Game Over Effect ---
+  // --- Game over visual effects ---
   useEffect(() => {
     if (gameOver) {
       clearInterval(moveRef.current);
@@ -162,7 +205,7 @@ const SnakeXenziaPage: React.FC = () => {
     }
   }, [gameOver]);
 
-  // --- Reset Setup ---
+  // --- Reset entire setup (return to setup screen) ---
   const resetGame = () => {
     setStarted(false);
     setSnake([]);
@@ -171,13 +214,22 @@ const SnakeXenziaPage: React.FC = () => {
     setShowConfetti(false);
   };
 
-  // --- Render UI ---
+  // --- UI Render Section ---
   return (
-    <div className="tic-container">
+    <div
+      className="tic-container"
+      // Add touch listeners so swipe works on mobile
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Show confetti when player loses */}
       {showConfetti && gameOver && <Confetti />}
+
       <Card className="tic-card" variant={'borderless'}>
         <Title level={3}>🐍 Snake Xenzia</Title>
 
+        {/* --- Setup UI (before starting) --- */}
         {!started ? (
           <Space direction="vertical" size="large" style={{ marginTop: 24 }}>
             {/* Grid size setup */}
@@ -208,7 +260,7 @@ const SnakeXenziaPage: React.FC = () => {
               </Text>
             </div>
 
-            {/* Wall mode */}
+            {/* Wall mode setup */}
             <div>
               <Text strong>Walls Enabled:</Text>
               <Switch
@@ -227,7 +279,7 @@ const SnakeXenziaPage: React.FC = () => {
           </Space>
         ) : (
           <>
-            {/* Game Board */}
+            {/* --- Main Game Board --- */}
             <div
               className="snake-board"
               style={{
@@ -238,6 +290,7 @@ const SnakeXenziaPage: React.FC = () => {
                 justifyContent: 'center',
               }}
             >
+              {/* Render grid cells */}
               {Array.from({ length: gridSize }).map((_, rowIdx) =>
                 Array.from({ length: gridSize }).map((_, colIdx) => {
                   const isSnake = snake.some((s) => s.x === colIdx && s.y === rowIdx);
@@ -252,12 +305,12 @@ const SnakeXenziaPage: React.FC = () => {
                         width: 20,
                         height: 20,
                         backgroundColor: isHead
-                          ? '#52c41a'
+                          ? '#52c41a' // Head color
                           : isSnake
-                          ? '#73d13d'
+                          ? '#73d13d' // Body color
                           : isFood
-                          ? '#ff7875'
-                          : '#f0f0f0',
+                          ? '#ff7875' // Food color
+                          : '#f0f0f0', // Empty cell color
                         borderRadius: isFood ? '50%' : 2,
                       }}
                     />
@@ -266,7 +319,7 @@ const SnakeXenziaPage: React.FC = () => {
               )}
             </div>
 
-            {/* Score */}
+            {/* --- Score Display --- */}
             <div style={{ marginTop: 20 }}>
               {!gameOver ? (
                 <Title level={4}>Score: {score}</Title>
@@ -277,7 +330,7 @@ const SnakeXenziaPage: React.FC = () => {
               )}
             </div>
 
-            {/* Directional Buttons */}
+            {/* --- Optional manual direction buttons (useful for testing) --- */}
             <div className="manual-controls">
               <div className="control-row">
                 <Button disabled={!started || gameOver} onClick={() => handleManualMove('UP')}>
@@ -297,7 +350,7 @@ const SnakeXenziaPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Control Buttons */}
+            {/* --- Game control buttons --- */}
             <Space style={{ marginTop: 16 }}>
               <Button onClick={startGame}>Restart</Button>
               <Button danger onClick={resetGame}>
