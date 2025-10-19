@@ -244,15 +244,7 @@ const SnakeXenziaPage: React.FC = () => {
 
   // --- UI Render Section ---
   return (
-    <div
-      className="tic-container"
-      onTouchStart={handleTouchStart}
-      onTouchMove={(e) => {
-        e.preventDefault(); // Prevent swipe scroll within game only
-        handleTouchMove(e);
-      }}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div className="tic-container">
       {/* Show confetti when player loses */}
       {showConfetti && gameOver && <Confetti />}
 
@@ -319,6 +311,9 @@ const SnakeXenziaPage: React.FC = () => {
                 marginTop: 20,
                 justifyContent: 'center',
               }}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
             >
               {/* Render grid cells */}
               {Array.from({ length: gridSize }).map((_, rowIdx) =>

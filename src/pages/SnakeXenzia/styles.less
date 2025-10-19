@@ -4,13 +4,7 @@
   align-items: center;
   justify-content: center;
   padding: 40px 16px;
-  overflow: hidden; /* Prevent scroll completely */
   background: linear-gradient(135deg, #fdfbfb, #ebedee);
-  overscroll-behavior: contain; /* Prevent bounce/refresh */
-
-  @media (max-width: 768px) {
-    touch-action: none; /* Disable swipe gestures */
-  }
 }
 /* Card wrapper styling */
 .tic-card {
@@ -26,7 +20,13 @@
 .snake-board {
   display: grid;
   margin: 0 auto;
+  overflow: hidden; /* Prevent scroll completely */
   touch-action: none; /* Block touch events from triggering scroll */
+  overscroll-behavior: contain; /* Prevent bounce/refresh */
+
+  @media (max-width: 768px) {
+    touch-action: none; /* Disable swipe gestures */
+  }
 }
 
 /* Each cell in the grid */
