@@ -1,21 +1,27 @@
 /* Page container (centers card and applies gradient background) */
 .tic-container {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   padding: 40px 16px;
-  background: linear-gradient(135deg, #fdfbfb, #ebedee);
   overflow: auto;
+  background: linear-gradient(135deg, #fdfbfb, #ebedee);
+
+  /* Disable scroll on mobile */
+  @media (max-width: 768px) {
+    overflow: hidden;
+    touch-action: none;
+  }
 }
 
 /* Card wrapper styling */
 .tic-card {
-  max-width: 500px;
   width: 100%;
-  text-align: center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  border-radius: 16px;
+  max-width: 500px;
   padding: 24px;
+  text-align: center;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 /* Grid container for the snake game board */
