@@ -139,13 +139,11 @@ const SnakeXenziaPage: React.FC = () => {
 
   // --- Touch event handlers for mobile swipe control ---
   const handleTouchStart = (e: React.TouchEvent) => {
-    // Save the start position of touch
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    // Update last known touch position (used on touch end)
     touchEndX.current = e.touches[0].clientX;
     touchEndY.current = e.touches[0].clientY;
   };
@@ -153,21 +151,47 @@ const SnakeXenziaPage: React.FC = () => {
   const handleTouchEnd = () => {
     if (!started || gameOver) return;
 
-    // Calculate the distance swiped in both axes
     const dx = touchEndX.current - touchStartX.current;
     const dy = touchEndY.current - touchStartY.current;
 
-    // Check whether swipe was more horizontal or vertical
     if (Math.abs(dx) > Math.abs(dy)) {
       // Horizontal swipe
-      if (dx > 30 && direction !== 'LEFT') setDirection('RIGHT'); // Swipe right
-      else if (dx < -30 && direction !== 'RIGHT') setDirection('LEFT'); // Swipe left
+      if (dx > 30 && direction !== 'LEFT') setDirection('RIGHT');
+      else if (dx < -30 && direction !== 'RIGHT') setDirection('LEFT');
     } else {
       // Vertical swipe
-      if (dy > 30 && direction !== 'UP') setDirection('DOWN'); // Swipe down
-      else if (dy < -30 && direction !== 'DOWN') setDirection('UP'); // Swipe up
+      if (dy > 30 && direction !== 'UP') setDirection('DOWN');
+      else if (dy < -30 && direction !== 'DOWN') setDirection('UP');
     }
   };
+
+  // --- Disable scrolling and page swiping on mobile while playing ---
+  useEffect(() => {
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+
+    const preventScroll = (e: TouchEvent) => e.preventDefault();
+
+    if (isMobile && started && !gameOver) {
+      // Disable browser scroll & gestures
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+
+      // Prevent touchmove from scrolling or pulling-to-refresh
+      document.addEventListener('touchmove', preventScroll, { passive: false });
+    } else {
+      // Restore default scroll behavior
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      document.removeEventListener('touchmove', preventScroll);
+    }
+
+    // Cleanup when leaving game or component unmounts
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      document.removeEventListener('touchmove', preventScroll);
+    };
+  }, [started, gameOver]);
 
   // --- Manual directional button control (optional UI buttons) ---
   const handleManualMove = (dir: Direction) => {
@@ -218,7 +242,6 @@ const SnakeXenziaPage: React.FC = () => {
   return (
     <div
       className="tic-container"
-      // Add touch listeners so swipe works on mobile
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
