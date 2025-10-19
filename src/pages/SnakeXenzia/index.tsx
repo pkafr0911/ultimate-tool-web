@@ -168,28 +168,32 @@ const SnakeXenziaPage: React.FC = () => {
   // --- Disable scrolling and page swiping on mobile while playing ---
   useEffect(() => {
     const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-
     const preventScroll = (e: TouchEvent) => e.preventDefault();
 
     if (isMobile && started && !gameOver) {
-      // Disable browser scroll & gestures
+      // Fully block scroll gestures
       document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed'; // Prevent bounce on iOS
+      document.body.style.width = '100%';
       document.body.style.touchAction = 'none';
 
-      // Prevent touchmove from scrolling or pulling-to-refresh
-      document.addEventListener('touchmove', preventScroll, { passive: false });
+      // Attach early (non-passive) listener to cancel all scrolling
+      window.addEventListener('touchmove', preventScroll, { passive: false });
     } else {
-      // Restore default scroll behavior
+      // Restore normal
       document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
       document.body.style.touchAction = '';
-      document.removeEventListener('touchmove', preventScroll);
+      window.removeEventListener('touchmove', preventScroll);
     }
 
-    // Cleanup when leaving game or component unmounts
     return () => {
       document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
       document.body.style.touchAction = '';
-      document.removeEventListener('touchmove', preventScroll);
+      window.removeEventListener('touchmove', preventScroll);
     };
   }, [started, gameOver]);
 
@@ -243,7 +247,10 @@ const SnakeXenziaPage: React.FC = () => {
     <div
       className="tic-container"
       onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
+      onTouchMove={(e) => {
+        e.preventDefault(); // Prevent swipe scroll within game only
+        handleTouchMove(e);
+      }}
       onTouchEnd={handleTouchEnd}
     >
       {/* Show confetti when player loses */}
