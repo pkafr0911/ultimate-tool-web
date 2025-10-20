@@ -43,6 +43,11 @@ export const gitCommands: CommandItem[] = [
   { category: 'Git', cmd: 'git stash apply', desc: 'Reapply stashed changes' },
   { category: 'Git', cmd: 'git diff', desc: 'Show changes between commits or working directory' },
   { category: 'Git', cmd: 'git remote -v', desc: 'Show remote repository URLs' },
+  {
+    category: 'Git',
+    cmd: 'git remote set-url origin <NEW_GIT_URL_HERE>',
+    desc: 'Change the remote repository URL. See "git help remote" or edit .git/config manually.',
+  },
   { category: 'Git', cmd: 'git tag', desc: 'List or create tags' },
   { category: 'Git', cmd: 'git clean -fd', desc: 'Remove untracked files and directories' },
   { category: 'Git', cmd: 'git rm <file>', desc: 'Remove file from repository and working tree' },

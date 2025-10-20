@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Button, Space, Typography, message, Tag } from 'antd';
+import { Card, Button, Space, Typography, message, Tag, Segmented, Input } from 'antd';
 import {
   CopyOutlined,
   DownloadOutlined,
@@ -10,6 +10,7 @@ import {
   CloseCircleOutlined,
   SortAscendingOutlined,
   FileSearchOutlined,
+  SwapOutlined,
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
 import './styles.less';
@@ -17,11 +18,15 @@ import './styles.less';
 const { Title, Text } = Typography;
 
 const JsonFormatterPage: React.FC = () => {
+  const [mode, setMode] = useState<'formatter' | 'converter'>('formatter');
+
+  // --- Shared States ---
   const [input, setInput] = useState<string>('{\n  "name": "Thanh",\n  "age": 25\n}');
   const [output, setOutput] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [isValid, setIsValid] = useState<boolean | null>(null);
 
+  // --- Formatter Functions ---
   const validateJson = () => {
     try {
       JSON.parse(input);
@@ -149,78 +154,170 @@ const JsonFormatterPage: React.FC = () => {
     setIsValid(null);
   };
 
+  // --- Converter Functions ---
+  const convertStringToJson = () => {
+    try {
+      // Remove wrapping quotes and unescape newlines/quotes
+      const cleaned = input
+        .replace(/^["']|["']$/g, '') // remove outer quotes if any
+        .replace(/\\n/g, '\n') // convert \n → actual newline
+        .replace(/\\"/g, '"'); // convert \" → "
+      const parsed = JSON.parse(cleaned);
+      setOutput(JSON.stringify(parsed, null, 2));
+      message.success('Converted string to JSON successfully!');
+    } catch (err: any) {
+      console.error(err);
+      message.error('Invalid escaped JSON string');
+      setOutput('');
+    }
+  };
+
+  const convertJsonToString = () => {
+    try {
+      const obj = JSON.parse(input);
+      const jsonStr = JSON.stringify(obj, null, 2)
+        .replace(/\n/g, '\\n') // escape newlines
+        .replace(/"/g, '\\"'); // escape quotes
+      setOutput(`"${jsonStr}"`);
+      message.success('Converted JSON to escaped string successfully!');
+    } catch (err: any) {
+      console.error(err);
+      message.error('Invalid JSON object');
+      setOutput('');
+    }
+  };
+
+  // --- Render ---
   return (
-    <Card title="JSON Formatter & Validator" className="json-card">
-      <div className="json-container">
-        {/* Left Side: Input JSON */}
-        <div className="json-pane">
-          <Title level={5}>Input JSON</Title>
-          <Editor
-            height="600px"
-            language="json"
-            value={input}
-            onChange={(val) => setInput(val || '')}
-            options={{
-              minimap: { enabled: false },
-              automaticLayout: true,
-            }}
+    <Card
+      title={
+        <Space>
+          <Title level={4} style={{ marginBottom: 0 }}>
+            JSON Tools
+          </Title>
+          <Segmented
+            options={[
+              { label: 'Formatter & Validator', value: 'formatter' },
+              { label: 'String ⇄ JSON Converter', value: 'converter' },
+            ]}
+            value={mode}
+            onChange={(val) => setMode(val as any)}
           />
+        </Space>
+      }
+      className="json-card"
+    >
+      {mode === 'formatter' ? (
+        <div className="json-container">
+          {/* Left Side: Input JSON */}
+          <div className="json-pane">
+            <Title level={5}>Input JSON</Title>
+            <Editor
+              height="600px"
+              language="json"
+              value={input}
+              onChange={(val) => setInput(val || '')}
+              options={{
+                minimap: { enabled: false },
+                automaticLayout: true,
+              }}
+            />
 
-          <Space className="button-group">
-            <Button icon={<FileSearchOutlined />} onClick={validateJson}>
-              Validate
-            </Button>
-            <Button icon={<FormatPainterOutlined />} type="primary" onClick={formatJson}>
-              Format
-            </Button>
-            <Button icon={<CompressOutlined />} onClick={minifyJson}>
-              Minify
-            </Button>
-            <Button icon={<SortAscendingOutlined />} onClick={sortKeys}>
-              Sort Keys
-            </Button>
-            <Button icon={<ClearOutlined />} danger onClick={clearAll}>
-              Clear
-            </Button>
-          </Space>
+            <Space className="button-group">
+              <Button icon={<FileSearchOutlined />} onClick={validateJson}>
+                Validate
+              </Button>
+              <Button icon={<FormatPainterOutlined />} type="primary" onClick={formatJson}>
+                Format
+              </Button>
+              <Button icon={<CompressOutlined />} onClick={minifyJson}>
+                Minify
+              </Button>
+              <Button icon={<SortAscendingOutlined />} onClick={sortKeys}>
+                Sort Keys
+              </Button>
+              <Button icon={<ClearOutlined />} danger onClick={clearAll}>
+                Clear
+              </Button>
+            </Space>
 
-          {isValid === true && (
-            <Tag icon={<CheckCircleOutlined />} color="success">
-              Valid JSON
-            </Tag>
-          )}
-          {isValid === false && (
-            <Tag icon={<CloseCircleOutlined />} color="error">
-              Invalid JSON
-            </Tag>
-          )}
-          {error && <Text type="danger">Error: {error}</Text>}
+            {isValid === true && (
+              <Tag icon={<CheckCircleOutlined />} color="success">
+                Valid JSON
+              </Tag>
+            )}
+            {isValid === false && (
+              <Tag icon={<CloseCircleOutlined />} color="error">
+                Invalid JSON
+              </Tag>
+            )}
+            {error && <Text type="danger">Error: {error}</Text>}
+          </div>
+
+          {/* Right Side: Output JSON */}
+          <div className="json-pane">
+            <Title level={5}>Formatted Output</Title>
+            <Editor
+              height="600px"
+              language="json"
+              value={output}
+              options={{
+                readOnly: true,
+                minimap: { enabled: false },
+                automaticLayout: true,
+              }}
+            />
+
+            <Space className="button-group">
+              <Button icon={<CopyOutlined />} onClick={handleCopy}>
+                Copy
+              </Button>
+              <Button icon={<DownloadOutlined />} onClick={handleDownload}>
+                Download
+              </Button>
+            </Space>
+          </div>
         </div>
+      ) : (
+        <div className="json-container">
+          {/* String ⇄ JSON Converter */}
+          <div className="json-pane">
+            <Title level={5}>Input String or JSON</Title>
+            <Input.TextArea
+              rows={16}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Enter a JSON string or object here"
+            />
+            <Space className="button-group">
+              <Button icon={<SwapOutlined />} type="primary" onClick={convertStringToJson}>
+                String → JSON
+              </Button>
+              <Button icon={<SwapOutlined />} onClick={convertJsonToString}>
+                JSON → String
+              </Button>
+              <Button icon={<ClearOutlined />} danger onClick={clearAll}>
+                Clear
+              </Button>
+            </Space>
+          </div>
 
-        {/* Right Side: Output JSON */}
-        <div className="json-pane">
-          <Title level={5}>Formatted Output</Title>
-          <Editor
-            height="600px"
-            language="json"
-            value={output}
-            options={{
-              readOnly: true,
-              minimap: { enabled: false },
-              automaticLayout: true,
-            }}
-          />
-
-          <Space className="button-group">
-            <Button icon={<CopyOutlined />} onClick={handleCopy}>
-              Copy
-            </Button>
-            <Button icon={<DownloadOutlined />} onClick={handleDownload}>
-              Download
-            </Button>
-          </Space>
+          <div className="json-pane">
+            <Title level={5}>Converted Output</Title>
+            <Input.TextArea
+              rows={16}
+              value={output}
+              readOnly
+              placeholder="Converted result will appear here"
+            />
+            <Space className="button-group">
+              <Button icon={<CopyOutlined />} onClick={handleCopy}>
+                Copy
+              </Button>
+            </Space>
+          </div>
         </div>
-      </div>
+      )}
     </Card>
   );
 };
