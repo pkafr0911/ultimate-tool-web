@@ -10,6 +10,7 @@ import defaultSettings from '../config/defaultSettings';
 import GlobalSearchBar from './components/GlobalSearchBar';
 import './libs/iconfont';
 import { errorConfig } from './requestErrorConfig';
+import DarkModeSwitch from './components/DarkModeSwitch';
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -43,6 +44,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     menuHeaderRender: undefined,
     rightContentRender: () => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginRight: 16 }}>
+        <DarkModeSwitch />
         <GlobalSearchBar />
         {/* <AvatarDropdown /> */}
       </div>

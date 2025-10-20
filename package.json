@@ -47,6 +47,7 @@
     "antd": "^5.20.0",
     "antd-style": "^3.7.0",
     "classnames": "^2.5.1",
+    "darkreader": "^4.9.112",
     "dashjs": "^4.3.0",
     "dayjs": "^1.11.13",
     "file-saver": "^2.0.5",
