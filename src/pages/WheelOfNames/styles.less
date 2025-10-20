@@ -1,30 +1,36 @@
 .wheel-light-container {
   display: flex;
-  justify-content: center;
   align-items: center;
-  height: 70vh;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 16px;
   background: linear-gradient(135deg, #f8fbff 0%, #e8f0ff 100%);
 }
 
 .wheel-light-card {
-  width: 900px;
-  background: #ffffff;
+  width: 100%;
+  max-width: 900px;
+  padding: 24px;
+  background: #fff;
   border-radius: 20px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
-  padding: 32px;
+
+  @media (max-width: 600px) {
+    padding: 16px;
+  }
 }
 
 .wheel-light-title {
-  text-align: center;
-  color: #1f1f1f;
   margin-bottom: 24px;
+  color: #1f1f1f;
+  text-align: center;
 }
 
 .wheel-light-content {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
   gap: 32px;
+  align-items: flex-start;
+  justify-content: space-between;
 
   @media (max-width: 900px) {
     flex-direction: column;
@@ -34,37 +40,45 @@
 
 .wheel-light-canvas {
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .wheel-light-pointer {
   position: absolute;
-  top: 232px;
+  top: 50%;
   left: 100%;
-  transform: translateX(-50%) rotate(-90deg); /* Rotates it to point towards the wheel */
   width: 25px;
   height: 35px;
   background: red;
+  transform: translateX(-50%) rotate(-90deg); /* Rotates it to point towards the wheel */
   clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+
+  @media (max-width: 600px) {
+    width: 18px;
+    height: 26px;
+  }
 }
 
 .wheel-light-controls {
-  width: 100%;
-  max-width: 320px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  width: 100%;
+  max-width: 320px;
 }
 
 .spin-btn-light {
+  color: #fff;
+  font-weight: 600;
   background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
   border: none;
   border-radius: 10px;
-  color: #fff;
-  font-weight: 600;
   transition: 0.3s;
 
   &:hover {
-    transform: scale(1.05);
     box-shadow: 0 6px 18px rgba(37, 117, 252, 0.3);
+    transform: scale(1.05);
   }
 }

@@ -7,14 +7,13 @@ const { Title } = Typography;
 const colors: string[] = ['#ff7875', '#ffa940', '#ffd666', '#95de64', '#69c0ff', '#b37feb'];
 
 const WheelOfNames: React.FC = () => {
-  const [nameInput, setNameInput] = useState<string>('Alice\nBob\nCharlie\nDavid');
-  const [names, setNames] = useState<string[]>(
-    nameInput.split('\n').filter((n) => n.trim() !== ''),
-  );
-  const [rotation, setRotation] = useState<number>(0);
-  const [spinning, setSpinning] = useState<boolean>(false);
+  const [nameInput, setNameInput] = useState('Alice\nBob\nCharlie\nDavid');
+  const [names, setNames] = useState<string[]>([]);
+  const [rotation, setRotation] = useState(0);
+  const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [canvasSize, setCanvasSize] = useState(450);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -22,8 +21,18 @@ const WheelOfNames: React.FC = () => {
   }, [nameInput]);
 
   useEffect(() => {
+    const handleResize = () => {
+      const size = Math.min(window.innerWidth * 0.8, 450);
+      setCanvasSize(size);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
     drawWheel(rotation);
-  }, [names, rotation]);
+  }, [rotation, names, canvasSize]);
 
   const drawWheel = (angle: number) => {
     const canvas = canvasRef.current;
@@ -31,7 +40,7 @@ const WheelOfNames: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const total = names.length;
+    const total = names.length || 1;
     const arc = (2 * Math.PI) / total;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -48,7 +57,7 @@ const WheelOfNames: React.FC = () => {
 
       ctx.save();
       ctx.fillStyle = '#fff';
-      ctx.font = `bold 20px sans-serif`;
+      ctx.font = `bold ${Math.max(14, canvas.width / 22)}px sans-serif`;
       ctx.translate(
         Math.cos(i * arc + arc / 2) * (canvas.width / 3),
         Math.sin(i * arc + arc / 2) * (canvas.height / 3),
@@ -60,8 +69,8 @@ const WheelOfNames: React.FC = () => {
 
     if (!spinning) {
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 28px sans-serif';
-      ctx.fillText('Click to Spin', -ctx.measureText('Click to Spin').width / 2, 10);
+      ctx.font = `bold ${Math.max(18, canvas.width / 18)}px sans-serif`;
+      ctx.fillText('Tap or Spin', -ctx.measureText('Tap or Spin').width / 2, 10);
     }
 
     ctx.restore();
@@ -93,9 +102,10 @@ const WheelOfNames: React.FC = () => {
         const normalized = ((end % 360) + 360) % 360;
         const segment = 360 / names.length;
         const winnerIndex = Math.floor((360 - normalized) / segment) % names.length;
-        setWinner(names[winnerIndex]);
+        const selectedWinner = names[winnerIndex];
+        setWinner(selectedWinner);
         setSpinning(false);
-        message.success(`Winner: ${names[winnerIndex]}`);
+        message.success(`Winner: ${selectedWinner}`);
 
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 15000);
@@ -104,10 +114,16 @@ const WheelOfNames: React.FC = () => {
     requestAnimationFrame(animate);
   };
 
+  // Enable tap/spin on mobile touch
+  const handleTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    if (!spinning) handleSpin();
+  };
+
   return (
     <div className="wheel-light-container">
       {showConfetti && <Confetti />}
-      <Card className="wheel-light-card" variant={'borderless'}>
+      <Card className="wheel-light-card" variant="borderless">
         <Title level={3} className="wheel-light-title">
           🎡 Wheel of Names
         </Title>
@@ -115,9 +131,10 @@ const WheelOfNames: React.FC = () => {
           <div className="wheel-light-canvas">
             <canvas
               ref={canvasRef}
-              width={450}
-              height={450}
+              width={canvasSize}
+              height={canvasSize}
               onClick={handleSpin}
+              onTouchStart={handleTouch}
               style={{ cursor: 'pointer' }}
             />
             <div className="wheel-light-pointer" />
@@ -142,7 +159,7 @@ const WheelOfNames: React.FC = () => {
 
             <Space direction="vertical" style={{ width: '100%', marginTop: 16 }}>
               <Input.TextArea
-                rows={10}
+                rows={8}
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
                 placeholder="Enter names, each on a new line"
