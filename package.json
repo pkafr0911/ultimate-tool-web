@@ -50,6 +50,7 @@
     "dashjs": "^4.3.0",
     "dayjs": "^1.11.13",
     "file-saver": "^2.0.5",
+    "framer-motion": "^12.23.24",
     "highcharts": "^12.1.2",
     "highcharts-react-official": "^3.2.1",
     "hls.js": "^1.1.5",

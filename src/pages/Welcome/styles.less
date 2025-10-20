@@ -1,54 +1,75 @@
-.welcome-container {
-  max-width: 1300px;
-  margin: 40px auto;
-  padding: 0 20px;
+.welcome-container.light-theme {
+  padding: 40px 60px;
+  background: linear-gradient(135deg, #fdfbfb, #ebedee);
+  min-height: 100vh;
+  color: #333;
+  overflow-x: hidden;
+  text-align: center;
 
   .welcome-title {
-    margin-bottom: 10px;
-    text-align: center;
+    font-weight: 800;
+    color: #1f1f1f;
+    margin-bottom: 8px;
   }
 
   .welcome-subtitle {
+    color: #666;
+    font-size: 16px;
     margin-bottom: 40px;
-    color: rgba(0, 0, 0, 0.65);
-    text-align: center;
   }
 
   .category-section {
-    margin-bottom: 50px;
+    margin-bottom: 60px;
+    text-align: left;
+  }
 
-    .category-title {
-      margin-bottom: 20px;
-      padding-left: 8px;
-      color: #1890ff;
-      border-left: 4px solid #1890ff;
+  .category-title {
+    color: #1890ff;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+
+  .feature-card.light-card {
+    text-align: center;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: #ffffff;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+
+    .ant-card-body {
+      padding: 24px;
     }
 
-    .feature-card {
-      padding: 20px;
-      text-align: center;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-      transition: all 0.3s;
+    &:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      border-color: #e0e0e0;
+    }
+
+    .feature-icon {
+      font-size: 36px;
+      margin-bottom: 12px;
+      color: #1890ff;
+    }
+
+    .feature-desc {
+      color: #555;
+      font-size: 14px;
+      min-height: 40px;
+    }
+
+    .ant-btn-primary {
+      margin-top: 10px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #1890ff, #40a9ff);
+      border: none;
+      box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
 
       &:hover {
-        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
-        transform: translateY(-4px);
-      }
-
-      .feature-icon {
-        margin-bottom: 10px;
-        font-size: 36px;
-      }
-
-      .feature-desc {
-        min-height: 40px;
-        color: rgba(0, 0, 0, 0.65);
-        font-size: 14px;
-      }
-
-      .ant-btn-primary {
-        margin-top: 10px;
+        background: linear-gradient(90deg, #40a9ff, #69c0ff);
+        box-shadow: 0 3px 10px rgba(24, 144, 255, 0.4);
       }
     }
   }

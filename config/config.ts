@@ -58,6 +58,7 @@ export default defineConfig({
    */
   theme: {
     'root-entry-name': 'variable', // Enables dynamic theme changes
+    'primary-color': defaultSettings.colorPrimary,
   },
 
   /**
