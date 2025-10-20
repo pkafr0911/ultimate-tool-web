@@ -36,8 +36,8 @@ const DarkModeSwitch: React.FC = () => {
     <Tooltip title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
       <Switch
         checked={darkMode}
-        checkedChildren={<MoonOutlined />}
-        unCheckedChildren={<SunOutlined />}
+        checkedChildren={<MoonOutlined style={{ color: '#1890ff' }} />}
+        unCheckedChildren={<SunOutlined style={{ color: '#ffc107' }} />}
         onChange={setDarkMode}
         style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }}
       />
