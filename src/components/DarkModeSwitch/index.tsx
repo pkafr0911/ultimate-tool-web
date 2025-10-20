@@ -2,6 +2,7 @@ import { MoonOutlined, SunOutlined } from '@ant-design/icons';
 import { Switch, Tooltip } from 'antd';
 import { disable, enable, setFetchMethod } from 'darkreader';
 import React, { useEffect, useState } from 'react';
+import './styles.less';
 
 // DarkReader needs fetch for CSS
 setFetchMethod(window.fetch);
@@ -37,8 +38,9 @@ const DarkModeSwitch: React.FC = () => {
       <Switch
         checked={darkMode}
         checkedChildren={<MoonOutlined style={{ color: '#1890ff' }} />}
-        unCheckedChildren={<SunOutlined style={{ color: '#ffc107' }} />}
+        unCheckedChildren={<SunOutlined style={{ color: '#fff' }} />}
         onChange={setDarkMode}
+        className={darkMode ? 'dark' : 'light'}
         style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }}
       />
     </Tooltip>
