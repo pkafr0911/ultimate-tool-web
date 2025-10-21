@@ -13,6 +13,7 @@ import {
   message,
 } from 'antd';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Confetti from 'react-confetti';
 import './styles.less'; // custom stylesheet for Minesweeper
 
 const { Title, Text } = Typography;
@@ -245,21 +246,44 @@ const MinesweeperPage: React.FC = () => {
     }
 
     // 🌊 Flood fill empty area
+    // If the clicked cell has 0 adjacent mines → start flood fill
     if (cell.adjacent === 0) {
-      const R = b.length;
-      const C = b[0].length;
+      const R = b.length; // total rows
+      const C = b[0].length; // total columns
+
+      // We'll use this stack to iteratively reveal neighboring cells.
       const stack: [number, number][] = [[r, c]];
+
+      // Directions we can move: up, down, left, right, and diagonals
+      // By combining all pairs of (-1, 0, 1), we cover the 8 surrounding cells.
       const dirs = [-1, 0, 1];
+
+      // --- Loop until there are no more cells to process ---
       while (stack.length) {
+        // Take one cell from the stack (Depth-First approach)
         const [cr, cc] = stack.pop()!;
+
+        // Check all 8 neighboring cells around the current cell
         for (let dr of dirs)
           for (let dc of dirs) {
-            const nr = cr + dr;
-            const nc = cc + dc;
+            const nr = cr + dr; // new row index
+            const nc = cc + dc; // new column index
+
+            // Skip out-of-bounds coordinates
             if (nr < 0 || nc < 0 || nr >= R || nc >= C) continue;
+
+            // Get neighbor cell
             const neigh = b[nr][nc];
+
+            // Skip if the neighbor is undefined, already revealed, or flagged
             if (!neigh || neigh.revealed || neigh.flagged) continue;
+
+            // Reveal the neighbor cell
             neigh.revealed = true;
+
+            // If the neighbor also has 0 adjacent mines (and isn’t mined),
+            // add it to the stack for further expansion
+            // This ensures all connected empty areas are revealed recursively.
             if (neigh.adjacent === 0 && !neigh.mined) stack.push([nr, nc]);
           }
       }
@@ -446,6 +470,7 @@ const MinesweeperPage: React.FC = () => {
   // ========================================================
   return (
     <div className="ms-page">
+      {won && <Confetti />}
       <Card className="ms-card" bordered={false}>
         <Title level={3}>💣 Minesweeper</Title>
 

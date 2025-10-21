@@ -253,7 +253,12 @@ const SnakeXenziaPage: React.FC = () => {
 
   // --- UI Render Section ---
   return (
-    <div className="tic-container">
+    <div
+      className="tic-container"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* Show confetti when player loses */}
       {showConfetti && gameOver && <Confetti />}
 
@@ -320,9 +325,6 @@ const SnakeXenziaPage: React.FC = () => {
                 marginTop: 20,
                 justifyContent: 'center',
               }}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
             >
               {/* Render grid cells */}
               {Array.from({ length: gridSize }).map((_, rowIdx) =>
