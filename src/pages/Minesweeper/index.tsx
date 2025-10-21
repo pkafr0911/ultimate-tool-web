@@ -459,32 +459,34 @@ const MinesweeperPage: React.FC = () => {
               </div>
 
               {/* Custom input fields */}
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                <Text>Rows:</Text>
-                <InputNumber
-                  min={9}
-                  max={30}
-                  value={rows}
-                  onChange={(v) => setRows(v || 9)}
-                  disabled={difficulty !== 'custom'}
-                />
-                <Text>Cols:</Text>
-                <InputNumber
-                  min={9}
-                  max={30}
-                  value={cols}
-                  onChange={(v) => setCols(v || 9)}
-                  disabled={difficulty !== 'custom'}
-                />
-                <Text>Mines:</Text>
-                <InputNumber
-                  min={10}
-                  max={Math.max(10, Math.min(668, rows * cols - 1))}
-                  value={mines}
-                  onChange={(v) => setMines(v || 10)}
-                  disabled={difficulty !== 'custom'}
-                />
-              </div>
+              {difficulty === 'custom' ? (
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <Text>Rows:</Text>
+                  <InputNumber
+                    min={9}
+                    max={30}
+                    value={rows}
+                    onChange={(v) => setRows(v || 9)}
+                    disabled={difficulty !== 'custom'}
+                  />
+                  <Text>Cols:</Text>
+                  <InputNumber
+                    min={9}
+                    max={30}
+                    value={cols}
+                    onChange={(v) => setCols(v || 9)}
+                    disabled={difficulty !== 'custom'}
+                  />
+                  <Text>Mines:</Text>
+                  <InputNumber
+                    min={10}
+                    max={Math.max(10, Math.min(668, rows * cols - 1))}
+                    value={mines}
+                    onChange={(v) => setMines(v || 10)}
+                    disabled={difficulty !== 'custom'}
+                  />
+                </div>
+              ) : null}
 
               {/* Toggles */}
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
