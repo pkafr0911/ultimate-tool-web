@@ -33,7 +33,7 @@ type Difficulty = 'beginner' | 'intermediate' | 'advanced' | 'custom';
 const PRESETS: Record<string, { rows: number; cols: number; mines: number }> = {
   beginner: { rows: 9, cols: 9, mines: 10 },
   intermediate: { rows: 16, cols: 16, mines: 40 },
-  advanced: { rows: 16, cols: 30, mines: 99 }, // you requested 30x30 with 16 mines but that seems inverted; using classic 16x30/99
+  advanced: { rows: 16, cols: 30, mines: 99 },
 };
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -45,6 +45,7 @@ const MinesweeperPage: React.FC = () => {
   const [cols, setCols] = useState<number>(9);
   const [mines, setMines] = useState<number>(10);
   const [showTips, setShowTips] = useState<boolean>(true);
+  const [tapMode, setTapMode] = useState<'reveal' | 'flag'>('reveal');
 
   // --- Game state ---
   const [board, setBoard] = useState<Cell[][]>([]);
@@ -346,7 +347,11 @@ const MinesweeperPage: React.FC = () => {
     if (cell.flagged) cls.push('ms-flagged');
     if (cell.mined && cell.revealed) cls.push('ms-mine');
 
-    const onClick = () => onLeftClick(cell.r, cell.c);
+    const onClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      if (tapMode === 'reveal') onLeftClick(cell.r, cell.c);
+      else onRightClick(e, cell.r, cell.c);
+    };
     const onContext = (e: React.MouseEvent) => onRightClick(e, cell.r, cell.c);
 
     const onDouble = () => onChord(cell.r, cell.c);
@@ -444,6 +449,20 @@ const MinesweeperPage: React.FC = () => {
                 <Text>Show Tips:</Text>
                 <Switch checked={showTips} onChange={setShowTips} />
                 <Text type="secondary">(tap cell to reveal, right-click to flag)</Text>
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <Text>Tap Mode:</Text>
+                <Select
+                  value={tapMode}
+                  onChange={(v) => setTapMode(v)}
+                  style={{ width: 140 }}
+                  options={[
+                    { label: 'Reveal (default)', value: 'reveal' },
+                    { label: 'Flag', value: 'flag' },
+                  ]}
+                />
+                <Text type="secondary">(for touch screens)</Text>
               </div>
             </Space>
           </Col>
