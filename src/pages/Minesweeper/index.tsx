@@ -430,7 +430,7 @@ const MinesweeperPage: React.FC = () => {
   return (
     <div className="ms-page">
       <Card className="ms-card" bordered={false}>
-        <Title level={3}>🧩 Minesweeper</Title>
+        <Title level={3}>💣 Minesweeper</Title>
 
         {/* ----- Settings Controls ----- */}
         <Row gutter={[12, 12]} align="middle">
