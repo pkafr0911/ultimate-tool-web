@@ -111,35 +111,54 @@
     margin-bottom: 6px;
   }
 }
-/* --- Start overlay --- */
-.ms-start-overlay {
+/* --- Base overlay style (shared) --- */
+.ms-overlay-base {
   position: absolute;
   top: 45%;
   left: 50%;
+  z-index: 10;
   padding: 10px 20px;
   color: #333;
   font-weight: 700;
-  font-size: 20px;
+  font-size: 24px;
   text-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
-  background: linear-gradient(135deg, #ffdee9, #b5fffc, #ffd6a5, #caffbf);
-  background-size: 300% 300%; /* allow gradient to move */
+  background-size: 300% 300%;
   border-radius: 12px;
-  box-shadow: 0 0 10px rgba(255, 182, 193, 0.4), 0 0 20px rgba(181, 255, 252, 0.3);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
   transform: translate(-50%, -50%);
   cursor: pointer;
   transition: all 0.3s ease;
-
-  /* Animate gradient + glow */
-  animation: gradientMove 6s ease infinite, msGlow 2.5s ease-in-out infinite alternate;
+  animation: gradientMove 6s ease infinite;
   user-select: none;
 
   &:hover {
-    box-shadow: 0 0 15px rgba(255, 182, 193, 0.6), 0 0 30px rgba(181, 255, 252, 0.5);
     transform: translate(-50%, -50%) scale(1.05);
   }
 }
 
-/* Moving gradient background */
+/* --- Start overlay --- */
+.ms-start-overlay {
+  .ms-overlay-base();
+  background: linear-gradient(135deg, #ffdee9, #b5fffc, #ffd6a5, #caffbf);
+}
+
+/* --- Win overlay --- */
+.ms-win-overlay {
+  .ms-overlay-base();
+  color: #222;
+  background: linear-gradient(135deg, #c6ffdd, #fbd786, #f7797d);
+  animation: gradientMove 5s ease infinite, winPulse 2s ease-in-out infinite;
+}
+
+/* --- Lose overlay --- */
+.ms-lose-overlay {
+  .ms-overlay-base();
+  color: #fff;
+  background: linear-gradient(135deg, #ff9a9e, #fad0c4, #ffdde1);
+  animation: gradientMove 5s ease infinite, losePulse 2s ease-in-out infinite;
+}
+
+/* --- Moving gradient background --- */
 @keyframes gradientMove {
   0% {
     background-position: 0% 50%;
@@ -152,13 +171,23 @@
   }
 }
 
-/* Glow animation */
-@keyframes msGlow {
-  from {
-    box-shadow: 0 0 10px rgba(255, 182, 193, 0.3), 0 0 20px rgba(181, 255, 252, 0.2);
+/* --- Subtle glow for WIN --- */
+@keyframes winPulse {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 223, 0, 0.5);
   }
-  to {
-    box-shadow: 0 0 25px rgba(255, 182, 193, 0.6), 0 0 45px rgba(181, 255, 252, 0.5);
+  100% {
+    box-shadow: 0 0 30px rgba(255, 223, 0, 0.8);
+  }
+}
+
+/* --- Subtle glow for LOSE --- */
+@keyframes losePulse {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 25px rgba(255, 0, 0, 0.8);
   }
 }
 

@@ -584,12 +584,25 @@ const MinesweeperPage: React.FC = () => {
           </div>
         </div>
 
-        {/* --- Centered "CLICK TO START" Overlay --- */}
+        {/* --- Overlays --- */}
         {!started && !gameOver && (
           <div className="ms-start-overlay" onClick={startGame}>
             CLICK TO START
           </div>
         )}
+
+        {gameOver && won && (
+          <div className="ms-win-overlay" onClick={startGame}>
+            🎉 YOU WIN 🎉
+          </div>
+        )}
+
+        {gameOver && !won && (
+          <div className="ms-lose-overlay" onClick={startGame}>
+            💥 YOU LOSE 💥
+          </div>
+        )}
+
         {/* ----- Tips Section ----- */}
         {showTips && (
           <div className="ms-tips">
