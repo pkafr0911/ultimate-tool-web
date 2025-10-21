@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Button, Space, Typography, message, Segmented } from 'antd';
+import { useDarkMode } from '@/hooks/useDarkMode';
 import {
   CopyOutlined,
   DownloadOutlined,
-  FileMarkdownOutlined,
   EditOutlined,
+  FileMarkdownOutlined,
 } from '@ant-design/icons';
-import ReactQuill from 'react-quill';
 import Editor from '@monaco-editor/react';
-import TurndownService from 'turndown';
+import { Button, Card, message, Segmented, Space, Typography } from 'antd';
 import MarkdownIt from 'markdown-it';
+import React, { useEffect, useState } from 'react';
+import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import TurndownService from 'turndown';
 import './styles.less';
 
 const { Title } = Typography;
@@ -28,6 +29,7 @@ const mdParser = new MarkdownIt({
 });
 
 const ReadmeEditorPage: React.FC = () => {
+  const { darkMode } = useDarkMode();
   const [mode, setMode] = useState<'rich' | 'markdown'>('rich');
   const [htmlContent, setHtmlContent] = useState<string>(
     '<h2>Welcome to README Editor</h2><p>Start typing here...</p>',
@@ -98,6 +100,7 @@ const ReadmeEditorPage: React.FC = () => {
               language="markdown"
               value={markdownContent}
               onChange={(val) => setMarkdownContent(val || '')}
+              theme={darkMode ? 'vs-dark' : 'light'}
               options={{
                 minimap: { enabled: false },
                 automaticLayout: true,

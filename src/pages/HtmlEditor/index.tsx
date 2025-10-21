@@ -1,20 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Button, Space, Typography, message, Segmented } from 'antd';
+import { useDarkMode } from '@/hooks/useDarkMode';
 import {
+  CodeOutlined,
   CopyOutlined,
   DownloadOutlined,
-  CodeOutlined,
   EditOutlined,
   FormatPainterOutlined,
 } from '@ant-design/icons';
-import ReactQuill from 'react-quill';
 import Editor from '@monaco-editor/react';
+import { Button, Card, message, Segmented, Space, Typography } from 'antd';
+import React, { useEffect, useState } from 'react';
+import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import './styles.less';
 
 const { Title } = Typography;
 
 const HtmlEditorPage: React.FC = () => {
+  const { darkMode } = useDarkMode();
   const [mode, setMode] = useState<'rich' | 'html'>('html');
   const [htmlContent, setHtmlContent] = useState<string>(
     '<h2>Welcome to HTML Editor</h2><p>Edit your content here...</p>',
@@ -152,6 +154,7 @@ const HtmlEditorPage: React.FC = () => {
               language="html"
               value={htmlContent}
               onChange={(val) => setHtmlContent(val || '')}
+              theme={darkMode ? 'vs-dark' : 'light'}
               options={{
                 minimap: { enabled: false },
                 automaticLayout: true,

@@ -1,3 +1,4 @@
+import { useDarkMode } from '@/hooks/useDarkMode';
 import {
   CodeOutlined,
   CopyOutlined,
@@ -16,6 +17,7 @@ import './styles.less';
 const { Title } = Typography;
 
 const PlaygroundPage: React.FC = () => {
+  const { darkMode } = useDarkMode();
   const [mode, setMode] = useState<'html' | 'playground'>('html');
 
   // --- HTML / CSS / JS Playground ---
@@ -289,7 +291,7 @@ const PlaygroundPage: React.FC = () => {
             language={language}
             value={code}
             onChange={(val) => setCode(val || '')}
-            theme="vs-light"
+            theme={darkMode ? 'vs-dark' : 'light'}
             options={{
               minimap: { enabled: false },
               fontSize: 14,

@@ -1,4 +1,5 @@
 import { handleCopy } from '@/helpers'; // Import custom copy helper
+import { useDarkMode } from '@/hooks/useDarkMode';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import {
   CompressOutlined,
@@ -34,6 +35,7 @@ const { Text } = Typography; // Destructure Text component from Typography
 
 const SVGViewer: React.FC = () => {
   // --- State variables ---
+  const { darkMode } = useDarkMode();
   const [svgCode, setSvgCode] = useState<string>(''); // Store the raw SVG code
   const [preview, setPreview] = useState<string>(''); // Store SVG preview HTML
   const [pngPreview, setPngPreview] = useState<string>('');
@@ -415,8 +417,15 @@ const SVGViewer: React.FC = () => {
                       setPreview(code);
                       extractSize(code);
                     }}
-                    theme="vs-light"
-                    options={{ minimap: { enabled: false }, wordWrap: 'on', fontSize: 14 }}
+                    theme={darkMode ? 'vs-dark' : 'light'}
+                    options={{
+                      minimap: { enabled: false },
+                      wordWrap: 'on',
+                      fontSize: 14,
+                      lineNumbersMinChars: 2, // default is 5, so this shrinks the margin
+                      lineDecorationsWidth: 0, // (optional) removes extra padding
+                      lineNumbers: 'on',
+                    }}
                   />
                 </div>
 

@@ -1,23 +1,25 @@
-import React, { useState } from 'react';
-import { Card, Button, Space, Typography, message, Tag, Segmented, Input } from 'antd';
+import { useDarkMode } from '@/hooks/useDarkMode';
 import {
+  CheckCircleOutlined,
+  ClearOutlined,
+  CloseCircleOutlined,
+  CompressOutlined,
   CopyOutlined,
   DownloadOutlined,
-  CompressOutlined,
-  FormatPainterOutlined,
-  ClearOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  SortAscendingOutlined,
   FileSearchOutlined,
+  FormatPainterOutlined,
+  SortAscendingOutlined,
   SwapOutlined,
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
+import { Button, Card, Input, message, Segmented, Space, Tag, Typography } from 'antd';
+import React, { useState } from 'react';
 import './styles.less';
 
 const { Title, Text } = Typography;
 
 const JsonFormatterPage: React.FC = () => {
+  const { darkMode } = useDarkMode();
   const [mode, setMode] = useState<'formatter' | 'converter'>('formatter');
 
   // --- Shared States ---
@@ -100,13 +102,10 @@ const JsonFormatterPage: React.FC = () => {
         if (obj && typeof obj === 'object') {
           return Object.keys(obj)
             .sort()
-            .reduce(
-              (acc, key) => {
-                acc[key] = sortObj(obj[key]);
-                return acc;
-              },
-              {} as Record<string, any>,
-            );
+            .reduce((acc, key) => {
+              acc[key] = sortObj(obj[key]);
+              return acc;
+            }, {} as Record<string, any>);
         }
         return obj;
       };
@@ -217,6 +216,7 @@ const JsonFormatterPage: React.FC = () => {
               language="json"
               value={input}
               onChange={(val) => setInput(val || '')}
+              theme={darkMode ? 'vs-dark' : 'light'}
               options={{
                 minimap: { enabled: false },
                 automaticLayout: true,

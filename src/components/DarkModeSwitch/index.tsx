@@ -1,37 +1,11 @@
+import { useDarkMode } from '@/hooks/useDarkMode';
 import { MoonOutlined, SunOutlined } from '@ant-design/icons';
 import { Switch, Tooltip } from 'antd';
-import { disable, enable, setFetchMethod } from 'darkreader';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import './styles.less';
 
-// DarkReader needs fetch for CSS
-setFetchMethod(window.fetch);
-
 const DarkModeSwitch: React.FC = () => {
-  const [darkMode, setDarkMode] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('dark-mode') === 'true';
-    setDarkMode(saved);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('dark-mode', String(darkMode));
-    if (darkMode) enable({ brightness: 100, contrast: 90, sepia: 10 });
-    else disable();
-  }, [darkMode]);
-
-  useEffect(() => {
-    if (darkMode) {
-      enable({
-        brightness: 150,
-        contrast: 90,
-        sepia: 10,
-      });
-    } else {
-      disable();
-    }
-  }, [darkMode]);
+  const { darkMode, setDarkMode } = useDarkMode();
 
   return (
     <Tooltip title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
