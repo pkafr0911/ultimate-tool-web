@@ -1,5 +1,8 @@
 // --- Import React, Ant Design components, and icons ---
-import { Button, Card, Col, Radio, Row, Select, Space, Typography, message } from 'antd';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { useIsTouchDevice } from '@/hooks/useIsTouchDevice';
+import { SettingOutlined } from '@ant-design/icons';
+import { Button, Card, Col, Flex, Radio, Row, Select, Space, Typography, message } from 'antd';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Confetti from 'react-confetti';
 import SetupModal from './components/SetupModal';
@@ -55,28 +58,16 @@ const MinesweeperPage: React.FC = () => {
   const [won, setWon] = useState<boolean>(false);
   const [flagsLeft, setFlagsLeft] = useState<number>(0);
   const [timeSec, setTimeSec] = useState<number>(0);
+  const [isSetupOpen, setIsSetupOpen] = useState(true);
 
   // Refs for timer and first-click detection
   const timerRef = useRef<number | null>(null);
   const firstClickRef = useRef<boolean>(true);
 
-  // Check in using Mobile
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile(); // Check in using Mobile
+  const isTouch = useIsTouchDevice(); //check  is using touch screen (mobile or tablet)
 
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Trigger open setting
-  const [isSetupOpen, setIsSetupOpen] = useState(true);
-  useEffect(() => {
-    if (!started || gameOver || won) {
-      setIsSetupOpen(true);
-    }
-  }, [gameOver, won, started]);
+  const CELL_GAP = useMemo(() => (isMobile ? 4 : 6), [isMobile]);
 
   // ========================================================
   // 📱 Responsive cell size calculation
@@ -90,10 +81,22 @@ const MinesweeperPage: React.FC = () => {
     } else {
       if (cols <= 9) return 40;
       if (cols <= 16) return 32;
-      if (cols <= 24) return 24;
-      return 18;
+      if (cols <= 24) return 28;
+      return 22;
     }
   }, [cols, isMobile]);
+
+  // ========================================================
+  // 📱 Board justify content  calculation
+  // ========================================================
+
+  const boardJustifyContent = useMemo(() => {
+    const innerWidth = window.innerWidth;
+    const allPadding = 40 + 16 + 24;
+    const boardSize = (cellSize + CELL_GAP * 2) * cols;
+    const cardSize = isMobile ? innerWidth : innerWidth - allPadding * 2;
+    return boardSize > cardSize ? 'flex-start' : 'center';
+  }, [cellSize, cols, isMobile]);
 
   // ========================================================
   // 🧭 Sync preset difficulty values
@@ -410,7 +413,6 @@ const MinesweeperPage: React.FC = () => {
     setFlagsLeft(0);
     setTimeSec(0);
     firstClickRef.current = true;
-    message.info('Game reset. Choose settings and start.');
   };
 
   // Clear timer on unmount
@@ -468,17 +470,46 @@ const MinesweeperPage: React.FC = () => {
   return (
     <div className="ms-page">
       {won && <Confetti />}
-      <Card className="ms-card" bordered={false}>
-        <Title level={3}>💣 Minesweeper</Title>
+      <Card className="ms-card" variant={'borderless'}>
+        <Space>
+          <Title level={3}>💣 Minesweeper </Title>
+        </Space>
+
+        <Flex
+          justify="center"
+          align="center"
+          style={{
+            gap: 8,
+            marginTop: 16,
+          }}
+        >
+          {!started && (
+            <Button style={{ width: '100%' }} type="primary" onClick={startGame}>
+              Start
+            </Button>
+          )}
+          {started && (
+            <Button
+              style={{ width: '100%' }}
+              danger
+              onClick={() => {
+                resetAll();
+                message.info('Game reset. Choose settings and start.');
+              }}
+            >
+              Reset
+            </Button>
+          )}
+          <Button onClick={() => setIsSetupOpen(true)} type="dashed" icon={<SettingOutlined />} />
+        </Flex>
 
         {/* ----- Settings Controls ----- */}
         <Row gutter={[12, 12]} align="middle">
           <Col xs={24} sm={12} md={10} lg={8}>
+            {/* Buttons */}
+
             <Space direction="vertical" size="small" style={{ width: '100%' }}>
-              <Button onClick={resetAll} danger>
-                New Setup
-              </Button>
-              {isMobile && (
+              {isTouch && (
                 <>
                   {' '}
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -518,12 +549,18 @@ const MinesweeperPage: React.FC = () => {
         </Row>
 
         {/* ----- Game Board ----- */}
-        <div className="ms-board-wrap">
+        <div
+          className="ms-board-wrap"
+          style={{
+            justifyContent: boardJustifyContent,
+          }}
+        >
           <div
             className="ms-board"
             style={{
               gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
-              gap: 6,
+              gap: CELL_GAP,
+              position: 'relative',
             }}
           >
             {board.length > 0
@@ -541,11 +578,18 @@ const MinesweeperPage: React.FC = () => {
                       fontSize: Math.floor(cellSize * 0.55),
                       background: '#fafafa',
                     }}
+                    onClick={startGame}
                   />
                 ))}
           </div>
         </div>
 
+        {/* --- Centered "CLICK TO START" Overlay --- */}
+        {!started && !gameOver && (
+          <div className="ms-start-overlay" onClick={startGame}>
+            CLICK TO START
+          </div>
+        )}
         {/* ----- Tips Section ----- */}
         {showTips && (
           <div className="ms-tips">
@@ -576,6 +620,7 @@ const MinesweeperPage: React.FC = () => {
         setMines={setMines}
         showTips={showTips}
         setShowTips={setShowTips}
+        started={started || gameOver || won}
         startGame={startGame}
         resetAll={resetAll}
       />

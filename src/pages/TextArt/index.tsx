@@ -273,8 +273,8 @@ const TextArtPage: React.FC = () => {
           {/* Settings: width and charset */}
           <Space wrap>
             <InputNumber
-              min={40}
-              max={500}
+              min={10}
+              max={1000}
               value={width}
               onChange={(v) => setWidth(v || 100)}
               addonBefore="Width"

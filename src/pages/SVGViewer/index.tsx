@@ -1,4 +1,5 @@
 import { handleCopy } from '@/helpers'; // Import custom copy helper
+import { useIsMobile } from '@/hooks/useIsMobile';
 import {
   CompressOutlined,
   CopyOutlined,
@@ -25,7 +26,7 @@ import {
   Typography,
   Upload,
 } from 'antd'; // Import Ant Design components
-import React, { useEffect, useRef, useState } from 'react'; // Import React and useState hook
+import React, { useRef, useState } from 'react'; // Import React and useState hook
 import { optimize } from 'svgo'; // Import SVG optimizer
 import styles from './styles.less'; // Import CSS module
 
@@ -52,14 +53,8 @@ const SVGViewer: React.FC = () => {
   const handleResetZoom = () => setZoom(1);
 
   // Check in using Mobile
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  // Check in using Mobile
+  const isMobile = useIsMobile();
 
   const dragCounter = useRef(0);
   // place this near the top of your component, under useState declarations:

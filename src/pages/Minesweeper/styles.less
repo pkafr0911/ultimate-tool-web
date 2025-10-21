@@ -17,7 +17,7 @@
 /* --- Game board --- */
 .ms-board-wrap {
   display: flex;
-  justify-content: center;
+  // justify-content: center;
   margin-top: 20px;
   overflow-x: auto;
 }
@@ -111,6 +111,56 @@
     margin-bottom: 6px;
   }
 }
+/* --- Start overlay --- */
+.ms-start-overlay {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  padding: 10px 20px;
+  color: #333;
+  font-weight: 700;
+  font-size: 20px;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+  background: linear-gradient(135deg, #ffdee9, #b5fffc, #ffd6a5, #caffbf);
+  background-size: 300% 300%; /* allow gradient to move */
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(255, 182, 193, 0.4), 0 0 20px rgba(181, 255, 252, 0.3);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  /* Animate gradient + glow */
+  animation: gradientMove 6s ease infinite, msGlow 2.5s ease-in-out infinite alternate;
+  user-select: none;
+
+  &:hover {
+    box-shadow: 0 0 15px rgba(255, 182, 193, 0.6), 0 0 30px rgba(181, 255, 252, 0.5);
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+
+/* Moving gradient background */
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Glow animation */
+@keyframes msGlow {
+  from {
+    box-shadow: 0 0 10px rgba(255, 182, 193, 0.3), 0 0 20px rgba(181, 255, 252, 0.2);
+  }
+  to {
+    box-shadow: 0 0 25px rgba(255, 182, 193, 0.6), 0 0 45px rgba(181, 255, 252, 0.5);
+  }
+}
 
 /* --- Responsive --- */
 @media (max-width: 768px) {
@@ -125,7 +175,7 @@
   }
 
   .ms-board-wrap {
-    justify-content: flex-start; /* align board to left for full scrollability */
+    // justify-content: flex-start; /* align board to left for full scrollability */
   }
 
   .ms-board {

@@ -1,3 +1,4 @@
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { Button, Card, InputNumber, Space, Switch, Typography, message } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import Confetti from 'react-confetti';
@@ -32,14 +33,8 @@ const SnakeXenziaPage: React.FC = () => {
   const touchEndY = useRef<number>(0);
 
   // Check in using Mobile
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  // Check in using Mobile
+  const isMobile = useIsMobile();
 
   // --- Generate a random food position within grid ---
   const randomFood = (): Cell => ({
