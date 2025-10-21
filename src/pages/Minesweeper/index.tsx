@@ -592,13 +592,13 @@ const MinesweeperPage: React.FC = () => {
         )}
 
         {gameOver && won && (
-          <div className="ms-win-overlay" onClick={startGame}>
+          <div className="ms-win-overlay" onClick={resetAll}>
             🎉 YOU WIN 🎉
           </div>
         )}
 
         {gameOver && !won && (
-          <div className="ms-lose-overlay" onClick={startGame}>
+          <div className="ms-lose-overlay" onClick={resetAll}>
             💥 YOU LOSE 💥
           </div>
         )}
