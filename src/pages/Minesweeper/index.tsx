@@ -1,5 +1,5 @@
 // --- Import React, Ant Design components, and icons ---
-import { FlagOutlined, ReloadOutlined } from '@ant-design/icons';
+import { ReloadOutlined } from '@ant-design/icons';
 import {
   Button,
   Card,
@@ -416,7 +416,7 @@ const MinesweeperPage: React.FC = () => {
             ''
           )
         ) : cell.flagged ? (
-          <FlagOutlined />
+          '🚩'
         ) : (
           ''
         )}
