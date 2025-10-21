@@ -1,19 +1,8 @@
 // --- Import React, Ant Design components, and icons ---
-import { ReloadOutlined } from '@ant-design/icons';
-import {
-  Button,
-  Card,
-  Col,
-  InputNumber,
-  Row,
-  Select,
-  Space,
-  Switch,
-  Typography,
-  message,
-} from 'antd';
+import { Button, Card, Col, Radio, Row, Select, Space, Typography, message } from 'antd';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Confetti from 'react-confetti';
+import SetupModal from './components/SetupModal';
 import './styles.less'; // custom stylesheet for Minesweeper
 
 const { Title, Text } = Typography;
@@ -80,6 +69,14 @@ const MinesweeperPage: React.FC = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Trigger open setting
+  const [isSetupOpen, setIsSetupOpen] = useState(true);
+  useEffect(() => {
+    if (!started || gameOver || won) {
+      setIsSetupOpen(true);
+    }
+  }, [gameOver, won, started]);
 
   // ========================================================
   // 📱 Responsive cell size calculation
@@ -478,76 +475,26 @@ const MinesweeperPage: React.FC = () => {
         <Row gutter={[12, 12]} align="middle">
           <Col xs={24} sm={12} md={10} lg={8}>
             <Space direction="vertical" size="small" style={{ width: '100%' }}>
-              {/* Difficulty + buttons */}
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                <Text strong>Difficulty:</Text>
-                <Select
-                  value={difficulty}
-                  onChange={(v: Difficulty) => setDifficulty(v)}
-                  style={{ minWidth: 160 }}
-                >
-                  <Option value="beginner">Beginner (9×9, 10 mines)</Option>
-                  <Option value="intermediate">Intermediate (16×16, 40 mines)</Option>
-                  <Option value="advanced">Advanced (16×30, 99 mines)</Option>
-                  <Option value="custom">Custom</Option>
-                </Select>
-
-                <Button icon={<ReloadOutlined />} onClick={startGame} type="primary">
-                  Start / Restart
-                </Button>
-                <Button onClick={resetAll} danger>
-                  New Setup
-                </Button>
-              </div>
-
-              {/* Custom input fields */}
-              {difficulty === 'custom' ? (
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <Text>Rows:</Text>
-                  <InputNumber
-                    min={9}
-                    max={30}
-                    value={rows}
-                    onChange={(v) => setRows(v || 9)}
-                    disabled={difficulty !== 'custom'}
-                  />
-                  <Text>Cols:</Text>
-                  <InputNumber
-                    min={9}
-                    max={30}
-                    value={cols}
-                    onChange={(v) => setCols(v || 9)}
-                    disabled={difficulty !== 'custom'}
-                  />
-                  <Text>Mines:</Text>
-                  <InputNumber
-                    min={10}
-                    max={Math.max(10, Math.min(668, rows * cols - 1))}
-                    value={mines}
-                    onChange={(v) => setMines(v || 10)}
-                    disabled={difficulty !== 'custom'}
-                  />
-                </div>
-              ) : null}
-
-              {/* Toggles */}
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <Text>Show Tips:</Text>
-                <Switch checked={showTips} onChange={setShowTips} />
-              </div>
-
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <Text>Tap Mode:</Text>
-                <Select
-                  value={tapMode}
-                  onChange={(v) => setTapMode(v)}
-                  style={{ width: 140 }}
-                  options={[
-                    { label: '💣 Reveal (default)', value: 'reveal' },
-                    { label: '🚩 Flag', value: 'flag' },
-                  ]}
-                />
-              </div>
+              <Button onClick={resetAll} danger>
+                New Setup
+              </Button>
+              {isMobile && (
+                <>
+                  {' '}
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <Text>Tap Mode:</Text>
+                    <Radio.Group
+                      value={tapMode}
+                      onChange={(e) => setTapMode(e.target.value)}
+                      optionType="button"
+                      buttonStyle="solid"
+                    >
+                      <Radio.Button value="reveal">💣 Reveal</Radio.Button>
+                      <Radio.Button value="flag">🚩 Flag</Radio.Button>
+                    </Radio.Group>
+                  </div>
+                </>
+              )}
             </Space>
           </Col>
 
@@ -616,6 +563,22 @@ const MinesweeperPage: React.FC = () => {
           <Text type="secondary">Made with ❤️ — responsive and mobile friendly.</Text>
         </div>
       </Card>
+      <SetupModal
+        visible={isSetupOpen}
+        onClose={() => setIsSetupOpen(false)}
+        difficulty={difficulty}
+        setDifficulty={setDifficulty}
+        rows={rows}
+        setRows={setRows}
+        cols={cols}
+        setCols={setCols}
+        mines={mines}
+        setMines={setMines}
+        showTips={showTips}
+        setShowTips={setShowTips}
+        startGame={startGame}
+        resetAll={resetAll}
+      />
     </div>
   );
 };
