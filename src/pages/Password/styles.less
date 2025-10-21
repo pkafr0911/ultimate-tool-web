@@ -1,0 +1,103 @@
+.password-card {
+  margin: 40px auto;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+
+  .ant-card-head {
+    text-align: center;
+
+    .ant-card-head-title {
+      font-weight: 600;
+      font-size: 20px;
+    }
+  }
+
+  .ant-space {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ant-input-number,
+  .ant-input {
+    width: 100%;
+  }
+
+  .ant-checkbox-wrapper {
+    font-size: 15px;
+  }
+
+  .ant-btn-primary {
+    height: 38px;
+    margin-top: 8px;
+    font-weight: 500;
+    border-radius: 8px;
+  }
+
+  .ant-typography-copy {
+    margin-top: 8px;
+    color: #1890ff;
+    font-weight: 500;
+    text-align: center;
+  }
+
+  // Description text
+  .ant-typography-secondary {
+    font-size: 14px;
+    text-align: center;
+  }
+}
+.password-output {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+
+  .password-label {
+    color: #555;
+    font-size: 15px;
+  }
+
+  .password-display {
+    padding: 8px 12px;
+    font-size: 15px;
+    font-family: 'Fira Code', monospace;
+    letter-spacing: 0.5px;
+    background-color: #fff;
+    border-radius: 6px;
+    transition: border-color 0.2s ease;
+
+    &:hover {
+      border-color: #40a9ff;
+    }
+  }
+
+  .password-copy {
+    color: #1677ff;
+    font-size: 14px;
+    font-family: 'Fira Code', monospace;
+    text-align: center;
+    cursor: pointer;
+  }
+}
+
+// --- Responsive ---
+@media (max-width: 576px) {
+  .password-card {
+    margin: 20px;
+    padding: 12px;
+
+    .ant-card-head-title {
+      font-size: 18px;
+    }
+
+    .ant-checkbox-wrapper {
+      font-size: 14px;
+    }
+  }
+}

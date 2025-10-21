@@ -5,7 +5,7 @@ import { commonPatterns } from './constants';
 import './styles.less';
 
 const { TextArea, Search } = Input;
-const { Paragraph } = Typography;
+const { Paragraph, Text, Title } = Typography;
 
 const explainRegex = (pattern: string): string[] => {
   const explanations: string[] = [];
@@ -140,6 +140,12 @@ const RegexTester: React.FC = () => {
 
   return (
     <Card className="regex-card-light" title="🧩 Regex Tester" variant={'borderless'}>
+      {/* Page Description */}
+      <Paragraph type="secondary" className="regex-description">
+        This tool helps you{' '}
+        <Text strong>test, debug, and understand Regular Expressions (Regex)</Text> in real time.
+        Enter a regex pattern and text — matches will be highlighted instantly.
+      </Paragraph>
       <div className="regex-header">
         <Input
           className="regex-input-light"
@@ -225,6 +231,28 @@ const RegexTester: React.FC = () => {
             ))}
             {filteredPatterns.length === 0 && <Paragraph>No matching patterns found.</Paragraph>}
           </Space>
+        </div>
+        {/* --- User Guide Section --- */}
+        <div className="regex-guide">
+          <Title level={5}>📘 How to Use</Title>
+          <Paragraph>
+            <Text strong>1.</Text> Enter your <Text code>Regex Pattern</Text> and optional{' '}
+            <Text code>Flags</Text>.<br />
+            <Text strong>2.</Text> Type your sample text in the <Text code>Text</Text> tab.
+            <br />
+            <Text strong>3.</Text> Matches will be <mark>highlighted</mark> instantly.
+            <br />
+            <Text strong>4.</Text> Switch to the <Text code>Explanation</Text> tab to see a
+            breakdown of each token.
+            <br />
+            <Text strong>5.</Text> Explore and copy from <Text code>Common Patterns</Text> for quick
+            use.
+            <br />
+            <Text type="secondary">
+              💡 Tip: Use flags like <Text code>g</Text> (global) or <Text code>i</Text> (ignore
+              case) to modify behavior.
+            </Text>
+          </Paragraph>
         </div>
       </div>
     </Card>

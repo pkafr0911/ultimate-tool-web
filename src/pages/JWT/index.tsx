@@ -1,10 +1,10 @@
-import { PageContainer } from '@ant-design/pro-components';
 import { Button, Card, Input, Space, Typography, message } from 'antd';
 import { SignJWT, jwtVerify } from 'jose';
 import React, { useState } from 'react';
+import './styles.less';
 
 const { TextArea } = Input;
-const { Title } = Typography;
+const { Title, Paragraph, Text } = Typography;
 
 const JWTTool: React.FC = () => {
   const [secret, setSecret] = useState('');
@@ -19,9 +19,7 @@ const JWTTool: React.FC = () => {
       return JSON.parse(trimmed);
     } catch {
       try {
-        let fixed = trimmed
-          .replace(/'/g, '"') // replace single quotes
-          .replace(/([a-zA-Z0-9_]+):/g, '"$1":'); // add quotes to keys
+        const fixed = trimmed.replace(/'/g, '"').replace(/([a-zA-Z0-9_]+):/g, '"$1":');
         return JSON.parse(fixed);
       } catch {
         throw new Error('Invalid JSON payload format.');
@@ -43,7 +41,6 @@ const JWTTool: React.FC = () => {
       setToken(jwt);
       message.success('JWT token created successfully!');
     } catch (err: any) {
-      console.error(err);
       message.error(err.message || 'Error creating JWT.');
     }
   };
@@ -70,57 +67,74 @@ const JWTTool: React.FC = () => {
   };
 
   return (
-    <PageContainer>
-      <Card title="🔐 JWT Encrypt / Decrypt Tool" variant={'borderless'}>
-        <Space direction="vertical" style={{ width: '100%' }} size="large">
-          <Input.Password
-            placeholder="Enter Secret Key"
-            value={secret}
-            onChange={(e) => setSecret(e.target.value)}
-          />
+    <Card title="🔐 JWT Encrypt / Decrypt Tool" className="jwt-card" variant="borderless">
+      <Space direction="vertical" style={{ width: '100%' }} size="large">
+        {/* --- Secret Key Input --- */}
+        <Input.Password
+          placeholder="Enter Secret Key"
+          value={secret}
+          onChange={(e) => setSecret(e.target.value)}
+        />
 
-          <TextArea
-            rows={4}
-            placeholder="Enter Payload JSON (e.g. { 'user': 'admin' })"
-            value={payload}
-            onChange={(e) => setPayload(e.target.value)}
-          />
+        {/* --- Payload Input --- */}
+        <TextArea
+          rows={4}
+          placeholder="Enter Payload JSON (e.g. { 'user': 'admin' })"
+          value={payload}
+          onChange={(e) => setPayload(e.target.value)}
+        />
 
-          <Space>
-            <Button type="primary" onClick={handleEncrypt}>
-              Encrypt (Sign JWT)
-            </Button>
-            <Button onClick={handlePrettify}>Prettify JSON</Button>
-          </Space>
-
-          <TextArea
-            rows={4}
-            placeholder="Generated or Existing JWT Token"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-          />
-
-          <Button onClick={handleDecrypt}>Decrypt (Verify JWT)</Button>
-
-          {decoded && (
-            <>
-              <Title level={5}>Decoded Payload:</Title>
-              <pre
-                style={{
-                  background: '#f7f7f7',
-                  padding: 12,
-                  borderRadius: 6,
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {decoded}
-              </pre>
-            </>
-          )}
+        {/* --- Action Buttons --- */}
+        <Space wrap>
+          <Button type="primary" onClick={handleEncrypt}>
+            Encrypt (Sign JWT)
+          </Button>
+          <Button onClick={handlePrettify}>Prettify JSON</Button>
         </Space>
-      </Card>
-    </PageContainer>
+
+        {/* --- Token Field --- */}
+        <TextArea
+          rows={4}
+          placeholder="Generated or Existing JWT Token"
+          value={token}
+          onChange={(e) => setToken(e.target.value)}
+        />
+
+        <Button onClick={handleDecrypt}>Decrypt (Verify JWT)</Button>
+
+        {/* --- Output Section --- */}
+        {decoded && (
+          <div className="jwt-output">
+            <Title level={5}>Decoded Payload:</Title>
+            <pre className="jwt-pre">{decoded}</pre>
+          </div>
+        )}
+      </Space>
+
+      {/* --- Guide Section --- */}
+      <div className="jwt-guide">
+        <Title level={4}>📘 How to Use This Tool</Title>
+        <Paragraph>
+          This page helps you <Text strong>create</Text> and <Text strong>verify</Text> JSON Web
+          Tokens (JWTs) using a secret key.
+        </Paragraph>
+        <ul>
+          <li>Enter a secret key for signing and verifying tokens.</li>
+          <li>
+            Provide your payload data in JSON format (e.g. <code>{`{ "user": "admin" }`}</code>).
+          </li>
+          <li>
+            Click <Text strong>Encrypt</Text> to generate a JWT.
+          </li>
+          <li>
+            Paste any JWT token and click <Text strong>Decrypt</Text> to verify and decode it.
+          </li>
+        </ul>
+        <Paragraph type="secondary">
+          ⚠️ Always keep your secret key private — anyone with it can generate valid tokens.
+        </Paragraph>
+      </div>
+    </Card>
   );
 };
 

@@ -60,6 +60,12 @@ const QRPage: React.FC = () => {
 
   return (
     <Card title="QR Generator" className="qr-card">
+      {/* Page Description */}
+      <Paragraph type="secondary" className="qr-description">
+        This page allows you to <Text strong>generate and download custom QR codes</Text> for any
+        text, link, or content. Adjust size, choose format (PNG/SVG), and download instantly.
+      </Paragraph>
+
       <Space direction="vertical" className="qr-container" size="middle">
         {/* Text Input */}
         <Input placeholder="Text or URL" value={text} onChange={(e) => setText(e.target.value)} />
@@ -97,19 +103,17 @@ const QRPage: React.FC = () => {
 
         {/* --- User Guide Section --- */}
         <div className="qr-guide">
-          <Title level={5}>How to Use</Title>
+          <Title level={5}>📘 How to Use</Title>
           <Paragraph>
-            <Text strong>1.</Text> Enter any text, URL, or content you want to encode in the input
-            box.
+            <Text strong>1.</Text> Enter the text, URL, or data to encode.
             <br />
-            <Text strong>2.</Text> Adjust the <Text code>Size</Text> using the slider or number box.
+            <Text strong>2.</Text> Adjust <Text code>Size</Text> with the slider or number input.
             <br />
-            <Text strong>3.</Text> Choose your preferred <Text code>Format</Text> — PNG or SVG.
+            <Text strong>3.</Text> Choose a <Text code>Format</Text> (PNG for web, SVG for print).
             <br />
-            <Text strong>4.</Text> Click <Text code>Download</Text> to save the QR code to your
-            device.
+            <Text strong>4.</Text> Click <Text code>Download</Text> to save your QR code.
             <br />
-            <Text type="secondary">Tip: SVG is vector-based — perfect for print or scaling.</Text>
+            <Text type="secondary">💡 Tip: SVG is vector-based and stays sharp at any size.</Text>
           </Paragraph>
         </div>
       </Space>

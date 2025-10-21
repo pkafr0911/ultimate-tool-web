@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Card, ColorPicker, Divider, Typography, Input, Space, Radio, message, Button } from 'antd';
-import type { Color } from 'antd/es/color-picker';
-import { TinyColor } from '@ctrl/tinycolor';
 import { CopyOutlined } from '@ant-design/icons';
+import { TinyColor } from '@ctrl/tinycolor';
+import { Button, Card, ColorPicker, Divider, Input, Radio, Space, Typography, message } from 'antd';
+import type { Color } from 'antd/es/color-picker';
+import React, { useState } from 'react';
+import './styles.less';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -33,9 +34,9 @@ const ColorPickerPage: React.FC = () => {
   };
 
   return (
-    <Card title="Color Picker">
+    <Card title="🎨 Color Picker Tool" className="color-picker-card" variant="borderless">
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Title level={4}>Choose Mode</Title>
+        <Title level={4}>Select Mode</Title>
         <Radio.Group
           value={mode}
           onChange={(e) => setMode(e.target.value)}
@@ -51,10 +52,10 @@ const ColorPickerPage: React.FC = () => {
 
         {mode === 'single' ? (
           <>
-            <Title level={5}>Pick a color</Title>
+            <Title level={5}>Pick a Color</Title>
             <ColorPicker value={color1} onChange={setColor1} showText />
             <Divider />
-            <Paragraph>Color values:</Paragraph>
+            <Paragraph>Color Values:</Paragraph>
             <Space direction="vertical" style={{ width: '100%' }}>
               <Input addonBefore="HEX" value={hex1} readOnly />
               <Input addonBefore="RGB" value={rgb1} readOnly />
@@ -74,7 +75,7 @@ const ColorPickerPage: React.FC = () => {
           </>
         ) : (
           <>
-            <Title level={5}>Pick gradient colors</Title>
+            <Title level={5}>Pick Gradient Colors</Title>
             <Space>
               <ColorPicker value={color1} onChange={setColor1} showText />
               <ColorPicker value={color2} onChange={setColor2} showText />
@@ -82,7 +83,7 @@ const ColorPickerPage: React.FC = () => {
 
             <Divider />
 
-            <Paragraph>Gradient values:</Paragraph>
+            <Paragraph>Gradient Values:</Paragraph>
             <Space direction="vertical" style={{ width: '100%' }}>
               <Input addonBefore="From" value={hex1} readOnly />
               <Input addonBefore="To" value={hex2} readOnly />
@@ -105,6 +106,30 @@ const ColorPickerPage: React.FC = () => {
           </>
         )}
       </Space>
+
+      {/* --- Guide Section --- */}
+      <div className="color-picker-guide">
+        <Title level={4}>📘 How to Use This Tool</Title>
+        <Paragraph>
+          This page helps you <Text strong>pick colors</Text> and create{' '}
+          <Text strong>CSS gradients</Text> with real-time previews and code formats.
+        </Paragraph>
+        <ul>
+          <li>
+            Choose <Text strong>Single Color</Text> or <Text strong>Gradient</Text> mode.
+          </li>
+          <li>Select one or two colors using the color picker(s).</li>
+          <li>
+            View the color values in <Text code>HEX</Text>, <Text code>RGB</Text>, and
+            <Text code>HSL</Text> formats.
+          </li>
+          <li>Copy the color or gradient CSS code for use in your project.</li>
+          <li>Preview updates instantly as you change colors.</li>
+        </ul>
+        <Paragraph type="secondary">
+          💡 Great for designers and developers working with brand colors, gradients, and UI themes.
+        </Paragraph>
+      </div>
     </Card>
   );
 };

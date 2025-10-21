@@ -9,20 +9,36 @@
   margin-bottom: 12px;
 }
 
+.regex-description {
+  margin-bottom: 16px;
+  color: #666;
+  text-align: left;
+}
+
+.regex-guide {
+  margin-top: 16px;
+  padding: 16px;
+  text-align: left;
+  background: #f9f9ff;
+  border: 1px solid #e6f0ff;
+  border-top: 1px solid #f0f0f0;
+  border-radius: 12px;
+}
+
 .regex-textarea-wrapper {
   position: relative;
   width: 100%;
+  font-size: 14px;
   font-family: monospace;
   line-height: 1.5;
-  font-size: 14px;
 }
 
 /* Flags input */
 .regex-flags-light {
   width: 100px;
+  color: #333;
   text-align: center;
   background: #fff;
-  color: #333;
   border: 1px solid #ccc;
   border-radius: 6px;
 }
@@ -30,41 +46,41 @@
 /* Highlight layer under the TextArea */
 .regex-highlights {
   position: absolute;
-  inset: 0;
+  z-index: 0;
   padding: 8px 11px;
+  overflow: hidden;
   color: transparent;
   white-space: pre-wrap;
   word-wrap: break-word;
-  overflow: hidden;
-  pointer-events: none;
   border: 1px solid #ddd;
   border-radius: 6px;
-  z-index: 0;
+  pointer-events: none;
+  inset: 0;
 }
 
 /* Actual TextArea on top */
 .regex-textarea-overlay {
   position: relative;
-  background: transparent !important;
+  z-index: 1;
+  font-size: 14px;
   font-family: monospace;
   line-height: 1.5;
-  font-size: 14px;
+  background: transparent !important;
   border: 1px solid #ddd;
   border-radius: 6px;
-  z-index: 1;
 }
 
 /* Highlight mark styling */
 .regex-highlights mark {
-  background: #fff6a1;
-  color: transparent;
-  border-radius: 3px;
   padding: 0 1px;
+  color: transparent;
+  background: #fff6a1;
+  border-radius: 3px;
 }
 
 .regex-explanation {
-  background: #fafafa;
   padding: 8px 12px;
+  background: #fafafa;
   border-radius: 8px;
 }
 
@@ -78,8 +94,8 @@
   border-top: 1px solid #eee;
 
   h4 {
-    color: #333;
     margin-bottom: 8px;
+    color: #333;
     font-weight: 500;
   }
 
@@ -88,7 +104,7 @@
   }
 
   .ant-tag:hover {
-    background: #e6f4ff;
     color: #1677ff;
+    background: #e6f4ff;
   }
 }
