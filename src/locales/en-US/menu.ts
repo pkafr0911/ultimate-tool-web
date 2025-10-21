@@ -37,6 +37,7 @@ export default {
   'menu.game': 'Game',
   'menu.game.tic-tac-toe': 'Tic-Tac-Toe',
   'menu.game.snake-xenzia': 'Snake Xenzia',
+  'menu.game.minesweeper': 'Minesweeper',
 
   // Docs / Commands
   'menu.docs': 'Documentation',

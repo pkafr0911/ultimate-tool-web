@@ -124,6 +124,12 @@
         icon: '🐍',
         component: './SnakeXenzia',
       },
+      {
+        path: '/game/minesweeper',
+        name: 'minesweeper',
+        icon: '💣',
+        component: './Minesweeper',
+      },
     ],
   },
   {
