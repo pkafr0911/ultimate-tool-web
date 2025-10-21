@@ -74,10 +74,10 @@ const MinesweeperPage: React.FC = () => {
   // 📱 Responsive cell size calculation
   // ========================================================
   const cellSize = useMemo(() => {
-    if (cols <= 9) return 40;
-    if (cols <= 16) return 32;
-    if (cols <= 24) return 24;
-    return 18;
+    if (cols <= 9) return 32;
+    if (cols <= 16) return 24;
+    if (cols <= 24) return 18;
+    return 16;
   }, [cols]);
 
   // ========================================================
