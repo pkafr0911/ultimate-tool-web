@@ -70,15 +70,32 @@ const MinesweeperPage: React.FC = () => {
   const timerRef = useRef<number | null>(null);
   const firstClickRef = useRef<boolean>(true);
 
+  // Check in using Mobile
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // ========================================================
   // 📱 Responsive cell size calculation
   // ========================================================
   const cellSize = useMemo(() => {
-    if (cols <= 9) return 32;
-    if (cols <= 16) return 24;
-    if (cols <= 24) return 18;
-    return 16;
-  }, [cols]);
+    if (isMobile) {
+      if (cols <= 9) return 32;
+      if (cols <= 16) return 24;
+      if (cols <= 24) return 18;
+      return 16;
+    } else {
+      if (cols <= 9) return 40;
+      if (cols <= 16) return 32;
+      if (cols <= 24) return 24;
+      return 18;
+    }
+  }, [cols, isMobile]);
 
   // ========================================================
   // 🧭 Sync preset difficulty values

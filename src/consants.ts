@@ -158,7 +158,7 @@ export const pages = [
     name: 'Minesweeper',
     path: '/game/minesweeper',
     icon: '💣',
-    desc: 'Minesweeper is a logic puzzle video game genre generally played on personal computers. The game features a grid of clickable tiles, with hidden "mines" dispersed throughout the board.',
+    desc: 'Clear all tiles without triggering hidden mines.',
   },
 
   // Docs / Commands

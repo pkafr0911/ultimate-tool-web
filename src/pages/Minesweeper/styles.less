@@ -18,7 +18,6 @@
 .ms-board-wrap {
   display: flex;
   justify-content: center;
-  justify-content: flex-start; /* align board to left for full scrollability */
   margin-top: 20px;
   overflow-x: auto;
 }
@@ -123,6 +122,10 @@
     .ant-card-body {
       padding: 0px;
     }
+  }
+
+  .ms-board-wrap {
+    justify-content: flex-start; /* align board to left for full scrollability */
   }
 
   .ms-board {

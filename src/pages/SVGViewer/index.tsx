@@ -51,6 +51,7 @@ const SVGViewer: React.FC = () => {
   const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 0.2)); // down to 20%
   const handleResetZoom = () => setZoom(1);
 
+  // Check in using Mobile
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
