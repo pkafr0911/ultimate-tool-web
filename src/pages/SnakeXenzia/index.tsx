@@ -31,6 +31,16 @@ const SnakeXenziaPage: React.FC = () => {
   const touchEndX = useRef<number>(0);
   const touchEndY = useRef<number>(0);
 
+  // Check in using Mobile
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // --- Generate a random food position within grid ---
   const randomFood = (): Cell => ({
     x: Math.floor(Math.random() * gridSize),
@@ -167,7 +177,6 @@ const SnakeXenziaPage: React.FC = () => {
 
   // --- Disable scrolling and page swiping on mobile while playing ---
   useEffect(() => {
-    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
     const preventScroll = (e: TouchEvent) => e.preventDefault();
 
     if (isMobile && started && !gameOver) {
@@ -244,7 +253,12 @@ const SnakeXenziaPage: React.FC = () => {
 
   // --- UI Render Section ---
   return (
-    <div className="tic-container">
+    <div
+      className="tic-container"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* Show confetti when player loses */}
       {showConfetti && gameOver && <Confetti />}
 
@@ -306,14 +320,11 @@ const SnakeXenziaPage: React.FC = () => {
               className="snake-board"
               style={{
                 display: 'grid',
-                gridTemplateColumns: `repeat(${gridSize}, 20px)`,
+                gridTemplateColumns: `repeat(${gridSize}, ${isMobile ? '10px' : '20px'})`,
                 gap: 2,
                 marginTop: 20,
                 justifyContent: 'center',
               }}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
             >
               {/* Render grid cells */}
               {Array.from({ length: gridSize }).map((_, rowIdx) =>
@@ -327,8 +338,8 @@ const SnakeXenziaPage: React.FC = () => {
                       key={`${rowIdx}-${colIdx}`}
                       className="snake-cell"
                       style={{
-                        width: 20,
-                        height: 20,
+                        width: isMobile ? 10 : 20,
+                        height: isMobile ? 10 : 20,
                         backgroundColor: isHead
                           ? '#52c41a' // Head color
                           : isSnake

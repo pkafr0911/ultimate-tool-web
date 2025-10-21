@@ -149,10 +149,16 @@ export const pages = [
     desc: 'Play the classic Tic-Tac-Toe game.',
   },
   {
-    name: 'snake-xenzia',
+    name: 'Snake xenzia',
     path: '/game/snake-xenzia',
     icon: '🐍',
     desc: 'Classic Snake game for fun and practice.',
+  },
+  {
+    name: 'Minesweeper',
+    path: '/game/minesweeper',
+    icon: '💣',
+    desc: 'Clear all tiles without triggering hidden mines.',
   },
 
   // Docs / Commands
