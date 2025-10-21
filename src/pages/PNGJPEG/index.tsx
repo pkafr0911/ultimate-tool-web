@@ -10,9 +10,7 @@ import { PageContainer } from '@ant-design/pro-components';
 import {
   Button,
   Card,
-  Col,
   InputNumber,
-  Row,
   Space,
   Spin,
   Tabs,
@@ -204,8 +202,8 @@ const PNGJPEG: React.FC = () => {
 
             {/* Tracing Options */}
             <Card size="small" title="Tracing Options (Adjust before converting)">
-              <Row gutter={16}>
-                <Col span={4}>
+              <Space wrap size={'large'}>
+                <Space size={'small'}>
                   <Tooltip title="Scale factor for the SVG output. Higher = larger SVG.">
                     <label>
                       Scale <InfoCircleOutlined style={{ marginLeft: 4 }} />
@@ -217,32 +215,32 @@ const PNGJPEG: React.FC = () => {
                     value={scale}
                     onChange={(val) => setScale(val || 1)}
                   />
-                </Col>
-                <Col span={4}>
+                </Space>
+                <Space size={'small'}>
                   <Tooltip title="Error threshold for line detection. Lower = more precise lines.">
                     <label>
                       ltres <InfoCircleOutlined style={{ marginLeft: 4 }} />
                     </label>
                   </Tooltip>
                   <InputNumber min={0} value={ltres} onChange={(val) => setLtres(val || 1)} />
-                </Col>
-                <Col span={4}>
+                </Space>
+                <Space size={'small'}>
                   <Tooltip title="Error threshold for curve detection. Lower = more precise curves.">
                     <label>
                       qtres <InfoCircleOutlined style={{ marginLeft: 4 }} />
                     </label>
                   </Tooltip>
                   <InputNumber min={0} value={qtres} onChange={(val) => setQtres(val || 1)} />
-                </Col>
-                <Col span={4}>
+                </Space>
+                <Space size={'small'}>
                   <Tooltip title="Minimum path length to keep. Higher = simpler SVG with fewer tiny paths.">
                     <label>
                       Pathomit <InfoCircleOutlined style={{ marginLeft: 4 }} />
                     </label>
                   </Tooltip>
                   <InputNumber min={0} value={pathomit} onChange={(val) => setPathomit(val || 0)} />
-                </Col>
-                <Col span={4}>
+                </Space>
+                <Space size={'small'}>
                   <Tooltip title="Pixel sampling interval for colors. 1 = every pixel, higher = faster but less accurate colors.">
                     <label>
                       ColorSampling <InfoCircleOutlined style={{ marginLeft: 4 }} />
@@ -253,8 +251,8 @@ const PNGJPEG: React.FC = () => {
                     value={colorsampling}
                     onChange={(val) => setColorsampling(val || 1)}
                   />
-                </Col>
-                <Col span={4}>
+                </Space>
+                <Space size={'small'}>
                   <Tooltip title="Stroke width in the output SVG.">
                     <label>
                       StrokeWidth <InfoCircleOutlined style={{ marginLeft: 4 }} />
@@ -265,8 +263,8 @@ const PNGJPEG: React.FC = () => {
                     value={strokewidth}
                     onChange={(val) => setStrokewidth(val || 1)}
                   />
-                </Col>
-              </Row>
+                </Space>
+              </Space>
             </Card>
 
             {/* Action Buttons */}

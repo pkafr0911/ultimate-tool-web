@@ -5,8 +5,8 @@
 
 .content {
   display: flex;
-  gap: 24px;
   flex-wrap: wrap;
+  gap: 24px;
 
   @media (min-width: 992px) {
     flex-wrap: nowrap;
@@ -16,8 +16,8 @@
 .editorSection,
 .previewWrapper {
   flex: 1 1 50%;
-  min-width: 300px;
   box-sizing: border-box;
+  min-width: 300px;
 
   @media (max-width: 768px) {
     flex: 1 1 100%; // Full width on mobile
@@ -29,9 +29,9 @@
 .editorBox {
   height: 600px;
   margin-top: 16px;
+  overflow: hidden;
   border: 1px solid #f0f0f0;
   border-radius: 8px;
-  overflow: hidden;
 }
 
 .actions {
@@ -58,11 +58,11 @@
 
 /* Tabs styling */
 .previewTabs {
-  flex: 1;
   display: flex;
+  flex: 1;
   flex-direction: column;
-  border-radius: 8px;
   overflow: hidden;
+  border-radius: 8px;
 }
 
 .previewTabs .ant-tabs-content-holder {
@@ -75,17 +75,12 @@
 
 /* Checkerboard background for transparency */
 .transparent {
-  background-image:
-    linear-gradient(45deg, #ccc 25%, transparent 25%),
+  background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
     linear-gradient(-45deg, #ccc 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, #ccc 75%),
     linear-gradient(-45deg, transparent 75%, #ccc 75%);
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
   background-size: 20px 20px;
-  background-position:
-    0 0,
-    0 10px,
-    10px -10px,
-    -10px 0px;
 }
 
 .white {
@@ -93,8 +88,8 @@
 }
 
 .black {
-  background: #000;
   color: #fff;
+  background: #000;
 }
 
 .grey {
@@ -103,16 +98,16 @@
 
 /* Actual preview area inside tabs */
 .previewSection {
+  display: flex;
   flex: 1;
-  border: 1px solid #d9d9d9;
-  border-radius: 8px;
-  padding: 16px;
+  align-items: center;
+  justify-content: center;
   height: 600px; // default height
+  padding: 16px;
   overflow: auto;
   text-align: center;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
   transition: background 0.3s ease;
 
   @media (max-width: 768px) {
@@ -125,33 +120,64 @@
 /* Border around actual SVG element */
 .previewSection svg {
   display: 'flex';
-  justify-content: 'center';
   align-items: 'center';
+  justify-content: 'center';
   width: 100%;
   height: 100%;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
   border: 1px dashed rgba(120, 120, 120, 0.6);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 8px;
 }
 
 /* Code preview area (for Data URI / Base64) */
 .previewCodeBox {
-  background: #f5f5f5;
-  padding: 12px;
-  border-radius: 8px;
-  overflow: auto;
   max-height: 600px;
+  padding: 12px;
+  overflow: auto;
   font-size: 12px;
   white-space: pre-wrap;
   text-align: left;
+  background: #f5f5f5;
   border: 1px solid #d9d9d9;
+  border-radius: 8px;
 }
 
 /* Bottom-right download/copy buttons */
 .previewActions {
   display: flex;
+  gap: 8px;
   justify-content: flex-end;
   margin-top: 12px;
-  gap: 8px;
+}
+
+/* guide */
+.svg-viewer-guide {
+  margin-top: 16px;
+  padding: 16px;
+  text-align: left;
+  background: #f9f9ff;
+  border: 1px solid #e6f0ff;
+  border-top: 1px solid #f0f0f0;
+  border-radius: 12px;
+
+  h4,
+  h5 {
+    margin-bottom: 8px;
+  }
+
+  ul {
+    margin: 8px 0 16px 20px;
+    padding: 0;
+    list-style-type: disc;
+
+    li {
+      margin-bottom: 4px;
+    }
+  }
+
+  p {
+    color: #666;
+    font-size: 13px;
+  }
 }
