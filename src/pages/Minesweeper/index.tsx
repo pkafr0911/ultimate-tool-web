@@ -1,3 +1,4 @@
+// --- Import React, Ant Design components, and icons ---
 import { FlagOutlined, ReloadOutlined } from '@ant-design/icons';
 import {
   Button,
@@ -12,61 +13,76 @@ import {
   message,
 } from 'antd';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import './styles.less';
+import './styles.less'; // custom stylesheet for Minesweeper
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-// Types
+// ========================================================
+// 🧩 Types & Constants
+// ========================================================
+
+// Each cell on the board
 type Cell = {
-  r: number;
-  c: number;
-  mined: boolean;
-  revealed: boolean;
-  flagged: boolean;
-  adjacent: number; // number of mines around
+  r: number; // row index
+  c: number; // column index
+  mined: boolean; // whether it contains a mine
+  revealed: boolean; // whether the cell has been revealed
+  flagged: boolean; // whether the cell has been flagged
+  adjacent: number; // number of surrounding mines
 };
 
+// Difficulty options
 type Difficulty = 'beginner' | 'intermediate' | 'advanced' | 'custom';
 
-// Presets
+// Predefined board sizes for each difficulty
 const PRESETS: Record<string, { rows: number; cols: number; mines: number }> = {
   beginner: { rows: 9, cols: 9, mines: 10 },
   intermediate: { rows: 16, cols: 16, mines: 40 },
   advanced: { rows: 16, cols: 30, mines: 99 },
 };
 
+// Helper: limit value between two bounds
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
 const MinesweeperPage: React.FC = () => {
-  // --- Settings ---
+  // ========================================================
+  // ⚙️ Settings (user-configurable)
+  // ========================================================
   const [difficulty, setDifficulty] = useState<Difficulty>('beginner');
   const [rows, setRows] = useState<number>(9);
   const [cols, setCols] = useState<number>(9);
   const [mines, setMines] = useState<number>(10);
   const [showTips, setShowTips] = useState<boolean>(true);
-  const [tapMode, setTapMode] = useState<'reveal' | 'flag'>('reveal');
+  const [tapMode, setTapMode] = useState<'reveal' | 'flag'>('reveal'); // toggle mode for mobile taps
 
-  // --- Game state ---
-  const [board, setBoard] = useState<Cell[][]>([]);
+  // ========================================================
+  // 🎮 Game State
+  // ========================================================
+  const [board, setBoard] = useState<Cell[][]>([]); // 2D grid of cells
   const [started, setStarted] = useState<boolean>(false);
   const [gameOver, setGameOver] = useState<boolean>(false);
   const [won, setWon] = useState<boolean>(false);
   const [flagsLeft, setFlagsLeft] = useState<number>(0);
   const [timeSec, setTimeSec] = useState<number>(0);
+
+  // Refs for timer and first-click detection
   const timerRef = useRef<number | null>(null);
   const firstClickRef = useRef<boolean>(true);
 
-  // responsive cell size based on columns
+  // ========================================================
+  // 📱 Responsive cell size calculation
+  // ========================================================
   const cellSize = useMemo(() => {
-    // for very wide boards reduce cell size
     if (cols <= 9) return 40;
     if (cols <= 16) return 32;
     if (cols <= 24) return 24;
     return 18;
   }, [cols]);
 
-  // Apply presets when difficulty changes
+  // ========================================================
+  // 🧭 Sync preset difficulty values
+  // ========================================================
   useEffect(() => {
     if (difficulty === 'custom') return;
     const p = PRESETS[difficulty];
@@ -76,7 +92,7 @@ const MinesweeperPage: React.FC = () => {
     setMines(p.mines);
   }, [difficulty]);
 
-  // Validate custom inputs
+  // Clamp custom values to valid ranges
   useEffect(() => {
     setRows((r) => clamp(r, 9, 30));
     setCols((c) => clamp(c, 9, 30));
@@ -84,7 +100,9 @@ const MinesweeperPage: React.FC = () => {
     setMines((m) => clamp(m, 10, maxMines));
   }, [rows, cols]);
 
-  // Create empty board helper
+  // ========================================================
+  // 🧱 Helper: create an empty board
+  // ========================================================
   const createEmptyBoard = (R: number, C: number): Cell[][] =>
     Array.from({ length: R }, (_, r) =>
       Array.from({ length: C }, (_, c) => ({
@@ -97,29 +115,34 @@ const MinesweeperPage: React.FC = () => {
       })),
     );
 
-  // Place mines ensuring first click safety (we will place after first click)
+  // ========================================================
+  // 💣 Place mines (after first click)
+  // Ensures first click and its neighbors are always safe.
+  // ========================================================
   const placeMines = (b: Cell[][], safeR: number, safeC: number, minesToPlace: number) => {
     const R = b.length;
     const C = b[0].length;
     const coords: [number, number][] = [];
+
+    // Exclude safe cell and neighbors
     for (let r = 0; r < R; r++) {
       for (let c = 0; c < C; c++) {
-        // exclude the safe cell and its neighbors to avoid instant loss on first click
         if (Math.abs(r - safeR) <= 1 && Math.abs(c - safeC) <= 1) continue;
         coords.push([r, c]);
       }
     }
-    // shuffle coords
+
+    // Shuffle coordinates
     for (let i = coords.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      const tmp = coords[i];
-      coords[i] = coords[j];
-      coords[j] = tmp;
+      [coords[i], coords[j]] = [coords[j], coords[i]];
     }
+
+    // Place mines in first N shuffled cells
     const chosen = coords.slice(0, minesToPlace);
     chosen.forEach(([r, c]) => (b[r][c].mined = true));
 
-    // compute adjacent counts
+    // Compute numbers (adjacent mine count)
     const dirs = [-1, 0, 1];
     for (let r = 0; r < R; r++) {
       for (let c = 0; c < C; c++) {
@@ -140,17 +163,21 @@ const MinesweeperPage: React.FC = () => {
     }
   };
 
-  // Start or restart game (clears timer etc.)
+  // ========================================================
+  // ▶️ Start or restart game
+  // ========================================================
   const startGame = () => {
     const R = clamp(rows, 9, 30);
     const C = clamp(cols, 9, 30);
     const maxMines = Math.max(10, Math.min(668, R * C - 1));
     const M = clamp(mines, 10, maxMines);
 
+    // Apply validated values
     setRows(R);
     setCols(C);
     setMines(M);
 
+    // Reset all runtime states
     clearTimer();
     firstClickRef.current = true;
     setStarted(true);
@@ -158,11 +185,13 @@ const MinesweeperPage: React.FC = () => {
     setWon(false);
     setFlagsLeft(M);
     setTimeSec(0);
-    const empty = createEmptyBoard(R, C);
-    setBoard(empty);
+    setBoard(createEmptyBoard(R, C));
     message.success('New game ready — click a cell to start (first click is safe).');
   };
 
+  // ========================================================
+  // ⏱ Timer controls
+  // ========================================================
   const clearTimer = () => {
     if (timerRef.current) {
       window.clearInterval(timerRef.current);
@@ -175,7 +204,9 @@ const MinesweeperPage: React.FC = () => {
     timerRef.current = window.setInterval(() => setTimeSec((s) => s + 1), 1000);
   };
 
-  // Reveal logic with flood fill
+  // ========================================================
+  // 🔍 Reveal logic (with flood fill for empty zones)
+  // ========================================================
   const revealCell = (r: number, c: number, bIn?: Cell[][]) => {
     if (gameOver) return;
     const b = bIn ? bIn : board.map((row) => row.map((cell) => ({ ...cell })));
@@ -184,8 +215,8 @@ const MinesweeperPage: React.FC = () => {
 
     cell.revealed = true;
 
+    // 💥 Mine hit
     if (cell.mined) {
-      // explode — reveal all mines
       for (let rr = 0; rr < b.length; rr++)
         for (let cc = 0; cc < b[0].length; cc++) if (b[rr][cc].mined) b[rr][cc].revealed = true;
       setBoard(b);
@@ -196,7 +227,7 @@ const MinesweeperPage: React.FC = () => {
       return b;
     }
 
-    // if zero adjacent, flood fill
+    // 🌊 Flood fill empty area
     if (cell.adjacent === 0) {
       const R = b.length;
       const C = b[0].length;
@@ -221,22 +252,19 @@ const MinesweeperPage: React.FC = () => {
     return b;
   };
 
-  // Check win condition after each move
-  const checkWinCondition = (b: Cell[][]) => {
-    const R = b.length;
-    const C = b[0].length;
-    // win when all non-mine cells are revealed
-    for (let r = 0; r < R; r++)
-      for (let c = 0; c < C; c++) {
-        if (!b[r][c].mined && !b[r][c].revealed) return false;
-      }
-    return true;
-  };
+  // ========================================================
+  // 🏆 Check win condition
+  // ========================================================
+  const checkWinCondition = (b: Cell[][]) =>
+    b.every((row) => row.every((cell) => cell.mined || cell.revealed));
 
-  // Handle left-click (reveal)
+  // ========================================================
+  // 👆 Left click: reveal cell
+  // ========================================================
   const onLeftClick = (r: number, c: number) => {
     if (gameOver || won) return;
-    // start game on first click: place mines excluding clicked cell and its neighbors
+
+    // On first click → place mines safely
     let b = board;
     if (firstClickRef.current) {
       b = board.map((row) => row.map((cell) => ({ ...cell })));
@@ -247,37 +275,38 @@ const MinesweeperPage: React.FC = () => {
 
     const after = revealCell(r, c, b);
     if (!after) return;
-    if (!gameOver) {
-      if (checkWinCondition(after)) {
-        setWon(true);
-        setGameOver(true);
-        clearTimer();
-        setFlagsLeft((f) => Math.max(0, f));
-        message.success('🎉 You cleared the board — you win!');
-      }
+
+    if (!gameOver && checkWinCondition(after)) {
+      setWon(true);
+      setGameOver(true);
+      clearTimer();
+      setFlagsLeft((f) => Math.max(0, f));
+      message.success('🎉 You cleared the board — you win!');
     }
   };
 
-  // Handle right-click (flag)
+  // ========================================================
+  // 🏴 Right click: toggle flag
+  // ========================================================
   const onRightClick = (e: React.MouseEvent, r: number, c: number) => {
     e.preventDefault();
     if (!started || gameOver || won) return;
     const b = board.map((row) => row.map((cell) => ({ ...cell })));
     const cell = b[r][c];
     if (cell.revealed) return;
+
+    // toggle flag
     if (cell.flagged) {
       cell.flagged = false;
       setFlagsLeft((f) => f + 1);
     } else {
-      if (flagsLeft <= 0) {
-        message.warning('No flags left');
-        return;
-      }
+      if (flagsLeft <= 0) return message.warning('No flags left');
       cell.flagged = true;
       setFlagsLeft((f) => f - 1);
     }
     setBoard(b);
 
+    // check for win after flagging
     if (checkWinCondition(b)) {
       setWon(true);
       setGameOver(true);
@@ -286,16 +315,20 @@ const MinesweeperPage: React.FC = () => {
     }
   };
 
-  // Quick chord (left+right) to reveal neighbors when number matches flags
+  // ========================================================
+  // ⛏️ Chording: reveal neighbors if adjacent flags match number
+  // ========================================================
   const onChord = (r: number, c: number) => {
     if (gameOver || won) return;
     const cell = board[r][c];
     if (!cell || !cell.revealed || cell.adjacent <= 0) return;
+
     // count flagged neighbors
     const R = board.length;
     const C = board[0].length;
     let flagged = 0;
     const neighs: [number, number][] = [];
+
     for (let dr = -1; dr <= 1; dr++)
       for (let dc = -1; dc <= 1; dc++) {
         if (dr === 0 && dc === 0) continue;
@@ -305,8 +338,10 @@ const MinesweeperPage: React.FC = () => {
         neighs.push([nr, nc]);
         if (board[nr][nc].flagged) flagged++;
       }
+
     if (flagged !== cell.adjacent) return;
-    // reveal all unflagged neighbors
+
+    // reveal unflagged neighbors
     let b = board.map((row) => row.map((cell) => ({ ...cell })));
     for (const [nr, nc] of neighs) {
       if (!b[nr][nc].flagged && !b[nr][nc].revealed) {
@@ -315,6 +350,7 @@ const MinesweeperPage: React.FC = () => {
         if (gameOver) break;
       }
     }
+
     setBoard(b);
     if (!gameOver && checkWinCondition(b)) {
       setWon(true);
@@ -324,10 +360,9 @@ const MinesweeperPage: React.FC = () => {
     }
   };
 
-  // Clean up timer when unmount
-  useEffect(() => () => clearTimer(), []);
-
-  // UI helpers
+  // ========================================================
+  // 🧹 Reset helper
+  // ========================================================
   const resetAll = () => {
     clearTimer();
     setStarted(false);
@@ -340,7 +375,12 @@ const MinesweeperPage: React.FC = () => {
     message.info('Game reset. Choose settings and start.');
   };
 
-  // Render a cell component
+  // Clear timer on unmount
+  useEffect(() => () => clearTimer(), []);
+
+  // ========================================================
+  // 🎨 Render: Cell component
+  // ========================================================
   const CellView: React.FC<{ cell: Cell }> = ({ cell }) => {
     const cls = ['ms-cell'];
     if (cell.revealed) cls.push('ms-revealed');
@@ -352,9 +392,6 @@ const MinesweeperPage: React.FC = () => {
       if (tapMode === 'reveal') onLeftClick(cell.r, cell.c);
       else onRightClick(e, cell.r, cell.c);
     };
-    const onContext = (e: React.MouseEvent) => onRightClick(e, cell.r, cell.c);
-
-    const onDouble = () => onChord(cell.r, cell.c);
 
     return (
       <div
@@ -366,11 +403,10 @@ const MinesweeperPage: React.FC = () => {
           fontSize: Math.floor(cellSize * 0.55),
         }}
         onClick={onClick}
-        onContextMenu={onContext}
-        onDoubleClick={onDouble}
-        role="button"
-        aria-label={`cell ${cell.r}-${cell.c}`}
+        onContextMenu={(e) => onRightClick(e, cell.r, cell.c)}
+        onDoubleClick={() => onChord(cell.r, cell.c)}
       >
+        {/* Display content: mine, number, or flag */}
         {cell.revealed ? (
           cell.mined ? (
             '💣'
@@ -388,15 +424,19 @@ const MinesweeperPage: React.FC = () => {
     );
   };
 
+  // ========================================================
+  // 🧩 Main Page Layout
+  // ========================================================
   return (
     <div className="ms-page">
       <Card className="ms-card" bordered={false}>
         <Title level={3}>🧩 Minesweeper</Title>
 
-        {/* Controls */}
+        {/* ----- Settings Controls ----- */}
         <Row gutter={[12, 12]} align="middle">
           <Col xs={24} sm={12} md={10} lg={8}>
             <Space direction="vertical" size="small" style={{ width: '100%' }}>
+              {/* Difficulty + buttons */}
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 <Text strong>Difficulty:</Text>
                 <Select
@@ -418,6 +458,7 @@ const MinesweeperPage: React.FC = () => {
                 </Button>
               </div>
 
+              {/* Custom input fields */}
               <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                 <Text>Rows:</Text>
                 <InputNumber
@@ -445,10 +486,10 @@ const MinesweeperPage: React.FC = () => {
                 />
               </div>
 
+              {/* Toggles */}
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                 <Text>Show Tips:</Text>
                 <Switch checked={showTips} onChange={setShowTips} />
-                <Text type="secondary">(tap cell to reveal, right-click to flag)</Text>
               </div>
 
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -458,15 +499,15 @@ const MinesweeperPage: React.FC = () => {
                   onChange={(v) => setTapMode(v)}
                   style={{ width: 140 }}
                   options={[
-                    { label: 'Reveal (default)', value: 'reveal' },
-                    { label: 'Flag', value: 'flag' },
+                    { label: '💣 Reveal (default)', value: 'reveal' },
+                    { label: '🚩 Flag', value: 'flag' },
                   ]}
                 />
-                <Text type="secondary">(for touch screens)</Text>
               </div>
             </Space>
           </Col>
 
+          {/* ----- Game Info ----- */}
           <Col xs={24} sm={12} md={14} lg={16}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
               <div>
@@ -485,7 +526,7 @@ const MinesweeperPage: React.FC = () => {
           </Col>
         </Row>
 
-        {/* Board area */}
+        {/* ----- Game Board ----- */}
         <div className="ms-board-wrap">
           <div
             className="ms-board"
@@ -514,30 +555,21 @@ const MinesweeperPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Tips area */}
+        {/* ----- Tips Section ----- */}
         {showTips && (
           <div className="ms-tips">
             <Title level={5}>Quick Tips</Title>
             <ul>
-              <li>First click never hits a mine — the mines are placed after your first click.</li>
-              <li>
-                Right-click (or long press on mobile) to place a flag. Flags left is shown in the
-                header.
-              </li>
-              <li>
-                Double-click (or tap twice) a revealed number to chord (reveal neighbors) if flags
-                match the number.
-              </li>
-              <li>Use custom mode to set Rows (9–30), Cols (9–30), and Mines (10–668).</li>
+              <li>First click never hits a mine — mines are placed after your first click.</li>
+              <li>Right-click (or long press) to place a flag.</li>
+              <li>Double-click a number to chord if flags match.</li>
+              <li>Use custom mode for full control of board size.</li>
             </ul>
           </div>
         )}
 
-        <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between' }}>
-          <div />
-          <div>
-            <Text type="secondary">Made with ❤️ — responsive and playable on mobile.</Text>
-          </div>
+        <div style={{ marginTop: 12, textAlign: 'center' }}>
+          <Text type="secondary">Made with ❤️ — responsive and mobile friendly.</Text>
         </div>
       </Card>
     </div>

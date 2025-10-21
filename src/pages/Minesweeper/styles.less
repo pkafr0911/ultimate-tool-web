@@ -18,12 +18,14 @@
 .ms-board-wrap {
   display: flex;
   justify-content: center;
+  justify-content: flex-start; /* align board to left for full scrollability */
   margin-top: 20px;
   overflow-x: auto;
 }
 
 .ms-board {
   display: grid;
+  flex-shrink: 0; /* prevents collapsing on narrow screens */
   justify-content: center;
   padding: 4px;
   background: #ccc;
@@ -113,8 +115,14 @@
 
 /* --- Responsive --- */
 @media (max-width: 768px) {
+  .ms-page {
+    padding: 5px;
+  }
   .ms-card {
     padding: 12px;
+    .ant-card-body {
+      padding: 0px;
+    }
   }
 
   .ms-board {
