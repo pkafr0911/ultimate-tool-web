@@ -514,12 +514,7 @@ const MinesweeperPage: React.FC = () => {
                   {' '}
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                     <Text>Tap Mode:</Text>
-                    <Radio.Group
-                      value={tapMode}
-                      onChange={(e) => setTapMode(e.target.value)}
-                      optionType="button"
-                      buttonStyle="solid"
-                    >
+                    <Radio.Group value={tapMode} onChange={(e) => setTapMode(e.target.value)}>
                       <Radio.Button value="reveal">💣 Reveal</Radio.Button>
                       <Radio.Button value="flag">🚩 Flag</Radio.Button>
                     </Radio.Group>
