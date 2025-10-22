@@ -1,21 +1,21 @@
 .welcome-container.light-theme {
-  padding: 40px 60px;
-  background: linear-gradient(135deg, #fdfbfb, #ebedee);
   min-height: 100vh;
-  color: #333;
+  padding: 40px 60px;
   overflow-x: hidden;
+  color: #333;
   text-align: center;
+  background: linear-gradient(135deg, #fdfbfb, #ebedee);
 
   .welcome-title {
-    font-weight: 800;
-    color: #1f1f1f;
     margin-bottom: 8px;
+    color: #1f1f1f;
+    font-weight: 800;
   }
 
   .welcome-subtitle {
+    margin-bottom: 40px;
     color: #666;
     font-size: 16px;
-    margin-bottom: 40px;
   }
 
   .category-section {
@@ -24,47 +24,47 @@
   }
 
   .category-title {
+    margin-bottom: 20px;
     color: #1890ff;
     font-weight: 700;
-    margin-bottom: 20px;
   }
 
   .feature-card.light-card {
-    text-align: center;
-    border-radius: 16px;
     overflow: hidden;
-    transition: all 0.3s ease;
+    text-align: center;
     background: #ffffff;
     border: 1px solid #f0f0f0;
+    border-radius: 16px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
 
     .ant-card-body {
       padding: 24px;
     }
 
     &:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
       border-color: #e0e0e0;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      transform: translateY(-6px);
     }
 
     .feature-icon {
-      font-size: 36px;
       margin-bottom: 12px;
       color: #1890ff;
+      font-size: 36px;
     }
 
     .feature-desc {
+      min-height: 40px;
       color: #555;
       font-size: 14px;
-      min-height: 40px;
     }
 
     .ant-btn-primary {
       margin-top: 10px;
-      border-radius: 8px;
       background: linear-gradient(90deg, #1890ff, #40a9ff);
       border: none;
+      border-radius: 8px;
       box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
 
       &:hover {
