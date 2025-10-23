@@ -133,7 +133,7 @@
       {
         path: '/game/sudoku',
         name: 'sudoku',
-        icon: '💣',
+        icon: '9️⃣',
         component: './Sudoku',
       },
     ],
