@@ -475,6 +475,13 @@ const MinesweeperPage: React.FC = () => {
           <Title level={3}>💣 Minesweeper </Title>
         </Space>
 
+        {/* --- Game Description --- */}
+        <Text type="secondary" style={{ display: 'block', marginTop: 8, marginBottom: 16 }}>
+          Minesweeper is a logic puzzle video game genre generally played on personal computers. The
+          game features a grid of clickable tiles, with hidden "mines" dispersed throughout the
+          board.
+        </Text>
+
         <Flex
           justify="center"
           align="center"

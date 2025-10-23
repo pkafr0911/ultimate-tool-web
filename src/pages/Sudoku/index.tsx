@@ -34,69 +34,79 @@ type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
 // Utilities: sudoku solver / generator (backtracking)
 // --------------------------
 
+// Deep-clone a Sudoku grid (2D array of Cell objects)
 const cloneGrid = (g: Cell[][]) =>
-  g.map((row) => row.map((c) => ({ ...c, notes: new Set([...c.notes]) })));
+  g.map((row) => row.map((c) => ({ ...c, notes: new Set([...c.notes]) }))); // clone each Cell and copy its notes set
 
-// Convert grid of numbers to a simple 9x9 number matrix (0 for empty)
+// Convert Cell grid → 9x9 number matrix (empty = 0)
 const cellGridToNumbers = (g: Cell[][]) => g.map((r) => r.map((c) => c.value ?? 0));
 
+// Convert number matrix → Cell grid (optionally apply givensMask)
 const numbersToCellGrid = (nums: number[][], givensMask?: boolean[][]) =>
   nums.map((row, r) =>
     row.map((val, c) => ({
-      r,
-      c,
-      value: val === 0 ? null : val,
-      given: givensMask ? !!givensMask[r][c] : val !== 0,
-      notes: new Set<number>(),
+      r, // row index
+      c, // column index
+      value: val === 0 ? null : val, // null for blanks, else number
+      given: givensMask ? !!givensMask[r][c] : val !== 0, // mark as given if mask true or value present
+      notes: new Set<number>(), // initialize empty notes set
     })),
   );
 
+// Check if placing value v at row r, col c is valid
 const isSafe = (mat: number[][], r: number, c: number, v: number) => {
+  // check row and column
   for (let i = 0; i < 9; i++) if (mat[r][i] === v || mat[i][c] === v) return false;
+  // compute top-left of 3x3 block
   const br = Math.floor(r / 3) * 3;
   const bc = Math.floor(c / 3) * 3;
+  // check 3x3 block
   for (let i = 0; i < 3; i++)
     for (let j = 0; j < 3; j++) if (mat[br + i][bc + j] === v) return false;
-  return true;
+  return true; // safe placement
 };
 
-// Backtracking solve (returns solved matrix or null)
+// Solve Sudoku with backtracking
 const solveSudoku = (matIn: number[][]): number[][] | null => {
-  const mat = matIn.map((r) => r.slice());
-  const emptyPos: [number, number][] = [];
+  const mat = matIn.map((r) => r.slice()); // copy matrix
+  const emptyPos: [number, number][] = []; // store empty cell positions
+
+  // collect empty cells
   for (let r = 0; r < 9; r++)
     for (let c = 0; c < 9; c++) if (mat[r][c] === 0) emptyPos.push([r, c]);
 
+  // recursive solver
   const backtrack = (idx: number): boolean => {
-    if (idx >= emptyPos.length) return true;
+    if (idx >= emptyPos.length) return true; // all cells filled
     const [r, c] = emptyPos[idx];
     for (let v = 1; v <= 9; v++) {
-      if (!isSafe(mat, r, c, v)) continue;
-      mat[r][c] = v;
-      if (backtrack(idx + 1)) return true;
-      mat[r][c] = 0;
+      if (!isSafe(mat, r, c, v)) continue; // skip invalid
+      mat[r][c] = v; // place value
+      if (backtrack(idx + 1)) return true; // recurse next
+      mat[r][c] = 0; // undo (backtrack)
     }
     return false;
   };
 
-  if (backtrack(0)) return mat;
-  return null;
+  if (backtrack(0)) return mat; // solved → return grid
+  return null; // unsolvable
 };
 
-// Generate a solved board using backtracking and randomized order
+// Generate a fully solved board randomly
 const generateSolvedBoard = (): number[][] => {
-  const mat = Array.from({ length: 9 }, () => Array(9).fill(0));
+  const mat = Array.from({ length: 9 }, () => Array(9).fill(0)); // empty 9x9
 
+  // recursive fill with randomized order
   const backtrack = (pos = 0): boolean => {
-    if (pos === 81) return true;
+    if (pos === 81) return true; // all filled
     const r = Math.floor(pos / 9);
     const c = pos % 9;
-    const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5);
+    const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5); // shuffle numbers
     for (const n of nums) {
       if (!isSafe(mat, r, c, n)) continue;
       mat[r][c] = n;
-      if (backtrack(pos + 1)) return true;
-      mat[r][c] = 0;
+      if (backtrack(pos + 1)) return true; // next cell
+      mat[r][c] = 0; // undo
     }
     return false;
   };
@@ -105,38 +115,44 @@ const generateSolvedBoard = (): number[][] => {
   return mat;
 };
 
-// Remove numbers from solved board to create puzzle (simple removal strategy)
+// Create a playable puzzle from a solved board
 const makePuzzle = (
   solved: number[][],
   difficulty: Difficulty,
 ): { puzzle: number[][]; givensMask: boolean[][] } => {
-  // target givens by difficulty
-  const targets: Record<Difficulty, number> = { easy: 36, medium: 32, hard: 28, expert: 24 };
-  const targetGivens = targets[difficulty] ?? 32;
+  // target number of givens based on difficulty
+  const targets: Record<Difficulty, number> = {
+    easy: 36,
+    medium: 32,
+    hard: 28,
+    expert: 24,
+  };
+  const targetGivens = targets[difficulty] ?? 32; // default 32 givens
 
-  const puzzle = solved.map((r) => r.slice());
-  const givensMask = Array.from({ length: 9 }, () => Array(9).fill(true));
+  const puzzle = solved.map((r) => r.slice()); // copy solved grid
+  const givensMask = Array.from({ length: 9 }, () => Array(9).fill(true)); // track fixed cells
 
+  // shuffle all cell indices 0–80
   const cells = Array.from({ length: 81 }, (_, i) => i).sort(() => Math.random() - 0.5);
+
+  // randomly remove numbers while keeping unique solvability
   for (const idx of cells) {
     const r = Math.floor(idx / 9);
     const c = idx % 9;
-    if (!givensMask[r][c]) continue;
+    if (!givensMask[r][c]) continue; // already removed
 
-    // try removing
-    const backup = puzzle[r][c];
-    puzzle[r][c] = 0;
-    givensMask[r][c] = false;
+    const backup = puzzle[r][c]; // store old value
+    puzzle[r][c] = 0; // remove
+    givensMask[r][c] = false; // mark empty
 
-    // ensure puzzle still has a unique solution — cheap check: solve and see if solution equals original
-    const solvedAttempt = solveSudoku(puzzle);
+    const solvedAttempt = solveSudoku(puzzle); // try to solve after removal
+
     if (!solvedAttempt) {
-      // revert
+      // revert if puzzle unsolvable
       puzzle[r][c] = backup;
       givensMask[r][c] = true;
     } else {
-      // keep removed
-      // stop when we reach desired number of givens
+      // stop if we’ve reached desired givens count
       const givensCount = givensMask.flat().filter(Boolean).length;
       if (givensCount <= targetGivens) break;
     }
@@ -374,6 +390,22 @@ const SudokuPage: React.FC = () => {
         <Row justify="space-between" align="middle">
           <Col>
             <Title level={3}>🧩 Sudoku</Title>
+
+            {/* --- Game Description --- */}
+            <Text
+              type="secondary"
+              style={{
+                display: 'block',
+                marginTop: 8,
+                maxWidth: 640,
+                lineHeight: 1.6,
+              }}
+            >
+              Sudoku is a logic-based, combinatorial number-placement puzzle. In classic Sudoku, the
+              objective is to fill a 9 × 9 grid with digits so that each column, each row, and each
+              of the nine 3 × 3 subgrids that compose the grid contains all of the digits from 1 to
+              9.
+            </Text>
             <Text type="secondary">Responsive, notes, hints, undo/redo, and solver.</Text>
           </Col>
 
@@ -491,6 +523,28 @@ const SudokuPage: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* --- How to Play Guide --- */}
+        <div style={{ marginTop: 24, paddingTop: 12, borderTop: '1px solid #f0f0f0' }}>
+          <Title level={4}>🧠 How to Play</Title>
+          <ul style={{ paddingLeft: 20, lineHeight: 1.7 }}>
+            <li>Click any empty cell to select it.</li>
+            <li>Use the number palette or keyboard (1–9) to fill in digits.</li>
+            <li>
+              Toggle <strong>Notes Mode</strong> to jot down possible numbers.
+            </li>
+            <li>
+              Click <strong>Validate</strong> to check for mistakes.
+            </li>
+            <li>
+              Use <strong>Undo</strong> and <strong>Redo</strong> to revert moves.
+            </li>
+            <li>
+              Click <strong>Hint</strong> to reveal a random correct number.
+            </li>
+            <li>You win when the entire grid is correctly filled!</li>
+          </ul>
         </div>
 
         <div style={{ marginTop: 12, textAlign: 'center' }}>
