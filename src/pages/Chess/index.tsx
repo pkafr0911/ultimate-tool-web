@@ -370,33 +370,59 @@ export default function ChessGame(): JSX.Element {
 
       <div className="chess-content">
         <div className="chess-board-wrapper">
-          <div className="chess-board">
-            {Array.from({ length: 8 }).map((_, rr) => {
-              const r = orientation === 'white' ? rr : 7 - rr;
-              return (
-                <div key={r} className="chess-row">
-                  {Array.from({ length: 8 }).map((_, cc) => {
-                    const c = orientation === 'white' ? cc : 7 - cc;
-                    const sq = board[r][c];
-                    const isSelected = selected && selected.r === r && selected.c === c;
-                    const isLegal = legalMoves.some((m) => m.r === r && m.c === c);
-                    const dark = (r + c) % 2 === 1;
-                    return (
-                      <div
-                        key={`${r}-${c}`}
-                        className={`chess-square ${dark ? 'dark' : 'light'} ${
-                          isSelected ? 'selected' : ''
-                        }`}
-                        onClick={() => handleSquareClick(r, c)}
-                      >
-                        {sq && <span className="chess-piece">{pieceSymbol(sq)}</span>}
-                        {isLegal && <div className="move-dot" />}
-                      </div>
-                    );
-                  })}
+          <div className="chess-coordinates top">
+            {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((f) => (
+              <div key={f} className="coord">
+                {f}
+              </div>
+            ))}
+          </div>
+
+          <div className="chess-row-with-coords">
+            <div className="chess-coordinates side">
+              {[8, 7, 6, 5, 4, 3, 2, 1].map((r) => (
+                <div key={r} className="coord">
+                  {r}
                 </div>
-              );
-            })}
+              ))}
+            </div>
+
+            <div className="chess-board">
+              {Array.from({ length: 8 }).map((_, rr) => {
+                const r = orientation === 'white' ? rr : 7 - rr;
+                return (
+                  <div key={r} className="chess-row">
+                    {Array.from({ length: 8 }).map((_, cc) => {
+                      const c = orientation === 'white' ? cc : 7 - cc;
+                      const sq = board[r][c];
+                      const isSelected = selected && selected.r === r && selected.c === c;
+                      const isLegal = legalMoves.some((m) => m.r === r && m.c === c);
+                      const dark = (r + c) % 2 === 1;
+                      return (
+                        <div
+                          key={`${r}-${c}`}
+                          className={`chess-square ${dark ? 'dark' : 'light'} ${
+                            isSelected ? 'selected' : ''
+                          }`}
+                          onClick={() => handleSquareClick(r, c)}
+                        >
+                          {sq && <span className="chess-piece">{pieceSymbol(sq)}</span>}
+                          {isLegal && <div className="move-dot" />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="chess-coordinates bottom">
+            {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((f) => (
+              <div key={f} className="coord">
+                {f}
+              </div>
+            ))}
           </div>
         </div>
 

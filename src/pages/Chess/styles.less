@@ -114,6 +114,68 @@
   border: 1px solid #e0d5c0;
 }
 
+/* === Coordinates (Algebraic notation) === */
+.chess-row-with-coords {
+  display: flex;
+  align-items: flex-start;
+}
+
+.chess-coordinates {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #3b2f2f;
+  font-weight: bold;
+  font-size: 13px;
+  font-family: 'Georgia', serif;
+  user-select: none;
+}
+
+.chess-coordinates.top,
+.chess-coordinates.bottom {
+  width: calc(56px * 8);
+  margin-left: 4px; // aligns with left numbers
+}
+
+.chess-coordinates.top {
+  margin-bottom: 4px;
+}
+
+.chess-coordinates.bottom {
+  margin-top: 4px;
+}
+
+.chess-coordinates.side {
+  flex-direction: column;
+  justify-content: space-between;
+  height: calc(56px * 8);
+  margin-right: 4px;
+}
+
+.chess-coordinates .coord {
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .chess-coordinates.top,
+  .chess-coordinates.bottom {
+    width: calc(44px * 8);
+    margin-left: 18px;
+  }
+
+  .chess-coordinates.side {
+    height: calc(44px * 8);
+  }
+
+  .chess-coordinates .coord {
+    font-size: 11px;
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .chess-content {
