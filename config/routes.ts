@@ -130,6 +130,12 @@
         icon: '💣',
         component: './Minesweeper',
       },
+      {
+        path: '/game/sudoku',
+        name: 'sudoku',
+        icon: '💣',
+        component: './Sudoku',
+      },
     ],
   },
   {

@@ -28,7 +28,7 @@ const categories = [
   { title: 'Editor', keys: ['Readme Editor', 'Json Formatter', 'HTML Editor'] },
   { title: 'Randomizer', keys: ['🎡 Wheel of Names', 'Random Generator'] },
   { title: 'Playground', keys: ['Playground'] },
-  { title: 'Game', keys: ['Tic-Tac-Toe', 'Snake xenzia', 'Minesweeper'] },
+  { title: 'Game', keys: ['Tic-Tac-Toe', 'Snake xenzia', 'Minesweeper', 'Sudoku'] },
   { title: 'Docs / Commands', keys: ['Commands', 'Emojis /  Kaomojis '] },
 ];
 

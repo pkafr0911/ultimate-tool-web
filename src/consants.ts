@@ -160,6 +160,12 @@ export const pages = [
     icon: '💣',
     desc: 'Clear all tiles without triggering hidden mines.',
   },
+  {
+    name: 'Sudoku',
+    path: '/game/sudoku',
+    icon: '9️⃣',
+    desc: 'Enjoy the Classic Sudoku Puzzle Game .',
+  },
 
   // Docs / Commands
   {

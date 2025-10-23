@@ -48,7 +48,6 @@ const GlobalSearchBar: React.FC = () => {
 
   return (
     <AutoComplete
-      style={{ width: 250 }}
       defaultActiveFirstOption
       options={options}
       onSelect={onSelect}
@@ -56,6 +55,7 @@ const GlobalSearchBar: React.FC = () => {
       value={value}
     >
       <Input
+        size="large"
         placeholder="Search tools..."
         prefix={<SearchOutlined />}
         allowClear

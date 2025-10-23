@@ -1,0 +1,197 @@
+// styles.less (replace existing)
+
+@layout-body-background: #f6f7fb;
+@component-background: #ffffff;
+@border-color-base: #e8e8e8;
+@border-color-split: #f0f0f0;
+@text-color-secondary: rgba(0, 0, 0, 0.45);
+@primary-color: #1890ff;
+@primary-1: #e6f7ff;
+@primary-2: #bae7ff;
+
+/* global page wrapper */
+// src/pages/Sudoku/styles.less
+
+.sud-page {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 16px;
+  background: @layout-body-background;
+}
+
+.sud-card {
+  width: 100%;
+  max-width: 950px;
+  padding: 20px;
+  background: @component-background;
+  border: 1px solid @border-color-split;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px fade(@border-color-base, 10%);
+}
+
+/* Header layout */
+.sud-card .ant-row {
+  flex-wrap: wrap;
+  gap: 12px;
+
+  .ant-col {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+}
+
+/* Sudoku grid and controls */
+.sud-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+/* Sudoku grid container */
+.sud-grid {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: @component-background;
+  border: 2px solid @border-color-base;
+  border-radius: 6px;
+}
+
+/* Each row */
+.sud-row {
+  display: flex;
+
+  &:nth-child(3n) {
+    border-bottom: 2px solid @border-color-base;
+  }
+}
+
+/* Each cell */
+.sud-row > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: @text-color-secondary;
+  font-weight: 500;
+  font-size: 16px;
+  border: 1px solid @border-color-split;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+
+  &:nth-child(3n) {
+    border-right: 2px solid @border-color-base;
+  }
+
+  &:hover {
+    background: fade(@primary-color, 8%);
+  }
+}
+
+/* Selected cell */
+.sud-selected {
+  background: fade(@primary-color, 15%) !important;
+  box-shadow: inset 0 0 0 2px @primary-color;
+}
+
+/* Numbers and notes */
+.sud-val {
+  color: @text-color;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.sud-empty {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+/* Number and control section */
+.sud-number-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+/* Number buttons */
+.sud-number-palette {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+
+  button {
+    width: 50px;
+    height: 50px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+}
+
+/* Control buttons under number palette */
+.sud-control-buttons {
+  display: flex;
+  gap: 8px;
+
+  button {
+    min-width: 90px;
+  }
+}
+
+/* === Mobile scaling === */
+@media (max-width: 768px) {
+  .sud-layout {
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .sud-row > div {
+    width: 34px;
+    height: 34px;
+    font-size: 14px;
+  }
+
+  .sud-number-palette {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+
+    button {
+      width: 44px;
+      height: 44px;
+      font-size: 14px;
+    }
+  }
+
+  .sud-control-buttons {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+
+    button {
+      min-width: 80px;
+      font-size: 13px;
+    }
+  }
+}
+
+/* Center footer text */
+.sud-footer {
+  margin-top: 12px;
+  color: @text-color-secondary;
+  text-align: center;
+}
