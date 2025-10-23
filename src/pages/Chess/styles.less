@@ -1,0 +1,142 @@
+.chess-page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.chess-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.chess-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.chess-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.chess-board-wrapper {
+  flex: 1;
+  min-width: 320px;
+  padding-bottom: 8px;
+  overflow-x: auto;
+}
+
+.chess-board {
+  display: inline-block;
+  background: linear-gradient(135deg, #d2b48c, #c19a6b);
+  border: 4px solid #5c4033;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.chess-row {
+  display: flex;
+}
+
+.chess-square {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border: 1px solid #a97c50;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.chess-square.light {
+  background-color: #f0d9b5;
+  background-image: linear-gradient(135deg, #f4e1c6 20%, #e8cfa3 80%);
+}
+
+.chess-square.dark {
+  background-color: #b58863;
+  background-image: linear-gradient(135deg, #a26d46 20%, #855c3c 80%);
+}
+
+.chess-square:hover {
+  filter: brightness(1.1);
+}
+
+.chess-square.selected {
+  z-index: 1;
+  outline: 3px solid #1677ff;
+}
+
+.chess-piece {
+  color: #1a1a1a;
+  font-size: 28px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.4);
+  user-select: none;
+}
+
+.move-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: rgba(255, 206, 84, 0.8);
+  border-radius: 50%;
+}
+
+.move-history {
+  flex: 0 0 280px;
+  max-height: 460px;
+  overflow-y: auto;
+  background-color: #fffaf2;
+  border: 1px solid #d9c7a3;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.move-status {
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.chess-notes {
+  margin-top: 16px;
+  font-size: 13px;
+  background: #fffdf7;
+  border: 1px solid #e0d5c0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .chess-content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .chess-board-wrapper {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .chess-square {
+    width: 44px;
+    height: 44px;
+  }
+
+  .chess-piece {
+    font-size: 22px;
+  }
+
+  .move-history {
+    width: 100%;
+    max-height: 240px;
+  }
+}

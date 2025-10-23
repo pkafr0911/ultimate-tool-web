@@ -39,6 +39,7 @@ export default {
   'menu.game.snake-xenzia': 'Snake Xenzia',
   'menu.game.minesweeper': 'Minesweeper',
   'menu.sudoku': 'Sudoku',
+  'menu.chess': 'Chess',
 
   // Docs / Commands
   'menu.docs': 'Documentation',

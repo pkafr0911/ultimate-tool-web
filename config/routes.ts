@@ -136,6 +136,12 @@
         icon: '9️⃣',
         component: './Sudoku',
       },
+      {
+        path: '/game/chess',
+        name: 'chess',
+        icon: '♟️',
+        component: './Chess',
+      },
     ],
   },
   {

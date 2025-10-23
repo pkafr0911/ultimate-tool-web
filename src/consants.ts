@@ -164,7 +164,13 @@ export const pages = [
     name: 'Sudoku',
     path: '/game/sudoku',
     icon: '9️⃣',
-    desc: 'Enjoy the Classic Sudoku Puzzle Game .',
+    desc: 'Enjoy the Classic Sudoku Puzzle Game.',
+  },
+  {
+    name: 'Chess',
+    path: '/game/chess',
+    icon: '♟️',
+    desc: 'All about the game of chess.',
   },
 
   // Docs / Commands
