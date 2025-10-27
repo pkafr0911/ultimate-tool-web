@@ -7,6 +7,7 @@
   "scripts": {
     "analyze": "cross-env ANALYZE=1 max build",
     "build": "max build",
+    "build-pre": "cross-env REACT_APP_ENV=pre max build",
     "deploy": "npm run build && cp -f dist/index.html dist/404.html && npm run gh-pages",
     "deploy-win": "npm run build && copy /Y dist\\index.html dist\\404.html && npm run gh-pages",
     "deploy_old": "npm run build && npm run gh-pages",
@@ -46,6 +47,7 @@
     "@monaco-editor/react": "^4.7.0",
     "antd": "^5.20.0",
     "antd-style": "^3.7.0",
+    "babel-plugin-istanbul": "^7.0.1",
     "classnames": "^2.5.1",
     "darkreader": "^4.9.112",
     "dashjs": "^4.3.0",
