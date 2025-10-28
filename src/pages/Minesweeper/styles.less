@@ -43,7 +43,9 @@
   border: 1px solid #d9d9d9;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.1s ease;
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease;
   user-select: none;
   touch-action: manipulation;
 
@@ -147,7 +149,9 @@
   .ms-overlay-base();
   color: #222;
   background: linear-gradient(135deg, #c6ffdd, #fbd786, #f7797d);
-  animation: gradientMove 5s ease infinite, winPulse 2s ease-in-out infinite;
+  animation:
+    gradientMove 5s ease infinite,
+    winPulse 2s ease-in-out infinite;
 }
 
 /* --- Lose overlay --- */
@@ -155,7 +159,9 @@
   .ms-overlay-base();
   color: #fff;
   background: linear-gradient(135deg, #ff9a9e, #fad0c4, #ffdde1);
-  animation: gradientMove 5s ease infinite, losePulse 2s ease-in-out infinite;
+  animation:
+    gradientMove 5s ease infinite,
+    losePulse 2s ease-in-out infinite;
 }
 
 /* --- Moving gradient background --- */
