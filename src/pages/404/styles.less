@@ -1,30 +1,31 @@
 .notfound-container {
-  height: 100vh;
-  width: 100%;
+  position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  text-align: center;
+  justify-content: center;
+  width: 100%;
+  height: 100vh;
   // background: radial-gradient(circle at 50% 50%, #141e30, #243b55);
   overflow: hidden;
- color: @primary-color;
-  position: relative;
+  color: @primary-color;
+  text-align: center;
 }
 
 .notfound-title {
-  font-size: 10rem;
+  margin: 0;
   font-weight: 800;
+  font-size: 10rem;
+  text-shadow: 0 0 20px rgba(255, 106, 0, 0.6);
   background: linear-gradient(90deg, #ff6a00, #ee0979);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 20px rgba(255, 106, 0, 0.6);
-  margin: 0;
   animation: float 3s ease-in-out infinite;
+  -webkit-text-fill-color: transparent;
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -33,24 +34,24 @@
 }
 
 .notfound-subtitle {
-  font-size: 1.25rem;
+  max-width: 600px;
   margin-top: 1rem;
   margin-bottom: 2rem;
   color: @primary-color;
-  max-width: 600px;
+  font-size: 1.25rem;
 }
 
 .notfound-button {
-  font-weight: 600;
-  border-radius: 8px;
   padding: 0 32px;
+  font-weight: 600;
   background: linear-gradient(90deg, #ff6a00, #ee0979);
   border: none;
+  border-radius: 8px;
   box-shadow: 0 4px 15px rgba(238, 9, 121, 0.3);
   transition: all 0.3s ease;
 
   &:hover {
-    transform: translateY(-3px);
     box-shadow: 0 6px 20px rgba(238, 9, 121, 0.5);
+    transform: translateY(-3px);
   }
 }

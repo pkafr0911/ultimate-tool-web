@@ -1,5 +1,4 @@
-﻿import type { RequestOptions } from '@@/plugin-request/request';
-import { useModel, type RequestConfig } from '@umijs/max';
+﻿import { type RequestConfig } from '@umijs/max';
 import { message, notification } from 'antd';
 
 // Error handling strategy: Error types

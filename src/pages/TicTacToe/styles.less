@@ -1,11 +1,11 @@
 .tic-container {
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding: 40px 16px;
+  justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #fdfbfb, #ebedee);
+  padding: 40px 16px;
   overflow: auto;
+  background: linear-gradient(135deg, #fdfbfb, #ebedee);
 
   // Mobile adjustments
   @media (max-width: 600px) {
@@ -15,13 +15,13 @@
 
 .tic-card {
   width: 100%;
-  text-align: center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
-  background: #fff;
   padding: 24px;
-  transition: box-shadow 0.2s ease;
   overflow: auto;
+  text-align: center;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s ease;
 
   &:hover {
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
@@ -34,16 +34,16 @@
 }
 
 .tic-board {
-  margin-top: 20px;
   display: grid;
   gap: 4px;
   justify-content: center;
+  margin-top: 20px;
   overflow: auto;
   touch-action: pan-x pan-y;
 
   @media (max-width: 600px) {
-    max-width: 100%;
     gap: 2px; // smaller gaps for small screens
+    max-width: 100%;
   }
 }
 
@@ -58,23 +58,23 @@
   display: flex !important;
   align-items: center;
   justify-content: center;
-  border-radius: 8px !important;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  user-select: none;
-  aspect-ratio: 1 / 1;
-  font-weight: bold;
-  background: #fff;
-  border: 1px solid #999;
-
-  --cell-size: calc(min(60px, max(20px, 80vw / var(--board-size))));
   width: var(--cell-size);
   height: var(--cell-size);
+  font-weight: bold;
   font-size: clamp(14px, calc(var(--cell-size) / 2.5), 24px);
+  background: #fff;
+  border: 1px solid #999;
+  border-radius: 8px !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  aspect-ratio: 1 / 1;
+
+  --cell-size: calc(min(60px, max(20px, 80vw / var(--board-size))));
 
   &:hover {
-    transform: scale(1.05);
     border-color: #1890ff !important;
+    transform: scale(1.05);
   }
 
   &:active {

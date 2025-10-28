@@ -10,6 +10,14 @@
       <style>
         html,
         body,
+        :root {
+          --accent-color: #1677ff;
+          --bg-light: #f9fafb;
+          --bg-dark: #0d1117;
+          --text-light: #555;
+          --text-dark: #bbb;
+          --spinner-size: 48px;
+        }
         #root {
           height: 100%;
           margin: 0;
@@ -18,6 +26,23 @@
         #root {
           background-repeat: no-repeat;
           background-size: 100% auto;
+        }
+
+        body {
+          background: var(--bg-light);
+          color: var(--text-light);
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        @media (prefers-color-scheme: dark) {
+          body {
+            background: var(--bg-dark);
+            color: var(--text-dark);
+          }
         }
 
         .loading-title {

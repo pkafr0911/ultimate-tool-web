@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { useLocation, history } from 'umi';
-import querystring from 'query-string';
 import { getPrams } from '@/helpers';
+import querystring from 'query-string';
+import { useEffect, useState } from 'react';
+import { history, useLocation } from 'umi';
 
 export default function usePagination() {
   const location: any = useLocation();

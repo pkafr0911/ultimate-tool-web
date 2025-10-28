@@ -1,16 +1,16 @@
 .random-light-container {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   height: 70vh;
   background: linear-gradient(135deg, #f6f9ff 0%, #eaf3ff 100%);
   animation: bgSoft 15s infinite alternate;
 }
 
 .random-light-title {
-  text-align: center;
   margin-bottom: 24px;
   color: #333;
+  text-align: center;
 }
 
 @keyframes bgSoft {
@@ -24,26 +24,26 @@
 
 .random-light-card {
   width: 380px;
-  background: #ffffff;
-  border-radius: 20px;
   padding: 28px;
   text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  background: #ffffff;
   border: 1px solid #f0f0f0;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 .random-light-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 24px;
 }
 
 .random-light-number {
-  font-size: 6rem;
-  font-weight: 700;
   flex: 1;
   color: #2b2b2b;
+  font-weight: 700;
+  font-size: 6rem;
   text-align: left;
   animation: popIn 0.4s ease;
 }
@@ -61,28 +61,28 @@
 
 .random-light-inputs {
   .input-label {
+    margin-bottom: 4px;
     color: #888;
     font-size: 0.8rem;
-    margin-bottom: 4px;
   }
 
   input {
-    background: #fafafa;
     color: #333;
+    background: #fafafa;
   }
 }
 
 .generate-btn-light {
   margin-top: 12px;
+  color: #fff;
+  font-weight: 600;
   background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
   border: none;
   border-radius: 10px;
   transition: all 0.3s ease;
-  font-weight: 600;
-  color: #fff;
 
   &:hover {
-    transform: scale(1.05);
     box-shadow: 0 6px 18px rgba(37, 117, 252, 0.3);
+    transform: scale(1.05);
   }
 }

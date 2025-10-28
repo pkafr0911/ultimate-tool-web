@@ -1,15 +1,15 @@
 .readme-card {
   .readme-container {
     display: flex;
-    gap: 16px;
     flex-wrap: wrap;
+    gap: 16px;
 
     .editor-pane,
     .preview-pane {
-      flex: 1;
-      min-width: 600px;
       display: flex;
+      flex: 1;
       flex-direction: column;
+      min-width: 600px;
     }
 
     .quill-editor {
@@ -24,8 +24,8 @@
 
     .markdown-preview {
       height: 600px;
-      overflow-y: auto;
       padding: 12px;
+      overflow-y: auto;
       border-radius: 8px;
 
       code {

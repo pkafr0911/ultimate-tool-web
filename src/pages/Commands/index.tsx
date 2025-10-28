@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Card, Input, Button, Typography, Space, message } from 'antd';
-import { CopyOutlined, SearchOutlined } from '@ant-design/icons';
 import { handleCopy } from '@/helpers';
+import { CopyOutlined, SearchOutlined } from '@ant-design/icons';
+import { Button, Card, Input, Space, Typography } from 'antd';
+import React, { useState } from 'react';
 import { dockerCommands, gitCommands, ubuntuCommands } from './constants';
 
 const { Title, Text } = Typography;
