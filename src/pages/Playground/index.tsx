@@ -129,20 +129,28 @@ const PlaygroundPage: React.FC = () => {
 
   // --- Prettify JS ---
   const prettifyJS = async () => {
-    if (!jsContent.trim()) return message.warning('No JS content to prettify.');
+    const isHtmlMode = mode === 'html';
+    const targetValue = isHtmlMode ? jsContent : code;
+
+    if (!targetValue.trim()) {
+      message.warning('No JavaScript content to prettify.');
+      return;
+    }
+
     try {
-      const formatted = await prettier.format(jsContent, {
+      const formatted = await prettier.format(targetValue, {
         parser: 'babel',
         plugins: [babel, estree],
         semi: true,
         singleQuote: true,
         tabWidth: 2,
       });
-      setJsContent(formatted);
+
+      isHtmlMode ? setJsContent(formatted) : setCode(formatted);
       message.success('JS prettified!');
-    } catch (err) {
-      console.error(err);
-      message.error('Failed to prettify JS.');
+    } catch (error) {
+      console.error(error);
+      message.error('Failed to prettify JavaScript.');
     }
   };
 
@@ -361,11 +369,15 @@ const PlaygroundPage: React.FC = () => {
                 { label: 'TypeScript', value: 'typescript' },
               ]}
             />
-            <Button type="primary" onClick={runCode}>
-              ▶ Run
-            </Button>
+
             <Button icon={<SettingOutlined />} onClick={() => setIsModalOpen(true)}>
               Settings
+            </Button>
+            <Button icon={<FormatPainterOutlined />} onClick={prettifyJS}>
+              Prettify
+            </Button>
+            <Button type="primary" onClick={runCode}>
+              ▶ Run
             </Button>
           </Space>
 
