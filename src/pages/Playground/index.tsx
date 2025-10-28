@@ -263,9 +263,7 @@ const PlaygroundPage: React.FC = () => {
                       <Button icon={<FormatPainterOutlined />} onClick={prettifyHTML}>
                         Prettify
                       </Button>
-                      <Button icon={<SettingOutlined />} onClick={() => setIsModalOpen(true)}>
-                        Settings
-                      </Button>
+                      <Button icon={<SettingOutlined />} onClick={() => setIsModalOpen(true)} />
                     </Space>
                     {viewMode === 'rich' ? (
                       <ReactQuill value={htmlContent} onChange={setHtmlContent} />
@@ -290,9 +288,7 @@ const PlaygroundPage: React.FC = () => {
                       <Button icon={<FormatPainterOutlined />} onClick={prettifyCSS}>
                         Prettify
                       </Button>
-                      <Button icon={<SettingOutlined />} onClick={() => setIsModalOpen(true)}>
-                        Settings
-                      </Button>
+                      <Button icon={<SettingOutlined />} onClick={() => setIsModalOpen(true)} />
                     </Space>
                     <Editor
                       height="400px"
@@ -361,6 +357,7 @@ const PlaygroundPage: React.FC = () => {
       ) : (
         <Card className="playground-card" variant="borderless">
           <Space style={{ marginBottom: 16 }}>
+            <Button icon={<SettingOutlined />} onClick={() => setIsModalOpen(true)} />
             <Select
               value={language}
               onChange={(v) => setLanguage(v)}
@@ -370,9 +367,6 @@ const PlaygroundPage: React.FC = () => {
               ]}
             />
 
-            <Button icon={<SettingOutlined />} onClick={() => setIsModalOpen(true)}>
-              Settings
-            </Button>
             <Button icon={<FormatPainterOutlined />} onClick={prettifyJS}>
               Prettify
             </Button>
