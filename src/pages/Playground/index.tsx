@@ -5,9 +5,24 @@ import {
   DownloadOutlined,
   EditOutlined,
   FormatPainterOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
-import { Button, Card, message, Segmented, Select, Space, Tabs, Typography } from 'antd';
+import {
+  Button,
+  Card,
+  Form,
+  InputNumber,
+  message,
+  Modal,
+  Segmented,
+  Select,
+  Space,
+  Switch,
+  Tabs,
+  Typography,
+} from 'antd';
+import cssbeautify from 'cssbeautify';
 import React, { useEffect, useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -19,6 +34,23 @@ const { Title } = Typography;
 const PlaygroundPage: React.FC = () => {
   const { darkMode } = useDarkMode();
   const [mode, setMode] = useState<'html' | 'playground'>('html');
+
+  // --- Editor Settings Modal ---
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editorOptions, setEditorOptions] = useState({
+    minimap: true,
+    wordWrap: true,
+    fontSize: 14,
+    lineNumbersMinChars: 2,
+    lineDecorationsWidth: 0,
+    lineNumbers: true,
+  });
+
+  const handleSaveSettings = (values: any) => {
+    setEditorOptions(values);
+    setIsModalOpen(false);
+    message.success('Editor settings updated!');
+  };
 
   // --- HTML / CSS / JS Playground ---
   const [viewMode, setViewMode] = useState<'rich' | 'html'>('html');
@@ -69,13 +101,27 @@ const PlaygroundPage: React.FC = () => {
     }
   };
 
+  // --- Prettify HTML ---
   const prettifyHTML = () => {
-    if (!htmlContent.trim()) {
-      message.warning('No HTML content to prettify.');
-      return;
-    }
+    if (!htmlContent.trim()) return message.warning('No HTML content to prettify.');
     setHtmlContent(formatHTML(htmlContent));
     message.success('HTML prettified!');
+  };
+
+  // --- Prettify CSS ---
+  const prettifyCSS = () => {
+    if (!cssContent.trim()) return message.warning('No CSS content to prettify.');
+    try {
+      const beautified = cssbeautify(cssContent, {
+        indent: '  ',
+        openbrace: 'end-of-line',
+        autosemicolon: true,
+      });
+      setCssContent(beautified);
+      message.success('CSS prettified!');
+    } catch (err) {
+      message.error('Failed to prettify CSS.');
+    }
   };
 
   useEffect(() => {
@@ -128,7 +174,6 @@ const PlaygroundPage: React.FC = () => {
     };
 
     try {
-      // eslint-disable-next-line no-new-func
       const result = new Function(code)();
       if (result !== undefined) captured.push(`➡️ ${String(result)}`);
     } catch (err: any) {
@@ -138,6 +183,16 @@ const PlaygroundPage: React.FC = () => {
     console.log = origLog;
     console.error = origErr;
     setOutput(captured.join('\n'));
+  };
+
+  // --- Monaco Options ---
+  const monacoOptions = {
+    minimap: { enabled: editorOptions.minimap },
+    wordWrap: editorOptions.wordWrap ? 'on' : 'off',
+    fontSize: editorOptions.fontSize,
+    lineNumbersMinChars: editorOptions.lineNumbersMinChars,
+    lineDecorationsWidth: editorOptions.lineDecorationsWidth,
+    lineNumbers: editorOptions.lineNumbers ? 'on' : 'off',
   };
 
   return (
@@ -157,7 +212,7 @@ const PlaygroundPage: React.FC = () => {
       />
 
       {mode === 'html' ? (
-        <Card className="html-card" variant={'borderless'}>
+        <Card className="html-card" variant="borderless">
           <Tabs
             defaultActiveKey="html"
             items={[
@@ -178,6 +233,9 @@ const PlaygroundPage: React.FC = () => {
                       <Button icon={<FormatPainterOutlined />} onClick={prettifyHTML}>
                         Prettify
                       </Button>
+                      <Button icon={<SettingOutlined />} onClick={() => setIsModalOpen(true)}>
+                        Settings
+                      </Button>
                     </Space>
                     {viewMode === 'rich' ? (
                       <ReactQuill value={htmlContent} onChange={setHtmlContent} />
@@ -187,7 +245,7 @@ const PlaygroundPage: React.FC = () => {
                         language="html"
                         value={htmlContent}
                         onChange={(val) => setHtmlContent(val || '')}
-                        options={{ minimap: { enabled: false } }}
+                        options={monacoOptions}
                       />
                     )}
                   </>
@@ -199,11 +257,11 @@ const PlaygroundPage: React.FC = () => {
                 children: (
                   <>
                     <Space align="center" style={{ marginBottom: 12 }}>
-                      <Button
-                        icon={<FormatPainterOutlined />}
-                        onClick={() => message.info('Add CSS prettifier here')}
-                      >
+                      <Button icon={<FormatPainterOutlined />} onClick={prettifyCSS}>
                         Prettify
+                      </Button>
+                      <Button icon={<SettingOutlined />} onClick={() => setIsModalOpen(true)}>
+                        Settings
                       </Button>
                     </Space>
                     <Editor
@@ -211,7 +269,7 @@ const PlaygroundPage: React.FC = () => {
                       language="css"
                       value={cssContent}
                       onChange={(val) => setCssContent(val || '')}
-                      options={{ minimap: { enabled: false } }}
+                      options={monacoOptions}
                     />
                   </>
                 ),
@@ -228,13 +286,16 @@ const PlaygroundPage: React.FC = () => {
                       >
                         Prettify
                       </Button>
+                      <Button icon={<SettingOutlined />} onClick={() => setIsModalOpen(true)}>
+                        Settings
+                      </Button>
                     </Space>
                     <Editor
                       height="400px"
                       language="javascript"
                       value={jsContent}
                       onChange={(val) => setJsContent(val || '')}
-                      options={{ minimap: { enabled: false } }}
+                      options={monacoOptions}
                     />
                   </>
                 ),
@@ -271,7 +332,7 @@ const PlaygroundPage: React.FC = () => {
           </div>
         </Card>
       ) : (
-        <Card className="playground-card" variant={'borderless'}>
+        <Card className="playground-card" variant="borderless">
           <Space style={{ marginBottom: 16 }}>
             <Select
               value={language}
@@ -284,6 +345,9 @@ const PlaygroundPage: React.FC = () => {
             <Button type="primary" onClick={runCode}>
               ▶ Run
             </Button>
+            <Button icon={<SettingOutlined />} onClick={() => setIsModalOpen(true)}>
+              Settings
+            </Button>
           </Space>
 
           <Editor
@@ -292,12 +356,7 @@ const PlaygroundPage: React.FC = () => {
             value={code}
             onChange={(val) => setCode(val || '')}
             theme={darkMode ? 'vs-dark' : 'light'}
-            options={{
-              minimap: { enabled: false },
-              fontSize: 14,
-              scrollBeyondLastLine: false,
-              automaticLayout: true,
-            }}
+            options={monacoOptions}
           />
 
           <div className="playground-output">
@@ -306,6 +365,75 @@ const PlaygroundPage: React.FC = () => {
           </div>
         </Card>
       )}
+
+      {/* --- Settings Modal --- */}
+      <Modal
+        title="Editor Settings"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onOk={() => document.getElementById('editor-settings-submit')?.click()}
+        width={380}
+        centered
+      >
+        <Form
+          layout="vertical"
+          initialValues={editorOptions}
+          onFinish={handleSaveSettings}
+          id="editor-settings-form"
+          style={{ marginTop: 8 }}
+        >
+          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <Form.Item label="Font Size" name="fontSize" style={{ marginBottom: 8 }}>
+              <InputNumber min={10} max={30} style={{ width: '100%' }} />
+            </Form.Item>
+
+            <Form.Item
+              label="Line Numbers Min Chars"
+              name="lineNumbersMinChars"
+              style={{ marginBottom: 8 }}
+            >
+              <InputNumber min={1} max={10} style={{ width: '100%' }} />
+            </Form.Item>
+
+            <Form.Item
+              label="Line Decorations Width"
+              name="lineDecorationsWidth"
+              style={{ marginBottom: 8 }}
+            >
+              <InputNumber min={0} max={20} style={{ width: '100%' }} />
+            </Form.Item>
+
+            <Space>
+              <Form.Item
+                label="Minimap"
+                name="minimap"
+                valuePropName="checked"
+                style={{ marginBottom: 4 }}
+              >
+                <Switch size="small" />
+              </Form.Item>
+              <Form.Item
+                label="Word Wrap"
+                name="wordWrap"
+                valuePropName="checked"
+                style={{ marginBottom: 4 }}
+              >
+                <Switch size="small" />
+              </Form.Item>
+              <Form.Item
+                label="Line Numbers"
+                name="lineNumbers"
+                valuePropName="checked"
+                style={{ marginBottom: 4 }}
+              >
+                <Switch size="small" />
+              </Form.Item>
+            </Space>
+          </Space>
+
+          <button type="submit" id="editor-settings-submit" style={{ display: 'none' }} />
+        </Form>
+      </Modal>
     </div>
   );
 };
