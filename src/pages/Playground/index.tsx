@@ -27,6 +27,9 @@ import React, { useEffect, useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { DEFAULT_CSS, DEFAULT_HTML, DEFAULT_SCRIPT } from './constants';
+import prettier from 'prettier/standalone';
+import babel from 'prettier/plugins/babel';
+import estree from 'prettier/plugins/estree';
 import './styles.less';
 
 const { Title } = Typography;
@@ -121,6 +124,25 @@ const PlaygroundPage: React.FC = () => {
       message.success('CSS prettified!');
     } catch (err) {
       message.error('Failed to prettify CSS.');
+    }
+  };
+
+  // --- Prettify JS ---
+  const prettifyJS = async () => {
+    if (!jsContent.trim()) return message.warning('No JS content to prettify.');
+    try {
+      const formatted = await prettier.format(jsContent, {
+        parser: 'babel',
+        plugins: [babel, estree],
+        semi: true,
+        singleQuote: true,
+        tabWidth: 2,
+      });
+      setJsContent(formatted);
+      message.success('JS prettified!');
+    } catch (err) {
+      console.error(err);
+      message.error('Failed to prettify JS.');
     }
   };
 
@@ -280,10 +302,7 @@ const PlaygroundPage: React.FC = () => {
                 children: (
                   <>
                     <Space align="center" style={{ marginBottom: 12 }}>
-                      <Button
-                        icon={<FormatPainterOutlined />}
-                        onClick={() => message.info('Add JS prettifier here')}
-                      >
+                      <Button icon={<FormatPainterOutlined />} onClick={prettifyJS}>
                         Prettify
                       </Button>
                       <Button icon={<SettingOutlined />} onClick={() => setIsModalOpen(true)}>
