@@ -51,7 +51,7 @@
         padding: 20px;
         text-align: center;
 
-        // Glass-like translucent background
+        // Glass-like translucent ba ckground
         background: rgba(255, 255, 255, 0.35);
         border: 1px solid rgba(255, 255, 255, 0.3);
         border-radius: 16px;
@@ -97,7 +97,9 @@
           content: '';
           pointer-events: none;
           inset: 0;
-          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          mask:
+            linear-gradient(#fff 0 0) content-box,
+            linear-gradient(#fff 0 0);
           -webkit-mask-composite: xor;
           mask-composite: exclude;
         }
@@ -105,12 +107,25 @@
         .ant-btn {
           font-weight: 600;
           border-radius: 10px;
-          transition: 0.3s ease;
+          padding: 6px 18px;
+          color: #333;
+          background: rgba(249, 184, 252, 0.35);
+          border: 1px solid rgba(160, 239, 253, 0.3);
+          backdrop-filter: blur(10px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+          transition: all 0.35s ease;
 
           &:hover {
             color: #fff;
             background: linear-gradient(90deg, #ff718b, #41b3ff);
             border: none;
+            box-shadow: 0 6px 20px rgba(255, 113, 139, 0.35);
+            transform: translateY(-2px) scale(1.03);
+          }
+
+          &:active {
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 2px 10px rgba(255, 113, 139, 0.25);
           }
         }
       }
