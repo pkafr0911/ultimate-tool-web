@@ -167,22 +167,27 @@ export default defineConfig({
    * @description Enables Mako for rapid development.
    * @doc https://umijs.org/docs/api/config#mako
    */
-  mako: REACT_APP_ENV === 'pre' ? false : {},
+
+  //// better performent but ez to read code in dev tool
+  mako: {},
 
   esbuildMinifyIIFE: true,
 
-  ...(REACT_APP_ENV === 'pre'
-    ? {
-        extraBabelPlugins: [
-          [
-            'babel-plugin-istanbul',
-            {
-              exclude: ['**/.umi', '**/locales'],
-            },
-          ],
-        ],
-      }
-    : {}),
+  //// Use this if need to hide the code
+  // mako: REACT_APP_ENV === 'pre' ? false : {},
+
+  // ...(REACT_APP_ENV === 'pre'
+  //   ? {
+  //       extraBabelPlugins: [
+  //         [
+  //           'babel-plugin-istanbul',
+  //           {
+  //             exclude: ['**/.umi', '**/locales'],
+  //           },
+  //         ],
+  //       ],
+  //     }
+  //   : {}),
 
   requestRecord: {},
 });

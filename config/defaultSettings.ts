@@ -3,6 +3,11 @@ import type { ProLayoutProps } from '@ant-design/pro-components';
 /**
  * Application settings configuration for Pro Layout
  */
+
+const { REACT_APP_ENV = 'dev' } = process.env;
+
+const REPO_NAME = 'ultimate-tool-web';
+
 const Settings: ProLayoutProps & {
   pwa?: boolean;
   logo?: string;
@@ -21,7 +26,7 @@ const Settings: ProLayoutProps & {
   colorWeak: false, // Whether to enable color weakness mode
   title: 'Ultimate tool', // Application title
   pwa: true, // Enable Progressive Web App (PWA) support
-  logo: 'https://pkafr0911.github.io/ultimate-tool-web/qr_icon.png', // Path to the logo/favicon image
+  logo: `https://pkafr0911.github.io/${REPO_NAME}/qr_icon.png`, // Path to the logo/favicon image
   iconfontUrl: '', // Custom icon font URL (empty for default)
   token: {
     // Token configuration for theme customization
@@ -33,13 +38,8 @@ const Settings: ProLayoutProps & {
   serveUrlMap: {
     dev: 'http://localhost:9080',
   },
-  //// Deployment base path - decomment this when run yarn deploy on  github
-  // basePath: '/ultimate-tool-web/',
-  // publicPath: '/ultimate-tool-web/',
-
-  //// Dev base path
-  basePath: '/',
-  publicPath: '/',
+  basePath: REACT_APP_ENV === 'pre' ? `/${REPO_NAME}/` : '/',
+  publicPath: REACT_APP_ENV === 'pre' ? `/${REPO_NAME}/` : '/',
 };
 
 export default Settings;
