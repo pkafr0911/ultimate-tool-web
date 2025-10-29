@@ -32,25 +32,25 @@
     ],
   },
   {
-    key: 'imageConverter',
-    name: 'imageConverter',
+    key: 'image-converter',
+    name: 'image-converter',
     icon: 'picture',
     routes: [
       {
-        path: '/imageConverter/svg-viewer',
+        path: '/image-converter/svg-viewer',
         name: 'svg-viewer',
         icon: 'fileImage',
         component: './SVGViewer',
       },
       {
-        path: '/imageConverter/pnj-jpeg',
+        path: '/image-converter/pnj-jpeg',
         name: 'pnj-jpeg',
         icon: 'fileImage',
         component: './PNGJPEG',
       },
-      { path: '/imageConverter/base64', name: 'base64', icon: 'fileText', component: './Base64' },
+      { path: '/image-converter/base64', name: 'base64', icon: 'fileText', component: './Base64' },
       {
-        path: '/imageConverter/text-art',
+        path: '/image-converter/text-art',
         name: 'text-art',
         icon: 'fontColors',
         component: './TextArt',

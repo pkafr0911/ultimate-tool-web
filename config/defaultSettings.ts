@@ -18,7 +18,7 @@ const Settings: ProLayoutProps & {
   publicPath: string;
 } = {
   navTheme: 'light', // Theme color of the navigation bar (light mode)
-  colorPrimary: '#002e70', // Primary color for the theme (Dawn Blue)
+  colorPrimary: '#574b7e', // Primary color for the theme (Dawn Blue)  002e70
   layout: 'top', // Layout type (mixed layout with sidebar and top navigation)
   contentWidth: 'Fluid', // Fluid content width for responsiveness
   fixedHeader: false, // Whether to fix the header (false for a non-fixed header)

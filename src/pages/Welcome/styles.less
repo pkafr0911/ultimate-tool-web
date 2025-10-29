@@ -1,76 +1,255 @@
-.welcome-container.light-theme {
+.welcome-container {
   min-height: 100vh;
-  padding: 40px 60px;
-  overflow-x: hidden;
-  color: #333;
-  text-align: center;
-  background: linear-gradient(135deg, #fdfbfb, #ebedee);
+  background: radial-gradient(circle at 10% 20%, #ffe3ec, #b5fffc);
+  background-size: 200% 200%;
+  animation: gradientShift 10s ease infinite;
+  color: #1f1f1f;
 
-  .welcome-title {
-    margin-bottom: 8px;
-    color: #1f1f1f;
-    font-weight: 800;
-  }
-
-  .welcome-subtitle {
-    margin-bottom: 40px;
-    color: #666;
-    font-size: 16px;
-  }
-
-  .category-section {
-    margin-bottom: 60px;
-    text-align: left;
-  }
-
-  .category-title {
-    margin-bottom: 20px;
-    color: #1890ff;
-    font-weight: 700;
-  }
-
-  .feature-card.light-card {
-    overflow: hidden;
+  .hero-section {
     text-align: center;
-    background: #ffffff;
-    border: 1px solid #f0f0f0;
-    border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-    transition: all 0.3s ease;
+    margin-bottom: 80px;
 
-    .ant-card-body {
-      padding: 24px;
+    .hero-title {
+      font-size: 3rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, #ff718b, #41b3ff);
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -1px;
     }
 
-    &:hover {
-      border-color: #e0e0e0;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-      transform: translateY(-6px);
+    .hero-subtitle {
+      font-size: 1.2rem;
+      color: rgba(0, 0, 0, 0.6);
+      margin-top: 12px;
+    }
+  }
+
+  .hero-section::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #ffffff 100%);
+    pointer-events: none;
+  }
+
+  .categories-container {
+    padding: 60px 8vw;
+
+    .category-section {
+      margin-bottom: 80px;
+
+      .category-title {
+        color: #333;
+        margin-bottom: 30px;
+        font-weight: 700;
+      }
+
+      .feature-card {
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.35s ease;
+        text-align: center;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+
+        .feature-icon {
+          font-size: 2.2rem;
+          margin-bottom: 16px;
+          transition: transform 0.3s ease;
+        }
+
+        &:hover {
+          transform: translateY(-6px) scale(1.03);
+          box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+          background: rgba(255, 255, 255, 0.5);
+
+          .feature-icon {
+            transform: rotate(6deg) scale(1.1);
+          }
+        }
+
+        .feature-desc {
+          color: rgba(0, 0, 0, 0.55);
+          min-height: 48px;
+          margin: 12px 0;
+        }
+
+        .ant-btn {
+          border-radius: 10px;
+          font-weight: 600;
+          transition: 0.3s ease;
+
+          &:hover {
+            background: linear-gradient(90deg, #ff718b, #41b3ff);
+            color: #fff;
+            border: none;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Hero container */
+.hero-phrase-container {
+  position: relative;
+  height: 40px; // ensures no layout shift during animation
+  overflow: hidden;
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+.hero-phrase {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111;
+  text-align: center;
+  line-height: 40px;
+  background: linear-gradient(90deg, #ff718b, #41b3ff);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+.hero-section {
+  position: relative;
+  text-align: center;
+  margin-bottom: 100px;
+  z-index: 1;
+
+  padding: 100px 20px 100px; // more breathing room top & bottom
+
+  .hero-title,
+  .hero-phrase,
+  .hero-subtitle {
+    position: relative;
+    z-index: 2;
+  }
+}
+
+.blob-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+
+  .blob {
+    position: absolute;
+    // width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.6;
+    mix-blend-mode: screen;
+    animation: blobMove 10s infinite ease-in-out;
+  }
+
+  .blob1 {
+    background: radial-gradient(circle at center, #ff718b, #ffeced);
+    top: 10%;
+    left: 20%;
+    animation-delay: 0s;
+  }
+
+  .blob2 {
+    background: radial-gradient(circle at center, #87e6fb, #6f9eff);
+    top: 40%;
+    right: 15%;
+    animation-delay: 5s;
+  }
+
+  .blob3 {
+    background: radial-gradient(circle at center, #b5fffc, #ffdee9);
+    bottom: 10%;
+    left: 10%;
+    animation-delay: 10s;
+  }
+}
+
+@keyframes blobMove {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  25% {
+    transform: translate(60px, -40px) scale(1.1);
+  }
+  50% {
+    transform: translate(0px, -80px) scale(0.95);
+  }
+  75% {
+    transform: translate(-60px, 40px) scale(1.05);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.ant-pro-layout .ant-pro-layout-content {
+  padding-inline: 0px;
+  padding-block: 0px;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@media (max-width: 768px) {
+  .categories-container {
+    padding: 40px 5vw;
+
+    .category-title {
+      font-size: 1.4rem;
+      text-align: center;
     }
 
-    .feature-icon {
-      margin-bottom: 12px;
-      color: #1890ff;
-      font-size: 36px;
-    }
+    .feature-card {
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+      margin: 0 auto;
+      max-width: 320px; // prevent too wide on tablets
+      transition: none; // avoid hover lag on touch
 
-    .feature-desc {
-      min-height: 40px;
-      color: #555;
-      font-size: 14px;
-    }
+      .feature-icon {
+        font-size: 1.8rem;
+      }
 
-    .ant-btn-primary {
-      margin-top: 10px;
-      background: linear-gradient(90deg, #1890ff, #40a9ff);
-      border: none;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+      .feature-desc {
+        min-height: auto;
+        margin: 8px 0;
+        font-size: 0.9rem;
+      }
 
       &:hover {
-        background: linear-gradient(90deg, #40a9ff, #69c0ff);
-        box-shadow: 0 3px 10px rgba(24, 144, 255, 0.4);
+        transform: none;
+        background: rgba(255, 255, 255, 0.45);
       }
+
+      .ant-btn {
+        font-size: 0.9rem;
+      }
+    }
+
+    .ant-row {
+      justify-content: center; // center the cards
+    }
+
+    .ant-col {
+      flex: 0 0 100%; // full width
+      max-width: 100%;
     }
   }
 }

@@ -76,25 +76,25 @@ export const pages = [
   // Image Converter
   {
     name: 'SVG Viewer',
-    path: '/imageConverter/svg-viewer',
+    path: '/image-converter/svg-viewer',
     icon: '🖼️',
     desc: 'View and inspect SVG files in the browser.',
   },
   {
     name: 'PNG / JPEG Converter',
-    path: '/imageConverter/pnj-jpeg',
+    path: '/image-converter/pnj-jpeg',
     icon: '🖌️',
     desc: 'Convert images between PNG and JPEG.',
   },
   {
     name: 'Image Base64 Converter',
-    path: '/imageConverter/base64',
+    path: '/image-converter/base64',
     icon: '💾',
     desc: 'Encode images to Base64 and decode back.',
   },
   {
     name: 'Text Art Generator',
-    path: '/imageConverter/text-art',
+    path: '/image-converter/text-art',
     icon: '🖋️',
     desc: 'Turn images into ASCII / text art.',
   },

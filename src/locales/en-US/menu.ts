@@ -18,11 +18,11 @@ export default {
   'menu.randomizer.random': 'Random Generator',
 
   // Image Converter
-  'menu.imageConverter': 'Image Converter',
-  'menu.imageConverter.svg-viewer': 'SVG Viewer',
-  'menu.imageConverter.pnj-jpeg': 'PNG / JPEG Converter',
-  'menu.imageConverter.base64': 'Base64 Converter',
-  'menu.imageConverter.text-art': 'Text Art Generator',
+  'menu.image-converter': 'Image Converter',
+  'menu.image-converter.svg-viewer': 'SVG Viewer',
+  'menu.image-converter.pnj-jpeg': 'PNG / JPEG Converter',
+  'menu.image-converter.base64': 'Base64 Converter',
+  'menu.image-converter.text-art': 'Text Art Generator',
 
   // Editor
   'menu.editor': 'Editor',

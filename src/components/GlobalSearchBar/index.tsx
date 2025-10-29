@@ -11,7 +11,7 @@ const highlightMatch = (text: string, query: string) => {
   const parts = text.split(regex);
   return parts.map((part, i) =>
     regex.test(part) ? (
-      <span key={i} style={{ color: '#002e70', fontWeight: 600 }}>
+      <span key={i} style={{ color: '#574b7e', fontWeight: 600 }}>
         {part}
       </span>
     ) : (
