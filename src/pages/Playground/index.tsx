@@ -309,9 +309,7 @@ const PlaygroundPage: React.FC = () => {
                       <Button icon={<FormatPainterOutlined />} onClick={prettifyJS}>
                         Prettify
                       </Button>
-                      <Button icon={<SettingOutlined />} onClick={() => setIsModalOpen(true)}>
-                        Settings
-                      </Button>
+                      <Button icon={<SettingOutlined />} onClick={() => setIsModalOpen(true)} />
                     </Space>
                     <Editor
                       height="400px"
