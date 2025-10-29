@@ -23,9 +23,9 @@
   function o() {
     i || ((i = !0), h());
   }
-  ((a = function () {
+  (a = function () {
     var l, a, c, h;
-    (((h = document.createElement('div')).innerHTML = v),
+    ((h = document.createElement('div')).innerHTML = v),
       (v = null),
       (c = h.getElementsByTagName('svg')[0]) &&
         (c.setAttribute('aria-hidden', 'true'),
@@ -36,13 +36,13 @@
         (l = c),
         (a = document.body).firstChild
           ? ((h = l), (c = a.firstChild).parentNode.insertBefore(h, c))
-          : a.appendChild(l)));
+          : a.appendChild(l));
   }),
     document.addEventListener
       ? ~['complete', 'loaded', 'interactive'].indexOf(document.readyState)
         ? setTimeout(a, 0)
         : ((c = function () {
-            (document.removeEventListener('DOMContentLoaded', c, !1), a());
+            document.removeEventListener('DOMContentLoaded', c, !1), a();
           }),
           document.addEventListener('DOMContentLoaded', c, !1))
       : document.attachEvent &&
@@ -59,5 +59,5 @@
         })(),
         (t.onreadystatechange = function () {
           'complete' == t.readyState && ((t.onreadystatechange = null), o());
-        })));
+        }));
 })(window);

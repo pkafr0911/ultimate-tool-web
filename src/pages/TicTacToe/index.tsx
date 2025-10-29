@@ -207,8 +207,8 @@ const TicTacToePage: React.FC = () => {
                 {boardSize < 10
                   ? 'Only available for board ≥10'
                   : blockBothSides
-                    ? 'Enabled'
-                    : 'Disabled'}
+                  ? 'Enabled'
+                  : 'Disabled'}
               </Text>
             </div>
 

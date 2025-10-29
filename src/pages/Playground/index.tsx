@@ -23,13 +23,13 @@ import {
   Typography,
 } from 'antd';
 import cssbeautify from 'cssbeautify';
+import babel from 'prettier/plugins/babel';
+import estree from 'prettier/plugins/estree';
+import prettier from 'prettier/standalone';
 import React, { useEffect, useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { DEFAULT_CSS, DEFAULT_HTML, DEFAULT_SCRIPT } from './constants';
-import prettier from 'prettier/standalone';
-import babel from 'prettier/plugins/babel';
-import estree from 'prettier/plugins/estree';
 import './styles.less';
 
 const { Title } = Typography;

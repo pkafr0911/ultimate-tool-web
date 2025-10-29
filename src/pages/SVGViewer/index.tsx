@@ -583,8 +583,8 @@ const SVGViewer: React.FC = () => {
                         activeTab === 'svg'
                           ? () => handleDownload(svgCode, 'image.svg', 'image/svg+xml')
                           : activeTab === 'png'
-                            ? handleDownloadPng
-                            : handleDownloadIco
+                          ? handleDownloadPng
+                          : handleDownloadIco
                       }
                     >
                       Download {activeTab.toUpperCase()}

@@ -102,13 +102,10 @@ const JsonFormatterPage: React.FC = () => {
         if (obj && typeof obj === 'object') {
           return Object.keys(obj)
             .sort()
-            .reduce(
-              (acc, key) => {
-                acc[key] = sortObj(obj[key]);
-                return acc;
-              },
-              {} as Record<string, any>,
-            );
+            .reduce((acc, key) => {
+              acc[key] = sortObj(obj[key]);
+              return acc;
+            }, {} as Record<string, any>);
         }
         return obj;
       };

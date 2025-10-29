@@ -1,10 +1,10 @@
 import { pages } from '@/consants';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { Button, Card, Col, Row, Typography } from 'antd';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
 import { history } from 'umi';
 import './styles.less';
-import { useIsMobile } from '@/hooks/useIsMobile';
 
 const { Title, Paragraph } = Typography;
 

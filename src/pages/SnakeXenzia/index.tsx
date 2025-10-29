@@ -338,10 +338,10 @@ const SnakeXenziaPage: React.FC = () => {
                         backgroundColor: isHead
                           ? '#52c41a' // Head color
                           : isSnake
-                            ? '#73d13d' // Body color
-                            : isFood
-                              ? '#ff7875' // Food color
-                              : '#f0f0f0', // Empty cell color
+                          ? '#73d13d' // Body color
+                          : isFood
+                          ? '#ff7875' // Food color
+                          : '#f0f0f0', // Empty cell color
                         borderRadius: isFood ? '50%' : 2,
                       }}
                     />
