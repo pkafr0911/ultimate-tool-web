@@ -67,26 +67,29 @@ export const prettifyCSS = (cssContent, setCssContent) => {
   }
 };
 
-export const prettifyJS = async (code, setCode) => {
+export const prettifyJS = async (
+  code: string,
+  setCode: (val: string) => void,
+  language: 'javascript' | 'typescript' = 'javascript',
+) => {
   if (!code.trim()) {
-    message.warning('No JavaScript content to prettify.');
+    message.warning('No code content to prettify.');
     return;
   }
 
   try {
     const formatted = await prettier.format(code, {
-      parser: 'babel',
-      plugins: [babel, estree],
+      parser: language === 'typescript' ? 'babel-ts' : 'babel', // TSX uses babel-ts
+      plugins: [babel, estree], // ⚡ must include parser plugin
       semi: true,
       singleQuote: true,
       tabWidth: 2,
     });
 
     setCode(formatted);
-
-    message.success('JS prettified!');
+    message.success(`${language === 'typescript' ? 'TSX' : 'JS'} prettified!`);
   } catch (error) {
     console.error(error);
-    message.error('Failed to prettify JavaScript.');
+    message.error('Failed to prettify code.');
   }
 };

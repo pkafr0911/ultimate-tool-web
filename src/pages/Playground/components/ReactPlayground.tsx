@@ -1,132 +1,177 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Card, Space, Typography } from 'antd';
+import { Button, Card, Space, Typography, Tabs } from 'antd';
 import Editor, { useMonaco } from '@monaco-editor/react';
 import { prettifyJS } from '../utils/formatters';
-import { FormatPainterOutlined, SettingOutlined } from '@ant-design/icons';
-import { DEFAULT_REACT, REACT_EXTRA_LIB } from '../constants';
+import { FormatPainterOutlined, SettingOutlined, FileAddOutlined } from '@ant-design/icons';
+import { DEFAULT_REACT, REACT_EXTRA_LIB, DEFAULT_CSS } from '../constants';
 import { useMonacoOption } from '../hooks/useMonacoOption';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { transpileTSXCode } from '../utils/transpileReact';
 
-// 🧱 Define the props accepted by this component
 type Props = {
-  onOpenSettings: () => void; // Callback fired when the settings button is clicked
+  onOpenSettings: () => void;
 };
 
-// 📖 Destructure Title from Ant Design's Typography for easy usage
 const { Title } = Typography;
 
-// 🚀 Main React component for the playground
+type FileTab = {
+  name: string;
+  language: string;
+  content: string;
+};
+
 const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
-  const { darkMode } = useDarkMode(); // Detect if user prefers dark mode
-  const [code, setCode] = useState(DEFAULT_REACT); // The code currently in the editor (initially a default example)
+  const { darkMode } = useDarkMode();
+  const monaco = useMonaco();
+  const { monacoOptions } = useMonacoOption();
 
-  const { monacoOptions } = useMonacoOption(); // Get Monaco editor configuration (font size, minimap, etc.)
-  const monaco = useMonaco(); // Access the Monaco editor instance
+  // Manage multiple tabs/files
+  const [tabs, setTabs] = useState<FileTab[]>([
+    { name: 'App.tsx', language: 'typescript', content: DEFAULT_REACT },
+  ]);
+  const [activeTab, setActiveTab] = useState<string>('App.tsx');
 
-  // 🧠 Configure TypeScript compiler and React typings once Monaco is ready
+  const activeFile = tabs.find((t) => t.name === activeTab)!;
+
+  // Monaco setup
   useEffect(() => {
     if (monaco) {
-      // Set compiler options so Monaco knows how to compile TSX
       monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-        jsx: monaco.languages.typescript.JsxEmit.ReactJSX, // Use new JSX transform
-        jsxImportSource: 'react', // Import from React runtime
-        target: monaco.languages.typescript.ScriptTarget.ESNext, // Modern JS output
-        module: monaco.languages.typescript.ModuleKind.ESNext, // ES modules
-        moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs, // Resolve like Node.js
-        allowSyntheticDefaultImports: true, // Allow default imports
-        esModuleInterop: true, // Support interop between CJS and ESM
-        strict: true, // Strict type checking
-        skipLibCheck: true, // Skip lib type checking for performance
+        jsx: monaco.languages.typescript.JsxEmit.ReactJSX,
+        jsxImportSource: 'react',
+        target: monaco.languages.typescript.ScriptTarget.ESNext,
+        module: monaco.languages.typescript.ModuleKind.ESNext,
+        moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+        allowSyntheticDefaultImports: true,
+        esModuleInterop: true,
+        strict: true,
+        skipLibCheck: true,
       });
 
-      // Add fake "@types/react" definitions to enable React types in Monaco
       monaco.languages.typescript.typescriptDefaults.addExtraLib(
         REACT_EXTRA_LIB,
         'file:///node_modules/@types/react/index.d.ts',
       );
 
-      // Optional: turn on validation in editor (both semantic & syntax)
       monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
         noSemanticValidation: false,
         noSyntaxValidation: false,
       });
     }
-  }, [monaco]); // Only run when Monaco becomes available
+  }, [monaco]);
 
-  // The generated HTML preview code
-  // ⚙️ Transpile TypeScript/React code into runnable JS + render preview
+  // Preview HTML (embed all CSS files too)
   const preview = useMemo(() => {
-    // Convert TSX → JS using Babel or TypeScript transpileModule
-    const jsCode = transpileTSXCode(code);
+    const tsxFile = tabs.find((t) => t.language === 'typescript')!;
+    const cssFiles = tabs.filter((t) => t.language === 'css');
 
-    // Build full HTML preview to embed in iframe
-    const html = `
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <title>Live React Preview</title>
-      <style>
-        body { margin: 0; font-family: sans-serif; padding: 20px; }
-      </style>
-      <!-- Load React + ReactDOM (v18) from CDN -->
-      <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-      <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    </head>
-    <body>
-      <div id="root"></div>
-      <script type="module">
-        window.addEventListener('DOMContentLoaded', () => {
-          try {
-            ${jsCode} // Execute the user's transpiled React code
-          } catch (err) {
-            // Display runtime errors in red text
-            document.body.innerHTML = '<pre style="color:red;">' + err + '</pre>';
-            console.error(err);
-          }
-        });
-      <\/script>
-    </body>
-  </html>
-  `;
-    return html;
-  }, [code]); // Re-run every time code changes
+    const jsCode = transpileTSXCode(tsxFile.content);
+    const cssCode = cssFiles.map((f) => `<style>${f.content}</style>`).join('\n');
+
+    return `
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <title>Live React Preview</title>
+          ${cssCode}
+          <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+          <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+        </head>
+        <body>
+          <div id="root"></div>
+          <script type="module">
+            window.addEventListener('DOMContentLoaded', () => {
+              try {
+                ${jsCode}
+              } catch (err) {
+                document.body.innerHTML = '<pre style="color:red;">' + err + '</pre>';
+                console.error(err);
+              }
+            });
+          <\/script>
+        </body>
+      </html>
+    `;
+  }, [tabs]);
+
+  // Add new CSS file
+  const addCssFile = () => {
+    const newFile: FileTab = {
+      name: `style${tabs.filter((f) => f.language === 'css').length + 1}.css`,
+      language: 'css',
+      content: DEFAULT_CSS,
+    };
+    setTabs([...tabs, newFile]);
+    setActiveTab(newFile.name);
+  };
 
   return (
     <Card className="react-card" variant="borderless">
-      {/* Toolbar section with action buttons */}
+      {/* Toolbar */}
       <Space style={{ marginBottom: 16 }}>
-        {/* Settings button */}
         <Button icon={<SettingOutlined />} onClick={onOpenSettings} />
-
-        {/* Prettify (auto-format) code button */}
-        <Button icon={<FormatPainterOutlined />} onClick={() => prettifyJS(code, setCode)}>
+        <Button
+          icon={<FormatPainterOutlined />}
+          onClick={() =>
+            prettifyJS(
+              activeFile.content,
+              (val) => {
+                setTabs(tabs.map((t) => (t.name === activeTab ? { ...t, content: val } : t)));
+              },
+              'typescript',
+            )
+          }
+        >
           Prettify
+        </Button>
+        <Button icon={<FileAddOutlined />} onClick={addCssFile}>
+          Add CSS
         </Button>
       </Space>
 
-      {/* 📝 Monaco Editor component */}
-      <Editor
-        height="400px"
-        language="typescript" // Enables TypeScript syntax
-        value={code} // The editor's current value
-        onChange={(val) => setCode(val || '')} // Update state on edit
-        theme={darkMode ? 'vs-dark' : 'light'} // Switch theme based on dark mode
-        options={monacoOptions} // Editor appearance and behavior
-        path="file:///App.tsx" // Virtual file name (important for TS)
-      />
+      {/* File Tabs */}
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => setActiveTab(key)}
+        type="editable-card"
+        hideAdd
+        onEdit={(targetKey, action) => {
+          if (action === 'remove') {
+            const newTabs = tabs.filter((t) => t.name !== targetKey);
+            setTabs(newTabs);
+            if (activeTab === targetKey && newTabs.length) setActiveTab(newTabs[0].name);
+          }
+        }}
+      >
+        {tabs.map((file) => (
+          <Tabs.TabPane
+            tab={file.name}
+            key={file.name}
+            closable={file.name !== 'App.tsx'} // ✅ App.tsx is not closable
+          >
+            <Editor
+              height="400px"
+              language={file.language}
+              value={file.content}
+              onChange={(val) => {
+                setTabs(tabs.map((t) => (t.name === file.name ? { ...t, content: val || '' } : t)));
+              }}
+              theme={darkMode ? 'vs-dark' : 'light'}
+              options={monacoOptions}
+              path={`file:///${file.name}`}
+            />
+          </Tabs.TabPane>
+        ))}
+      </Tabs>
 
-      {/* 🧩 Live React preview section */}
+      {/* Preview */}
       <div className="react-preview-pane" style={{ marginTop: 24 }}>
         <Title level={5}>Live React Preview</Title>
-
-        {/* Render generated HTML inside an iframe */}
         <iframe
           title="react-preview"
-          srcDoc={preview} // The generated HTML code
-          sandbox="allow-scripts allow-same-origin" // Restrict iframe permissions
-          className="react-preview"
+          srcDoc={preview}
+          sandbox="allow-scripts allow-same-origin"
           style={{
             width: '100%',
             height: '600px',
@@ -140,5 +185,4 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
   );
 };
 
-// 🚀 Export the component for use elsewhere
 export default ReactPlayground;
