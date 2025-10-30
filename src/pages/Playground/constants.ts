@@ -29,6 +29,10 @@ export const DEFAULT_SCRIPT = `
     alert('Hello from JavaScript!');
   });
   `;
+
+export const DEFAULT_CODE = `// Try something!\nconsole.log("Hello, playground!");`;
+
+// Default React code shown in the editor initially
 export const DEFAULT_REACT = `type Props = { name: string };
 
 const App: React.FC<Props> = ({ name }) => {
@@ -43,10 +47,12 @@ const App: React.FC<Props> = ({ name }) => {
   );
 };
 
-ReactDOM.createRoot(document.getElementById('root')!).render(<App name="Thanh" />);`;
+ReactDOM.createRoot(document.getElementById('root')!).render(<App name="TAIN" />);`;
 
-export const DEFAULT_CODE = `// Try something!\nconsole.log("Hello, playground!");`;
-
+/**
+ * This defines React types for Monaco so the in-browser TypeScript compiler
+ * knows how to interpret JSX and React APIs.
+ */
 export const REACT_EXTRA_LIB = `declare namespace React {
   type FC<P = {}> = (props: P & { children?: any }) => any;
   function createElement(...args: any[]): any;
