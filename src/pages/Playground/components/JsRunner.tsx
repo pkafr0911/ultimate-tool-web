@@ -3,7 +3,7 @@ import { Button, Card, Select, Space, Typography } from 'antd';
 import Editor from '@monaco-editor/react';
 import { prettifyJS } from '../utils/formatters';
 import { FormatPainterOutlined, SettingOutlined } from '@ant-design/icons';
-import { DEFAULT_CODE, DEFAULT_REACT, REACT_EXTRA_LIB } from '../constants';
+import { DEFAULT_CODE, DEFAULT_REACT_TS, REACT_EXTRA_LIB } from '../constants';
 import { useMonacoOption } from '../hooks/useMonacoOption';
 import { useDarkMode } from '@/hooks/useDarkMode';
 

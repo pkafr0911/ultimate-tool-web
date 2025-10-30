@@ -33,7 +33,7 @@ export const DEFAULT_SCRIPT = `
 export const DEFAULT_CODE = `// Try something!\nconsole.log("Hello, playground!");`;
 
 // Default React code shown in the editor initially
-export const DEFAULT_REACT = `type Props = { name: string };
+export const DEFAULT_REACT_TS = `type Props = { name: string };
 
 const App: React.FC<Props> = ({ name }) => {
   const [count, setCount] = React.useState(0);
@@ -48,6 +48,20 @@ const App: React.FC<Props> = ({ name }) => {
 };
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<App name="TAIN" />);`;
+
+export const DEFAULT_REACT_JS = `function App() {
+  const [count, setCount] = React.useState(0);
+  return (
+    <div style={{ fontFamily: 'sans-serif', textAlign: 'center' }}>
+      <h2>React Playground ⚛️</h2>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+`;
 
 /**
  * This defines React types for Monaco so the in-browser TypeScript compiler

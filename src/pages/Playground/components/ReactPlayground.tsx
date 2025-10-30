@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button, Card, Space, Typography, Tabs } from 'antd';
 import Editor, { useMonaco } from '@monaco-editor/react';
-import { prettifyJS } from '../utils/formatters';
+import { prettifyCSS, prettifyJS } from '../utils/formatters';
 import { FormatPainterOutlined, SettingOutlined, FileAddOutlined } from '@ant-design/icons';
-import { DEFAULT_REACT, REACT_EXTRA_LIB, DEFAULT_CSS } from '../constants';
+import { DEFAULT_REACT_TS, REACT_EXTRA_LIB, DEFAULT_CSS, DEFAULT_REACT_JS } from '../constants';
 import { useMonacoOption } from '../hooks/useMonacoOption';
 import { useDarkMode } from '@/hooks/useDarkMode';
-import { transpileTSXCode } from '../utils/transpileReact';
+import { transpileCode } from '../utils/transpileReact';
 
 type Props = {
   onOpenSettings: () => void;
@@ -16,7 +16,7 @@ const { Title } = Typography;
 
 type FileTab = {
   name: string;
-  language: string;
+  language: 'javascript' | 'typescript' | 'css';
   content: string;
 };
 
@@ -27,7 +27,7 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
 
   // Manage multiple tabs/files
   const [tabs, setTabs] = useState<FileTab[]>([
-    { name: 'App.tsx', language: 'typescript', content: DEFAULT_REACT },
+    { name: 'App.tsx', language: 'typescript', content: DEFAULT_REACT_TS },
   ]);
   const [activeTab, setActiveTab] = useState<string>('App.tsx');
 
@@ -62,10 +62,13 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
 
   // Preview HTML (embed all CSS files too)
   const preview = useMemo(() => {
-    const tsxFile = tabs.find((t) => t.language === 'typescript')!;
+    const scriptFile = tabs.find((t) => ['typescript', 'javascript'].includes(t.language))!;
     const cssFiles = tabs.filter((t) => t.language === 'css');
 
-    const jsCode = transpileTSXCode(tsxFile.content);
+    const jsCode = transpileCode(
+      scriptFile.content,
+      scriptFile.language as 'javascript' | 'typescript',
+    );
     const cssCode = cssFiles.map((f) => `<style>${f.content}</style>`).join('\n');
 
     return `
@@ -106,22 +109,65 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
     setActiveTab(newFile.name);
   };
 
+  const switchAppFile = () => {
+    if (activeTab === 'App.tsx') {
+      // Switch to JSX: replace App.tsx with App.jsx
+      setTabs(
+        tabs.map((t) =>
+          t.name === 'App.tsx'
+            ? {
+                name: 'App.jsx',
+                language: 'javascript',
+                content: DEFAULT_REACT_JS,
+              }
+            : t,
+        ),
+      );
+      setActiveTab('App.jsx');
+    } else if (activeTab === 'App.jsx') {
+      // Switch back to TSX: replace App.jsx with App.tsx
+      setTabs(
+        tabs.map((t) =>
+          t.name === 'App.jsx'
+            ? {
+                name: 'App.tsx',
+                language: 'typescript',
+                content: DEFAULT_REACT_TS, // optionally, you could re-add TS type if needed
+              }
+            : t,
+        ),
+      );
+      setActiveTab('App.tsx');
+    }
+  };
+
   return (
     <Card className="react-card" variant="borderless">
       {/* Toolbar */}
       <Space style={{ marginBottom: 16 }}>
         <Button icon={<SettingOutlined />} onClick={onOpenSettings} />
+        {/* Switch between TSX and JSX */}
+        {(activeTab === 'App.tsx' || activeTab === 'App.jsx') && (
+          <Button onClick={switchAppFile}>
+            {activeTab === 'App.tsx' ? 'Switch to App.jsx' : 'Switch to App.tsx'}
+          </Button>
+        )}
         <Button
           icon={<FormatPainterOutlined />}
-          onClick={() =>
-            prettifyJS(
-              activeFile.content,
-              (val) => {
-                setTabs(tabs.map((t) => (t.name === activeTab ? { ...t, content: val } : t)));
-              },
-              'typescript',
-            )
-          }
+          onClick={() => {
+            if (activeFile.language === 'css') {
+              prettifyCSS(activeFile.content, (val) =>
+                setTabs(tabs.map((t) => (t.name === activeTab ? { ...t, content: val } : t))),
+              );
+            } else {
+              prettifyJS(
+                activeFile.content,
+                (val) =>
+                  setTabs(tabs.map((t) => (t.name === activeTab ? { ...t, content: val } : t))),
+                activeFile.language,
+              );
+            }
+          }}
         >
           Prettify
         </Button>
@@ -148,7 +194,7 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
           <Tabs.TabPane
             tab={file.name}
             key={file.name}
-            closable={file.name !== 'App.tsx'} // ✅ App.tsx is not closable
+            closable={file.name !== 'App.tsx' && file.name !== 'App.jsx'}
           >
             <Editor
               height="400px"
