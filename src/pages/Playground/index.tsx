@@ -5,7 +5,9 @@ import {
   DownloadOutlined,
   EditOutlined,
   FormatPainterOutlined,
+  Html5Outlined,
   SettingOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
 import {
@@ -29,14 +31,21 @@ import prettier from 'prettier/standalone';
 import React, { useEffect, useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { DEFAULT_CSS, DEFAULT_HTML, DEFAULT_SCRIPT } from './constants';
+import * as Babel from '@babel/standalone';
+import {
+  DEFAULT_CODE,
+  DEFAULT_CSS,
+  DEFAULT_HTML,
+  DEFAULT_REACT,
+  DEFAULT_SCRIPT,
+} from './constants';
 import './styles.less';
 
 const { Title } = Typography;
 
 const PlaygroundPage: React.FC = () => {
   const { darkMode } = useDarkMode();
-  const [mode, setMode] = useState<'html' | 'playground'>('html');
+  const [mode, setMode] = useState<'html' | 'playground' | 'react'>('html');
 
   // --- Editor Settings Modal ---
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -54,6 +63,50 @@ const PlaygroundPage: React.FC = () => {
     setIsModalOpen(false);
     message.success('Editor settings updated!');
   };
+
+  // --- React Playground ---
+  const [reactCode, setReactCode] = useState(DEFAULT_REACT);
+  const [reactPreview, setReactPreview] = useState('');
+
+  // JSX -> JS (Babel transpilation)
+  const transpileTSXCode = (code: string) => {
+    try {
+      const output = Babel.transform(code, {
+        presets: ['env', 'react', 'typescript'],
+        filename: 'index.tsx',
+      }).code;
+
+      return output || '';
+    } catch (e: any) {
+      return `
+      document.body.innerHTML = '<pre style="color:red;white-space:pre-wrap;">${e.message}</pre>';
+    `;
+    }
+  };
+
+  useEffect(() => {
+    const jsCode = transpileTSXCode(reactCode);
+    const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+        <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+      </head>
+      <body>
+        <div id="root"></div>
+        <script>
+          try {
+            ${jsCode}
+          } catch (err) {
+            document.body.innerHTML = '<pre style="color:red;">' + err + '</pre>';
+          }
+        <\/script>
+      </body>
+    </html>`;
+    setReactPreview(html);
+  }, [reactCode]);
 
   // --- HTML / CSS / JS Playground ---
   const [viewMode, setViewMode] = useState<'rich' | 'html'>('html');
@@ -104,14 +157,12 @@ const PlaygroundPage: React.FC = () => {
     }
   };
 
-  // --- Prettify HTML ---
   const prettifyHTML = () => {
     if (!htmlContent.trim()) return message.warning('No HTML content to prettify.');
     setHtmlContent(formatHTML(htmlContent));
     message.success('HTML prettified!');
   };
 
-  // --- Prettify CSS ---
   const prettifyCSS = () => {
     if (!cssContent.trim()) return message.warning('No CSS content to prettify.');
     try {
@@ -122,15 +173,15 @@ const PlaygroundPage: React.FC = () => {
       });
       setCssContent(beautified);
       message.success('CSS prettified!');
-    } catch (err) {
+    } catch {
       message.error('Failed to prettify CSS.');
     }
   };
 
-  // --- Prettify JS ---
   const prettifyJS = async () => {
     const isHtmlMode = mode === 'html';
-    const targetValue = isHtmlMode ? jsContent : code;
+    const isReactMode = mode === 'react';
+    const targetValue = isHtmlMode ? jsContent : isReactMode ? reactCode : code;
 
     if (!targetValue.trim()) {
       message.warning('No JavaScript content to prettify.');
@@ -146,7 +197,10 @@ const PlaygroundPage: React.FC = () => {
         tabWidth: 2,
       });
 
-      isHtmlMode ? setJsContent(formatted) : setCode(formatted);
+      if (isHtmlMode) setJsContent(formatted);
+      else if (isReactMode) setReactCode(formatted);
+      else setCode(formatted);
+
       message.success('JS prettified!');
     } catch (error) {
       console.error(error);
@@ -186,7 +240,7 @@ const PlaygroundPage: React.FC = () => {
 
   // --- JS/TS Playground ---
   const [language, setLanguage] = useState<'javascript' | 'typescript'>('javascript');
-  const [code, setCode] = useState(`// Try something!\nconsole.log("Hello, playground!");`);
+  const [code, setCode] = useState(DEFAULT_CODE);
   const [output, setOutput] = useState<string>('');
 
   const runCode = () => {
@@ -215,7 +269,6 @@ const PlaygroundPage: React.FC = () => {
     setOutput(captured.join('\n'));
   };
 
-  // --- Monaco Options ---
   const monacoOptions = {
     minimap: { enabled: editorOptions.minimap },
     wordWrap: editorOptions.wordWrap ? 'on' : 'off',
@@ -233,15 +286,47 @@ const PlaygroundPage: React.FC = () => {
 
       <Segmented
         options={[
-          { label: 'HTML / CSS / JS', value: 'html' },
-          { label: 'JS / TS Runner', value: 'playground' },
+          {
+            label: (
+              <div className="segmented-option">
+                <Html5Outlined style={{ fontSize: 16, color: '#e34c26' }} />
+                <span>HTML / CSS / JS</span>
+              </div>
+            ),
+            value: 'html',
+          },
+          {
+            label: (
+              <div className="segmented-option">
+                <CodeOutlined style={{ fontSize: 16, color: '#61dafb' }} />
+                <span>React</span>
+              </div>
+            ),
+            value: 'react',
+          },
+          {
+            label: (
+              <div className="segmented-option">
+                <ThunderboltOutlined style={{ fontSize: 16, color: '#fadb14' }} />
+                <span>JS / TS Runner</span>
+              </div>
+            ),
+            value: 'playground',
+          },
         ]}
         value={mode}
         onChange={(val) => setMode(val as any)}
-        style={{ marginBottom: 16 }}
+        size="large"
+        style={{
+          marginBottom: 16,
+          background: 'linear-gradient(145deg, #f0f2f5, #ffffff)',
+          padding: 4,
+          borderRadius: 12,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+        }}
       />
 
-      {mode === 'html' ? (
+      {mode === 'html' && (
         <Card className="html-card" variant="borderless">
           <Tabs
             defaultActiveKey="html"
@@ -352,7 +437,8 @@ const PlaygroundPage: React.FC = () => {
             />
           </div>
         </Card>
-      ) : (
+      )}
+      {mode === 'playground' && (
         <Card className="playground-card" variant="borderless">
           <Space style={{ marginBottom: 16 }}>
             <Button icon={<SettingOutlined />} onClick={() => setIsModalOpen(true)} />
@@ -385,6 +471,42 @@ const PlaygroundPage: React.FC = () => {
           <div className="playground-output">
             <Title level={5}>Output:</Title>
             <pre>{output || '// Your output will appear here'}</pre>
+          </div>
+        </Card>
+      )}
+
+      {mode === 'react' && (
+        <Card className="react-card" variant="borderless">
+          <Space style={{ marginBottom: 16 }}>
+            <Button icon={<SettingOutlined />} onClick={() => setIsModalOpen(true)} />
+            <Button icon={<FormatPainterOutlined />} onClick={prettifyJS}>
+              Prettify
+            </Button>
+          </Space>
+
+          <Editor
+            height="400px"
+            language="javascript"
+            value={reactCode}
+            onChange={(val) => setReactCode(val || '')}
+            theme={darkMode ? 'vs-dark' : 'light'}
+            options={monacoOptions}
+          />
+
+          <div className="react-preview-pane" style={{ marginTop: 24 }}>
+            <Title level={5}>Live React Preview</Title>
+            <iframe
+              title="react-preview"
+              srcDoc={reactPreview}
+              className="react-preview"
+              style={{
+                width: '100%',
+                height: '600px',
+                border: '1px solid #ddd',
+                borderRadius: 8,
+                background: '#fff',
+              }}
+            />
           </div>
         </Card>
       )}

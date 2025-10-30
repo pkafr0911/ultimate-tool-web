@@ -44,6 +44,7 @@
   "dependencies": {
     "@ant-design/icons": "^4.8.3",
     "@ant-design/pro-components": "^2.7.19",
+    "@babel/standalone": "^7.28.5",
     "@monaco-editor/react": "^4.7.0",
     "antd": "^5.20.0",
     "antd-style": "^3.7.0",

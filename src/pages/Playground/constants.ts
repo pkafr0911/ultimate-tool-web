@@ -29,3 +29,16 @@ export const DEFAULT_SCRIPT = `
     alert('Hello from JavaScript!');
   });
   `;
+export const DEFAULT_REACT = `function App() {
+  const [count, setCount] = React.useState(0);
+  return (
+    <div style={{ fontFamily: 'sans-serif', textAlign: 'center', marginTop: '30px' }}>
+      <h2>⚛️ React Playground</h2>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);`;
+
+export const DEFAULT_CODE = `// Try something!\nconsole.log("Hello, playground!");`;
