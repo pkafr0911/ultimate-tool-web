@@ -23,6 +23,14 @@ export const codeMessage = {
 };
 
 export const pages = [
+  // Playground
+  {
+    name: 'Playground',
+    path: '/playground',
+    icon: '🧩',
+    desc: 'Test small scripts or ideas instantly.',
+  },
+
   // Utility Tools
   {
     name: 'QR Generator',
@@ -131,14 +139,6 @@ export const pages = [
     path: '/randomizer/random',
     icon: '🎲',
     desc: 'Generate random numbers, items, or selections.',
-  },
-
-  // Playground
-  {
-    name: 'Playground',
-    path: '/playground',
-    icon: '🧩',
-    desc: 'Test small scripts or ideas instantly.',
   },
 
   // Game

@@ -7,6 +7,12 @@
     hideInMenu: true,
   },
   {
+    path: '/playground',
+    name: 'playground',
+    icon: 'appstore',
+    component: './Playground',
+  },
+  {
     key: 'utility',
     name: 'utility',
     icon: 'tool',
@@ -100,12 +106,6 @@
         component: './Random',
       },
     ],
-  },
-  {
-    path: '/playground',
-    name: 'playground',
-    icon: 'appstore',
-    component: './Playground',
   },
   {
     key: 'game',

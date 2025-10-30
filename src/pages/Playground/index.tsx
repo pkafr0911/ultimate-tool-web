@@ -9,7 +9,7 @@ import {
   SettingOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
-import Editor from '@monaco-editor/react';
+import Editor, { useMonaco } from '@monaco-editor/react';
 import {
   Button,
   Card,
@@ -18,6 +18,7 @@ import {
   message,
   Modal,
   Segmented,
+  SegmentedProps,
   Select,
   Space,
   Switch,
@@ -38,6 +39,7 @@ import {
   DEFAULT_HTML,
   DEFAULT_REACT,
   DEFAULT_SCRIPT,
+  REACT_EXTRA_LIB,
 } from './constants';
 import './styles.less';
 
@@ -68,11 +70,45 @@ const PlaygroundPage: React.FC = () => {
   const [reactCode, setReactCode] = useState(DEFAULT_REACT);
   const [reactPreview, setReactPreview] = useState('');
 
+  const monaco = useMonaco();
+
+  useEffect(() => {
+    if (monaco) {
+      monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+        jsx: monaco.languages.typescript.JsxEmit.ReactJSX,
+        jsxImportSource: 'react',
+        target: monaco.languages.typescript.ScriptTarget.ESNext,
+        module: monaco.languages.typescript.ModuleKind.ESNext,
+        moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+        allowSyntheticDefaultImports: true,
+        esModuleInterop: true,
+        strict: true,
+        skipLibCheck: true,
+      });
+
+      // ✅ Inject minimal React + JSX declarations
+      monaco.languages.typescript.typescriptDefaults.addExtraLib(
+        REACT_EXTRA_LIB,
+        'file:///node_modules/@types/react/index.d.ts',
+      );
+
+      // Disable semantic validation (optional, avoids broken refs)
+      monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+        noSemanticValidation: false,
+        noSyntaxValidation: false,
+      });
+    }
+  }, [monaco]);
+
   // JSX -> JS (Babel transpilation)
   const transpileTSXCode = (code: string) => {
     try {
       const output = Babel.transform(code, {
-        presets: ['env', 'react', 'typescript'],
+        presets: [
+          ['env', { modules: false, targets: { esmodules: true } }],
+          ['react', { runtime: 'classic' }], // ✅ fixed
+          'typescript',
+        ],
         filename: 'index.tsx',
       }).code;
 
@@ -86,25 +122,35 @@ const PlaygroundPage: React.FC = () => {
 
   useEffect(() => {
     const jsCode = transpileTSXCode(reactCode);
+
     const html = `
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-        <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-      </head>
-      <body>
-        <div id="root"></div>
-        <script>
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <title>Live React Preview</title>
+      <style>
+        body { margin: 0; font-family: sans-serif; padding: 20px; }
+      </style>
+      <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+      <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    </head>
+    <body>
+      <div id="root"></div>
+      <script type="module">
+        window.addEventListener('DOMContentLoaded', () => {
           try {
             ${jsCode}
           } catch (err) {
             document.body.innerHTML = '<pre style="color:red;">' + err + '</pre>';
+            console.error(err);
           }
-        <\/script>
-      </body>
-    </html>`;
+        });
+      <\/script>
+    </body>
+  </html>
+  `;
+
     setReactPreview(html);
   }, [reactCode]);
 
@@ -271,12 +317,42 @@ const PlaygroundPage: React.FC = () => {
 
   const monacoOptions = {
     minimap: { enabled: editorOptions.minimap },
-    wordWrap: editorOptions.wordWrap ? 'on' : 'off',
+    wordWrap: editorOptions.wordWrap ? 'on' : ('off' as any),
     fontSize: editorOptions.fontSize,
     lineNumbersMinChars: editorOptions.lineNumbersMinChars,
     lineDecorationsWidth: editorOptions.lineDecorationsWidth,
-    lineNumbers: editorOptions.lineNumbers ? 'on' : 'off',
+    lineNumbers: editorOptions.lineNumbers ? 'on' : ('off' as any),
   };
+
+  const segmentedOption: SegmentedProps['options'] = [
+    {
+      label: (
+        <div className="segmented-option">
+          <Html5Outlined style={{ fontSize: 16, color: '#e34c26' }} />
+          <span>HTML / CSS / JS</span>
+        </div>
+      ),
+      value: 'html',
+    },
+    {
+      label: (
+        <div className="segmented-option">
+          <CodeOutlined style={{ fontSize: 16, color: '#61dafb' }} />
+          <span>React</span>
+        </div>
+      ),
+      value: 'react',
+    },
+    {
+      label: (
+        <div className="segmented-option">
+          <ThunderboltOutlined style={{ fontSize: 16, color: '#fadb14' }} />
+          <span>JS / TS Runner</span>
+        </div>
+      ),
+      value: 'playground',
+    },
+  ];
 
   return (
     <div className="playground-container">
@@ -285,35 +361,7 @@ const PlaygroundPage: React.FC = () => {
       </Title>
 
       <Segmented
-        options={[
-          {
-            label: (
-              <div className="segmented-option">
-                <Html5Outlined style={{ fontSize: 16, color: '#e34c26' }} />
-                <span>HTML / CSS / JS</span>
-              </div>
-            ),
-            value: 'html',
-          },
-          {
-            label: (
-              <div className="segmented-option">
-                <CodeOutlined style={{ fontSize: 16, color: '#61dafb' }} />
-                <span>React</span>
-              </div>
-            ),
-            value: 'react',
-          },
-          {
-            label: (
-              <div className="segmented-option">
-                <ThunderboltOutlined style={{ fontSize: 16, color: '#fadb14' }} />
-                <span>JS / TS Runner</span>
-              </div>
-            ),
-            value: 'playground',
-          },
-        ]}
+        options={segmentedOption}
         value={mode}
         onChange={(val) => setMode(val as any)}
         size="large"
@@ -486,11 +534,12 @@ const PlaygroundPage: React.FC = () => {
 
           <Editor
             height="400px"
-            language="javascript"
+            language="typescript"
             value={reactCode}
             onChange={(val) => setReactCode(val || '')}
             theme={darkMode ? 'vs-dark' : 'light'}
             options={monacoOptions}
+            path="file:///App.tsx"
           />
 
           <div className="react-preview-pane" style={{ marginTop: 24 }}>
@@ -498,6 +547,7 @@ const PlaygroundPage: React.FC = () => {
             <iframe
               title="react-preview"
               srcDoc={reactPreview}
+              sandbox="allow-scripts allow-same-origin"
               className="react-preview"
               style={{
                 width: '100%',
