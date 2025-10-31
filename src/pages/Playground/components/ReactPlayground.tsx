@@ -121,14 +121,6 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
     }
   };
 
-  useEffect(() => {
-    if (monaco) {
-      setTimeout(() => {
-        monaco.editor.getEditors().forEach((ed) => ed.layout());
-      }, 150);
-    }
-  }, [splitDirection, monaco]);
-
   return (
     <Card
       className="react-card"
@@ -140,56 +132,89 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
       }}
     >
       {/* Toolbar */}
-      <Space style={{ marginBottom: 8, flexWrap: 'wrap' }}>
-        <Button icon={<SettingOutlined />} onClick={onOpenSettings} />
-        {(activeTab === 'App.tsx' || activeTab === 'App.jsx') && (
-          <Button onClick={switchAppFile}>
-            {activeTab === 'App.tsx' ? 'Switch to App.jsx' : 'Switch to App.tsx'}
-          </Button>
-        )}
-        <Button
-          icon={<FormatPainterOutlined />}
-          onClick={() => {
-            if (activeFile.language === 'css') {
-              prettifyCSS(activeFile.content, (val) =>
-                setTabs(tabs.map((t) => (t.name === activeTab ? { ...t, content: val } : t))),
-              );
-            } else {
-              prettifyJS(
-                activeFile.content,
-                (val) =>
-                  setTabs(tabs.map((t) => (t.name === activeTab ? { ...t, content: val } : t))),
-                activeFile.language,
-              );
-            }
-          }}
-        >
-          Prettify
-        </Button>
-        <Button icon={<FileAddOutlined />} onClick={addCssFile}>
-          Add CSS
-        </Button>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 8,
+          marginBottom: 12,
+          padding: '8px 12px',
+          background: darkMode ? '#1f1f1f' : '#fafafa',
+          border: darkMode ? '1px solid #333' : '1px solid #e5e5e5',
+          borderRadius: 8,
+        }}
+      >
+        {/* Left section: action buttons */}
+        <Space wrap>
+          <Button
+            icon={<SettingOutlined />}
+            onClick={onOpenSettings}
+            type="text"
+            title="Settings"
+          />
 
-        <Segmented
-          options={[
-            { label: 'Vertical', value: 'vertical' },
-            { label: 'Horizontal', value: 'horizontal' },
-          ]}
-          value={splitDirection}
-          onChange={(val) => setSplitDirection(val as 'vertical' | 'horizontal')}
-        />
-      </Space>
+          {(activeTab === 'App.tsx' || activeTab === 'App.jsx') && (
+            <Button onClick={switchAppFile} icon={<FileAddOutlined />} type="default">
+              {activeTab === 'App.tsx' ? 'Switch to JSX' : 'Switch to TSX'}
+            </Button>
+          )}
+
+          <Button
+            icon={<FormatPainterOutlined />}
+            onClick={() => {
+              if (activeFile.language === 'css') {
+                prettifyCSS(activeFile.content, (val) =>
+                  setTabs(tabs.map((t) => (t.name === activeTab ? { ...t, content: val } : t))),
+                );
+              } else {
+                prettifyJS(
+                  activeFile.content,
+                  (val) =>
+                    setTabs(tabs.map((t) => (t.name === activeTab ? { ...t, content: val } : t))),
+                  activeFile.language,
+                );
+              }
+            }}
+          >
+            Prettify
+          </Button>
+
+          <Button icon={<FileAddOutlined />} type="primary" onClick={addCssFile}>
+            Add CSS
+          </Button>
+        </Space>
+
+        {/* Right section: layout switch */}
+        <Space align="center" style={{ marginLeft: 'auto' }}>
+          <Typography.Text type="secondary" style={{ marginRight: 4, whiteSpace: 'nowrap' }}>
+            Layout:
+          </Typography.Text>
+          <Segmented
+            options={[
+              { label: 'Vertical', value: 'vertical' },
+              { label: 'Horizontal', value: 'horizontal' },
+            ]}
+            value={splitDirection}
+            onChange={(val) => setSplitDirection(val as 'vertical' | 'horizontal')}
+            block
+            size="middle"
+            style={{ minWidth: 180 }}
+          />
+        </Space>
+      </div>
 
       {/* Splitter fills the rest */}
       <div
         style={{
           flex: 1,
           minHeight: 0,
-
           display: 'flex',
         }}
       >
         <Splitter
+          key={splitDirection} // 👈 forces re-render when layout changes
           layout={splitDirection}
           style={{
             flex: 1,
@@ -197,7 +222,6 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
             width: '100%',
             height: splitDirection === 'vertical' ? 'calc(100vh - 120px)' : undefined,
             display: 'flex',
-            transition: 'all 0.25s ease',
           }}
         >
           {/* Left/Top Panel: Code Editor */}
@@ -267,10 +291,9 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
                 sandbox="allow-scripts allow-same-origin"
                 style={{
                   flex: 1,
-                  border: 'none',
-                  minHeight: 0,
                   borderTop: splitDirection === 'horizontal' ? '1px solid #ddd' : undefined,
-                  borderLeft: splitDirection === 'vertical' ? '1px solid #ddd' : undefined,
+                  borderRadius: 8,
+                  minHeight: 0,
                 }}
               />
             </div>
