@@ -1,16 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Card, Space, Typography, Tabs } from 'antd';
+import { Button, Card, Space, Tabs, Typography, Segmented, Splitter } from 'antd';
 import Editor, { useMonaco } from '@monaco-editor/react';
+import { SettingOutlined, FormatPainterOutlined, FileAddOutlined } from '@ant-design/icons';
 import { prettifyCSS, prettifyJS } from '../utils/formatters';
-import { FormatPainterOutlined, SettingOutlined, FileAddOutlined } from '@ant-design/icons';
 import { DEFAULT_REACT_TS, REACT_EXTRA_LIB, DEFAULT_CSS, DEFAULT_REACT_JS } from '../constants';
 import { useMonacoOption } from '../hooks/useMonacoOption';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { transpileCode } from '../utils/transpileReact';
 
-type Props = {
-  onOpenSettings: () => void;
-};
+type Props = { onOpenSettings: () => void };
 
 const { Title } = Typography;
 
@@ -25,15 +23,14 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
   const monaco = useMonaco();
   const { monacoOptions } = useMonacoOption();
 
-  // Manage multiple tabs/files
   const [tabs, setTabs] = useState<FileTab[]>([
     { name: 'App.tsx', language: 'typescript', content: DEFAULT_REACT_TS },
   ]);
-  const [activeTab, setActiveTab] = useState<string>('App.tsx');
+  const [activeTab, setActiveTab] = useState('App.tsx');
+  const [splitDirection, setSplitDirection] = useState<'vertical' | 'horizontal'>('vertical');
 
   const activeFile = tabs.find((t) => t.name === activeTab)!;
 
-  // Monaco setup
   useEffect(() => {
     if (monaco) {
       monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
@@ -52,15 +49,9 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
         REACT_EXTRA_LIB,
         'file:///node_modules/@types/react/index.d.ts',
       );
-
-      monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
-        noSemanticValidation: false,
-        noSyntaxValidation: false,
-      });
     }
   }, [monaco]);
 
-  // Preview HTML (embed all CSS files too)
   const preview = useMemo(() => {
     const scriptFile = tabs.find((t) => ['typescript', 'javascript'].includes(t.language))!;
     const cssFiles = tabs.filter((t) => t.language === 'css');
@@ -81,7 +72,7 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
           <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
           <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
         </head>
-        <body>
+        <body style="margin:0;">
           <div id="root"></div>
           <script type="module">
             window.addEventListener('DOMContentLoaded', () => {
@@ -98,7 +89,6 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
     `;
   }, [tabs]);
 
-  // Add new CSS file
   const addCssFile = () => {
     const newFile: FileTab = {
       name: `style${tabs.filter((f) => f.language === 'css').length + 1}.css`,
@@ -111,29 +101,19 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
 
   const switchAppFile = () => {
     if (activeTab === 'App.tsx') {
-      // Switch to JSX: replace App.tsx with App.jsx
       setTabs(
         tabs.map((t) =>
           t.name === 'App.tsx'
-            ? {
-                name: 'App.jsx',
-                language: 'javascript',
-                content: DEFAULT_REACT_JS,
-              }
+            ? { name: 'App.jsx', language: 'javascript', content: DEFAULT_REACT_JS }
             : t,
         ),
       );
       setActiveTab('App.jsx');
     } else if (activeTab === 'App.jsx') {
-      // Switch back to TSX: replace App.jsx with App.tsx
       setTabs(
         tabs.map((t) =>
           t.name === 'App.jsx'
-            ? {
-                name: 'App.tsx',
-                language: 'typescript',
-                content: DEFAULT_REACT_TS, // optionally, you could re-add TS type if needed
-              }
+            ? { name: 'App.tsx', language: 'typescript', content: DEFAULT_REACT_TS }
             : t,
         ),
       );
@@ -141,12 +121,27 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
     }
   };
 
+  useEffect(() => {
+    if (monaco) {
+      setTimeout(() => {
+        monaco.editor.getEditors().forEach((ed) => ed.layout());
+      }, 150);
+    }
+  }, [splitDirection, monaco]);
+
   return (
-    <Card className="react-card" variant="borderless">
+    <Card
+      className="react-card"
+      variant="borderless"
+      style={{
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       {/* Toolbar */}
-      <Space style={{ marginBottom: 16 }}>
+      <Space style={{ marginBottom: 8, flexWrap: 'wrap' }}>
         <Button icon={<SettingOutlined />} onClick={onOpenSettings} />
-        {/* Switch between TSX and JSX */}
         {(activeTab === 'App.tsx' || activeTab === 'App.jsx') && (
           <Button onClick={switchAppFile}>
             {activeTab === 'App.tsx' ? 'Switch to App.jsx' : 'Switch to App.tsx'}
@@ -174,58 +169,113 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
         <Button icon={<FileAddOutlined />} onClick={addCssFile}>
           Add CSS
         </Button>
+
+        <Segmented
+          options={[
+            { label: 'Vertical', value: 'vertical' },
+            { label: 'Horizontal', value: 'horizontal' },
+          ]}
+          value={splitDirection}
+          onChange={(val) => setSplitDirection(val as 'vertical' | 'horizontal')}
+        />
       </Space>
 
-      {/* File Tabs */}
-      <Tabs
-        activeKey={activeTab}
-        onChange={(key) => setActiveTab(key)}
-        type="editable-card"
-        hideAdd
-        onEdit={(targetKey, action) => {
-          if (action === 'remove') {
-            const newTabs = tabs.filter((t) => t.name !== targetKey);
-            setTabs(newTabs);
-            if (activeTab === targetKey && newTabs.length) setActiveTab(newTabs[0].name);
-          }
+      {/* Splitter fills the rest */}
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+
+          display: 'flex',
         }}
       >
-        {tabs.map((file) => (
-          <Tabs.TabPane
-            tab={file.name}
-            key={file.name}
-            closable={file.name !== 'App.tsx' && file.name !== 'App.jsx'}
-          >
-            <Editor
-              height="400px"
-              language={file.language}
-              value={file.content}
-              onChange={(val) => {
-                setTabs(tabs.map((t) => (t.name === file.name ? { ...t, content: val || '' } : t)));
-              }}
-              theme={darkMode ? 'vs-dark' : 'light'}
-              options={monacoOptions}
-              path={`file:///${file.name}`}
-            />
-          </Tabs.TabPane>
-        ))}
-      </Tabs>
-
-      {/* Preview */}
-      <div className="react-preview-pane" style={{ marginTop: 24 }}>
-        <Title level={5}>Live React Preview</Title>
-        <iframe
-          title="react-preview"
-          srcDoc={preview}
-          sandbox="allow-scripts allow-same-origin"
+        <Splitter
+          layout={splitDirection}
           style={{
+            flex: 1,
+            minHeight: 'calc(100vh - 120px)',
             width: '100%',
-            height: '600px',
-            border: '1px solid #ddd',
-            borderRadius: 8,
-            background: '#fff',
+            height: splitDirection === 'vertical' ? 'calc(100vh - 120px)' : undefined,
+            display: 'flex',
+            transition: 'all 0.25s ease',
           }}
-        />
+        >
+          {/* Left/Top Panel: Code Editor */}
+          <Splitter.Panel defaultSize="50%" min="25%" max="75%">
+            <Tabs
+              activeKey={activeTab}
+              onChange={(key) => setActiveTab(key)}
+              type="editable-card"
+              hideAdd
+              style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+              onEdit={(targetKey, action) => {
+                if (action === 'remove') {
+                  const newTabs = tabs.filter((t) => t.name !== targetKey);
+                  setTabs(newTabs);
+                  if (activeTab === targetKey && newTabs.length) setActiveTab(newTabs[0].name);
+                }
+              }}
+            >
+              {tabs.map((file) => (
+                <Tabs.TabPane
+                  tab={file.name}
+                  key={file.name}
+                  closable={file.name !== 'App.tsx' && file.name !== 'App.jsx'}
+                  style={{ height: '100%', flex: 1, minHeight: 0 }}
+                >
+                  <div style={{ height: '100%', flex: 1, minHeight: 0 }}>
+                    <Editor
+                      // height="80vh"
+                      language={file.language}
+                      value={file.content}
+                      onChange={(val) => {
+                        setTabs(
+                          tabs.map((t) =>
+                            t.name === file.name ? { ...t, content: val || '' } : t,
+                          ),
+                        );
+                      }}
+                      theme={darkMode ? 'vs-dark' : 'light'}
+                      options={monacoOptions}
+                      path={`file:///${file.name}`}
+                    />
+                  </div>
+                </Tabs.TabPane>
+              ))}
+            </Tabs>
+          </Splitter.Panel>
+
+          {/* Right/Bottom Panel: Preview */}
+          <Splitter.Panel>
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                background: '#fff',
+                flex: 1,
+                minHeight: 0,
+              }}
+            >
+              <Title level={5} style={{ padding: '8px 12px', margin: 0 }}>
+                Live React Preview
+              </Title>
+              <iframe
+                title="react-preview"
+                srcDoc={preview}
+                sandbox="allow-scripts allow-same-origin"
+                style={{
+                  flex: 1,
+                  border: 'none',
+                  minHeight: 0,
+                  borderTop: splitDirection === 'horizontal' ? '1px solid #ddd' : undefined,
+                  borderLeft: splitDirection === 'vertical' ? '1px solid #ddd' : undefined,
+                }}
+              />
+            </div>
+          </Splitter.Panel>
+        </Splitter>
       </div>
     </Card>
   );
