@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Button, Card, Segmented, Space, Tabs, Typography } from 'antd';
+import { Button, Card, Segmented, Space, Splitter, Tabs, Typography } from 'antd';
 import Editor from '@monaco-editor/react';
 import { prettifyCSS, prettifyHTML, prettifyJS } from '../utils/formatters';
 import {
@@ -23,7 +23,7 @@ type Props = {
 };
 
 // Extract `Title` from Ant Design Typography for section headings
-const { Title } = Typography;
+const { Text, Title } = Typography;
 
 /**
  * HtmlPlayground Component
@@ -38,16 +38,17 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
   // Dark mode state (used for Monaco theme)
   const { darkMode } = useDarkMode();
 
-  // Current view mode for the HTML tab: either 'html' or 'rich' (WYSIWYG)
-  const [viewMode, setViewMode] = useState<'rich' | 'html'>('html');
+  // Get editor configuration options from custom hook
+  const { monacoOptions } = useMonacoOption();
 
   // Code content states for HTML, CSS, and JS
   const [htmlContent, setHtmlContent] = useState(DEFAULT_HTML);
   const [cssContent, setCssContent] = useState(DEFAULT_CSS);
   const [jsContent, setJsContent] = useState(DEFAULT_SCRIPT);
 
-  // Get editor configuration options from custom hook
-  const { monacoOptions } = useMonacoOption();
+  // Mode & layout states
+  const [viewMode, setViewMode] = useState<'rich' | 'html'>('html'); // Current view mode for the HTML tab: either 'html' or 'rich' (WYSIWYG)
+  const [splitDirection, setSplitDirection] = useState<'vertical' | 'horizontal'>('horizontal');
 
   // Preview HTML (combined and injected into iframe)
   const preview = useMemo(
@@ -67,152 +68,215 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
 
   return (
     // Ant Design card wrapper for the entire playground
-    <Card className="html-card" variant="borderless">
-      {/* Tabs to switch between HTML, CSS, and JS editors */}
-      <Tabs
-        defaultActiveKey="html"
-        items={[
-          // ---------------------- HTML TAB ----------------------
-          {
-            key: 'html',
-            label: 'HTML',
-            children: (
-              <>
-                {/* Toolbar (switch view, prettify, open settings) */}
-                <Space align="center" style={{ marginBottom: 12 }}>
-                  {/* Switch between code and rich (visual) modes */}
-                  <Segmented
-                    options={[
-                      { label: 'HTML Mode', value: 'html', icon: <CodeOutlined /> },
-                      { label: 'Rich Mode', value: 'rich', icon: <EditOutlined /> },
-                    ]}
-                    value={viewMode}
-                    onChange={(val) => setViewMode(val as any)}
-                  />
+    <Card
+      className="html-card"
+      variant="borderless"
+      style={{
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Toolbar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 8,
+          marginBottom: 12,
+          padding: '8px 12px',
+          background: darkMode ? '#1f1f1f' : '#fafafa',
+          border: darkMode ? '1px solid #333' : '1px solid #e5e5e5',
+          borderRadius: 8,
+        }}
+      >
+        {/* Left: actions */}
+        <Space wrap>
+          <Button icon={<SettingOutlined />} onClick={onOpenSettings} type="text" />
 
-                  {/* Button to auto-format HTML */}
-                  <Button
-                    icon={<FormatPainterOutlined />}
-                    onClick={() => prettifyHTML(htmlContent, setHtmlContent)}
-                  >
-                    Prettify
-                  </Button>
+          <Button
+            icon={<FormatPainterOutlined />}
+            onClick={() => {
+              if (viewMode === 'html') prettifyHTML(htmlContent, setHtmlContent);
+              prettifyCSS(cssContent, setCssContent);
+              prettifyJS(jsContent, setJsContent);
+            }}
+          >
+            Prettify All
+          </Button>
 
-                  {/* Open global settings modal */}
-                  <Button icon={<SettingOutlined />} onClick={onOpenSettings} />
-                </Space>
+          <Button icon={<CopyOutlined />} onClick={() => handleCopy(preview, 'Copied full HTML!')}>
+            Copy All
+          </Button>
 
-                {/* Conditional: show code editor or rich text editor */}
-                {viewMode === 'rich' ? (
-                  // Rich text (WYSIWYG) editor
-                  <ReactQuill value={htmlContent} onChange={setHtmlContent} />
-                ) : (
-                  // Monaco code editor
-                  <Editor
-                    height="400px"
-                    language="html"
-                    value={htmlContent}
-                    onChange={(val) => setHtmlContent(val || '')}
-                    options={monacoOptions}
-                  />
-                )}
-              </>
-            ),
-          },
+          <Button icon={<DownloadOutlined />} onClick={() => handleDownload('index.html', preview)}>
+            Download
+          </Button>
+        </Space>
 
-          // ---------------------- CSS TAB ----------------------
-          {
-            key: 'css',
-            label: 'CSS',
-            children: (
-              <>
-                <Space align="center" style={{ marginBottom: 12 }}>
-                  {/* Prettify CSS */}
-                  <Button
-                    icon={<FormatPainterOutlined />}
-                    onClick={() => prettifyCSS(cssContent, setCssContent)}
-                  >
-                    Prettify
-                  </Button>
+        {/* Right: layout controls */}
+        <Space align="center" style={{ marginLeft: 'auto' }}>
+          <Text type="secondary" style={{ marginRight: 4 }}>
+            Layout:
+          </Text>
+          <Segmented
+            options={[
+              { label: 'Horizontal', value: 'horizontal' },
+              { label: 'Vertical', value: 'vertical' },
+            ]}
+            value={splitDirection}
+            onChange={(val) => setSplitDirection(val as 'vertical' | 'horizontal')}
+            size="middle"
+            style={{ minWidth: 180 }}
+          />
+        </Space>
+      </div>
 
-                  {/* Settings button */}
-                  <Button icon={<SettingOutlined />} onClick={onOpenSettings} />
-                </Space>
-
-                {/* Monaco editor for CSS */}
-                <Editor
-                  height="400px"
-                  language="css"
-                  value={cssContent}
-                  onChange={(val) => setCssContent(val || '')}
-                  options={monacoOptions}
-                />
-              </>
-            ),
-          },
-
-          // ---------------------- JAVASCRIPT TAB ----------------------
-          {
-            key: 'js',
-            label: 'JS',
-            children: (
-              <>
-                <Space align="center" style={{ marginBottom: 12 }}>
-                  {/* Prettify JS */}
-                  <Button
-                    icon={<FormatPainterOutlined />}
-                    onClick={() => prettifyJS(jsContent, setJsContent)}
-                  >
-                    Prettify
-                  </Button>
-
-                  {/* Settings button */}
-                  <Button icon={<SettingOutlined />} onClick={onOpenSettings} />
-                </Space>
-
-                {/* Monaco editor for JavaScript */}
-                <Editor
-                  height="400px"
-                  language="javascript"
-                  value={jsContent}
-                  onChange={(val) => setJsContent(val || '')}
-                  theme={darkMode ? 'vs-dark' : 'light'}
-                  options={monacoOptions}
-                />
-              </>
-            ),
-          },
-        ]}
-      />
-
-      {/* Toolbar below editors for global actions (copy/download) */}
-      <Space style={{ marginTop: 16 }}>
-        {/* Copy the entire preview HTML to clipboard */}
-        <Button icon={<CopyOutlined />} onClick={() => handleCopy(preview, 'Copied!')}>
-          Copy All
-        </Button>
-
-        {/* Download the generated HTML as a file */}
-        <Button icon={<DownloadOutlined />} onClick={() => handleDownload('index.html', preview)}>
-          Download HTML
-        </Button>
-      </Space>
-
-      {/* Live preview area */}
-      <div className="preview-pane" style={{ marginTop: 24 }}>
-        <Title level={5}>Live Preview</Title>
-        <iframe
-          title="preview"
-          srcDoc={preview} // Directly inject full HTML document
-          className="html-preview"
+      {/* Splitter Area */}
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+        }}
+      >
+        <Splitter
+          key={splitDirection}
+          layout={splitDirection}
           style={{
+            flex: 1,
+            display: 'flex',
+            height: splitDirection === 'vertical' ? 'calc(100vh - 120px)' : undefined,
             width: '100%',
-            height: '600px',
-            border: '1px solid #ddd',
-            borderRadius: 8,
-            background: '#fff',
           }}
-        />
+        >
+          {/* Left / Top: Editors */}
+          <Splitter.Panel defaultSize="50%" min="25%" max="75%">
+            <Tabs
+              defaultActiveKey="html"
+              type="card"
+              size="middle"
+              style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+              items={[
+                {
+                  key: 'html',
+                  label: 'HTML',
+                  children: (
+                    <>
+                      <Space style={{ marginBottom: 8 }}>
+                        <Segmented
+                          options={[
+                            { label: 'Code', value: 'html', icon: <CodeOutlined /> },
+                            { label: 'Rich', value: 'rich', icon: <EditOutlined /> },
+                          ]}
+                          value={viewMode}
+                          onChange={(val) => setViewMode(val as any)}
+                        />
+                        <Button
+                          icon={<FormatPainterOutlined />}
+                          onClick={() => prettifyHTML(htmlContent, setHtmlContent)}
+                        >
+                          Prettify
+                        </Button>
+                      </Space>
+
+                      {viewMode === 'rich' ? (
+                        <ReactQuill value={htmlContent} onChange={setHtmlContent} />
+                      ) : (
+                        <Editor
+                          height="calc(100vh - 120px)"
+                          language="html"
+                          value={htmlContent}
+                          onChange={(val) => setHtmlContent(val || '')}
+                          theme={darkMode ? 'vs-dark' : 'light'}
+                          options={monacoOptions}
+                        />
+                      )}
+                    </>
+                  ),
+                },
+                {
+                  key: 'css',
+                  label: 'CSS',
+                  children: (
+                    <>
+                      <Button
+                        icon={<FormatPainterOutlined />}
+                        style={{ marginBottom: 8 }}
+                        onClick={() => prettifyCSS(cssContent, setCssContent)}
+                      >
+                        Prettify
+                      </Button>
+                      <Editor
+                        height="calc(100vh - 120px)"
+                        language="css"
+                        value={cssContent}
+                        onChange={(val) => setCssContent(val || '')}
+                        theme={darkMode ? 'vs-dark' : 'light'}
+                        options={monacoOptions}
+                      />
+                    </>
+                  ),
+                },
+                {
+                  key: 'js',
+                  label: 'JavaScript',
+                  children: (
+                    <>
+                      <Button
+                        icon={<FormatPainterOutlined />}
+                        style={{ marginBottom: 8 }}
+                        onClick={() => prettifyJS(jsContent, setJsContent)}
+                      >
+                        Prettify
+                      </Button>
+                      <Editor
+                        height="calc(100vh - 120px)"
+                        language="javascript"
+                        value={jsContent}
+                        onChange={(val) => setJsContent(val || '')}
+                        theme={darkMode ? 'vs-dark' : 'light'}
+                        options={monacoOptions}
+                      />
+                    </>
+                  ),
+                },
+              ]}
+            />
+          </Splitter.Panel>
+
+          {/* Right / Bottom: Live Preview */}
+          <Splitter.Panel>
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                background: '#fff',
+                flex: 1,
+                minHeight: 0,
+              }}
+            >
+              <Title level={5} style={{ padding: '8px 12px', margin: 0 }}>
+                Live HTML Preview
+              </Title>
+              <iframe
+                title="html-preview"
+                srcDoc={preview}
+                // sandbox="allow-scripts allow-same-origin allow-modals"
+                style={{
+                  flex: 1,
+                  borderTop: splitDirection === 'horizontal' ? '1px solid #ddd' : undefined,
+                  borderRadius: 8,
+                  minHeight: 0,
+                }}
+              />
+            </div>
+          </Splitter.Panel>
+        </Splitter>
       </div>
     </Card>
   );

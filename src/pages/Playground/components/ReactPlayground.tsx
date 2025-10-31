@@ -27,7 +27,7 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
     { name: 'App.tsx', language: 'typescript', content: DEFAULT_REACT_TS },
   ]);
   const [activeTab, setActiveTab] = useState('App.tsx');
-  const [splitDirection, setSplitDirection] = useState<'vertical' | 'horizontal'>('vertical');
+  const [splitDirection, setSplitDirection] = useState<'vertical' | 'horizontal'>('horizontal');
 
   const activeFile = tabs.find((t) => t.name === activeTab)!;
 
@@ -193,8 +193,8 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
           </Typography.Text>
           <Segmented
             options={[
-              { label: 'Vertical', value: 'vertical' },
               { label: 'Horizontal', value: 'horizontal' },
+              { label: 'Vertical', value: 'vertical' },
             ]}
             value={splitDirection}
             onChange={(val) => setSplitDirection(val as 'vertical' | 'horizontal')}
@@ -249,7 +249,7 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
                 >
                   <div style={{ height: '100%', flex: 1, minHeight: 0 }}>
                     <Editor
-                      // height="80vh"
+                      height="calc(100vh - 120px)"
                       language={file.language}
                       value={file.content}
                       onChange={(val) => {
