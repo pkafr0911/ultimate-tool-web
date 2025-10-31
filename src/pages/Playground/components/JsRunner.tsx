@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { Button, Card, Select, Space, Typography } from 'antd';
+import React, { useState } from 'react';
+import { Button, Card, Segmented, Select, Space, Splitter, Typography } from 'antd';
 import Editor from '@monaco-editor/react';
 import { prettifyJS } from '../utils/formatters';
-import { FormatPainterOutlined, SettingOutlined } from '@ant-design/icons';
-import { DEFAULT_CODE, DEFAULT_REACT_TS, REACT_EXTRA_LIB } from '../constants';
+import { FormatPainterOutlined, PlayCircleOutlined, SettingOutlined } from '@ant-design/icons';
+import { DEFAULT_CODE } from '../constants';
 import { useMonacoOption } from '../hooks/useMonacoOption';
 import { useDarkMode } from '@/hooks/useDarkMode';
 
@@ -31,6 +31,8 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
 
   // Get Monaco editor configuration from custom hook
   const { monacoOptions } = useMonacoOption();
+
+  const [splitDirection, setSplitDirection] = useState<'vertical' | 'horizontal'>('horizontal');
 
   /**
    * runCode()
@@ -80,48 +82,136 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
 
   return (
     // Ant Design card wrapper for the entire playground interface
-    <Card className="playground-card" variant="borderless">
-      {/* Toolbar section with settings, language selector, prettify, and run buttons */}
-      <Space style={{ marginBottom: 16 }}>
-        {/* Open settings modal */}
-        <Button icon={<SettingOutlined />} onClick={onOpenSettings} />
+    <Card
+      className="playground-card"
+      variant="borderless"
+      style={{
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Toolbar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 8,
+          marginBottom: 12,
+          padding: '8px 12px',
+          background: darkMode ? '#1f1f1f' : '#fafafa',
+          border: darkMode ? '1px solid #333' : '1px solid #e5e5e5',
+          borderRadius: 8,
+        }}
+      >
+        <Space wrap>
+          <Button
+            icon={<SettingOutlined />}
+            onClick={onOpenSettings}
+            type="text"
+            title="Settings"
+          />
 
-        {/* Dropdown to switch between JS and TS modes */}
-        <Select
-          value={language}
-          onChange={(v) => setLanguage(v)}
-          options={[
-            { label: 'JavaScript', value: 'javascript' },
-            { label: 'TypeScript', value: 'typescript' },
-          ]}
-        />
+          <Button
+            icon={<FormatPainterOutlined />}
+            onClick={() => prettifyJS(code, setCode, language)}
+          >
+            Prettify
+          </Button>
 
-        {/* Button to auto-format the JS/TS code using Prettier */}
-        <Button icon={<FormatPainterOutlined />} onClick={() => prettifyJS(code, setCode)}>
-          Prettify
-        </Button>
+          <Button type="primary" icon={<PlayCircleOutlined />} onClick={runCode}>
+            Run
+          </Button>
+        </Space>
 
-        {/* Button to execute the code */}
-        <Button type="primary" onClick={runCode}>
-          ▶ Run
-        </Button>
-      </Space>
+        <Space align="center" style={{ marginLeft: 'auto' }}>
+          <Typography.Text type="secondary" style={{ marginRight: 4, whiteSpace: 'nowrap' }}>
+            Layout:
+          </Typography.Text>
+          <Segmented
+            options={[
+              { label: 'Horizontal', value: 'horizontal' },
+              { label: 'Vertical', value: 'vertical' },
+            ]}
+            value={splitDirection}
+            onChange={(val) => setSplitDirection(val as 'vertical' | 'horizontal')}
+            size="middle"
+            style={{ minWidth: 180 }}
+          />
+        </Space>
+      </div>
 
-      {/* Monaco Editor for writing code */}
-      <Editor
-        height="400px"
-        language={language} // JS or TS
-        value={code}
-        onChange={(val) => setCode(val || '')} // Update code state on edit
-        theme={darkMode ? 'vs-dark' : 'light'} // Match theme with dark/light mode
-        options={monacoOptions} // Apply custom editor settings
-      />
+      {/* Splitter Layout */}
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+        }}
+      >
+        <Splitter
+          layout={splitDirection}
+          style={{
+            flex: 1,
+            minHeight: 'calc(100vh - 120px)',
+            width: '100%',
+            height: splitDirection === 'vertical' ? 'calc(100vh - 120px)' : undefined,
+            display: 'flex',
+          }}
+        >
+          {/* Editor Panel */}
+          <Splitter.Panel defaultSize="60%" min="25%" max="75%">
+            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              <Title level={5} style={{ padding: '8px 12px', margin: 0 }}>
+                {language === 'typescript' ? 'TypeScript Editor' : 'JavaScript Editor'}
+              </Title>
+              <div style={{ flex: 1, minHeight: 0 }}>
+                <Editor
+                  language={language}
+                  value={code}
+                  onChange={(val) => setCode(val || '')}
+                  theme={darkMode ? 'vs-dark' : 'light'}
+                  options={monacoOptions}
+                />
+              </div>
+            </div>
+          </Splitter.Panel>
 
-      {/* Output section below editor */}
-      <div className="playground-output">
-        <Title level={5}>Output:</Title>
-        {/* Preformatted output text area showing logs or results */}
-        <pre>{output || '// Your output will appear here'}</pre>
+          {/* Output Panel */}
+          <Splitter.Panel>
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                background: darkMode ? '#1e1e1e' : '#fff',
+                flex: 1,
+                minHeight: 0,
+                overflow: 'auto',
+              }}
+            >
+              <Title level={5} style={{ padding: '8px 12px', margin: 0 }}>
+                Output
+              </Title>
+              <pre
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  margin: 0,
+                  color: darkMode ? '#d4d4d4' : '#333',
+                  background: darkMode ? '#1e1e1e' : '#fafafa',
+                  fontSize: 13,
+                  overflow: 'auto',
+                }}
+              >
+                {output || '// Your output will appear here'}
+              </pre>
+            </div>
+          </Splitter.Panel>
+        </Splitter>
       </div>
     </Card>
   );
