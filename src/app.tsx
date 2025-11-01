@@ -41,7 +41,12 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
   return {
     footerRender: () => <Footer />,
     bgLayoutImgList: [],
-    menuHeaderRender: undefined,
+    menuHeaderRender: (logo, title, props) => (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {logo}
+        <span className="app-title">{title}</span>
+      </div>
+    ),
     rightContentRender: () => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginRight: 16 }}>
         <GlobalSearchBar />
@@ -49,6 +54,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
         {/* <AvatarDropdown /> */}
       </div>
     ),
+
     // Custom 403 page if necessary
     unAccessible: <UnauthorizedPage />,
     childrenRender: (children) => (
