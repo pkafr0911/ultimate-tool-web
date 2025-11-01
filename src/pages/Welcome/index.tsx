@@ -103,6 +103,63 @@ const WelcomePage: React.FC = () => {
       <div className="categories-container">
         {categories.map((category, i) => {
           const items = pages.filter((p) => category.keys.includes(p.name));
+
+          // Special design for Playground
+          if (category.title === 'Playground') {
+            return (
+              <motion.div
+                key="playground-section"
+                className="playground-section"
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+              >
+                <div className="playground-header">
+                  <Title level={2} className="playground-title">
+                    🚀 Playground
+                  </Title>
+                  <Paragraph className="playground-subtitle">
+                    Experiment, code, and create — directly in your browser.
+                  </Paragraph>
+                </div>
+
+                <motion.div
+                  className="playground-cards"
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  transition={{ staggerChildren: 0.15 }}
+                >
+                  {items.map((item, idx) => (
+                    <motion.div
+                      key={item.name}
+                      className="playground-card"
+                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                      whileHover={{ scale: 1.03, rotate: 1 }}
+                      transition={{ type: 'spring', stiffness: 120, damping: 10 }}
+                    >
+                      <Card
+                        hoverable
+                        bordered={false}
+                        className="playground-card-inner"
+                        onClick={() => history.push(item.path)}
+                      >
+                        <div className="playground-icon">{item.icon}</div>
+                        <Title level={4}>{item.name}</Title>
+                        <Paragraph className="playground-desc">{item.desc}</Paragraph>
+                        <Button type="primary" ghost>
+                          Open Playground
+                        </Button>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </motion.div>
+            );
+          }
+
+          // Default category render
           return (
             <motion.div
               key={category.title}

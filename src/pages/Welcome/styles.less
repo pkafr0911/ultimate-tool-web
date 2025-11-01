@@ -6,7 +6,7 @@
   animation: gradientShift 10s ease infinite;
 
   .hero-section {
-    margin-bottom: 80px;
+    // margin-bottom: 80px;
     text-align: center;
 
     .hero-title {
@@ -156,7 +156,7 @@
 .hero-section {
   position: relative;
   z-index: 1;
-  margin-bottom: 100px;
+  // margin-bottom: 100px;
 
   padding: 100px 20px 100px; // more breathing room top & bottom
   text-align: center;
@@ -289,6 +289,154 @@
 
     .ant-col {
       flex: 0 0 100%; // full width
+      max-width: 100%;
+    }
+  }
+}
+
+.playground-section {
+  width: 100%;
+  padding: 100px 8vw;
+  margin-bottom: 60px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0;
+  background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+
+  /* 🖼️ Subtle background image with blending */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1600&q=80');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.15; /* adjust visibility */
+    z-index: 0;
+    mix-blend-mode: multiply;
+    transform: scale(1.05);
+  }
+
+  /* 🌈 Animated glowing gradient overlay */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 10% 10%, #ff718b20, #41b3ff10);
+    animation: glowMove 10s ease-in-out infinite;
+    z-index: 1;
+  }
+
+  .playground-header {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    margin-bottom: 60px;
+
+    .playground-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, #ff718b, #41b3ff);
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .playground-subtitle {
+      font-size: 1.2rem;
+      color: rgba(0, 0, 0, 0.65);
+      margin-top: 10px;
+    }
+  }
+
+  .playground-cards {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 32px;
+  }
+
+  .playground-card {
+    flex: 1 1 300px;
+    max-width: 360px;
+
+    .playground-card-inner {
+      padding: 28px 24px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      transition: all 0.4s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.75);
+        transform: translateY(-6px);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+      }
+
+      .playground-icon {
+        font-size: 2.5rem;
+        margin-bottom: 16px;
+        background: linear-gradient(90deg, #ff718b, #41b3ff);
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .playground-desc {
+        min-height: 50px;
+        color: rgba(0, 0, 0, 0.6);
+      }
+
+      .ant-btn {
+        margin-top: 10px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        background: linear-gradient(90deg, #ff718b, #41b3ff);
+        color: #fff;
+        border: none;
+
+        &:hover {
+          filter: brightness(1.1);
+          transform: scale(1.05);
+        }
+      }
+    }
+  }
+}
+
+@keyframes glowMove {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+@media (max-width: 768px) {
+  .playground-section {
+    padding: 60px 5vw;
+
+    &::after {
+      opacity: 0.25;
+      background-position: right center;
+    }
+
+    .playground-title {
+      font-size: 2rem;
+    }
+
+    .playground-cards {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .playground-card {
       max-width: 100%;
     }
   }
