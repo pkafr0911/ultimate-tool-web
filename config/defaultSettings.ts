@@ -26,7 +26,7 @@ const Settings: ProLayoutProps & {
   colorWeak: false, // Whether to enable color weakness mode
   title: 'Ultimate tool', // Application title
   pwa: true, // Enable Progressive Web App (PWA) support
-  logo: `https://pkafr0911.github.io/${REPO_NAME}/qr_icon.png`, // Path to the logo/favicon image
+  logo: `https://pkafr0911.github.io/${REPO_NAME}/logo.svg`, // Path to the logo/favicon image
   iconfontUrl: '', // Custom icon font URL (empty for default)
   token: {
     // Token configuration for theme customization
