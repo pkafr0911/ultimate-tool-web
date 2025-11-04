@@ -254,11 +254,12 @@ const WelcomePage: React.FC = () => {
       >
         <blockquote>
           “All your essential tools, beautifully organized. It’s like having a digital Swiss Army
-          knife — without the clutter.”
+          knife — without the clutter”
         </blockquote>
         <div className="author">
           <strong>Thanh Nguyen</strong>
           <span>Developer & Creator of Ultimate Tools</span>
+          <div>{`t ko nói thế =))`}</div>
         </div>
       </motion.div>
 
