@@ -4,7 +4,7 @@ import UnauthorizedPage from '@/pages/403';
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
 import type { RunTimeLayoutConfig } from '@umijs/max';
-import { setLocale } from '@umijs/max';
+import { setLocale, history } from '@umijs/max';
 import { isPlainObject } from 'lodash';
 import defaultSettings from '../config/defaultSettings';
 import DarkModeSwitch from './components/DarkModeSwitch';
@@ -42,7 +42,10 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     footerRender: () => <Footer />,
     bgLayoutImgList: [],
     menuHeaderRender: (logo, title, props) => (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div
+        onClick={() => history.push('/')}
+        style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+      >
         {logo}
         <span className="app-title">{title}</span>
       </div>

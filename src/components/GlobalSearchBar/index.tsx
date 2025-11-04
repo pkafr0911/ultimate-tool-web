@@ -3,6 +3,7 @@ import { SearchOutlined } from '@ant-design/icons';
 import { useNavigate } from '@umijs/max';
 import { AutoComplete, Input } from 'antd';
 import React, { useMemo, useState } from 'react';
+import './styles.less';
 
 // highlight matched text inside label
 const highlightMatch = (text: string, query: string) => {
@@ -47,21 +48,23 @@ const GlobalSearchBar: React.FC = () => {
   };
 
   return (
-    <AutoComplete
-      defaultActiveFirstOption
-      options={options}
-      onSelect={onSelect}
-      onSearch={setValue}
-      value={value}
-    >
-      <Input
-        size="large"
-        placeholder="Search tools..."
-        prefix={<SearchOutlined />}
-        allowClear
-        style={{ borderRadius: 6 }}
-      />
-    </AutoComplete>
+    <div className={`global-search-wrapper`}>
+      <AutoComplete
+        defaultActiveFirstOption
+        options={options}
+        onSelect={onSelect}
+        onSearch={setValue}
+        value={value}
+      >
+        <Input
+          size="large"
+          placeholder="Search tools..."
+          prefix={<SearchOutlined />}
+          allowClear
+          style={{ borderRadius: 6 }}
+        />
+      </AutoComplete>
+    </div>
   );
 };
 

@@ -173,27 +173,33 @@ const WelcomePage: React.FC = () => {
                 {category.title}
               </Title>
 
-              <Row gutter={[24, 24]}>
+              <Row gutter={[16, 16]}>
                 {items.map((item, idx) => (
-                  <Col xs={24} sm={12} md={8} lg={6} key={item.name}>
+                  <Col xs={8} sm={8} md={6} lg={6} key={item.name}>
                     <motion.div
                       className="feature-card-wrapper"
                       initial={{ opacity: 0, y: 30 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
-                      transition={{ delay: 0.1 * idx, duration: 0.5 }}
+                      transition={{ delay: 0.1 * idx, duration: 0.4 }}
                     >
                       <Card
                         hoverable
-                        className="feature-card"
+                        className={`feature-card ${isMobile ? 'compact' : ''}`}
                         onClick={() => history.push(item.path)}
                       >
                         <div className="feature-icon">{item.icon}</div>
-                        <Title level={5}>{item.name}</Title>
-                        <Paragraph className="feature-desc">{item.desc}</Paragraph>
-                        <Button type="primary" block ghost>
-                          Explore
-                        </Button>
+                        <Title level={5} className="feature-name">
+                          {item.name}
+                        </Title>
+                        {!isMobile && (
+                          <>
+                            <Paragraph className="feature-desc">{item.desc}</Paragraph>
+                            <Button type="primary" block ghost>
+                              Explore
+                            </Button>
+                          </>
+                        )}
                       </Card>
                     </motion.div>
                   </Col>
