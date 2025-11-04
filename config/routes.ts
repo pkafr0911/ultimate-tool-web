@@ -3,7 +3,7 @@
     path: '/',
     name: 'welcome',
     icon: 'smile',
-    component: './Welcome',
+    component: './Welcome2',
     hideInMenu: true,
   },
   {
