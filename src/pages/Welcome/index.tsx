@@ -14,23 +14,36 @@ const categories = [
     title: 'Utility Tools',
     keys: [
       'QR Generator',
-      'Video Watch',
-      'Epoch Converter',
-      'Regex Tester',
-      'UUID Generator',
       'Password Generator',
-      'JWT Encrypt/Decrypt',
+      'UUID Generator',
       'Color Picker',
+      'Regex Tester',
+      'JWT Encrypt/Decrypt',
+      'Epoch Converter',
+      'Video Watch',
     ],
   },
   {
     title: 'Image Converter',
-    keys: ['SVG Viewer', 'PNG / JPEG Converter', 'Image Base64 Converter', 'Text Art Generator'],
+    keys: ['PNG / JPEG Converter', 'SVG Viewer', 'Image Base64 Converter', 'Text Art Generator'],
   },
-  { title: 'Editor', keys: ['Readme Editor', 'Json Formatter', 'HTML Editor'] },
-  { title: 'Randomizer', keys: ['🎡 Wheel of Names', 'Random Generator'] },
-  { title: 'Game', keys: ['Tic-Tac-Toe', 'Snake xenzia', 'Minesweeper', 'Sudoku', 'Chess'] },
-  { title: 'Docs / Commands', keys: ['Commands', 'Emojis /  Kaomojis '] },
+
+  {
+    title: 'Editor',
+    keys: ['Json Formatter', 'Readme Editor', 'HTML Editor'],
+  },
+  {
+    title: 'Randomizer',
+    keys: ['🎡 Wheel of Names', 'Random Generator'],
+  },
+  {
+    title: 'Game',
+    keys: ['Chess', 'Sudoku', 'Tic-Tac-Toe', 'Minesweeper', 'Snake xenzia'],
+  },
+  {
+    title: 'Docs / Commands',
+    keys: ['Commands', 'Emojis /  Kaomojis '],
+  },
 ];
 
 const phrases = [
