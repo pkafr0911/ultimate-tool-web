@@ -63,7 +63,7 @@ const SVGViewer: React.FC = () => {
   // place this near the top of your component, under useState declarations:
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  //
+  // Highlight Editor Mount
   const svgContainerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const [selectedElement, setSelectedElement] = useState<SVGElement | null>(null);
@@ -344,6 +344,90 @@ const SVGViewer: React.FC = () => {
     message.success('Flipped vertically!');
   };
 
+  // --- Highlight Editor Mount ---
+  const handleEditorMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
+    editorRef.current = editor; // Store the editor instance for later use
+
+    let lastTagFragment: string | null = null; // Track the last highlighted tag name
+    let lastHighlightedEl: SVGElement | null = null; // Track the last highlighted SVG element
+
+    // 🖱️ Highlight based on cursor position in the code editor
+    editor.onDidChangeCursorPosition(() => {
+      const code = editor.getValue(); // Get current SVG code
+      const position = editor.getPosition(); // Get cursor position
+      if (!position) return;
+
+      const model = editor.getModel(); // Get Monaco editor model
+      if (!model) return;
+
+      const offset = model.getOffsetAt(position); // Convert cursor position to string index
+      const tagStart = code.lastIndexOf('<', offset); // Find start of current tag
+      const tagEnd = code.indexOf('>', offset); // Find end of current tag
+
+      // If the cursor isn't inside any <tag>, clear highlight
+      if (tagStart === -1 || tagEnd === -1 || offset < tagStart || offset > tagEnd) {
+        clear();
+        return;
+      }
+
+      const tagFragment = code.slice(tagStart, tagEnd + 1); // Extract tag text (e.g. <rect x="10" />)
+      // const match = tagFragment.match(/<(path|rect|circle|polygon)\b([^>]*)>/i);
+      const match = tagFragment.match(/<([a-zA-Z][\w:-]*)\b([^>]*)>/i); // Match ANY tag and capture name + attributes
+      if (!match) return;
+
+      const tagName = match[1].toLowerCase(); // e.g. "rect", "path", "circle"
+      const attrString = match[2] || ''; // Capture all attributes as string
+
+      if (tagFragment === lastTagFragment && lastHighlightedEl) return; // Skip if same tag as before
+      lastTagFragment = tagFragment;
+
+      const container = svgContainerRef.current; // Reference to SVG preview container
+      if (!container) return;
+      const svg = container.querySelector('svg'); // Find SVG inside the container
+      if (!svg) return;
+
+      const elements = svg.querySelectorAll(tagName); // Select all SVG elements of that tag
+      if (!elements.length) {
+        clear();
+        return;
+      }
+
+      // 🧩 Try to find the element whose attributes match most closely
+      let targetEl: SVGElement | null = null;
+
+      const normalizedAttr = attrString.replace(/\s*\/?\s*>?\s*$/, '').trim(); // Remove trailing "/" or ">"
+      targetEl = Array.from(elements).find(
+        (el) => el.outerHTML.replace(/\s+/g, ' ').includes(normalizedAttr), // Match by attribute substring
+      ) as SVGElement | null;
+
+      // fallback to the first if no match found
+      if (!targetEl) targetEl = elements[0] as SVGElement;
+
+      // Clear previous highlight
+      if (lastHighlightedEl && lastHighlightedEl !== targetEl) {
+        lastHighlightedEl.style.stroke = '';
+        lastHighlightedEl.style.strokeWidth = '';
+      }
+
+      // Apply highlight to matched SVG element
+      targetEl.style.stroke = '#1890ff';
+      targetEl.style.strokeWidth = '5';
+      lastHighlightedEl = targetEl;
+      setSelectedElement(targetEl); // Update selected element state
+    });
+
+    const clear = () => {
+      //Clear highlight when clicking outside the SVG
+      if (lastHighlightedEl) {
+        lastHighlightedEl.style.stroke = '';
+        lastHighlightedEl.style.strokeWidth = '';
+        lastHighlightedEl = null;
+      }
+      setSelectedElement(null); // Clear selection state
+      lastTagFragment = null;
+    };
+  };
+
   return (
     <div
       onDragEnter={(e) => {
@@ -435,114 +519,7 @@ const SVGViewer: React.FC = () => {
                       setPreview(code);
                       extractSize(code);
                     }}
-                    onMount={(editor) => {
-                      editorRef.current = editor;
-
-                      let lastTagName: string | null = null;
-                      let lastHighlightedEl: SVGElement | null = null;
-
-                      // 🖱️ Highlight based on cursor position
-                      editor.onDidChangeCursorPosition(() => {
-                        const code = editor.getValue();
-                        const position = editor.getPosition();
-                        if (!position) return;
-
-                        const model = editor.getModel();
-                        if (!model) return;
-
-                        const offset = model.getOffsetAt(position);
-                        const tagStart = code.lastIndexOf('<', offset);
-                        const tagEnd = code.indexOf('>', offset);
-                        if (tagStart === -1 || tagEnd === -1) return;
-
-                        const tagFragment = code.slice(tagStart, tagEnd + 1);
-                        // const match = tagFragment.match(/<(path|rect|circle|polygon)\b([^>]*)>/i);
-                        const match = tagFragment.match(/<([a-zA-Z][\w:-]*)\b([^>]*)>/i);
-                        if (!match) return;
-
-                        const tagName = match[1].toLowerCase();
-                        const attrString = match[2] || '';
-
-                        if (tagName === lastTagName && lastHighlightedEl) return;
-                        lastTagName = tagName;
-
-                        const container = svgContainerRef.current;
-                        if (!container) return;
-                        const svg = container.querySelector('svg');
-                        if (!svg) return;
-
-                        const elements = svg.querySelectorAll(tagName);
-                        if (!elements.length) return;
-
-                        // 🧩 Try to find the element whose attributes match most closely
-                        let targetEl: SVGElement | null = null;
-
-                        const normalizedAttr = attrString.replace(/\s*\/?\s*>?\s*$/, '').trim();
-                        targetEl = Array.from(elements).find((el) =>
-                          el.outerHTML.replace(/\s+/g, ' ').includes(normalizedAttr),
-                        ) as SVGElement | null;
-
-                        // fallback to the first if no match found
-                        if (!targetEl) targetEl = elements[0] as SVGElement;
-
-                        // Clear previous highlight
-                        if (lastHighlightedEl && lastHighlightedEl !== targetEl) {
-                          lastHighlightedEl.style.stroke = '';
-                          lastHighlightedEl.style.strokeWidth = '';
-                        }
-
-                        // Apply highlight
-                        targetEl.style.stroke = '#1890ff';
-                        targetEl.style.strokeWidth = '5';
-                        lastHighlightedEl = targetEl;
-                        setSelectedElement(targetEl);
-                      });
-
-                      // 🟦 Click highlight inside SVG
-                      const container = svgContainerRef.current;
-                      if (container) {
-                        container.addEventListener('click', (e) => {
-                          const target = e.target as SVGElement;
-                          const svg = container.querySelector('svg');
-                          if (!svg) return;
-                          if (!svg.contains(target)) return;
-
-                          const tag = target.tagName.toLowerCase();
-                          if (['path', 'rect', 'circle', 'polygon'].includes(tag)) {
-                            // Clear previous highlight
-                            if (lastHighlightedEl && lastHighlightedEl !== target) {
-                              lastHighlightedEl.style.stroke = '';
-                              lastHighlightedEl.style.strokeWidth = '';
-                            }
-
-                            // Highlight clicked element
-                            target.style.stroke = '#1890ff';
-                            target.style.strokeWidth = '2';
-                            lastHighlightedEl = target;
-                            setSelectedElement(target);
-                            lastTagName = tag;
-                          }
-                        });
-                      }
-
-                      // 🧹 Clear highlight when clicking outside the SVG
-                      document.addEventListener('click', (e) => {
-                        const container = svgContainerRef.current;
-                        if (!container) return;
-                        const svg = container.querySelector('svg');
-                        if (!svg) return;
-
-                        if (!svg.contains(e.target as Node)) {
-                          if (lastHighlightedEl) {
-                            lastHighlightedEl.style.stroke = '';
-                            lastHighlightedEl.style.strokeWidth = '';
-                            lastHighlightedEl = null;
-                          }
-                          setSelectedElement(null);
-                          lastTagName = null;
-                        }
-                      });
-                    }}
+                    onMount={handleEditorMount}
                     theme={darkMode ? 'vs-dark' : 'light'}
                     options={{
                       minimap: { enabled: false },
