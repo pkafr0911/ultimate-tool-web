@@ -24,13 +24,52 @@
 
     .markdown-preview {
       height: 600px;
-      padding: 12px;
       overflow-y: auto;
       border-radius: 8px;
+      padding: 24px;
+      background: #fff;
+      transition: background 0.3s ease;
+
+      &.markdown-body {
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      pre {
+        border-radius: 6px;
+        padding: 12px;
+        overflow-x: auto;
+      }
 
       code {
-        padding: 2px 4px;
         border-radius: 4px;
+        padding: 2px 4px;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+
+        th,
+        td {
+          border: 1px solid #dfe2e5;
+          padding: 6px 13px;
+        }
+
+        th {
+          background: #f6f8fa;
+        }
+      }
+
+      blockquote {
+        border-left: 4px solid #dfe2e5;
+        color: #6a737d;
+        padding-left: 16px;
+      }
+
+      &.markdown-dark {
+        background: #0d1117;
+        color: #c9d1d9;
       }
     }
 

@@ -12,6 +12,9 @@ import React, { useEffect, useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import TurndownService from 'turndown';
+import hljs from 'highlight.js';
+import 'github-markdown-css/github-markdown-light.css';
+import 'highlight.js/styles/github.css';
 import './styles.less';
 
 const { Title } = Typography;
@@ -22,10 +25,24 @@ const turndownService = new TurndownService({
   codeBlockStyle: 'fenced',
 });
 
+// Configure MarkdownIt + syntax highlight
 const mdParser = new MarkdownIt({
   html: true,
   linkify: true,
   typographer: true,
+  highlight: function (str, lang) {
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        return `<pre class="hljs"><code>${
+          hljs.highlight(str, {
+            language: lang,
+            ignoreIllegals: true,
+          }).value
+        }</code></pre>`;
+      } catch (__) {}
+    }
+    return `<pre class="hljs"><code>${mdParser.utils.escapeHtml(str)}</code></pre>`;
+  },
 });
 
 const ReadmeEditorPage: React.FC = () => {
@@ -36,14 +53,24 @@ const ReadmeEditorPage: React.FC = () => {
   );
   const [markdownContent, setMarkdownContent] = useState<string>('');
 
-  // HTML → Markdown (for rich editor)
+  // Load GitHub theme for dark/light mode
+  useEffect(() => {
+    import(
+      darkMode
+        ? 'github-markdown-css/github-markdown-dark.css'
+        : 'github-markdown-css/github-markdown-light.css'
+    );
+    import(darkMode ? 'highlight.js/styles/github-dark.css' : 'highlight.js/styles/github.css');
+  }, [darkMode]);
+
+  // HTML → Markdown
   useEffect(() => {
     if (mode === 'rich') {
       setMarkdownContent(turndownService.turndown(htmlContent));
     }
   }, [htmlContent, mode]);
 
-  // Markdown → HTML (for markdown editor)
+  // Markdown → HTML
   useEffect(() => {
     if (mode === 'markdown') {
       setHtmlContent(mdParser.render(markdownContent));
@@ -52,8 +79,7 @@ const ReadmeEditorPage: React.FC = () => {
 
   const handleCopy = async () => {
     try {
-      const textToCopy = mode === 'rich' ? markdownContent : markdownContent;
-      await navigator.clipboard.writeText(textToCopy);
+      await navigator.clipboard.writeText(markdownContent);
       message.success('Copied Markdown to clipboard!');
     } catch {
       message.error('Failed to copy');
@@ -88,7 +114,7 @@ const ReadmeEditorPage: React.FC = () => {
       className="readme-card"
     >
       <div className="readme-container">
-        {/* Left side: Editable */}
+        {/* Left side: Editor */}
         <div className="editor-pane">
           <Title level={5}>{mode === 'rich' ? 'Edit (Rich Text)' : 'Edit (Raw Markdown)'}</Title>
 
@@ -109,7 +135,7 @@ const ReadmeEditorPage: React.FC = () => {
           )}
         </div>
 
-        {/* Right side: Output */}
+        {/* Right side: Preview */}
         <div className="preview-pane">
           <Title level={5}>{mode === 'rich' ? 'Raw Markdown (.md)' : 'Rendered Preview'}</Title>
 
@@ -125,7 +151,12 @@ const ReadmeEditorPage: React.FC = () => {
               }}
             />
           ) : (
-            <div className="markdown-preview" dangerouslySetInnerHTML={{ __html: htmlContent }} />
+            <div
+              className={`markdown-preview markdown-body ${
+                darkMode ? 'markdown-dark' : 'markdown-light'
+              }`}
+              dangerouslySetInnerHTML={{ __html: htmlContent }}
+            />
           )}
 
           <Space className="button-group">

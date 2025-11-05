@@ -1,6 +1,6 @@
-<p align="center">
+<!-- <p align="center">
   <img src="https://raw.githubusercontent.com/pkafr0911/ultimate-tool-web/main/public/banner.png" alt="Ultimate Tools & Utilities Banner" width="100%">
-</p>
+</p> -->
 
 # 🧰 Ultimate Tools & Utilities
 
@@ -12,7 +12,7 @@
 
 🔗 **[Visit Ultimate Tools & Utilities](https://pkafr0911.github.io/ultimate-tool-web/)**
 
-![Preview Screenshot](https://user-images.githubusercontent.com/0000000/preview.png)
+![Preview Screenshot](https://pkafr0911.github.io/ultimate-tool-web/images/preview.png)
 
 ---
 
@@ -26,24 +26,31 @@ It centralizes commonly used tools — from converters and formatters to editors
 ## 🚀 Features
 
 ### 🧪 Playground
+
 Experiment, code, and create directly in your browser — no setup required.
 
 ### 🛠 Utility Tools
+
 Quick conversions, encryption, randomization, and much more.
 
 ### 🖼 Image Converter
+
 Convert, preview, and transform your images in seconds.
 
 ### 📝 Editors
+
 Format JSON, edit Markdown READMEs, or tweak HTML instantly.
 
 ### 🎲 Randomizer
+
 Spin the wheel, generate random numbers, or pick names for fun experiments.
 
 ### 🎮 Games
+
 Take a break with built-in classics — Chess, Sudoku, Tic-Tac-Toe, Minesweeper, and more.
 
 ### 📚 Docs & Commands
+
 Quick access to useful command references, emojis, and kaomoji sets.
 
 ---
@@ -51,7 +58,7 @@ Quick access to useful command references, emojis, and kaomoji sets.
 ## 🧩 Tech Stack
 
 | Category | Technology |
-|-----------|-------------|
+| --- | --- |
 | Framework | [UmiJS](https://umijs.org/) + [React 18](https://reactjs.org/) |
 | UI Library | [Ant Design v5](https://ant.design/) + [Framer Motion](https://www.framer.com/motion/) |
 | Styling | LESS + CSS Animations |
@@ -64,6 +71,7 @@ Quick access to useful command references, emojis, and kaomoji sets.
 
 ## 🏗️ Project Structure
 
+```
 src/
 ├── components/        # Shared UI components
 ├── constants/         # Page and tool definitions
@@ -72,17 +80,18 @@ src/
 ├── styles/            # Global and page-specific styles
 └── utils/             # Helper functions
 
-````
+```
 
 ---
 
 ## ⚙️ Installation
 
 ### 1️⃣ Clone the Repository
+
 ```bash
 git clone https://github.com/pkafr0911/ultimate-tool-web.git
 cd ultimate-tool-web
-````
+```
 
 ### 2️⃣ Install Dependencies
 
@@ -197,28 +206,26 @@ After deployment, your site will be automatically published to GitHub Pages.
 
 ## 🧠 Development Notes
 
-* Homepage dynamically lists categories from `src/constants/pages.ts`.
-* Animations powered by **Framer Motion**.
-* Fully responsive layout using Ant Design’s grid + `useIsMobile()` hook.
-* Carousel auto-switches when tools exceed 4 items per category.
-* Rotating tagline in hero section every 3 seconds using motion transitions.
+- Homepage dynamically lists categories from `src/constants/pages.ts`.
+- Animations powered by **Framer Motion**.
+- Fully responsive layout using Ant Design’s grid + `useIsMobile()` hook.
+- Carousel auto-switches when tools exceed 4 items per category.
+- Rotating tagline in hero section every 3 seconds using motion transitions.
 
 ---
 
 ## 🎨 Design Highlights
 
-* Gradient hero titles and animated blob backgrounds.
-* Smooth entrance and fade transitions with Framer Motion.
-* Card-based feature layout with hover effects.
-* Compact responsive design for mobile devices.
+- Gradient hero titles and animated blob backgrounds.
+- Smooth entrance and fade transitions with Framer Motion.
+- Card-based feature layout with hover effects.
+- Compact responsive design for mobile devices.
 
 ---
 
 ## 👨‍💻 Author
 
-**Thanh Nguyen**
-Creator & Developer of Ultimate Tools
-🌐 [GitHub](https://github.com/pkafr0911)
+**Thanh Nguyen** Creator & Developer of Ultimate Tools 🌐 [GitHub](https://github.com/pkafr0911)
 
 > “All your essential tools, beautifully organized — like a digital Swiss Army knife, without the clutter.”
 

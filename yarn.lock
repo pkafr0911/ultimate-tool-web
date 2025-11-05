@@ -10073,6 +10073,11 @@ git-raw-commits@^4.0.0:
     meow "^12.0.1"
     split2 "^4.0.0"
 
+github-markdown-css@^5.8.1:
+  version "5.8.1"
+  resolved "https://registry.yarnpkg.com/github-markdown-css/-/github-markdown-css-5.8.1.tgz#2a53cf17f0c9bde5ff9e83710a3310a02f5278a7"
+  integrity sha512-8G+PFvqigBQSWLQjyzgpa2ThD9bo7+kDsriUIidGcRhXgmcaAWUIpCZf8DavJgc+xifjbCG+GvMyWr0XMXmc7g==
+
 github-username@^6.0.0:
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/github-username/-/github-username-6.0.0.tgz#d543eced7295102996cd8e4e19050ebdcbe60658"
@@ -10430,6 +10435,11 @@ highcharts@^12.1.2:
   version "12.1.2"
   resolved "https://registry.yarnpkg.com/highcharts/-/highcharts-12.1.2.tgz#826114935b3ffb6b99dc906da00f137667a67fbb"
   integrity sha512-paZ72q1um0zZT1sS+O/3JfXVSOLPmZ0zlo8SgRc0rEplPFPQUPc4VpkgQS8IUTueeOBgIWwVpAWyC9tBYbQ0kg==
+
+highlight.js@^11.11.1:
+  version "11.11.1"
+  resolved "https://registry.yarnpkg.com/highlight.js/-/highlight.js-11.11.1.tgz#fca06fa0e5aeecf6c4d437239135fabc15213585"
+  integrity sha512-Xwwo44whKBVCYoliBQwaPvtd/2tYFkRQtXDWj1nackaV2JPXx3L0+Jvd8/qCJ2p+ML0/XVkJ2q+Mr+UVdpJK5w==
 
 history@*, history@5.3.0, history@^5.1.0, history@^5.2.0:
   version "5.3.0"
