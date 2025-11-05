@@ -225,15 +225,9 @@ After deployment, your site will be automatically published to GitHub Pages.
 
 ## 👨‍💻 Author
 
-**Thanh Nguyen** Creator & Developer of Ultimate Tools 🌐 [GitHub](https://github.com/pkafr0911)
+**Thanh Nguyen - Tain** Creator & Developer of Ultimate Tools 🌐 [GitHub](https://github.com/pkafr0911)
 
 > “All your essential tools, beautifully organized — like a digital Swiss Army knife, without the clutter.”
-
----
-
-## 🪪 License
-
-This project is licensed under the **MIT License** — you are free to fork, modify, and use it for personal or commercial purposes.
 
 ---
 

@@ -47,7 +47,7 @@ const mdParser = new MarkdownIt({
 
 const ReadmeEditorPage: React.FC = () => {
   const { darkMode } = useDarkMode();
-  const [mode, setMode] = useState<'rich' | 'markdown'>('rich');
+  const [mode, setMode] = useState<'rich' | 'markdown'>('markdown');
   const [htmlContent, setHtmlContent] = useState<string>(
     '<h2>Welcome to README Editor</h2><p>Start typing here...</p>',
   );
@@ -103,8 +103,8 @@ const ReadmeEditorPage: React.FC = () => {
           </Title>
           <Segmented
             options={[
-              { label: 'Rich Mode', value: 'rich', icon: <EditOutlined /> },
               { label: 'Markdown Mode', value: 'markdown', icon: <FileMarkdownOutlined /> },
+              { label: 'Rich Mode', value: 'rich', icon: <EditOutlined /> },
             ]}
             value={mode}
             onChange={(val) => setMode(val as 'rich' | 'markdown')}
