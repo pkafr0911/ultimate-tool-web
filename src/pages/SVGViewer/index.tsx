@@ -27,9 +27,11 @@ import {
   Typography,
   Upload,
 } from 'antd'; // Import Ant Design components
-import React, { useRef, useState } from 'react'; // Import React and useState hook
+import React, { useEffect, useRef, useState } from 'react'; // Import React and useState hook
 import { optimize } from 'svgo'; // Import SVG optimizer
 import styles from './styles.less'; // Import CSS module
+
+import * as monaco from 'monaco-editor';
 
 const { Text } = Typography; // Destructure Text component from Typography
 
@@ -55,12 +57,20 @@ const SVGViewer: React.FC = () => {
   const handleResetZoom = () => setZoom(1);
 
   // Check in using Mobile
-  // Check in using Mobile
   const isMobile = useIsMobile();
 
   const dragCounter = useRef(0);
   // place this near the top of your component, under useState declarations:
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  //
+  const svgContainerRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const [selectedElement, setSelectedElement] = useState<SVGElement | null>(null);
+
+  useEffect(() => {
+    console.log('selectedElement', selectedElement);
+  }, [selectedElement]);
 
   // --- Function to handle SVG file upload ---
   const handleUpload = (file: File) => {
@@ -425,13 +435,121 @@ const SVGViewer: React.FC = () => {
                       setPreview(code);
                       extractSize(code);
                     }}
+                    onMount={(editor) => {
+                      editorRef.current = editor;
+
+                      let lastTagName: string | null = null;
+                      let lastHighlightedEl: SVGElement | null = null;
+
+                      // 🖱️ Highlight based on cursor position
+                      editor.onDidChangeCursorPosition(() => {
+                        const code = editor.getValue();
+                        const position = editor.getPosition();
+                        if (!position) return;
+
+                        const model = editor.getModel();
+                        if (!model) return;
+
+                        const offset = model.getOffsetAt(position);
+                        const tagStart = code.lastIndexOf('<', offset);
+                        const tagEnd = code.indexOf('>', offset);
+                        if (tagStart === -1 || tagEnd === -1) return;
+
+                        const tagFragment = code.slice(tagStart, tagEnd + 1);
+                        // const match = tagFragment.match(/<(path|rect|circle|polygon)\b([^>]*)>/i);
+                        const match = tagFragment.match(/<([a-zA-Z][\w:-]*)\b([^>]*)>/i);
+                        if (!match) return;
+
+                        const tagName = match[1].toLowerCase();
+                        const attrString = match[2] || '';
+
+                        if (tagName === lastTagName && lastHighlightedEl) return;
+                        lastTagName = tagName;
+
+                        const container = svgContainerRef.current;
+                        if (!container) return;
+                        const svg = container.querySelector('svg');
+                        if (!svg) return;
+
+                        const elements = svg.querySelectorAll(tagName);
+                        if (!elements.length) return;
+
+                        // 🧩 Try to find the element whose attributes match most closely
+                        let targetEl: SVGElement | null = null;
+
+                        const normalizedAttr = attrString.replace(/\s*\/?\s*>?\s*$/, '').trim();
+                        targetEl = Array.from(elements).find((el) =>
+                          el.outerHTML.replace(/\s+/g, ' ').includes(normalizedAttr),
+                        ) as SVGElement | null;
+
+                        // fallback to the first if no match found
+                        if (!targetEl) targetEl = elements[0] as SVGElement;
+
+                        // Clear previous highlight
+                        if (lastHighlightedEl && lastHighlightedEl !== targetEl) {
+                          lastHighlightedEl.style.stroke = '';
+                          lastHighlightedEl.style.strokeWidth = '';
+                        }
+
+                        // Apply highlight
+                        targetEl.style.stroke = '#1890ff';
+                        targetEl.style.strokeWidth = '5';
+                        lastHighlightedEl = targetEl;
+                        setSelectedElement(targetEl);
+                      });
+
+                      // 🟦 Click highlight inside SVG
+                      const container = svgContainerRef.current;
+                      if (container) {
+                        container.addEventListener('click', (e) => {
+                          const target = e.target as SVGElement;
+                          const svg = container.querySelector('svg');
+                          if (!svg) return;
+                          if (!svg.contains(target)) return;
+
+                          const tag = target.tagName.toLowerCase();
+                          if (['path', 'rect', 'circle', 'polygon'].includes(tag)) {
+                            // Clear previous highlight
+                            if (lastHighlightedEl && lastHighlightedEl !== target) {
+                              lastHighlightedEl.style.stroke = '';
+                              lastHighlightedEl.style.strokeWidth = '';
+                            }
+
+                            // Highlight clicked element
+                            target.style.stroke = '#1890ff';
+                            target.style.strokeWidth = '2';
+                            lastHighlightedEl = target;
+                            setSelectedElement(target);
+                            lastTagName = tag;
+                          }
+                        });
+                      }
+
+                      // 🧹 Clear highlight when clicking outside the SVG
+                      document.addEventListener('click', (e) => {
+                        const container = svgContainerRef.current;
+                        if (!container) return;
+                        const svg = container.querySelector('svg');
+                        if (!svg) return;
+
+                        if (!svg.contains(e.target as Node)) {
+                          if (lastHighlightedEl) {
+                            lastHighlightedEl.style.stroke = '';
+                            lastHighlightedEl.style.strokeWidth = '';
+                            lastHighlightedEl = null;
+                          }
+                          setSelectedElement(null);
+                          lastTagName = null;
+                        }
+                      });
+                    }}
                     theme={darkMode ? 'vs-dark' : 'light'}
                     options={{
                       minimap: { enabled: false },
                       wordWrap: 'on',
                       fontSize: 14,
-                      lineNumbersMinChars: 2, // default is 5, so this shrinks the margin
-                      lineDecorationsWidth: 0, // (optional) removes extra padding
+                      lineNumbersMinChars: 2,
+                      lineDecorationsWidth: 0,
                       lineNumbers: 'on',
                     }}
                   />
@@ -499,6 +617,7 @@ const SVGViewer: React.FC = () => {
                       children: (
                         <div className={`${styles.previewSection} ${styles[bgMode]}`}>
                           <div
+                            ref={svgContainerRef}
                             style={{
                               transform: `scale(${zoom})`,
                               transformOrigin: 'top left', // ensure scaling doesn't cut off top-left
