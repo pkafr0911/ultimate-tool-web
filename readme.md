@@ -2,7 +2,6 @@ Here’s your **complete and polished `README.md`** — everything in one file, 
 
 ---
 
-```markdown
 # 🧰 Ultimate Tools & Utilities
 
 > A modern, all-in-one web platform that gathers **developer tools**, **playgrounds**, and **everyday utilities** — all beautifully designed and accessible from one place.
@@ -64,8 +63,6 @@ Quick access to useful command references, emojis, and kaomoji sets.
 ---
 
 ## 🏗️ Project Structure
-
-```
 
 src/
 ├── components/        # Shared UI components
