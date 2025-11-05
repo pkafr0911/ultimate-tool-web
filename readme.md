@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/pkafr0911/ultimate-tool-web/main/public/banner.png" alt="Ultimate Tools & Utilities Banner" width="100%">
+</p>
+
 # 🧰 Ultimate Tools & Utilities
 
 > A modern, all-in-one web platform that gathers **developer tools**, **playgrounds**, and **everyday utilities** — all beautifully designed and accessible from one place.
