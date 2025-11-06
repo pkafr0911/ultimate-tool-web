@@ -33,6 +33,19 @@ export const formatXML = (xml: string) => {
   return formattedLines.join('\n').trim(); // Join all lines
 };
 
+// --- Extract width and height from SVG code ---
+export const extractSize = (
+  code: string,
+  setSvgSize: (size: { width: string; height: string }) => void,
+) => {
+  const widthMatch = code.match(/width="([^"]+)"/);
+  const heightMatch = code.match(/height="([^"]+)"/);
+  setSvgSize({
+    width: widthMatch ? widthMatch[1] : '',
+    height: heightMatch ? heightMatch[1] : '',
+  });
+};
+
 export const handleEditorMount = (editor: monaco.editor.IStandaloneCodeEditor, svgContainerRef) => {
   let lastTagFragment: string | null = null; // Track the last highlighted tag name
   let lastHighlightedEl: SVGElement | null = null; // Track the last highlighted SVG element
