@@ -194,8 +194,7 @@ const EditorSection: React.FC<Props> = ({
       return;
     }
     try {
-      const clean = optimize(svgCode, { multipass: true }).data;
-      const pretty = formatXML(clean);
+      const pretty = formatXML(svgCode);
       setSvgCode(pretty);
       setPreview(pretty);
       extractSize(pretty, setSvgSize);
