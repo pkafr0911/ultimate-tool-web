@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Dispatch, useEffect, useRef, useState } from 'react';
 import { Button, Upload, Space, Typography, Input, Tooltip, message } from 'antd'; // Import Ant Design components
 import { Editor } from '@monaco-editor/react'; // Import Monaco Editor component
 import {
@@ -34,7 +34,12 @@ type Props = {
   setSvgCode: (val: string) => void;
   setPreview: (val: string) => void;
   sizeInfo: { before: number; after?: number } | null;
-  setSizeInfo: (info: { before: number; after?: number } | null) => void;
+  setSizeInfo: Dispatch<
+    React.SetStateAction<{
+      before: number;
+      after?: number;
+    } | null>
+  >;
   svgSize: { width: string; height: string };
   setSvgSize: (size: any) => void;
   svgContainerRef: React.RefObject<HTMLDivElement>;
@@ -66,6 +71,10 @@ const EditorSection: React.FC<Props> = ({
 
   // Setting hook
   const { settings, setSettings } = useSetting();
+
+  useEffect(() => {
+    setSizeInfo((pev) => ({ ...pev, before: new Blob([svgCode]).size }));
+  }, []);
 
   // Keep ratio updated whenever SVG size changes
   useEffect(() => {
@@ -222,6 +231,7 @@ const EditorSection: React.FC<Props> = ({
       setSvgCode(pretty);
       setPreview(pretty);
       extractSize(pretty, setSvgSize);
+      setSizeInfo((pev) => ({ ...pev, before: new Blob([pretty]).size }));
       message.success('SVG prettified!');
     } catch (err) {
       console.error(err);
@@ -355,6 +365,7 @@ const EditorSection: React.FC<Props> = ({
             setSvgCode(code);
             setPreview(code);
             extractSize(code, setSvgSize);
+            setSizeInfo((pev) => ({ ...pev, before: new Blob([code]).size }));
           }}
           onMount={onMount}
           theme={darkMode ? 'vs-dark' : 'light'}
