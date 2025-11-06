@@ -1,4 +1,19 @@
 import * as monaco from 'monaco-editor';
+import { defaultSettings, SETTINGS_KEY, ViewerSettings } from '../constants';
+
+// --- Helpers for LocalStorage ---
+export const saveSettings = (settings: ViewerSettings) => {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+};
+
+export const loadSettings = (): ViewerSettings => {
+  try {
+    const saved = localStorage.getItem(SETTINGS_KEY);
+    return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
+  } catch {
+    return defaultSettings;
+  }
+};
 
 // --- Download SVG or other data as file ---
 export const handleDownload = (data: string, filename: string, type: string) => {
@@ -46,7 +61,11 @@ export const extractSize = (
   });
 };
 
-export const handleEditorMount = (editor: monaco.editor.IStandaloneCodeEditor, svgContainerRef) => {
+export const handleEditorMount = (
+  editor: monaco.editor.IStandaloneCodeEditor,
+  svgContainerRef,
+  callback?: (action: string, data: any) => void,
+) => {
   let lastTagFragment: string | null = null; // Track the last highlighted tag name
   let lastHighlightedEl: SVGElement | null = null; // Track the last highlighted SVG element
 
@@ -61,11 +80,11 @@ export const handleEditorMount = (editor: monaco.editor.IStandaloneCodeEditor, s
   };
 
   // Function to clear highlight state
-  const clear = () => {
+  const clear = (settings: ViewerSettings) => {
     // 🧹 Remove highlight overlay and tooltip if present
     if (lastHighlightedEl) {
-      // lastHighlightedEl.style.stroke = '';
-      // lastHighlightedEl.style.strokeWidth = '';
+      lastHighlightedEl.style.stroke = '';
+      lastHighlightedEl.style.strokeWidth = '';
 
       const svg = lastHighlightedEl.ownerSVGElement;
       removeHighlight(svg);
@@ -75,14 +94,16 @@ export const handleEditorMount = (editor: monaco.editor.IStandaloneCodeEditor, s
   };
 
   // Function to apply highlight styles
-  const applyHighlight = (targetEl: SVGElement) => {
+  const applyHighlight = (targetEl: SVGElement, settings: ViewerSettings) => {
     const svg = targetEl.ownerSVGElement;
     if (!svg) return;
 
-    // // Apply highlight stroke to matched SVG element
-    // targetEl.style.stroke = '#1890ff';
-    // targetEl.style.strokeWidth = '5';
-    // lastHighlightedEl = targetEl;
+    // ✅ Highlight border if enabled
+    if (settings.highlightBorder) {
+      // Apply highlight stroke to matched SVG element
+      targetEl.style.stroke = '#1890ff';
+      targetEl.style.strokeWidth = '3';
+    }
 
     // 🧹 Remove old highlight overlay if any
     removeHighlight(svg);
@@ -104,19 +125,22 @@ export const handleEditorMount = (editor: monaco.editor.IStandaloneCodeEditor, s
       bbox = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
     }
 
-    // 🎨 Create overlay rect
-    const overlay = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    overlay.setAttribute('id', '__highlight_overlay__');
-    overlay.setAttribute('x', bbox.x.toString());
-    overlay.setAttribute('y', bbox.y.toString());
-    overlay.setAttribute('width', bbox.width.toString());
-    overlay.setAttribute('height', bbox.height.toString());
-    overlay.setAttribute('fill', '#1890ff');
-    overlay.setAttribute('fill-opacity', '0.15');
-    overlay.setAttribute('stroke', '#1890ff');
-    // overlay.setAttribute('stroke-width', '2');
-    overlay.setAttribute('pointer-events', 'none');
-    overlay.style.transition = 'all 0.15s ease';
+    if (settings.highlightArea) {
+      // 🎨 Create overlay rect
+      const overlay = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      overlay.setAttribute('id', '__highlight_overlay__');
+      overlay.setAttribute('x', bbox.x.toString());
+      overlay.setAttribute('y', bbox.y.toString());
+      overlay.setAttribute('width', bbox.width.toString());
+      overlay.setAttribute('height', bbox.height.toString());
+      overlay.setAttribute('fill', '#1890ff');
+      overlay.setAttribute('fill-opacity', '0.15');
+      overlay.setAttribute('stroke', '#1890ff');
+      // overlay.setAttribute('stroke-width', '2');
+      overlay.setAttribute('pointer-events', 'none');
+      overlay.style.transition = 'all 0.15s ease';
+      svg.appendChild(overlay); // 🪄 Add overlay to SVG
+    }
 
     // 🏷️ Tooltip showing width × height
     const tooltip = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -128,103 +152,131 @@ export const handleEditorMount = (editor: monaco.editor.IStandaloneCodeEditor, s
     tooltip.setAttribute('font-family', 'monospace');
     tooltip.setAttribute('pointer-events', 'none');
     tooltip.textContent = `W: ${bbox.width.toFixed(1)} H: ${bbox.height.toFixed(1)}`;
-
-    // 🪄 Add overlay and tooltip to SVG
-    svg.appendChild(overlay);
-    svg.appendChild(tooltip);
+    svg.appendChild(tooltip); // 🪄 Add tooltip to SVG
 
     // 🔗 Track highlight
     lastHighlightedEl = targetEl;
   };
 
-  // 🖱️ Highlight based on cursor position in the code editor
-  editor.onMouseMove((e) => {
-    const code = editor.getValue(); // Get current SVG code
-    const position = e.target.position; // Get cursor position
+  editor.onDidChangeCursorPosition((e) => {
+    const position = editor.getPosition();
     if (!position) return;
 
-    const model = editor.getModel(); // Get Monaco editor model
+    if (callback) {
+      callback('position', position);
+    }
+  });
+
+  // 🖱️ Highlight based on cursor position in the code editor
+  editor.onMouseMove((e) => {
+    const settings = loadSettings();
+    const code = editor.getValue();
+    const position = e.target.position;
+    if (!position) return;
+
+    const model = editor.getModel();
     if (!model) return;
 
-    const offset = model.getOffsetAt(position); // Convert cursor position to string index
-    const tagStart = code.lastIndexOf('<', offset); // Find start of current tag
-    const tagEnd = code.indexOf('>', offset); // Find end of current tag
+    const offset = model.getOffsetAt(position);
+    const tagStart = code.lastIndexOf('<', offset);
+    const tagEnd = code.indexOf('>', offset);
 
-    // If the cursor isn't inside any <tag>, clear highlight
     if (tagStart === -1 || tagEnd === -1 || offset < tagStart || offset > tagEnd) {
-      clear();
+      clear(settings);
       return;
     }
 
-    const tagFragment = code.slice(tagStart, tagEnd + 1); // Extract tag text (e.g. <rect x="10" />)
-    // const match = tagFragment.match(/<(path|rect|circle|polygon)\b([^>]*)>/i);
-    const match = tagFragment.match(/<([a-zA-Z][\w:-]*)\b([^>]*)>/i); // Match ANY tag and capture name + attributes
+    // 🧩 Extract the tag block safely — include attributes across multiple lines
+    const tagFragment = code
+      .slice(tagStart, tagEnd + 1)
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const match = tagFragment.match(/<([a-zA-Z][\w:-]*)\b([^>]*)>/i);
     if (!match) return;
 
-    const tagName = match[1].toLowerCase(); // e.g. "rect", "path", "circle"
-    const attrString = match[2] || ''; // Capture all attributes as string
+    const tagName = match[1].toLowerCase();
+    const attrString = match[2] || '';
 
-    if (tagFragment === lastTagFragment && lastHighlightedEl) return; // Skip if same tag as before
+    if (tagFragment === lastTagFragment && lastHighlightedEl) return;
     lastTagFragment = tagFragment;
 
-    const container = svgContainerRef.current; // Reference to SVG preview container
+    const container = svgContainerRef.current;
     if (!container) return;
-    const svg = container.querySelector('svg'); // Find SVG inside the container
+    const svg = container.querySelector('svg');
     if (!svg) return;
 
-    const elements: Element[] = svg.querySelectorAll(tagName); // Select all SVG elements of that tag
+    const elements: Element[] = svg.querySelectorAll(tagName);
     if (!elements.length) {
-      clear();
+      clear(settings);
       return;
     }
 
-    // 🧩 Helper: parse attributes from tag string into a normalized key-value map
     const parseAttributes = (str: string): Record<string, string> => {
       const attrs: Record<string, string> = {};
       str.replace(/([\w:-]+)\s*=\s*(['"])(.*?)\2/g, (_, key, _q, value) => {
-        // Trim both ends AND normalize internal spaces for values
         attrs[key] = value.replace(/\s+/g, ' ').trim();
         return '';
       });
       return attrs;
     };
 
-    // 🧩 Normalize attrString from Monaco
-    const normalizedAttrString = attrString
-      .replace(/[\n\r\t]+/g, ' ') // remove line breaks & tabs
-      .replace(/\s*\/?\s*>?\s*$/, '') // remove trailing '/' or '>'
-      .trim();
+    const parsedAttr = parseAttributes(attrString);
 
-    const parsedAttr = parseAttributes(normalizedAttrString);
-
-    // 🧩 Try to find the SVG element that matches attributes
+    // 🧩 Try to find the closest visual match
     let targetEl: SVGElement | null = null;
+
+    // First, try perfect attribute match
+    // 🧩 Step 1: Try to find the element whose attributes exactly match the tag under the cursor
     targetEl = Array.from(elements).find((el) => {
+      // Collect all attributes from the SVG element into a normalized key-value map
       const elAttrs: Record<string, string> = {};
       for (const { name, value } of Array.from(el.attributes)) {
-        // Normalize whitespace inside attribute values
+        // Normalize internal whitespace (e.g., remove extra spaces or line breaks)
         elAttrs[name] = value.replace(/\s+/g, ' ').trim();
       }
 
-      // ✅ Compare attributes (all from parsedAttr must match in element)
+      // ✅ Compare attributes:
+      // - Every attribute (key-value pair) in the parsed tag must exist in the SVG element
+      // - This ensures we’re matching the *exact* element that corresponds to the code cursor
       return Object.entries(parsedAttr).every(([k, v]) => elAttrs[k] === v);
     }) as SVGElement | null;
 
-    // fallback to the first if no match found
+    // 🪄 Step 2: If no exact attribute match was found,
+    // and there are multiple elements with the same tag name (e.g. multiple <path> tags)
+    if (!targetEl && elements.length > 1) {
+      // Get the current mouse Y position in the browser window
+      const mouseY = e.event.browserEvent?.clientY || 0;
+
+      // Calculate the screen position (bounding box) of each element
+      // Then sort them by how close their top edge is to the mouse Y position
+      const sorted = Array.from(elements)
+        .map((el) => ({
+          el,
+          box: el.getBoundingClientRect(),
+        }))
+        .sort((a, b) => Math.abs(a.box.top - mouseY) - Math.abs(b.box.top - mouseY));
+
+      // 🎯 Pick the element visually closest to the mouse position as the best candidate
+      targetEl = sorted[0]?.el as SVGElement;
+    }
+
+    // 🩹 Step 3: If all else fails, just use the first matching element as fallback
     if (!targetEl) targetEl = elements[0] as SVGElement;
 
-    // Clear previous highlight
+    // 🧹 Clear previous highlight
     if (lastHighlightedEl && lastHighlightedEl !== targetEl) {
       lastHighlightedEl.style.stroke = '';
       lastHighlightedEl.style.strokeWidth = '';
     }
 
-    // Apply highlight to matched SVG element
-    applyHighlight(targetEl);
+    // ✨ Apply highlight
+    applyHighlight(targetEl, settings);
   });
 
   // 🖱️ Clear highlight when mouse leaves editor
   editor.onMouseLeave(() => {
-    clear();
+    const settings = loadSettings(); // 👈 Load user preferences
+    clear(settings);
   });
 };

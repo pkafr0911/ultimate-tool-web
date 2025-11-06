@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Tabs, Button, Space, Segmented, Tooltip, Typography, message } from 'antd'; // Import Ant Design components
 import {
   MinusOutlined,
@@ -34,10 +34,61 @@ const PreviewTabs: React.FC<Props> = ({
   const [activeTab, setActiveTab] = useState<string>('svg'); // Active preview tab
   const [bgMode, setBgMode] = useState<'transparent' | 'white' | 'black' | 'grey'>('grey'); // Background mode
 
+  // --- Pan (drag) control ---
+  const [isDragging, setIsDragging] = useState(false);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [start, setStart] = useState<{ x: number; y: number } | null>(null);
+
   const [zoom, setZoom] = useState(1); // 1 = 100%
   const handleZoomIn = () => setZoom((z) => Math.min(z + 0.1, 3)); // up to 300%
   const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 0.2)); // down to 20%
   const handleResetZoom = () => setZoom(1);
+  const [fitScale, setFitScale] = useState(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-fit SVG to container
+  useEffect(() => {
+    const fitSvgToContainer = () => {
+      const container = containerRef.current;
+      const svgWrapper = svgContainerRef.current;
+      if (!container || !svgWrapper) return;
+
+      const svgEl = svgWrapper.querySelector('svg');
+      if (!svgEl) return;
+
+      const bbox = svgEl.getBBox();
+      const containerRect = container.getBoundingClientRect();
+      if (!bbox.width || !bbox.height) return;
+
+      const scaleX = containerRect.width / bbox.width;
+      const scaleY = containerRect.height / bbox.height;
+      const scale = Math.min(scaleX, scaleY, 1); // Prevent upscaling beyond 100%
+
+      setFitScale(scale);
+      setZoom(scale); // Initialize zoom to fit scale
+      setOffset({ x: 0, y: 0 });
+    };
+
+    fitSvgToContainer();
+    window.addEventListener('resize', fitSvgToContainer);
+    return () => window.removeEventListener('resize', fitSvgToContainer);
+  }, [preview]);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+    setStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging || !start) return;
+    setOffset({ x: e.clientX - start.x, y: e.clientY - start.y });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    setStart(null);
+  };
 
   // --- Convert SVG to Canvas image (PNG or ICO) ---
   const svgToCanvas = async (mimeType: string) => {
@@ -85,6 +136,7 @@ const PreviewTabs: React.FC<Props> = ({
   return (
     <div className={styles.previewWrapper}>
       <Tabs
+        size="small"
         activeKey={activeTab}
         onChange={(key) => setActiveTab(key)}
         items={[
@@ -92,14 +144,19 @@ const PreviewTabs: React.FC<Props> = ({
             key: 'svg',
             label: 'SVG',
             children: (
-              <div className={`${styles.previewSection} ${styles[bgMode]}`}>
+              <div
+                className={`${styles.previewSection} ${styles[bgMode]}`}
+                style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+              >
                 <div
                   ref={svgContainerRef}
                   style={{
-                    transform: `scale(${zoom})`,
-                    transformOrigin: 'top left', // ensure scaling doesn't cut off top-left
-                    maxWidth: '100%',
-                    maxHeight: '100%',
+                    transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+                    transformOrigin: 'top left',
                     display: 'inline-block',
                   }}
                   dangerouslySetInnerHTML={{
@@ -112,6 +169,7 @@ const PreviewTabs: React.FC<Props> = ({
               </div>
             ),
           },
+
           {
             key: 'png',
             label: 'PNG',

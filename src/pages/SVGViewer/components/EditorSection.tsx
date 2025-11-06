@@ -14,10 +14,18 @@ import {
 } from '@ant-design/icons'; // Import icons
 import styles from '../styles.less'; // Import CSS module
 import { handleCopy } from '@/helpers';
-import { extractSize, formatXML, handleEditorMount } from '../utils/helpers';
+import {
+  extractSize,
+  formatXML,
+  handleEditorMount,
+  loadSettings,
+  saveSettings,
+} from '../utils/helpers';
 import { optimize } from 'svgo'; // Import SVG optimizer
 import type * as monaco from 'monaco-editor';
 import { useDarkMode } from '@/hooks/useDarkMode';
+import { useSetting } from '../hooks/useSetting';
+import { ViewerSettings } from '../constants';
 
 const { Text } = Typography; // Destructure Text component from Typography
 
@@ -49,10 +57,15 @@ const EditorSection: React.FC<Props> = ({
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 
+  const [cursorPos, setCursorPos] = useState({ line: 1, column: 1 });
+
   const [lockRatio, setLockRatio] = useState<boolean>(true);
   const ratioRef = useRef<number | null>(null);
 
   const [rotation, setRotation] = useState(0);
+
+  // Setting hook
+  const { settings, setSettings } = useSetting();
 
   // Keep ratio updated whenever SVG size changes
   useEffect(() => {
@@ -62,6 +75,11 @@ const EditorSection: React.FC<Props> = ({
       ratioRef.current = w / h;
     }
   }, [svgSize.width, svgSize.height]);
+
+  // Sync lock ratio with setting
+  useEffect(() => {
+    if (lockRatio !== settings.lockRatio) setSettings({ ...settings, lockRatio });
+  }, [lockRatio]);
 
   // --- Optimize SVG using SVGO ---
   const handleOptimize = () => {
@@ -197,7 +215,10 @@ const EditorSection: React.FC<Props> = ({
       return;
     }
     try {
-      const pretty = formatXML(svgCode);
+      const settings = loadSettings();
+      let code = svgCode;
+      if (settings.optimizeBeforePrettify) code = optimize(svgCode, { multipass: true }); // Optimize SVG
+      const pretty = formatXML(code);
       setSvgCode(pretty);
       setPreview(pretty);
       extractSize(pretty, setSvgSize);
@@ -263,38 +284,69 @@ const EditorSection: React.FC<Props> = ({
     message.success(`Rotated SVG to ${newRotation}°!`);
   };
 
+  useEffect(() => {
+    console.log('cursorPos', cursorPos);
+  }, [cursorPos]);
+
   const onMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
     editorRef.current = editor; // Store the editor instance for later use
-    handleEditorMount(editor, svgContainerRef);
+    const callback = (action: string, data: any) => {
+      if (action === 'position')
+        setCursorPos({
+          line: data.lineNumber,
+          column: data.column,
+        });
+    };
+    handleEditorMount(editor, svgContainerRef, callback);
   };
 
   return (
     <div className={styles.editorSection}>
       <Space className={styles.topActions} style={{ marginTop: 12, marginBottom: 8 }} wrap>
         <Upload beforeUpload={handleUpload} showUploadList={false} accept=".svg">
-          <Button icon={<UploadOutlined />}>Upload SVG</Button>
+          <Button size="small" icon={<UploadOutlined />}>
+            Upload SVG
+          </Button>
         </Upload>
-        <Button onClick={prettifySVG} icon={<HighlightOutlined />}>
+        <Button size="small" onClick={prettifySVG} icon={<HighlightOutlined />}>
           Prettify
         </Button>
-        <Button onClick={handleOptimize} icon={<CompressOutlined />}>
+        <Button size="small" onClick={handleOptimize} icon={<CompressOutlined />}>
           Optimize
         </Button>
       </Space>
 
-      {/* Show size info */}
-      {sizeInfo && (
-        <Text type="secondary" className="mb-2 block">
-          Size: <b>{(sizeInfo.before / 1024).toFixed(2)} KB</b>
-          {sizeInfo.after && (
-            <>
-              {' '}
-              → <b>{(sizeInfo.after / 1024).toFixed(2)} KB</b> (
-              {(((sizeInfo.before - sizeInfo.after) / sizeInfo.before) * 100).toFixed(1)}% smaller)
-            </>
-          )}
-        </Text>
-      )}
+      <Space direction="horizontal" size={'large'}>
+        {/* Show cursor position */}
+        <div
+          style={{
+            height: 28,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            borderBottom: '1px solid #ddd',
+          }}
+        >
+          <Text type="secondary">
+            Ln {cursorPos.line}, Col {cursorPos.column}
+          </Text>
+        </div>
+
+        {/* Show size info */}
+        {sizeInfo && (
+          <Text type="secondary" className="mb-2 block">
+            Size: <b>{(sizeInfo.before / 1024).toFixed(2)} KB</b>
+            {sizeInfo.after && (
+              <>
+                {' '}
+                → <b>{(sizeInfo.after / 1024).toFixed(2)} KB</b> (
+                {(((sizeInfo.before - sizeInfo.after) / sizeInfo.before) * 100).toFixed(1)}%
+                smaller)
+              </>
+            )}
+          </Text>
+        )}
+      </Space>
 
       {/* Editor */}
       <div className={styles.editorBox}>
@@ -323,10 +375,10 @@ const EditorSection: React.FC<Props> = ({
 
       {/* Editor actions */}
       <Space className={styles.actions} wrap>
-        <Button type="primary" onClick={handleCopyCode} icon={<CopyOutlined />}>
+        <Button size="small" type="primary" onClick={handleCopyCode} icon={<CopyOutlined />}>
           Copy
         </Button>
-        <Button danger onClick={handleClear} icon={<DeleteOutlined />}>
+        <Button size="small" danger onClick={handleClear} icon={<DeleteOutlined />}>
           Clear
         </Button>
       </Space>
@@ -362,16 +414,17 @@ const EditorSection: React.FC<Props> = ({
         />
         {/* Flip buttons */}
         <Tooltip title={'Flip H'}>
-          <Button onClick={flipHorizontal} icon={<SwapOutlined />} />
+          <Button size="small" onClick={flipHorizontal} icon={<SwapOutlined />} />
         </Tooltip>
         <Tooltip title={'Flip V'}>
           <Button
+            size="small"
             onClick={flipVertical}
             icon={<SwapOutlined style={{ transform: 'rotate(90deg)' }} />}
           />
         </Tooltip>
         <Tooltip title="Rotate 90°">
-          <Button icon={<RotateRightOutlined />} onClick={handleRotate} />
+          <Button size="small" icon={<RotateRightOutlined />} onClick={handleRotate} />
         </Tooltip>
       </Space>
     </div>

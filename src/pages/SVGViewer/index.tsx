@@ -1,23 +1,26 @@
 import { handleCopy } from '@/helpers'; // Import custom copy helper
 import { useIsMobile } from '@/hooks/useIsMobile';
 
-import { Card, message, Splitter, Typography } from 'antd'; // Import Ant Design components
+import { Button, Card, message, Space, Splitter, Typography } from 'antd'; // Import Ant Design components
 import React, { useRef, useState } from 'react'; // Import React and useState hook
 import styles from './styles.less'; // Import CSS module
 
-import { extractSize, handleDownload } from './utils/helpers';
+import { extractSize, handleDownload, loadSettings } from './utils/helpers';
 import GuideSection from './components/GuideSection';
 import DragOverlay from '@/components/DragOverlay';
 import { DragDropWrapper } from './components/DragDropWrapper';
 import EditorSection from './components/EditorSection';
 import PreviewTabs from './components/PreviewTabs';
+import { SettingOutlined } from '@ant-design/icons';
+import SettingsModal from './components/SettingsModal';
+import logo from '@/assets/logo.svg?raw';
 
 const { Text } = Typography; // Destructure Text component from Typography
 
 const SVGViewer: React.FC = () => {
   // --- State variables ---
-  const [svgCode, setSvgCode] = useState<string>(''); // Store the raw SVG code
-  const [preview, setPreview] = useState<string>(''); // Store SVG preview HTML
+  const [svgCode, setSvgCode] = useState<string>(logo); // Store the raw SVG code
+  const [preview, setPreview] = useState<string>(logo); // Store SVG preview HTML
   const [pngPreview, setPngPreview] = useState<string>('');
   const [icoPreview, setIcoPreview] = useState<string>('');
 
@@ -28,9 +31,13 @@ const SVGViewer: React.FC = () => {
     height: '',
   }); // Store detected or custom SVG width/height
 
+  // Settings state
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+
   // Check in using Mobile
   const isMobile = useIsMobile();
 
+  // Couting Drag
   const dragCounter = useRef(0);
 
   // Highlight Editor Mount
@@ -38,6 +45,8 @@ const SVGViewer: React.FC = () => {
 
   // --- Function to handle SVG file upload ---
   const handleUpload = (file: File) => {
+    const settings = loadSettings(); // 👈 Load user preferences
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
@@ -49,8 +58,7 @@ const SVGViewer: React.FC = () => {
       const newContent = result.trim();
       let combinedSvg = '';
 
-      if (svgCode.trim()) {
-        // Append new SVG below existing one
+      if (settings.uploadStack && svgCode.trim()) {
         combinedSvg = `${svgCode.trim()}\n\n<!-- New SVG appended -->\n${newContent}`;
       } else {
         combinedSvg = newContent;
@@ -58,12 +66,10 @@ const SVGViewer: React.FC = () => {
 
       setSvgCode(combinedSvg);
       setPreview(combinedSvg);
+      extractSize(combinedSvg, setSvgSize);
 
-      extractSize(combinedSvg, setSvgSize); // Auto-detect width & height
-
-      // Update combined file size
       setSizeInfo({ before: new Blob([combinedSvg]).size });
-      message.success(svgCode ? 'Appended new SVG!' : 'SVG loaded!');
+      message.success(settings.uploadStack && svgCode ? 'Appended new SVG!' : 'SVG loaded!');
     };
     reader.readAsText(file);
     return false;
@@ -82,7 +88,20 @@ const SVGViewer: React.FC = () => {
       dragCounter={dragCounter}
       handleUpload={handleUpload}
     >
-      <Card title="🧩 SVG Viewer" variant={'borderless'} className={styles.container}>
+      <Card
+        title={
+          <Space>
+            🧩 SVG Viewer
+            <Button
+              type="text"
+              icon={<SettingOutlined />}
+              onClick={() => setIsSettingsModalOpen(true)}
+            />
+          </Space>
+        }
+        variant={'borderless'}
+        className={styles.container}
+      >
         <div>
           <Typography.Title level={4}>📘 About SVG Viewer</Typography.Title>
           <Typography.Paragraph>
@@ -130,6 +149,9 @@ const SVGViewer: React.FC = () => {
 
       {/* Drag overlay */}
       {dragging && <DragOverlay />}
+
+      {/* --- Settings Modal --- */}
+      <SettingsModal open={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} />
     </DragDropWrapper>
   );
 };
