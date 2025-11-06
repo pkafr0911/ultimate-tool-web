@@ -284,10 +284,6 @@ const EditorSection: React.FC<Props> = ({
     message.success(`Rotated SVG to ${newRotation}°!`);
   };
 
-  useEffect(() => {
-    console.log('cursorPos', cursorPos);
-  }, [cursorPos]);
-
   const onMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
     editorRef.current = editor; // Store the editor instance for later use
     const callback = (action: string, data: any) => {

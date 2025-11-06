@@ -40,8 +40,8 @@ const PreviewTabs: React.FC<Props> = ({
   const [start, setStart] = useState<{ x: number; y: number } | null>(null);
 
   const [zoom, setZoom] = useState(1); // 1 = 100%
-  const handleZoomIn = () => setZoom((z) => Math.min(z + 0.1, 3)); // up to 300%
-  const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 0.2)); // down to 20%
+  const handleZoomIn = () => setZoom((z) => Math.min(z + 1, 3)); // up to 300%
+  const handleZoomOut = () => setZoom((z) => Math.max(z - 0.5, 0.2)); // down to 20%
   const handleResetZoom = () => setZoom(1);
   const [fitScale, setFitScale] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -75,20 +75,32 @@ const PreviewTabs: React.FC<Props> = ({
   }, [preview]);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
-    setStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+    // Triggered when mouse button is pressed down on the div
+    e.preventDefault(); // Prevents default browser drag behavior (like image dragging)
+    setIsDragging(true); // Marks that dragging has started
+    setStart({
+      // Records the starting mouse position relative to current offset
+      x: e.clientX - offset.x, // Calculate X starting point (adjusted by current offset)
+      y: e.clientY - offset.y, // Calculate Y starting point (adjusted by current offset)
+    });
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging || !start) return;
-    setOffset({ x: e.clientX - start.x, y: e.clientY - start.y });
+    // Triggered when mouse moves over the div
+    if (!isDragging || !start) return; // Do nothing if dragging hasn’t started or start point is missing
+    setOffset({
+      // Update the offset (i.e., how much the SVG has been moved)
+      x: e.clientX - start.x, // Calculate new X offset based on current mouse position
+      y: e.clientY - start.y, // Calculate new Y offset based on current mouse position
+    });
   };
 
   const handleMouseUp = () => {
-    setIsDragging(false);
-    setStart(null);
+    // Triggered when mouse button is released
+    setIsDragging(false); // Ends the dragging state
+    setStart(null); // Clears the starting position
   };
+  6;
 
   // --- Convert SVG to Canvas image (PNG or ICO) ---
   const svgToCanvas = async (mimeType: string) => {
