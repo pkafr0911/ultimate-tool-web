@@ -14,6 +14,7 @@ import { handleCopy } from '@/helpers';
 import { extractSize, formatXML, handleEditorMount } from '../utils/helpers';
 import { optimize } from 'svgo'; // Import SVG optimizer
 import type * as monaco from 'monaco-editor';
+import { useDarkMode } from '@/hooks/useDarkMode';
 
 const { Text } = Typography; // Destructure Text component from Typography
 
@@ -25,7 +26,6 @@ type Props = {
   setSizeInfo: (info: { before: number; after?: number } | null) => void;
   svgSize: { width: string; height: string };
   setSvgSize: (size: any) => void;
-  darkMode: boolean;
   svgContainerRef: React.RefObject<HTMLDivElement>;
   handleUpload: (file: File) => boolean;
 };
@@ -36,12 +36,13 @@ const EditorSection: React.FC<Props> = ({
   setPreview,
   sizeInfo,
   setSizeInfo,
-  darkMode,
   svgSize,
   setSvgSize,
   svgContainerRef,
   handleUpload,
 }) => {
+  // --- State variables ---
+  const { darkMode } = useDarkMode();
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
 

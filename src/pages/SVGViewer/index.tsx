@@ -1,5 +1,4 @@
 import { handleCopy } from '@/helpers'; // Import custom copy helper
-import { useDarkMode } from '@/hooks/useDarkMode';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
 import { Card, message, Splitter, Typography } from 'antd'; // Import Ant Design components
@@ -17,12 +16,11 @@ const { Text } = Typography; // Destructure Text component from Typography
 
 const SVGViewer: React.FC = () => {
   // --- State variables ---
-  const { darkMode } = useDarkMode();
   const [svgCode, setSvgCode] = useState<string>(''); // Store the raw SVG code
   const [preview, setPreview] = useState<string>(''); // Store SVG preview HTML
   const [pngPreview, setPngPreview] = useState<string>('');
   const [icoPreview, setIcoPreview] = useState<string>('');
-  const [bgMode, setBgMode] = useState<'transparent' | 'white' | 'black' | 'grey'>('grey'); // Background mode
+
   const [sizeInfo, setSizeInfo] = useState<{ before: number; after?: number } | null>(null); // Store size info before/after optimization
   const [dragging, setDragging] = useState(false);
   const [svgSize, setSvgSize] = useState<{ width: string; height: string }>({
@@ -108,7 +106,6 @@ const SVGViewer: React.FC = () => {
                 setSizeInfo={setSizeInfo}
                 svgSize={svgSize}
                 setSvgSize={setSvgSize}
-                darkMode={darkMode}
                 svgContainerRef={svgContainerRef}
                 handleUpload={handleUpload}
               />
@@ -116,8 +113,6 @@ const SVGViewer: React.FC = () => {
             <Splitter.Panel style={{ padding: '0px 10px' }}>
               {/* Right Side - Preview */}
               <PreviewTabs
-                bgMode={bgMode}
-                setBgMode={setBgMode}
                 preview={preview}
                 svgCode={svgCode}
                 handleDownload={handleDownload}

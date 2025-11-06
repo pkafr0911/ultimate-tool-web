@@ -12,8 +12,6 @@ import styles from '../styles.less'; // Import CSS module
 const { Text } = Typography;
 
 type Props = {
-  bgMode: string;
-  setBgMode: (mode: any) => void;
   preview: string;
   svgCode: string;
   handleDownload: (content: string, name: string, type: string) => void;
@@ -24,8 +22,6 @@ type Props = {
 };
 
 const PreviewTabs: React.FC<Props> = ({
-  bgMode,
-  setBgMode,
   preview,
   svgCode,
   handleDownload,
@@ -34,7 +30,9 @@ const PreviewTabs: React.FC<Props> = ({
   getDataURI,
   getBase64,
 }) => {
+  // --- State variables ---
   const [activeTab, setActiveTab] = useState<string>('svg'); // Active preview tab
+  const [bgMode, setBgMode] = useState<'transparent' | 'white' | 'black' | 'grey'>('grey'); // Background mode
 
   const [zoom, setZoom] = useState(1); // 1 = 100%
   const handleZoomIn = () => setZoom((z) => Math.min(z + 0.1, 3)); // up to 300%
