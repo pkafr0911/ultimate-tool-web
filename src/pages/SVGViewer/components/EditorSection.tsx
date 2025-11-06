@@ -10,6 +10,7 @@ import {
   SwapOutlined,
   LockOutlined,
   UnlockOutlined,
+  RotateRightOutlined,
 } from '@ant-design/icons'; // Import icons
 import styles from '../styles.less'; // Import CSS module
 import { handleCopy } from '@/helpers';
@@ -50,6 +51,8 @@ const EditorSection: React.FC<Props> = ({
 
   const [lockRatio, setLockRatio] = useState<boolean>(true);
   const ratioRef = useRef<number | null>(null);
+
+  const [rotation, setRotation] = useState(0);
 
   // Keep ratio updated whenever SVG size changes
   useEffect(() => {
@@ -235,6 +238,31 @@ const EditorSection: React.FC<Props> = ({
     });
   };
 
+  // --- Rotate SVG by 90° ---
+  const handleRotate = () => {
+    if (!svgCode.trim()) {
+      message.warning('No SVG loaded.');
+      return;
+    }
+
+    const newRotation = (rotation + 90) % 360;
+    setRotation(newRotation);
+
+    let updated = svgCode;
+    updated = updated.replace(/<svg([^>]*)>/, (match, attrs) => {
+      const transformValue = `rotate(${newRotation})`;
+      if (attrs.includes('transform=')) {
+        return `<svg${attrs.replace(/transform="([^"]*)"/, `transform="${transformValue}"`)}>`;
+      } else {
+        return `<svg${attrs} transform="${transformValue}">`;
+      }
+    });
+
+    setSvgCode(updated);
+    setPreview(updated);
+    message.success(`Rotated SVG to ${newRotation}°!`);
+  };
+
   const onMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
     editorRef.current = editor; // Store the editor instance for later use
     handleEditorMount(editor, svgContainerRef);
@@ -341,6 +369,9 @@ const EditorSection: React.FC<Props> = ({
             onClick={flipVertical}
             icon={<SwapOutlined style={{ transform: 'rotate(90deg)' }} />}
           />
+        </Tooltip>
+        <Tooltip title="Rotate 90°">
+          <Button icon={<RotateRightOutlined />} onClick={handleRotate} />
         </Tooltip>
       </Space>
     </div>

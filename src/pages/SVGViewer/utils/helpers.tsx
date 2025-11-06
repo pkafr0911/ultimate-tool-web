@@ -64,6 +64,9 @@ export const handleEditorMount = (editor: monaco.editor.IStandaloneCodeEditor, s
   const clear = () => {
     // 🧹 Remove highlight overlay and tooltip if present
     if (lastHighlightedEl) {
+      // lastHighlightedEl.style.stroke = '';
+      // lastHighlightedEl.style.strokeWidth = '';
+
       const svg = lastHighlightedEl.ownerSVGElement;
       removeHighlight(svg);
       lastHighlightedEl = null;
@@ -75,6 +78,11 @@ export const handleEditorMount = (editor: monaco.editor.IStandaloneCodeEditor, s
   const applyHighlight = (targetEl: SVGElement) => {
     const svg = targetEl.ownerSVGElement;
     if (!svg) return;
+
+    // // Apply highlight stroke to matched SVG element
+    // targetEl.style.stroke = '#1890ff';
+    // targetEl.style.strokeWidth = '5';
+    // lastHighlightedEl = targetEl;
 
     // 🧹 Remove old highlight overlay if any
     removeHighlight(svg);
