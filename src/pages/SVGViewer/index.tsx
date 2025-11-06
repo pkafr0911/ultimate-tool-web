@@ -347,11 +347,22 @@ const SVGViewer: React.FC = () => {
     let lastTagFragment: string | null = null; // Track the last highlighted tag name
     let lastHighlightedEl: SVGElement | null = null; // Track the last highlighted SVG element
 
+    // Function to remove highlight overlay and tooltip
+    const removeHighlight = (svg: SVGSVGElement | null) => {
+      if (svg) {
+        const oldOverlay = svg.querySelector('#__highlight_overlay__');
+        const oldTooltip = svg.querySelector('#__highlight_tooltip__');
+        if (oldOverlay) oldOverlay.remove();
+        if (oldTooltip) oldTooltip.remove();
+      }
+    };
+
+    // Function to clear highlight state
     const clear = () => {
-      //Clear highlight when clicking outside the SVG
+      // 🧹 Remove highlight overlay and tooltip if present
       if (lastHighlightedEl) {
-        lastHighlightedEl.style.stroke = '';
-        lastHighlightedEl.style.strokeWidth = '';
+        const svg = lastHighlightedEl.ownerSVGElement;
+        removeHighlight(svg);
         lastHighlightedEl = null;
       }
       setSelectedElement(null); // Clear selection state
@@ -364,8 +375,7 @@ const SVGViewer: React.FC = () => {
       if (!svg) return;
 
       // 🧹 Remove old highlight overlay if any
-      const oldOverlay = svg.querySelector('#__highlight_overlay__');
-      if (oldOverlay) oldOverlay.remove();
+      removeHighlight(svg);
 
       // 🧩 Get the bounding box of the target element (use SVGGraphicsElement.getBBox when available)
       let bbox: { x: number; y: number; width: number; height: number };
@@ -384,7 +394,7 @@ const SVGViewer: React.FC = () => {
         bbox = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
       }
 
-      // 🎨 Create a light-blue overlay rectangle
+      // 🎨 Create overlay rect
       const overlay = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       overlay.setAttribute('id', '__highlight_overlay__');
       overlay.setAttribute('x', bbox.x.toString());
@@ -395,13 +405,25 @@ const SVGViewer: React.FC = () => {
       overlay.setAttribute('fill-opacity', '0.15');
       overlay.setAttribute('stroke', '#1890ff');
       overlay.setAttribute('stroke-width', '2');
-      overlay.setAttribute('pointer-events', 'none'); // Allow clicks to pass through
-      overlay.style.transition = 'all 0.2s ease-in-out';
+      overlay.setAttribute('pointer-events', 'none');
+      overlay.style.transition = 'all 0.15s ease';
 
-      // 🪄 Add overlay on top of all elements
+      // 🏷️ Tooltip showing width × height
+      const tooltip = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      tooltip.setAttribute('id', '__highlight_tooltip__');
+      tooltip.setAttribute('x', (bbox.x + bbox.width + 5).toString());
+      tooltip.setAttribute('y', (bbox.y + 15).toString());
+      tooltip.setAttribute('fill', '#1890ff');
+      tooltip.setAttribute('font-size', '14');
+      tooltip.setAttribute('font-family', 'monospace');
+      tooltip.setAttribute('pointer-events', 'none');
+      tooltip.textContent = `W: ${bbox.width.toFixed(1)} H: ${bbox.height.toFixed(1)}`;
+
+      // 🪄 Add overlay and tooltip to SVG
       svg.appendChild(overlay);
+      svg.appendChild(tooltip);
 
-      // Update references
+      // 🔗 Track highlight
       lastHighlightedEl = targetEl;
       setSelectedElement(targetEl);
     };
