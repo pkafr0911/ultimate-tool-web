@@ -24,6 +24,7 @@ import { saveAs } from 'file-saver';
 import JSZip from 'jszip';
 import React, { useEffect, useRef, useState } from 'react';
 import './styles.less';
+import DragOverlay from '@/components/DragOverlay';
 
 const { Text } = Typography;
 
@@ -234,28 +235,7 @@ const TextArtPage: React.FC = () => {
       <Card title="🖼️ Multi Image → ASCII Text Art Generator" variant={'borderless'}>
         <Space direction="vertical" style={{ width: '100%' }} size="large">
           {/* Drag-and-drop overlay */}
-          {dragging && (
-            <div
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                zIndex: 9999,
-                background: 'rgba(0,0,0,0.1)',
-                border: '2px dashed #1890ff',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                flexDirection: 'column',
-                padding: 20,
-              }}
-            >
-              <UploadOutlined style={{ fontSize: 48, color: '#000' }} />
-              <p style={{ fontSize: 18, marginTop: 8 }}>Drop files here to upload</p>
-            </div>
-          )}
+          {dragging && <DragOverlay />}
 
           {/* File upload button */}
           <Upload

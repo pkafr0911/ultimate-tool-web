@@ -1,3 +1,4 @@
+import DragOverlay from '@/components/DragOverlay';
 import { handleCopy } from '@/helpers';
 import {
   CopyOutlined,
@@ -135,28 +136,7 @@ const PNGJPEG: React.FC = () => {
               </Upload>
             )}
 
-            {dragging && (
-              <div
-                style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  zIndex: 9999,
-                  background: 'rgba(0,0,0,0.1)',
-                  border: '2px dashed #1890ff',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  flexDirection: 'column',
-                  padding: 20,
-                }}
-              >
-                <UploadOutlined style={{ fontSize: 48, color: '#000000' }} />
-                <p style={{ fontSize: 18, marginTop: 8 }}>Drop file anywhere to upload</p>
-              </div>
-            )}
+            {dragging && <DragOverlay />}
 
             {/* Preview */}
             {preview && (
