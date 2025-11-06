@@ -68,10 +68,6 @@ const SVGViewer: React.FC = () => {
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const [selectedElement, setSelectedElement] = useState<SVGElement | null>(null);
 
-  useEffect(() => {
-    console.log('selectedElement', selectedElement);
-  }, [selectedElement]);
-
   // --- Function to handle SVG file upload ---
   const handleUpload = (file: File) => {
     const reader = new FileReader();
@@ -351,10 +347,69 @@ const SVGViewer: React.FC = () => {
     let lastTagFragment: string | null = null; // Track the last highlighted tag name
     let lastHighlightedEl: SVGElement | null = null; // Track the last highlighted SVG element
 
+    const clear = () => {
+      //Clear highlight when clicking outside the SVG
+      if (lastHighlightedEl) {
+        lastHighlightedEl.style.stroke = '';
+        lastHighlightedEl.style.strokeWidth = '';
+        lastHighlightedEl = null;
+      }
+      setSelectedElement(null); // Clear selection state
+      lastTagFragment = null;
+    };
+
+    // Function to apply highlight styles
+    const applyHighlight = (targetEl: SVGElement) => {
+      const svg = targetEl.ownerSVGElement;
+      if (!svg) return;
+
+      // 🧹 Remove old highlight overlay if any
+      const oldOverlay = svg.querySelector('#__highlight_overlay__');
+      if (oldOverlay) oldOverlay.remove();
+
+      // 🧩 Get the bounding box of the target element (use SVGGraphicsElement.getBBox when available)
+      let bbox: { x: number; y: number; width: number; height: number };
+      if ('getBBox' in targetEl && typeof (targetEl as any).getBBox === 'function') {
+        try {
+          // Cast to SVGGraphicsElement to satisfy TypeScript
+          bbox = (targetEl as unknown as SVGGraphicsElement).getBBox();
+        } catch (err) {
+          // If getBBox throws (some browsers/elements), fall back to DOM rect
+          const rect = (targetEl as Element).getBoundingClientRect();
+          bbox = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+        }
+      } else {
+        // Fallback for elements without getBBox
+        const rect = (targetEl as Element).getBoundingClientRect();
+        bbox = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+      }
+
+      // 🎨 Create a light-blue overlay rectangle
+      const overlay = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      overlay.setAttribute('id', '__highlight_overlay__');
+      overlay.setAttribute('x', bbox.x.toString());
+      overlay.setAttribute('y', bbox.y.toString());
+      overlay.setAttribute('width', bbox.width.toString());
+      overlay.setAttribute('height', bbox.height.toString());
+      overlay.setAttribute('fill', '#1890ff');
+      overlay.setAttribute('fill-opacity', '0.15');
+      overlay.setAttribute('stroke', '#1890ff');
+      overlay.setAttribute('stroke-width', '2');
+      overlay.setAttribute('pointer-events', 'none'); // Allow clicks to pass through
+      overlay.style.transition = 'all 0.2s ease-in-out';
+
+      // 🪄 Add overlay on top of all elements
+      svg.appendChild(overlay);
+
+      // Update references
+      lastHighlightedEl = targetEl;
+      setSelectedElement(targetEl);
+    };
+
     // 🖱️ Highlight based on cursor position in the code editor
-    editor.onDidChangeCursorPosition(() => {
+    editor.onMouseMove((e) => {
       const code = editor.getValue(); // Get current SVG code
-      const position = editor.getPosition(); // Get cursor position
+      const position = e.target.position; // Get cursor position
       if (!position) return;
 
       const model = editor.getModel(); // Get Monaco editor model
@@ -410,22 +465,13 @@ const SVGViewer: React.FC = () => {
       }
 
       // Apply highlight to matched SVG element
-      targetEl.style.stroke = '#1890ff';
-      targetEl.style.strokeWidth = '5';
-      lastHighlightedEl = targetEl;
-      setSelectedElement(targetEl); // Update selected element state
+      applyHighlight(targetEl);
     });
 
-    const clear = () => {
-      //Clear highlight when clicking outside the SVG
-      if (lastHighlightedEl) {
-        lastHighlightedEl.style.stroke = '';
-        lastHighlightedEl.style.strokeWidth = '';
-        lastHighlightedEl = null;
-      }
-      setSelectedElement(null); // Clear selection state
-      lastTagFragment = null;
-    };
+    // 🖱️ Clear highlight when mouse leaves editor
+    editor.onMouseLeave(() => {
+      clear();
+    });
   };
 
   return (
