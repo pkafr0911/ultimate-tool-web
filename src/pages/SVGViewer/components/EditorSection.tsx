@@ -217,7 +217,7 @@ const EditorSection: React.FC<Props> = ({
     try {
       const settings = loadSettings();
       let code = svgCode;
-      if (settings.optimizeBeforePrettify) code = optimize(svgCode, { multipass: true }); // Optimize SVG
+      if (settings?.optimizeBeforePrettify) code = optimize(svgCode, { multipass: true }).data; // Optimize SVG
       const pretty = formatXML(code);
       setSvgCode(pretty);
       setPreview(pretty);

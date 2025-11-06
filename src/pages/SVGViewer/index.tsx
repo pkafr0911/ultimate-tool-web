@@ -144,7 +144,11 @@ const SVGViewer: React.FC = () => {
           </Splitter>
         </div>
         {/* --- Guide Section --- */}
-        <GuideSection />
+        <GuideSection
+          callback={(action) => {
+            if (action === 'openSetting') setIsSettingsModalOpen(true);
+          }}
+        />
       </Card>
 
       {/* Drag overlay */}

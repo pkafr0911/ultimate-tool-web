@@ -15,6 +15,7 @@ import {
   SyncOutlined,
   DownloadOutlined,
   CopyOutlined,
+  ControlOutlined,
   ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import styles from '../styles.less';
@@ -63,6 +64,15 @@ const steps = [
     text: 'Zoom in for detailed inspection, or use zoom out/reset controls for fitting.',
   },
   {
+    icon: <ControlOutlined />,
+    text: (
+      <>
+        Hold <Text keyboard>Ctrl</Text> + scroll to zoom smoothly around your cursor — just like
+        Figma or Illustrator.
+      </>
+    ),
+  },
+  {
     icon: <SyncOutlined />,
     text: 'Reset zoom or pan with the reset button to refit the SVG view.',
   },
@@ -76,7 +86,7 @@ const steps = [
   },
 ];
 
-const GuideSection: React.FC = () => {
+const GuideSection: React.FC<{ callback: (action: string) => void }> = ({ callback }) => {
   return (
     <div className={styles['svg-viewer-guide']}>
       <Title level={5}>🧭 How to Use the SVG Editor & Preview</Title>
@@ -88,6 +98,9 @@ const GuideSection: React.FC = () => {
             <span>{step.text}</span>
           </li>
         ))}
+        <li key={'more'}>
+          Click here to open advance <a onClick={() => callback('openSetting')}> Settings</a>
+        </li>
       </ul>
 
       <Divider style={{ margin: '12px 0' }} />
