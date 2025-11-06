@@ -40,8 +40,8 @@ const PreviewTabs: React.FC<Props> = ({
   const [start, setStart] = useState<{ x: number; y: number } | null>(null);
 
   const [zoom, setZoom] = useState(1); // 1 = 100%
-  const handleZoomIn = () => setZoom((z) => Math.min(z + 1, 3)); // up to 300%
-  const handleZoomOut = () => setZoom((z) => Math.max(z - 0.5, 0.2)); // down to 20%
+  const handleZoomIn = () => setZoom((z) => Math.min(z * 2, 8)); // up to 800%
+  const handleZoomOut = () => setZoom((z) => Math.max(z * 0.5, 0.125)); // down to 12.5%
   const handleResetZoom = () => setZoom(1);
   const [fitScale, setFitScale] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -100,7 +100,40 @@ const PreviewTabs: React.FC<Props> = ({
     setIsDragging(false); // Ends the dragging state
     setStart(null); // Clears the starting position
   };
-  6;
+
+  // --- Ctrl + Scroll Zoom Control (Zoom centered around cursor) ---
+  useEffect(() => {
+    const container = svgContainerRef.current?.parentElement; // the previewSection div
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return; // only zoom when Ctrl is pressed
+      e.preventDefault(); // 🚫 prevent browser page zoom
+
+      const rect = container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left; // mouse position relative to container
+      const mouseY = e.clientY - rect.top;
+
+      setZoom((prevZoom) => {
+        const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9; // scroll up = zoom in, down = zoom out
+        const newZoom = Math.min(Math.max(prevZoom * zoomFactor, 0.125), 8);
+
+        // compute how much zoom changes
+        const scaleChange = newZoom / prevZoom;
+
+        // adjust offset so that zoom centers around cursor
+        setOffset((prevOffset) => ({
+          x: mouseX - (mouseX - prevOffset.x) * scaleChange,
+          y: mouseY - (mouseY - prevOffset.y) * scaleChange,
+        }));
+
+        return newZoom;
+      });
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, [svgContainerRef]);
 
   // --- Convert SVG to Canvas image (PNG or ICO) ---
   const svgToCanvas = async (mimeType: string) => {
@@ -149,6 +182,7 @@ const PreviewTabs: React.FC<Props> = ({
     <div className={styles.previewWrapper}>
       <Tabs
         size="small"
+        style={{ marginTop: 17 }}
         activeKey={activeTab}
         onChange={(key) => setActiveTab(key)}
         items={[
@@ -217,6 +251,7 @@ const PreviewTabs: React.FC<Props> = ({
       <div className={styles.previewFooter}>
         <Space>
           <Segmented
+            size="small"
             options={[
               { label: 'Transparent', value: 'transparent' },
               { label: 'White', value: 'white' },
@@ -227,13 +262,13 @@ const PreviewTabs: React.FC<Props> = ({
             onChange={(val) => setBgMode(val as any)}
           />
           <Tooltip title="Zoom Out">
-            <Button icon={<MinusOutlined />} onClick={handleZoomOut} />
+            <Button size="small" icon={<MinusOutlined />} onClick={handleZoomOut} />
           </Tooltip>
           <Tooltip title="Zoom In">
-            <Button icon={<PlusOutlined />} onClick={handleZoomIn} />
+            <Button size="small" icon={<PlusOutlined />} onClick={handleZoomIn} />
           </Tooltip>
           <Tooltip title="Reset Zoom">
-            <Button icon={<SyncOutlined />} onClick={handleResetZoom} />
+            <Button size="small" icon={<SyncOutlined />} onClick={handleResetZoom} />
           </Tooltip>
           <Text type="secondary">{Math.round(zoom * 100)}%</Text>
         </Space>
@@ -243,6 +278,7 @@ const PreviewTabs: React.FC<Props> = ({
       <div className={styles.previewActions}>
         {['svg', 'png', 'ico'].includes(activeTab) && (
           <Button
+            size="small"
             type="primary"
             icon={<DownloadOutlined />}
             onClick={
@@ -258,6 +294,7 @@ const PreviewTabs: React.FC<Props> = ({
         )}
         {['datauri', 'base64'].includes(activeTab) && (
           <Button
+            size="small"
             icon={<CopyOutlined />}
             onClick={() =>
               handleCopy(
