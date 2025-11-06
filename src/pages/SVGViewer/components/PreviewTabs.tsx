@@ -103,25 +103,27 @@ const PreviewTabs: React.FC<Props> = ({
 
   // --- Ctrl + Scroll Zoom Control (Zoom centered around cursor) ---
   useEffect(() => {
-    const container = svgContainerRef.current?.parentElement; // the previewSection div
-    if (!container) return;
+    const container = svgContainerRef.current?.parentElement; // The previewSection div
+    const svgEl = svgContainerRef.current?.querySelector('svg'); // The actual SVG element
+    if (!container || !svgEl) return;
 
     const handleWheel = (e: WheelEvent) => {
-      if (!e.ctrlKey) return; // only zoom when Ctrl is pressed
-      e.preventDefault(); // 🚫 prevent browser page zoom
+      if (!e.ctrlKey) return; // Only zoom when holding Ctrl
+      e.preventDefault(); // Prevent page zoom
 
       const rect = container.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left; // mouse position relative to container
-      const mouseY = e.clientY - rect.top;
+      const svgRect = svgEl.getBoundingClientRect();
+
+      // Mouse position relative to SVG (not container)
+      const mouseX = e.clientX - svgRect.left;
+      const mouseY = e.clientY - svgRect.top;
 
       setZoom((prevZoom) => {
-        const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9; // scroll up = zoom in, down = zoom out
-        const newZoom = Math.min(Math.max(prevZoom * zoomFactor, 0.125), 8);
-
-        // compute how much zoom changes
+        const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9; // Smooth scaling up/down
+        const newZoom = Math.min(Math.max(prevZoom * zoomFactor, 0.1), 10); // Limit zoom range
         const scaleChange = newZoom / prevZoom;
 
-        // adjust offset so that zoom centers around cursor
+        // Keep the mouse point fixed while zooming (Figma-style math)
         setOffset((prevOffset) => ({
           x: mouseX - (mouseX - prevOffset.x) * scaleChange,
           y: mouseY - (mouseY - prevOffset.y) * scaleChange,
