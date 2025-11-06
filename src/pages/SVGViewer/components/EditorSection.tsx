@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button, Upload, Space, Typography, Input, Tooltip, message } from 'antd'; // Import Ant Design components
 import { Editor } from '@monaco-editor/react'; // Import Monaco Editor component
 import {
@@ -8,6 +8,8 @@ import {
   CopyOutlined,
   DeleteOutlined,
   SwapOutlined,
+  LockOutlined,
+  UnlockOutlined,
 } from '@ant-design/icons'; // Import icons
 import styles from '../styles.less'; // Import CSS module
 import { handleCopy } from '@/helpers';
@@ -45,6 +47,18 @@ const EditorSection: React.FC<Props> = ({
   const { darkMode } = useDarkMode();
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const [lockRatio, setLockRatio] = useState<boolean>(true);
+  const ratioRef = useRef<number | null>(null);
+
+  // Keep ratio updated whenever SVG size changes
+  useEffect(() => {
+    const w = parseFloat(svgSize.width);
+    const h = parseFloat(svgSize.height);
+    if (w && h && !isNaN(w) && !isNaN(h)) {
+      ratioRef.current = w / h;
+    }
+  }, [svgSize.width, svgSize.height]);
 
   // --- Optimize SVG using SVGO ---
   const handleOptimize = () => {
@@ -180,7 +194,8 @@ const EditorSection: React.FC<Props> = ({
       return;
     }
     try {
-      const pretty = formatXML(svgCode);
+      const clean = optimize(svgCode, { multipass: true }).data;
+      const pretty = formatXML(clean);
       setSvgCode(pretty);
       setPreview(pretty);
       extractSize(pretty, setSvgSize);
@@ -189,6 +204,36 @@ const EditorSection: React.FC<Props> = ({
       console.error(err);
       message.error('Failed to prettify SVG.');
     }
+  };
+
+  // --- Size Change ---
+  const handleSizeChange = (type: 'width' | 'height', value: string) => {
+    setSvgSize((prev) => {
+      const updated = { ...prev };
+      const numValue = parseFloat(value);
+
+      // Assign new value
+      updated[type] = value;
+
+      if (lockRatio && ratioRef.current && !isNaN(numValue) && numValue > 0) {
+        if (type === 'width') {
+          // Auto-correct height based on width
+          updated.height = numValue / ratioRef.current;
+        } else {
+          // Auto-correct width based on height
+          updated.width = numValue * ratioRef.current;
+        }
+      }
+
+      // Trigger resize only if both are valid numbers
+      const w = parseFloat(updated.width);
+      const h = parseFloat(updated.height);
+      if (!isNaN(w) && !isNaN(h) && w > 0 && h > 0) {
+        debouncedResize(updated.width, updated.height);
+      }
+
+      return updated;
+    });
   };
 
   const onMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
@@ -261,17 +306,23 @@ const EditorSection: React.FC<Props> = ({
       {/* Resize controls */}
       <Space style={{ float: 'right', marginTop: 16 }}>
         <Text strong>Resize:</Text>
+        {/* Lock Ratio Button */}
+        <Tooltip title={lockRatio ? 'Unlock aspect ratio' : 'Lock aspect ratio'}>
+          <Button
+            size="small"
+            icon={lockRatio ? <LockOutlined /> : <UnlockOutlined />}
+            type={lockRatio ? 'primary' : 'default'}
+            onClick={() => setLockRatio((prev) => !prev)}
+          />
+        </Tooltip>
+        {/*Size Input*/}
         <Input
           size="small"
           prefix={<CompressOutlined />}
           placeholder="W"
           style={{ width: 90 }}
           value={svgSize.width}
-          onChange={(e) => {
-            const width = e.target.value;
-            setSvgSize((prev) => ({ ...prev, width }));
-            if (width && svgSize.height) debouncedResize(width, svgSize.height);
-          }}
+          onChange={(e) => handleSizeChange('width', e.target.value.trim())}
         />
         x
         <Input
@@ -280,12 +331,9 @@ const EditorSection: React.FC<Props> = ({
           placeholder="H"
           style={{ width: 90 }}
           value={svgSize.height}
-          onChange={(e) => {
-            const height = e.target.value;
-            setSvgSize((prev) => ({ ...prev, height }));
-            if (height && svgSize.width) debouncedResize(svgSize.width, height);
-          }}
+          onChange={(e) => handleSizeChange('height', e.target.value.trim())}
         />
+        {/* Flip buttons */}
         <Tooltip title={'Flip H'}>
           <Button onClick={flipHorizontal} icon={<SwapOutlined />} />
         </Tooltip>

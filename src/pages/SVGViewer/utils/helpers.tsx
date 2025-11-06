@@ -106,7 +106,7 @@ export const handleEditorMount = (editor: monaco.editor.IStandaloneCodeEditor, s
     overlay.setAttribute('fill', '#1890ff');
     overlay.setAttribute('fill-opacity', '0.15');
     overlay.setAttribute('stroke', '#1890ff');
-    overlay.setAttribute('stroke-width', '2');
+    // overlay.setAttribute('stroke-width', '2');
     overlay.setAttribute('pointer-events', 'none');
     overlay.style.transition = 'all 0.15s ease';
 
@@ -116,7 +116,7 @@ export const handleEditorMount = (editor: monaco.editor.IStandaloneCodeEditor, s
     tooltip.setAttribute('x', (bbox.x + bbox.width + 5).toString());
     tooltip.setAttribute('y', (bbox.y + 15).toString());
     tooltip.setAttribute('fill', '#1890ff');
-    tooltip.setAttribute('font-size', '14');
+    tooltip.setAttribute('font-size', '12');
     tooltip.setAttribute('font-family', 'monospace');
     tooltip.setAttribute('pointer-events', 'none');
     tooltip.textContent = `W: ${bbox.width.toFixed(1)} H: ${bbox.height.toFixed(1)}`;
@@ -170,13 +170,37 @@ export const handleEditorMount = (editor: monaco.editor.IStandaloneCodeEditor, s
       return;
     }
 
-    // 🧩 Try to find the element whose attributes match most closely
-    let targetEl: SVGElement | null = null;
+    // 🧩 Helper: parse attributes from tag string into a normalized key-value map
+    const parseAttributes = (str: string): Record<string, string> => {
+      const attrs: Record<string, string> = {};
+      str.replace(/([\w:-]+)\s*=\s*(['"])(.*?)\2/g, (_, key, _q, value) => {
+        // Trim both ends AND normalize internal spaces for values
+        attrs[key] = value.replace(/\s+/g, ' ').trim();
+        return '';
+      });
+      return attrs;
+    };
 
-    const normalizedAttr = attrString.replace(/\s*\/?\s*>?\s*$/, '').trim(); // Remove trailing "/" or ">"
-    targetEl = Array.from(elements).find(
-      (el) => el.outerHTML.replace(/\s+/g, ' ').includes(normalizedAttr), // Match by attribute substring
-    ) as SVGElement | null;
+    // 🧩 Normalize attrString from Monaco
+    const normalizedAttrString = attrString
+      .replace(/[\n\r\t]+/g, ' ') // remove line breaks & tabs
+      .replace(/\s*\/?\s*>?\s*$/, '') // remove trailing '/' or '>'
+      .trim();
+
+    const parsedAttr = parseAttributes(normalizedAttrString);
+
+    // 🧩 Try to find the SVG element that matches attributes
+    let targetEl: SVGElement | null = null;
+    targetEl = Array.from(elements).find((el) => {
+      const elAttrs: Record<string, string> = {};
+      for (const { name, value } of Array.from(el.attributes)) {
+        // Normalize whitespace inside attribute values
+        elAttrs[name] = value.replace(/\s+/g, ' ').trim();
+      }
+
+      // ✅ Compare attributes (all from parsedAttr must match in element)
+      return Object.entries(parsedAttr).every(([k, v]) => elAttrs[k] === v);
+    }) as SVGElement | null;
 
     // fallback to the first if no match found
     if (!targetEl) targetEl = elements[0] as SVGElement;
