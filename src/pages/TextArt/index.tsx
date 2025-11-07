@@ -25,6 +25,7 @@ import JSZip from 'jszip';
 import React, { useEffect, useRef, useState } from 'react';
 import './styles.less';
 import DragOverlay from '@/components/DragOverlay';
+import DragDropWrapper from '@/components/DragDropWrapper';
 
 const { Text } = Typography;
 
@@ -202,35 +203,12 @@ const TextArtPage: React.FC = () => {
   };
 
   return (
-    <div
+    <DragDropWrapper
       className="text-art-page"
-      onDragEnter={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounter.current++;
-        setDragging(true);
-      }}
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
-      onDragLeave={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounter.current--;
-        if (dragCounter.current <= 0) {
-          dragCounter.current = 0;
-          setDragging(false);
-        }
-      }}
-      onDrop={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setDragging(false);
-        dragCounter.current = 0;
-        const files = Array.from(e.dataTransfer.files);
-        if (files.length > 0) handleUpload(files);
-      }}
+      setDragging={setDragging}
+      dragCounter={dragCounter}
+      handleUpload={handleUpload}
+      multiple={true}
     >
       <Card title="🖼️ Multi Image → ASCII Text Art Generator" variant={'borderless'}>
         <Space direction="vertical" style={{ width: '100%' }} size="large">
@@ -368,7 +346,7 @@ const TextArtPage: React.FC = () => {
           {!images.length && <Text type="secondary">Upload images to generate ASCII art.</Text>}
         </Space>
       </Card>
-    </div>
+    </DragDropWrapper>
   );
 };
 

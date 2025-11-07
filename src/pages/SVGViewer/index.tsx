@@ -8,12 +8,12 @@ import styles from './styles.less'; // Import CSS module
 import { extractSize, handleDownload, loadSettings } from './utils/helpers';
 import GuideSection from './components/GuideSection';
 import DragOverlay from '@/components/DragOverlay';
-import { DragDropWrapper } from './components/DragDropWrapper';
 import EditorSection from './components/EditorSection';
 import PreviewTabs from './components/PreviewTabs';
 import { SettingOutlined } from '@ant-design/icons';
 import SettingsModal from './components/SettingsModal';
 import logo from '@/assets/logo.svg?raw';
+import DragDropWrapper from '@/components/DragDropWrapper';
 
 const { Text } = Typography; // Destructure Text component from Typography
 

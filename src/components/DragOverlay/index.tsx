@@ -1,7 +1,7 @@
 import React from 'react';
 import { UploadOutlined } from '@ant-design/icons';
 
-const DragOverlay: React.FC = () => {
+const DragOverlay: React.FC<{ text?: string }> = ({ text }) => {
   return (
     <div
       style={{
@@ -20,7 +20,7 @@ const DragOverlay: React.FC = () => {
       }}
     >
       <UploadOutlined style={{ fontSize: 48, color: '#1890ff' }} />
-      <p style={{ fontSize: 18, marginTop: 8 }}>Drop your SVG file here to upload</p>
+      <p style={{ fontSize: 18, marginTop: 8 }}>{text || 'Drop your file here to upload'}</p>
     </div>
   );
 };
