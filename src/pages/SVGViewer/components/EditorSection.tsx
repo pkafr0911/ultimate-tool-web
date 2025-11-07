@@ -14,11 +14,12 @@ import {
 } from '@ant-design/icons'; // Import icons
 import styles from '../styles.less'; // Import CSS module
 import { handleCopy } from '@/helpers';
-import { extractSize, formatXML, handleEditorMount, loadSettings } from '../utils/helpers';
+import { extractSize, formatXML, loadSettings } from '../utils/helpers';
 import { optimize } from 'svgo'; // Import SVG optimizer
 import type * as monaco from 'monaco-editor';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { useSetting } from '../hooks/useSetting';
+import { handleEditorMount } from '../utils/editorMount';
 
 const { Text } = Typography; // Destructure Text component from Typography
 
