@@ -6,6 +6,7 @@ import {
   SyncOutlined,
   DownloadOutlined,
   CopyOutlined,
+  ColumnHeightOutlined,
 } from '@ant-design/icons'; // Import icons
 import styles from '../styles.less'; // Import CSS module
 
@@ -46,6 +47,33 @@ const PreviewTabs: React.FC<Props> = ({
   const handleResetZoom = () => {
     setZoom(fitScale);
     setOffset({ x: 0, y: 0 });
+  };
+
+  // --- Measure Tool ---
+  const [measure, setMeasure] = useState<{
+    x: number;
+    y: number;
+    distances: { top: number; bottom: number; left: number; right: number };
+  } | null>(null);
+
+  // --- Color under cursor ---
+  const [hoverColor, setHoverColor] = useState<{ x: number; y: number; color: string } | null>(
+    null,
+  );
+
+  // --- Setup Offscreen Canvas for Color Sampling ---
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const updateCanvas = () => {
+    const img = new Image();
+    img.src = getDataURI();
+    img.onload = () => {
+      const canvas = canvasRef.current || document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) ctx.drawImage(img, 0, 0);
+      canvasRef.current = canvas;
+    };
   };
 
   const [fitScale, setFitScale] = useState(1);
@@ -142,6 +170,64 @@ const PreviewTabs: React.FC<Props> = ({
     return () => container.removeEventListener('wheel', handleWheel);
   }, [svgContainerRef]);
 
+  useEffect(() => {
+    updateCanvas();
+  }, [preview]);
+
+  // --- Measure tool (Alt) ---
+  useEffect(() => {
+    const svgEl = svgContainerRef.current?.querySelector('svg');
+    if (!svgEl) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (e.altKey) {
+        const rect = svgEl.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        setMeasure({
+          x,
+          y,
+          distances: {
+            top: y,
+            bottom: rect.height - y,
+            left: x,
+            right: rect.width - x,
+          },
+        });
+      } else {
+        setMeasure(null);
+      }
+
+      // --- Color pick ---
+      const canvas = canvasRef.current;
+      if (canvas && !e.altKey) {
+        const rect = svgEl.getBoundingClientRect();
+        const x = Math.floor(((e.clientX - rect.left) / rect.width) * canvas.width);
+        const y = Math.floor(((e.clientY - rect.top) / rect.height) * canvas.height);
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          const pixel = ctx.getImageData(x, y, 1, 1).data;
+          const color = `#${[pixel[0], pixel[1], pixel[2]]
+            .map((v) => v.toString(16).padStart(2, '0'))
+            .join('')}`;
+          setHoverColor({ x: e.clientX, y: e.clientY, color });
+        }
+      }
+    };
+
+    const handleLeave = () => {
+      setMeasure(null);
+      setHoverColor(null);
+    };
+
+    svgEl.addEventListener('mousemove', handleMouseMove);
+    svgEl.addEventListener('mouseleave', handleLeave);
+    return () => {
+      svgEl.removeEventListener('mousemove', handleMouseMove);
+      svgEl.removeEventListener('mouseleave', handleLeave);
+    };
+  }, [svgContainerRef]);
+
   // --- Convert SVG to Canvas image (PNG or ICO) ---
   const svgToCanvas = async (mimeType: string) => {
     return new Promise<string>((resolve, reject) => {
@@ -219,6 +305,56 @@ const PreviewTabs: React.FC<Props> = ({
                       .join(''),
                   }}
                 />
+                {/* Alt Measure Tooltip */}
+                {measure && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: measure.y,
+                      left: measure.x + 12,
+                      background: 'rgba(255,255,255,0.9)',
+                      border: '1px solid #ccc',
+                      borderRadius: 4,
+                      padding: '2px 4px',
+                      fontSize: 12,
+                    }}
+                  >
+                    <ColumnHeightOutlined /> {Math.round(measure.distances.top)}px ↑↓{' '}
+                    {Math.round(measure.distances.bottom)}px
+                  </div>
+                )}
+
+                {/* Hover Color Tooltip */}
+                {hoverColor && !measure && (
+                  <div
+                    style={{
+                      position: 'fixed',
+                      top: hoverColor.y + 15,
+                      left: hoverColor.x + 15,
+                      background: 'white',
+                      border: '1px solid #ccc',
+                      borderRadius: 4,
+                      padding: '2px 6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      fontSize: 12,
+                      zIndex: 999,
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: 14,
+                        height: 14,
+                        background: hoverColor.color,
+                        border: '1px solid #aaa',
+                        borderRadius: 2,
+                      }}
+                    />
+                    {hoverColor.color}
+                  </div>
+                )}
               </div>
             ),
           },
