@@ -31,18 +31,23 @@ const PreviewTabs: React.FC<Props> = ({
   getBase64,
 }) => {
   // --- State variables ---
-  const [activeTab, setActiveTab] = useState<string>('svg'); // Active preview tab
-  const [bgMode, setBgMode] = useState<'transparent' | 'white' | 'black' | 'grey'>('grey'); // Background mode
+  const [activeTab, setActiveTab] = useState('svg');
+  const [bgMode, setBgMode] = useState<'transparent' | 'white' | 'black' | 'grey'>('grey');
 
   // --- Pan (drag) control ---
   const [isDragging, setIsDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [start, setStart] = useState<{ x: number; y: number } | null>(null);
 
-  const [zoom, setZoom] = useState(1); // 1 = 100%
-  const handleZoomIn = () => setZoom((z) => Math.min(z * 2, 8)); // up to 800%
-  const handleZoomOut = () => setZoom((z) => Math.max(z * 0.5, 0.125)); // down to 12.5%
-  const handleResetZoom = () => setZoom(1);
+  // --- Zoom control ---
+  const [zoom, setZoom] = useState(1);
+  const handleZoomIn = () => setZoom((z) => Math.min(z * 2, 8));
+  const handleZoomOut = () => setZoom((z) => Math.max(z * 0.5, 0.125));
+  const handleResetZoom = () => {
+    setZoom(fitScale);
+    setOffset({ x: 0, y: 0 });
+  };
+
   const [fitScale, setFitScale] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -136,50 +141,6 @@ const PreviewTabs: React.FC<Props> = ({
     container.addEventListener('wheel', handleWheel, { passive: false });
     return () => container.removeEventListener('wheel', handleWheel);
   }, [svgContainerRef]);
-
-  // --- “Center Canvas” Button ---
-  const handleCenterCanvas = () => {
-    const container = svgContainerRef.current?.parentElement;
-    const svgEl = svgContainerRef.current?.querySelector('svg');
-    if (!container || !svgEl) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const svgRect = svgEl.getBoundingClientRect();
-
-    setOffset({
-      x: containerRect.width / 2 - svgRect.width / 2,
-      y: containerRect.height / 2 - svgRect.height / 2,
-    });
-  };
-
-  // --- “Zoom to Fit” (Shift + 1 or Button) ---
-  const handleZoomToFit = () => {
-    const container = svgContainerRef.current?.parentElement;
-    const svgEl = svgContainerRef.current?.querySelector('svg');
-    if (!container || !svgEl) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const svgRect = svgEl.getBoundingClientRect();
-
-    const zoomX = containerRect.width / svgRect.width;
-    const zoomY = containerRect.height / svgRect.height;
-    const newZoom = Math.min(zoomX, zoomY) * 0.9; // leave small margin
-
-    setZoom(newZoom);
-    setOffset({
-      x: (containerRect.width - svgRect.width * newZoom) / 2,
-      y: (containerRect.height - svgRect.height * newZoom) / 2,
-    });
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.shiftKey && e.key === '1') handleZoomToFit(); // Shift + 1
-      if (e.key === '0') handleCenterCanvas(); // Press 0 to center
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   // --- Convert SVG to Canvas image (PNG or ICO) ---
   const svgToCanvas = async (mimeType: string) => {
@@ -317,8 +278,6 @@ const PreviewTabs: React.FC<Props> = ({
             <Button size="small" icon={<SyncOutlined />} onClick={handleResetZoom} />
           </Tooltip>
           <Text type="secondary">{Math.round(zoom * 100)}%</Text>
-          <Button onClick={handleZoomToFit}>Fit</Button>
-          <Button onClick={handleCenterCanvas}>Center</Button>
         </Space>
       </div>
 
