@@ -137,6 +137,50 @@ const PreviewTabs: React.FC<Props> = ({
     return () => container.removeEventListener('wheel', handleWheel);
   }, [svgContainerRef]);
 
+  // --- “Center Canvas” Button ---
+  const handleCenterCanvas = () => {
+    const container = svgContainerRef.current?.parentElement;
+    const svgEl = svgContainerRef.current?.querySelector('svg');
+    if (!container || !svgEl) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const svgRect = svgEl.getBoundingClientRect();
+
+    setOffset({
+      x: containerRect.width / 2 - svgRect.width / 2,
+      y: containerRect.height / 2 - svgRect.height / 2,
+    });
+  };
+
+  // --- “Zoom to Fit” (Shift + 1 or Button) ---
+  const handleZoomToFit = () => {
+    const container = svgContainerRef.current?.parentElement;
+    const svgEl = svgContainerRef.current?.querySelector('svg');
+    if (!container || !svgEl) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const svgRect = svgEl.getBoundingClientRect();
+
+    const zoomX = containerRect.width / svgRect.width;
+    const zoomY = containerRect.height / svgRect.height;
+    const newZoom = Math.min(zoomX, zoomY) * 0.9; // leave small margin
+
+    setZoom(newZoom);
+    setOffset({
+      x: (containerRect.width - svgRect.width * newZoom) / 2,
+      y: (containerRect.height - svgRect.height * newZoom) / 2,
+    });
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.key === '1') handleZoomToFit(); // Shift + 1
+      if (e.key === '0') handleCenterCanvas(); // Press 0 to center
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // --- Convert SVG to Canvas image (PNG or ICO) ---
   const svgToCanvas = async (mimeType: string) => {
     return new Promise<string>((resolve, reject) => {
@@ -273,6 +317,8 @@ const PreviewTabs: React.FC<Props> = ({
             <Button size="small" icon={<SyncOutlined />} onClick={handleResetZoom} />
           </Tooltip>
           <Text type="secondary">{Math.round(zoom * 100)}%</Text>
+          <Button onClick={handleZoomToFit}>Fit</Button>
+          <Button onClick={handleCenterCanvas}>Center</Button>
         </Space>
       </div>
 
