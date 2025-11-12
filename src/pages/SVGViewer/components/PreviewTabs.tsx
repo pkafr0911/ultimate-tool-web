@@ -500,18 +500,83 @@ const PreviewTabs: React.FC<Props> = ({
 
       {/* Footer: Background + Zoom + Tool buttons */}
       <div className={styles.previewFooter}>
-        <Space>
+        <Space wrap>
           <Segmented
+            style={{ padding: 5 }}
             size="small"
             options={[
-              { label: 'Transparent', value: 'transparent' },
-              { label: 'White', value: 'white' },
-              { label: 'Grey', value: 'grey' },
-              { label: 'Black', value: 'black' },
+              {
+                label: (
+                  <div
+                    style={{
+                      margin: 2,
+                      width: 16,
+                      height: 16,
+                      border: '1px solid #ccc',
+                      borderRadius: 2,
+                      backgroundImage: `
+                        linear-gradient(45deg, #ccc 25%, transparent 25%),
+                        linear-gradient(-45deg, #ccc 25%, transparent 25%),
+                        linear-gradient(45deg, transparent 75%, #ccc 75%),
+                        linear-gradient(-45deg, transparent 75%, #ccc 75%)
+                      `,
+                      backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+                      backgroundSize: '20px 20px',
+                    }}
+                  />
+                ),
+                value: 'transparent',
+              },
+              {
+                label: (
+                  <div
+                    style={{
+                      margin: 2,
+                      width: 16,
+                      height: 16,
+                      background: '#ffffff',
+                      border: '1px solid #ccc',
+                      borderRadius: 2,
+                    }}
+                  />
+                ),
+                value: 'white',
+              },
+              {
+                label: (
+                  <div
+                    style={{
+                      margin: 2,
+                      width: 16,
+                      height: 16,
+                      background: '#808080',
+                      border: '1px solid #ccc',
+                      borderRadius: 2,
+                    }}
+                  />
+                ),
+                value: 'grey',
+              },
+              {
+                label: (
+                  <div
+                    style={{
+                      margin: 2,
+                      width: 16,
+                      height: 16,
+                      background: '#000000',
+                      border: '1px solid #ccc',
+                      borderRadius: 2,
+                    }}
+                  />
+                ),
+                value: 'black',
+              },
             ]}
             value={bgMode}
             onChange={(val) => setBgMode(val as any)}
           />
+
           <Tooltip title="Zoom Out">
             <Button size="small" icon={<MinusOutlined />} onClick={handleZoomOut} />
           </Tooltip>
