@@ -507,68 +507,76 @@ const PreviewTabs: React.FC<Props> = ({
             options={[
               {
                 label: (
-                  <div
-                    style={{
-                      margin: 2,
-                      width: 16,
-                      height: 16,
-                      border: '1px solid #ccc',
-                      borderRadius: 2,
-                      backgroundImage: `
-                        linear-gradient(45deg, #ccc 25%, transparent 25%),
-                        linear-gradient(-45deg, #ccc 25%, transparent 25%),
-                        linear-gradient(45deg, transparent 75%, #ccc 75%),
-                        linear-gradient(-45deg, transparent 75%, #ccc 75%)
-                      `,
-                      backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
-                      backgroundSize: '20px 20px',
-                    }}
-                  />
+                  <Tooltip title="Transparent">
+                    <div
+                      style={{
+                        margin: 2,
+                        width: 16,
+                        height: 16,
+                        border: '1px solid #ccc',
+                        borderRadius: 2,
+                        backgroundImage: `
+                          linear-gradient(45deg, #ccc 25%, transparent 25%),
+                          linear-gradient(-45deg, #ccc 25%, transparent 25%),
+                          linear-gradient(45deg, transparent 75%, #ccc 75%),
+                          linear-gradient(-45deg, transparent 75%, #ccc 75%)
+                        `,
+                        backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+                        backgroundSize: '20px 20px',
+                      }}
+                    />
+                  </Tooltip>
                 ),
                 value: 'transparent',
               },
               {
                 label: (
-                  <div
-                    style={{
-                      margin: 2,
-                      width: 16,
-                      height: 16,
-                      background: '#ffffff',
-                      border: '1px solid #ccc',
-                      borderRadius: 2,
-                    }}
-                  />
+                  <Tooltip title="White">
+                    <div
+                      style={{
+                        margin: 2,
+                        width: 16,
+                        height: 16,
+                        background: '#ffffff',
+                        border: '1px solid #ccc',
+                        borderRadius: 2,
+                      }}
+                    />
+                  </Tooltip>
                 ),
                 value: 'white',
               },
               {
                 label: (
-                  <div
-                    style={{
-                      margin: 2,
-                      width: 16,
-                      height: 16,
-                      background: '#808080',
-                      border: '1px solid #ccc',
-                      borderRadius: 2,
-                    }}
-                  />
+                  <Tooltip title="Grey">
+                    <div
+                      style={{
+                        margin: 2,
+                        width: 16,
+                        height: 16,
+                        background: '#808080',
+                        border: '1px solid #ccc',
+                        borderRadius: 2,
+                      }}
+                    />
+                  </Tooltip>
                 ),
                 value: 'grey',
               },
               {
                 label: (
-                  <div
-                    style={{
-                      margin: 2,
-                      width: 16,
-                      height: 16,
-                      background: '#000000',
-                      border: '1px solid #ccc',
-                      borderRadius: 2,
-                    }}
-                  />
+                  <Tooltip title="Black">
+                    <div
+                      style={{
+                        margin: 2,
+                        width: 16,
+                        height: 16,
+                        background: '#000000',
+                        border: '1px solid #ccc',
+                        borderRadius: 2,
+                      }}
+                    />
+                  </Tooltip>
                 ),
                 value: 'black',
               },
