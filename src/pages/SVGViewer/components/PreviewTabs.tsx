@@ -47,6 +47,7 @@ const PreviewTabs: React.FC<Props> = ({
     width: number;
     height: number;
   } | null>(null);
+  const [previousTool, setPreviousTool] = useState<ToolMode | null>(null);
 
   // Drag/pan
   const [isDragging, setIsDragging] = useState(false);
@@ -123,6 +124,16 @@ const PreviewTabs: React.FC<Props> = ({
   // Keyboard shortcuts for tools
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      // Temporarily switch to hand when holding space
+      if (e.code === 'Space') {
+        e.preventDefault(); // ❌ Prevent default scroll immediately
+        if (tool !== 'hand') {
+          setPreviousTool(tool); // Save current tool
+          setTool('hand'); // Switch to hand
+        }
+      }
+
+      // Other shortcuts
       // ⌨️ Listen for keyboard shortcuts to switch tools
       if (['h', 'H'].includes(e.key)) setTool('hand'); // ✋ Press "H" → Hand tool (move/pan mode)
       if (['c', 'C'].includes(e.key)) setTool('color'); // 🎨 Press "C" → Color picker mode
@@ -130,9 +141,21 @@ const PreviewTabs: React.FC<Props> = ({
       if (['v', 'V'].includes(e.key) || e.key === 'Escape') setTool('select'); // 🖱️ Press "V" or "Esc" → Select mode (default)
     };
 
-    window.addEventListener('keydown', onKeyDown); // 🔊 Attach the key listener to the window
-    return () => window.removeEventListener('keydown', onKeyDown); // 🧹 Clean up on unmount to avoid memory leaks
-  }, []); // 🪄 Run once on mount (no dependencies)
+    const onKeyUp = (e: KeyboardEvent) => {
+      // Restore previous tool when space released
+      if (e.code === 'Space' && previousTool) {
+        setTool(previousTool);
+        setPreviousTool(null);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown, { passive: false }); // 🔊 Attach the key listener to the window
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown); // 🧹 Clean up on unmount to avoid memory leaks
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, [tool, previousTool]);
 
   // Mouse events for drag in hand mode
   // When mouse is pressed down
@@ -344,6 +367,27 @@ const PreviewTabs: React.FC<Props> = ({
     }
   };
 
+  const ensureSvgSize = (svg: string, width = 128, height = 128) => {
+    // Match the <svg ...> tag only (even if there's XML header above)
+    const svgTagMatch = svg.match(/<svg[^>]*>/i);
+    if (!svgTagMatch) return svg; // Not a valid SVG
+
+    const svgTag = svgTagMatch[0];
+
+    // Check if width/height exist inside the <svg> tag only
+    const hasWidth = /\bwidth\s*=/.test(svgTag);
+    const hasHeight = /\bheight\s*=/.test(svgTag);
+
+    // If both exist, return unchanged
+    if (hasWidth && hasHeight) return svg;
+
+    // Insert missing width/height before the closing '>'
+    const updatedSvgTag = svgTag.replace(/>$/, ` width="${width}" height="${height}">`);
+
+    // Replace the original <svg ...> tag with the updated one
+    return svg.replace(svgTag, updatedSvgTag);
+  };
+
   return (
     <div className={styles.previewWrapper}>
       <Tabs
@@ -381,9 +425,7 @@ const PreviewTabs: React.FC<Props> = ({
                     transformOrigin: 'top left',
                     display: 'inline-block',
                   }}
-                  dangerouslySetInnerHTML={{
-                    __html: preview,
-                  }}
+                  dangerouslySetInnerHTML={{ __html: ensureSvgSize(preview, 512, 512) }}
                 />
 
                 {/* Selected element overlay */}
