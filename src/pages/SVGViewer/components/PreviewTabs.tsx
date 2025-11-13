@@ -13,6 +13,8 @@ import {
   SelectOutlined,
 } from '@ant-design/icons';
 import styles from '../styles.less';
+import { ensureSvgSize } from '../utils/helpers';
+import { handleCopy } from '@/helpers';
 
 const { Text } = Typography;
 
@@ -20,7 +22,6 @@ type Props = {
   preview: string;
   svgCode: string;
   handleDownload: (content: string, name: string, type: string) => void;
-  handleCopy: (val: string, msg: string) => void;
   svgContainerRef: React.RefObject<HTMLDivElement>;
   getDataURI: () => string;
   getBase64: () => string;
@@ -32,14 +33,18 @@ const PreviewTabs: React.FC<Props> = ({
   preview,
   svgCode,
   handleDownload,
-  handleCopy,
   svgContainerRef,
   getDataURI,
   getBase64,
 }) => {
+  //#region State & Refs
+
+  //#region Tabs & Background
   const [activeTab, setActiveTab] = useState('svg');
   const [bgMode, setBgMode] = useState<'transparent' | 'white' | 'black' | 'grey'>('grey');
+  //#endregion
 
+  //#region Tool Selection & Selection Info
   const [tool, setTool] = useState<ToolMode>('select'); // current tool mode
   const [selectedBox, setSelectedBox] = useState<DOMRect | null>(null);
   const [selectedInfo, setSelectedInfo] = useState<{
@@ -48,13 +53,15 @@ const PreviewTabs: React.FC<Props> = ({
     height: number;
   } | null>(null);
   const [previousTool, setPreviousTool] = useState<ToolMode | null>(null);
+  //#endregion
 
-  // Drag/pan
+  //#region Drag / Pan
   const [isDragging, setIsDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [start, setStart] = useState<{ x: number; y: number } | null>(null);
+  //#endregion
 
-  // Zoom
+  //#region Zoom
   const [zoom, setZoom] = useState(1);
   const [fitScale, setFitScale] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,15 +72,21 @@ const PreviewTabs: React.FC<Props> = ({
     setZoom(fitScale);
     setOffset({ x: 0, y: 0 });
   };
+  //#endregion
 
-  // Measure + color states
+  //#region Measure & Color
   const [measure, setMeasure] = useState<{ x: number; y: number; distances: any } | null>(null);
   const [hoverColor, setHoverColor] = useState<{ x: number; y: number; color: string } | null>(
     null,
   );
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  //#endregion
 
-  // Auto-fit SVG to container
+  //#endregion
+
+  //#region Effects
+
+  //#region Auto-fit SVG to Container
   useEffect(() => {
     const fitSvgToContainer = () => {
       const container = containerRef.current; // 📦 The visible preview area container
@@ -103,8 +116,9 @@ const PreviewTabs: React.FC<Props> = ({
     window.addEventListener('resize', fitSvgToContainer); // 🔄 Auto-refit SVG when window size changes
     return () => window.removeEventListener('resize', fitSvgToContainer); // 🧹 Cleanup on unmount
   }, [preview]); // 🪄 Re-run whenever the SVG preview changes
+  //#endregion
 
-  // Update color-sampling canvas
+  //#region Update Canvas for Color Sampling
   const updateCanvas = () => {
     const img = new Image(); // 🖼️ Create a new HTML Image object to load the SVG as an image
     img.src = getDataURI(); // 🔗 Set the source to the SVG’s Data URI (base64-encoded image)
@@ -113,15 +127,16 @@ const PreviewTabs: React.FC<Props> = ({
       const canvas = document.createElement('canvas'); // 🧾 Create an offscreen <canvas> element
       canvas.width = img.width; // 📏 Match canvas width to the loaded image width
       canvas.height = img.height; // 📏 Match canvas height to the loaded image height
-      const ctx = canvas.getContext('2d'); // 🎨 Get 2D drawing context from the canvas
+      const ctx = canvas.getContext('2d', { willReadFrequently: true }); // 🎨 Get 2D drawing context from the canvas
       if (ctx) ctx.drawImage(img, 0, 0); // 🖌️ Draw the SVG image onto the canvas at (0, 0)
       canvasRef.current = canvas; // 💾 Store the canvas reference for later color sampling
     };
   };
 
   useEffect(() => updateCanvas(), [preview]); // 🪄 Rebuild the canvas each time the SVG preview changes
+  //#endregion
 
-  // Keyboard shortcuts for tools
+  //#region Keyboard Shortcuts for Tools
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       // Temporarily switch to hand when holding space
@@ -224,104 +239,98 @@ const PreviewTabs: React.FC<Props> = ({
     // Cleanup on unmount or dependency change
     return () => container.removeEventListener('wheel', handleWheel);
   }, [svgContainerRef]);
+  //#endregion
 
-  // Handle tool behaviors (measure / color / select)
+  //#region Tool Behaviors (Measure / Color / Select)
   useEffect(() => {
-    const svgEl = svgContainerRef.current?.querySelector('svg');
+    const svgEl = svgContainerRef.current?.querySelector('svg'); // 🔍 Get the <svg> element
     if (!svgEl) return;
 
-    const handleMove = (e: MouseEvent) => {
-      const rect = svgEl.getBoundingClientRect(); // Get SVG's position and size relative to viewport
-      const mouseX = e.clientX - rect.left; // Mouse X relative to SVG
-      const mouseY = e.clientY - rect.top; // Mouse Y relative to SVG
+    // 🎨 Sample color from hidden canvas at mouse position
+    const sampleColor = (e: MouseEvent) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return null; // ❌ No canvas, can't sample
+      const rect = svgEl.getBoundingClientRect(); // 📏 SVG position
+      const x = Math.floor(((e.clientX - rect.left) / rect.width) * canvas.width); // 🖱️ Map mouse X to canvas
+      const y = Math.floor(((e.clientY - rect.top) / rect.height) * canvas.height); // 🖱️ Map mouse Y to canvas
+      if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) return null; // ⚠️ Out of bounds
 
+      try {
+        const p = canvas
+          .getContext('2d', { willReadFrequently: true })!
+          .getImageData(x, y, 1, 1).data; // 🎨 Get pixel RGBA
+        return `#${[p[0], p[1], p[2]].map((v) => v.toString(16).padStart(2, '0')).join('')}`; // 🔗 Convert to hex
+      } catch {
+        return null; // ❌ Failed (tainted canvas)
+      }
+    };
+
+    // 🔄 Handle mouse move
+    const handleMove = (e: MouseEvent) => {
       if (tool === 'measure') {
+        // 📏 Measure distances
+        const rect = svgEl.getBoundingClientRect();
         setMeasure({
           x: e.clientX,
           y: e.clientY,
           distances: {
-            top: mouseY,
-            bottom: rect.height - mouseY,
-            left: mouseX,
-            right: rect.width - mouseX,
+            top: e.clientY - rect.top,
+            bottom: rect.height - (e.clientY - rect.top),
+            left: e.clientX - rect.left,
+            right: rect.width - (e.clientX - rect.left),
           },
         });
       } else if (tool === 'color') {
-        // --- Color picker: sample pixel color from hidden canvas ---
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        // Convert mouse coords in SVG to canvas pixel coords
-        const canvasX = Math.floor((mouseX / rect.width) * canvas.width);
-        const canvasY = Math.floor((mouseY / rect.height) * canvas.height);
-
-        if (canvasX < 0 || canvasY < 0 || canvasX >= canvas.width || canvasY >= canvas.height) {
-          return setHoverColor(null); // Out of bounds
-        }
-
-        try {
-          const p = ctx.getImageData(canvasX, canvasY, 1, 1).data;
-          const color = `#${[p[0], p[1], p[2]]
-            .map((v) => v.toString(16).padStart(2, '0'))
-            .join('')}`;
-          setHoverColor({ x: e.clientX, y: e.clientY, color });
-        } catch {
-          setHoverColor(null); // Handle tainted canvas errors safely
-        }
+        // 🎨 Hover color preview
+        const color = sampleColor(e);
+        setHoverColor(color ? { x: e.clientX, y: e.clientY, color } : null);
       }
     };
 
+    // 🖱️ Handle click events
     const handleClick = (e: MouseEvent) => {
-      if (tool !== 'select') return;
+      if (tool === 'select') {
+        // 🔹 Select element
+        let el = e.target as Element | null;
+        while (el && el.nodeType !== 1) el = el.parentElement; // ⬆️ Walk up to nearest element
+        if (!el || el === svgEl) return (setSelectedBox(null), setSelectedInfo(null)); // ❌ Skip SVG root
 
-      // Make sure click came from inside the SVG
-      const target = e.target as Element | null;
-      if (!target) return;
-
-      // If user clicked on a child element (path, rect, g, etc.) we want that element.
-      // If they clicked on an inner <div> or something outside, bail.
-      // Walk up to the nearest SVG graphics element (not the <svg> root).
-      let el: Element | null = target;
-      // If they clicked on text nodes or child nodes, find nearest element parent
-      while (el && el.nodeType !== 1) el = el.parentElement;
-
-      if (!svgEl.contains(el)) return;
-
-      // Skip clicks on the root <svg> itself
-      if (el === svgEl) {
-        setSelectedBox(null);
-        setSelectedInfo(null);
-        return;
+        const rect = el.getBoundingClientRect(); // 📏 Element bounding box
+        setSelectedBox(rect); // 🔲 Show overlay
+        setSelectedInfo({ tag: el.tagName, width: rect.width, height: rect.height }); // ℹ️ Save info
+      } else if (tool === 'color') {
+        // 🎨 Copy color on click
+        const color = sampleColor(e);
+        if (color) {
+          setHoverColor({ x: e.clientX, y: e.clientY, color }); // 👀 Update tooltip
+          handleCopy(color); // 📋 Copy to clipboard
+        }
       }
-
-      // Use getBoundingClientRect — this returns screen coordinates and respects transforms
-      const rect = (el as Element).getBoundingClientRect();
-
-      // Save rect directly (DOMRect) so overlay can use top/left/width/height
-      setSelectedBox(rect);
-      setSelectedInfo({
-        tag: (el as Element).tagName,
-        width: rect.width,
-        height: rect.height,
-      });
     };
 
+    // ❌ Reset hover/measure on mouse leave
     const handleLeave = () => {
       setMeasure(null);
       if (tool !== 'color') setHoverColor(null);
     };
 
+    // 🖇️ Attach event listeners
     svgEl.addEventListener('mousemove', handleMove);
     svgEl.addEventListener('click', handleClick);
     svgEl.addEventListener('mouseleave', handleLeave);
+
+    // 🧹 Cleanup
     return () => {
       svgEl.removeEventListener('mousemove', handleMove);
       svgEl.removeEventListener('click', handleClick);
       svgEl.removeEventListener('mouseleave', handleLeave);
     };
   }, [tool]);
+  //#endregion
+
+  //#endregion
+
+  //#region Export / Download Handlers
 
   // Convert SVG → Canvas → DataURL (used for PNG/ICO)
   // --- Convert SVG to Canvas Data URL ---
@@ -332,7 +341,7 @@ const PreviewTabs: React.FC<Props> = ({
         const canvas = document.createElement('canvas'); // Create canvas
         canvas.width = img.width; // Set canvas size to image size
         canvas.height = img.height;
-        const ctx = canvas.getContext('2d'); // Get 2D context
+        const ctx = canvas.getContext('2d', { willReadFrequently: true }); // Get 2D context
         if (!ctx) return reject('Canvas missing'); // Safety check
         ctx.drawImage(img, 0, 0); // Draw SVG image onto canvas
         resolve(canvas.toDataURL(mimeType)); // Return as Data URL
@@ -366,27 +375,7 @@ const PreviewTabs: React.FC<Props> = ({
       message.error('Failed to convert to ICO.');
     }
   };
-
-  const ensureSvgSize = (svg: string, width = 128, height = 128) => {
-    // Match the <svg ...> tag only (even if there's XML header above)
-    const svgTagMatch = svg.match(/<svg[^>]*>/i);
-    if (!svgTagMatch) return svg; // Not a valid SVG
-
-    const svgTag = svgTagMatch[0];
-
-    // Check if width/height exist inside the <svg> tag only
-    const hasWidth = /\bwidth\s*=/.test(svgTag);
-    const hasHeight = /\bheight\s*=/.test(svgTag);
-
-    // If both exist, return unchanged
-    if (hasWidth && hasHeight) return svg;
-
-    // Insert missing width/height before the closing '>'
-    const updatedSvgTag = svgTag.replace(/>$/, ` width="${width}" height="${height}">`);
-
-    // Replace the original <svg ...> tag with the updated one
-    return svg.replace(svgTag, updatedSvgTag);
-  };
+  //#endregion
 
   return (
     <div className={styles.previewWrapper}>
@@ -626,7 +615,40 @@ const PreviewTabs: React.FC<Props> = ({
             value={bgMode}
             onChange={(val) => setBgMode(val as any)}
           />
-
+          <Space>
+            <Tooltip title="Select (V)">
+              <Button
+                size="small"
+                type={tool === 'select' ? 'primary' : 'default'}
+                icon={<SelectOutlined />}
+                onClick={() => setTool('select')}
+              />
+            </Tooltip>
+            <Tooltip title="Hand / Move (H)">
+              <Button
+                size="small"
+                type={tool === 'hand' ? 'primary' : 'default'}
+                icon={<DragOutlined />}
+                onClick={() => setTool('hand')}
+              />
+            </Tooltip>
+            <Tooltip title="Color Picker (C)">
+              <Button
+                size="small"
+                type={tool === 'color' ? 'primary' : 'default'}
+                icon={<BgColorsOutlined />}
+                onClick={() => setTool('color')}
+              />
+            </Tooltip>
+            <Tooltip title="Measure (R)">
+              <Button
+                size="small"
+                type={tool === 'measure' ? 'primary' : 'default'}
+                icon={<AimOutlined />}
+                onClick={() => setTool('measure')}
+              />
+            </Tooltip>
+          </Space>
           <Tooltip title="Zoom Out">
             <Button size="small" icon={<MinusOutlined />} onClick={handleZoomOut} />
           </Tooltip>
@@ -637,41 +659,6 @@ const PreviewTabs: React.FC<Props> = ({
             <Button size="small" icon={<SyncOutlined />} onClick={handleResetZoom} />
           </Tooltip>
           <Text type="secondary">{Math.round(zoom * 100)}%</Text>
-        </Space>
-
-        <Space>
-          <Tooltip title="Select (V)">
-            <Button
-              size="small"
-              type={tool === 'select' ? 'primary' : 'default'}
-              icon={<SelectOutlined />}
-              onClick={() => setTool('select')}
-            />
-          </Tooltip>
-          <Tooltip title="Hand / Move (H)">
-            <Button
-              size="small"
-              type={tool === 'hand' ? 'primary' : 'default'}
-              icon={<DragOutlined />}
-              onClick={() => setTool('hand')}
-            />
-          </Tooltip>
-          <Tooltip title="Color Picker (C)">
-            <Button
-              size="small"
-              type={tool === 'color' ? 'primary' : 'default'}
-              icon={<BgColorsOutlined />}
-              onClick={() => setTool('color')}
-            />
-          </Tooltip>
-          <Tooltip title="Measure (R)">
-            <Button
-              size="small"
-              type={tool === 'measure' ? 'primary' : 'default'}
-              icon={<AimOutlined />}
-              onClick={() => setTool('measure')}
-            />
-          </Tooltip>
         </Space>
       </div>
 

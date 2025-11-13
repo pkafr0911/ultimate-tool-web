@@ -151,17 +151,30 @@ const EditorSection: React.FC<Props> = ({
 
     let updated = svgCode;
 
-    if (updated.includes('width=')) {
-      updated = updated.replace(/width="[^"]*"/, `width="${width}"`);
-    } else {
-      updated = updated.replace('<svg', `<svg width="${width}"`);
+    // Match the <svg ...> tag
+    const svgTagMatch = updated.match(/<svg[^>]*>/i);
+    if (!svgTagMatch) {
+      message.error('Invalid SVG.');
+      return;
     }
 
-    if (updated.includes('height=')) {
-      updated = updated.replace(/height="[^"]*"/, `height="${height}"`);
+    let svgTag = svgTagMatch[0];
+
+    // Replace existing width/height or add them if missing
+    if (/width=/.test(svgTag)) {
+      svgTag = svgTag.replace(/width="[^"]*"/, `width="${width}"`);
     } else {
-      updated = updated.replace('<svg', `<svg height="${height}"`);
+      svgTag = svgTag.replace('<svg', `<svg width="${width}"`);
     }
+
+    if (/height=/.test(svgTag)) {
+      svgTag = svgTag.replace(/height="[^"]*"/, `height="${height}"`);
+    } else {
+      svgTag = svgTag.replace('<svg', `<svg height="${height}"`);
+    }
+
+    // Replace old <svg> tag with updated one
+    updated = updated.replace(/<svg[^>]*>/i, svgTag);
 
     setSvgCode(updated);
     setPreview(updated);

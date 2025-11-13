@@ -1,4 +1,3 @@
-import { handleCopy } from '@/helpers'; // Import custom copy helper
 import { useIsMobile } from '@/hooks/useIsMobile';
 
 import { Button, Card, message, Space, Splitter, Typography } from 'antd'; // Import Ant Design components
@@ -135,7 +134,6 @@ const SVGViewer: React.FC = () => {
                 preview={preview}
                 svgCode={svgCode}
                 handleDownload={handleDownload}
-                handleCopy={handleCopy}
                 svgContainerRef={svgContainerRef}
                 getDataURI={getDataURI}
                 getBase64={getBase64}
