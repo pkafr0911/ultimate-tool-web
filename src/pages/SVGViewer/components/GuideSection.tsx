@@ -76,8 +76,8 @@ const steps = [
     icon: <DragOutlined />,
     text: (
       <>
-        Switch to the <Text strong>Hand (H)</Text> tool to pan the SVG around freely. Click and drag
-        to move your view.
+        Switch to the <Text strong>Hand (H)(Space)</Text> tool to pan the SVG around freely. Click
+        and drag to move your view.
       </>
     ),
   },
