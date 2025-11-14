@@ -79,6 +79,7 @@
     "react-tilt": "^1.0.2",
     "react-virtualized-auto-sizer": "^1.0.26",
     "react-window": "1.8.10",
+    "tesseract.js": "^6.0.1",
     "turndown": "^7.2.1",
     "uuid": "^9.0.0"
   },

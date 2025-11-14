@@ -43,6 +43,12 @@
     icon: 'picture',
     routes: [
       {
+        path: '/image-converter/image-to-text',
+        name: 'Image To Text',
+        icon: 'fileSearch',
+        component: './ImageToText',
+      },
+      {
         path: '/image-converter/svg-viewer',
         name: 'svg-viewer',
         icon: 'fileImage',

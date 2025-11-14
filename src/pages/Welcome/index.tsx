@@ -30,7 +30,13 @@ const categories = [
   },
   {
     title: 'Image Converter',
-    keys: ['PNG / JPEG Converter', 'SVG Viewer', 'Image Base64 Converter', 'Text Art Generator'],
+    keys: [
+      'PNG / JPEG Converter',
+      'SVG Viewer',
+      'Image Base64 Converter',
+      'Text Art Generator',
+      'Image To Text',
+    ],
     desc: 'Convert, preview, and transform your images with a click.',
   },
   {

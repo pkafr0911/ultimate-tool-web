@@ -83,6 +83,18 @@ export const pages = [
 
   // Image Converter
   {
+    name: 'Image To Text',
+    path: '/image-converter/image-to-text',
+    icon: '📄',
+    desc: 'Extract text from images easily.',
+  },
+  {
+    name: 'Text Art Generator',
+    path: '/image-converter/text-art',
+    icon: '🖋️',
+    desc: 'Turn images into ASCII / text art.',
+  },
+  {
     name: 'SVG Viewer',
     path: '/image-converter/svg-viewer',
     icon: '🖼️',
@@ -99,12 +111,6 @@ export const pages = [
     path: '/image-converter/base64',
     icon: '💾',
     desc: 'Encode images to Base64 and decode back.',
-  },
-  {
-    name: 'Text Art Generator',
-    path: '/image-converter/text-art',
-    icon: '🖋️',
-    desc: 'Turn images into ASCII / text art.',
   },
 
   // Editor

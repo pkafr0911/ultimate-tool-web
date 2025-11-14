@@ -6307,6 +6307,11 @@ blink-diff@^1.0.13:
     preceptor-core "~0.10.0"
     promise "6.0.0"
 
+bmp-js@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/bmp-js/-/bmp-js-0.1.0.tgz#e05a63f796a6c1ff25f4771ec7adadc148c07233"
+  integrity sha512-vHdS19CnY3hwiNdkaqk93DvjVLfbEcI8mys4UjuWrlX1haDmroo8o4xCzh4wD6DGV6HxRCyauwhHRqMTfERtjw==
+
 bn.js@^4.0.0, bn.js@^4.1.0, bn.js@^4.11.9:
   version "4.12.1"
   resolved "https://registry.yarnpkg.com/bn.js/-/bn.js-4.12.1.tgz#215741fe3c9dba2d7e12c001d0cfdbae43975ba7"
@@ -10728,6 +10733,11 @@ icss-utils@^5.0.0, icss-utils@^5.1.0:
   resolved "https://registry.yarnpkg.com/icss-utils/-/icss-utils-5.1.0.tgz#c6be6858abd013d768e98366ae47e25d5887b1ae"
   integrity sha512-soFhflCVWLfRNOPU3iv5Z9VUdT44xFRbzjLsEzSr5AQmgqPMTHdU3PMT1Cf1ssx8fLNJDA1juftYl+PUcv3MqA==
 
+idb-keyval@^6.2.0:
+  version "6.2.2"
+  resolved "https://registry.yarnpkg.com/idb-keyval/-/idb-keyval-6.2.2.tgz#b0171b5f73944854a3291a5cdba8e12768c4854a"
+  integrity sha512-yjD9nARJ/jb1g+CvD0tlhUHOrJ9Sy0P8T9MF3YaLlHnSRpwPfpTX0XIvpmw3gAJUmEu3FiICLBDPXVwyEvrleg==
+
 identity-obj-proxy@3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/identity-obj-proxy/-/identity-obj-proxy-3.0.0.tgz#94d2bda96084453ef36fbc5aaec37e0f79f1fc14"
@@ -11417,7 +11427,7 @@ is-unicode-supported@^0.1.0:
   resolved "https://registry.yarnpkg.com/is-unicode-supported/-/is-unicode-supported-0.1.0.tgz#3f26c76a809593b52bfa2ecb5710ed2779b522a7"
   integrity sha512-knxG2q4UC3u8stRGyAVJCOdxFmv5DZiRcdlIaAQXAbSfJya+OhopNotLQrstBhququ4ZpuKbDc/8S6mgXgPFPw==
 
-is-url@1.2.4:
+is-url@1.2.4, is-url@^1.2.4:
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/is-url/-/is-url-1.2.4.tgz#04a4df46d28c4cff3d73d01ff06abeb318a1aa52"
   integrity sha512-ITvGim8FhRiYe4IQ5uHSkj7pVaPDrCTkNd3yq3cV7iZAcJdHTUMPMEHcqSOy9xZ9qFenQCvi+2wjH9a1nXqHww==
@@ -13498,7 +13508,7 @@ node-fetch@^1.0.1:
     encoding "^0.1.11"
     is-stream "^1.0.1"
 
-node-fetch@^2.6.0, node-fetch@^2.6.1, node-fetch@^2.6.7, node-fetch@^2.7.0:
+node-fetch@^2.6.0, node-fetch@^2.6.1, node-fetch@^2.6.7, node-fetch@^2.6.9, node-fetch@^2.7.0:
   version "2.7.0"
   resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.7.0.tgz#d0f0fa6e3e2dc1d27efcd8ad99d550bda94d187d"
   integrity sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==
@@ -14108,6 +14118,11 @@ openapi3-ts@^2.0.1:
   integrity sha512-TxhYBMoqx9frXyOgnRHufjQfPXomTIHYKhSKJ6jHfj13kS8OEIhvmE8CTuQyKtjjWttAjX5DPxM1vmalEpo8Qw==
   dependencies:
     yaml "^1.10.2"
+
+opencollective-postinstall@^2.0.3:
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/opencollective-postinstall/-/opencollective-postinstall-2.0.3.tgz#7a0fff978f6dbfa4d006238fbac98ed4198c3259"
+  integrity sha512-8AV/sCtuzUeTo8gQK5qDZzARrulB3egtLzFgteqB2tcT4Mw7B8Kt7JcDHmltjz6FOAHsvTevk70gZEbhM4ZS9Q==
 
 optionator@^0.9.1, optionator@^0.9.3:
   version "0.9.4"
@@ -16765,7 +16780,7 @@ regenerate@^1.4.2:
   resolved "https://registry.yarnpkg.com/regenerate/-/regenerate-1.4.2.tgz#b9346d8827e8f5a32f7ba29637d398b69014848a"
   integrity sha512-zrceR/XhGYU/d/opr2EKO7aRHUeiBI8qjtfHqADTwZd6Szfy16la6kqD0MIUs5z5hx6AaKa+PixpPrR289+I0A==
 
-regenerator-runtime@0.13.11, regenerator-runtime@^0.13.2:
+regenerator-runtime@0.13.11, regenerator-runtime@^0.13.2, regenerator-runtime@^0.13.3:
   version "0.13.11"
   resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.13.11.tgz#f6dca3e7ceec20590d07ada785636a90cdca17f9"
   integrity sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==
@@ -18669,6 +18684,26 @@ terser@^5.10.0:
     commander "^2.20.0"
     source-map-support "~0.5.20"
 
+tesseract.js-core@^6.0.0:
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/tesseract.js-core/-/tesseract.js-core-6.0.0.tgz#6f25da94f70f8e8f02aff47a43be61d49e6f67c3"
+  integrity sha512-1Qncm/9oKM7xgrQXZXNB+NRh19qiXGhxlrR8EwFbK5SaUbPZnS5OMtP/ghtqfd23hsr1ZvZbZjeuAGcMxd/ooA==
+
+tesseract.js@^6.0.1:
+  version "6.0.1"
+  resolved "https://registry.yarnpkg.com/tesseract.js/-/tesseract.js-6.0.1.tgz#5b2ff39aae92d59cef79589a43a0f3ab963801cc"
+  integrity sha512-/sPvMvrCtgxnNRCjbTYbr7BRu0yfWDsMZQ2a/T5aN/L1t8wUQN6tTWv6p6FwzpoEBA0jrN2UD2SX4QQFRdoDbA==
+  dependencies:
+    bmp-js "^0.1.0"
+    idb-keyval "^6.2.0"
+    is-url "^1.2.4"
+    node-fetch "^2.6.9"
+    opencollective-postinstall "^2.0.3"
+    regenerator-runtime "^0.13.3"
+    tesseract.js-core "^6.0.0"
+    wasm-feature-detect "^1.2.11"
+    zlibjs "^0.3.1"
+
 test-exclude@^6.0.0:
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/test-exclude/-/test-exclude-6.0.0.tgz#04a8698661d805ea6fa293b6cb9e63ac044ef15e"
@@ -19620,6 +19655,11 @@ warning@^4.0.3:
   dependencies:
     loose-envify "^1.0.0"
 
+wasm-feature-detect@^1.2.11:
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/wasm-feature-detect/-/wasm-feature-detect-1.8.0.tgz#4e9f55b0a64d801f372fbb0324ed11ad3abd0c78"
+  integrity sha512-zksaLKM2fVlnB5jQQDqKXXwYHLQUVH9es+5TOOHwGOVJOCeRBCiPjwSg+3tN2AdTCzjgli4jijCH290kXb/zWQ==
+
 wbuf@^1.1.0, wbuf@^1.7.3:
   version "1.7.3"
   resolved "https://registry.yarnpkg.com/wbuf/-/wbuf-1.7.3.tgz#c1d8d149316d3ea852848895cb6a0bfe887b87df"
@@ -20046,6 +20086,11 @@ yocto-queue@^1.0.0:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-1.1.1.tgz#fef65ce3ac9f8a32ceac5a634f74e17e5b232110"
   integrity sha512-b4JR1PFR10y1mKjhHY9LaGo6tmrgjit7hxVIeAmyMw3jegXR4dhYqLaQF5zMXZxY7tLpMyJeLjr1C4rLmkVe8g==
+
+zlibjs@^0.3.1:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/zlibjs/-/zlibjs-0.3.1.tgz#50197edb28a1c42ca659cc8b4e6a9ddd6d444554"
+  integrity sha512-+J9RrgTKOmlxFSDHo0pI1xM6BLVUv+o0ZT9ANtCxGkjIVCCUdx9alUF8Gm+dGLKbkkkidWIHFDZHDMpfITt4+w==
 
 zod-validation-error@^2.1.0:
   version "2.1.0"

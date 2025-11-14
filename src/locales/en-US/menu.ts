@@ -19,6 +19,7 @@ export default {
 
   // Image Converter
   'menu.image-converter': 'Image Converter',
+  'menu.image-converter.image-to-text': 'Image To Text',
   'menu.image-converter.svg-viewer': 'SVG Viewer',
   'menu.image-converter.pnj-jpeg': 'PNG / JPEG Converter',
   'menu.image-converter.base64': 'Base64 Converter',
