@@ -28,7 +28,7 @@ import {
   createCanvas,
 } from '../utils/ImageEditorEngine';
 
-type Tool = 'pan' | 'crop' | 'color' | 'ruler' | 'perspective' | 'select';
+type Tool = 'pan' | 'crop' | 'color' | 'ruler' | 'perspective' | 'select' | 'draw';
 
 type HistoryItem = {
   canvasDataUrl: string;
@@ -82,6 +82,12 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   const [rulerActive, setRulerActive] = useState(false);
   const rulerPoints = useRef<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const [dpiMeasured, setDpiMeasured] = useState<number | null>(null);
+
+  // Drawing state
+  const [drawColor, setDrawColor] = useState('#ff0000');
+  const [drawLineWidth, setDrawLineWidth] = useState(2);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const drawPoints = useRef<{ x: number; y: number }[]>([]);
 
   // Load image once
   useEffect(() => {
@@ -235,6 +241,9 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
           break;
         }
       }
+    } else if (tool === 'draw') {
+      setIsDrawing(true);
+      drawPoints.current = [{ x, y }];
     }
   };
 
@@ -251,6 +260,24 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         h: Math.abs(cur.y - cropStart.current.y),
       });
       drawOverlay();
+    } else if (tool === 'draw' && isDrawing && canvasRef.current) {
+      const rect = canvasRef.current.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / zoom;
+      const y = (e.clientY - rect.top) / zoom;
+
+      drawPoints.current.push({ x, y });
+
+      const ctx = canvasRef.current.getContext('2d')!;
+      ctx.save();
+      ctx.strokeStyle = drawColor;
+      ctx.lineWidth = drawLineWidth;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      const points = drawPoints.current;
+      ctx.moveTo(points[points.length - 2].x, points[points.length - 2].y);
+      ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+      ctx.stroke();
+      ctx.restore();
     } else {
       drawOverlay();
     }
@@ -260,6 +287,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     setIsPanning(false);
     panStart.current = null;
     if (tool === 'crop' && cropRect) applyCrop();
+    if (tool === 'draw' && isDrawing) {
+      setIsDrawing(false);
+      pushHistory(canvasRef.current!.toDataURL(), 'Draw');
+    }
   };
 
   /** Draw overlay: crop, ruler, perspective, color hover */
@@ -695,6 +726,26 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
             )}
           </Space>
           <Divider />
+          <div>
+            <div style={{ marginBottom: 8 }}>Draw Tool</div>
+            <Space>
+              <input
+                type="color"
+                value={drawColor}
+                onChange={(e) => setDrawColor(e.target.value)}
+              />
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={drawLineWidth}
+                onChange={(e) => setDrawLineWidth(Number(e.target.value))}
+                style={{ width: 60 }}
+              />
+              <Button onClick={() => setTool('draw')}>Draw</Button>
+            </Space>
+          </div>
+          <Divider />
 
           <div>
             <div style={{ marginBottom: 8 }}>Crop & Perspective</div>
@@ -771,6 +822,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
               <Option value="crop">Crop</Option>
               <Option value="ruler">Ruler</Option>
               <Option value="perspective">Perspective</Option>
+              <Option value="draw">Draw</Option>
             </Select>
           </Space>
         </div>
