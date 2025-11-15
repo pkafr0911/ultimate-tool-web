@@ -13,7 +13,6 @@ import { ExclamationCircleOutlined, SettingOutlined } from '@ant-design/icons';
 import { handleOCR, loadSettings } from './utils/helpers';
 import GuideSection from './components/GuideSection';
 import SettingsModal from './components/SettingsModal';
-import { handlePasteImage } from '@/helpers';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -43,7 +42,23 @@ const ImageToText: React.FC = () => {
   }, [imageUrl]);
 
   useEffect(() => {
-    handlePasteImage(handleUpload);
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      const imageItem = Array.from(items).find((item) => item.type.includes('image'));
+      if (imageItem) {
+        const blob = imageItem.getAsFile();
+        if (blob) {
+          handleUpload(blob);
+          message.success('Image pasted from clipboard!');
+          e.preventDefault();
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
   }, []);
 
   // --- Handle uploaded image ---

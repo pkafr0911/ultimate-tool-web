@@ -47,23 +47,3 @@ export const handleCopy = (content: string, noti?: string) => {
   }
   message.success(noti || `Copied: ${content}`);
 };
-
-export const handlePasteImage = (handleUpload) => {
-  const handlePaste = (e: ClipboardEvent) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-
-    const imageItem = Array.from(items).find((item) => item.type.includes('image'));
-    if (imageItem) {
-      const blob = imageItem.getAsFile();
-      if (blob) {
-        handleUpload(blob);
-        message.success('Image pasted from clipboard!');
-        e.preventDefault();
-      }
-    }
-  };
-
-  window.addEventListener('paste', handlePaste);
-  return () => window.removeEventListener('paste', handlePaste);
-};

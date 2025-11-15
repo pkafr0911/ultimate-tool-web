@@ -1,6 +1,6 @@
 import DragDropWrapper from '@/components/DragDropWrapper';
 import DragOverlay from '@/components/DragOverlay';
-import { handleCopy, handlePasteImage } from '@/helpers';
+import { handleCopy } from '@/helpers';
 import {
   CopyOutlined,
   DownloadOutlined,
@@ -48,7 +48,23 @@ const PNGJPEG: React.FC = () => {
 
   // --- Clipboard paste support ---
   useEffect(() => {
-    handlePasteImage(handleUpload);
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      const imageItem = Array.from(items).find((item) => item.type.includes('image'));
+      if (imageItem) {
+        const blob = imageItem.getAsFile();
+        if (blob) {
+          handleUpload(blob);
+          message.success('Image pasted from clipboard!');
+          e.preventDefault();
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
   }, []);
 
   const handleUpload = (file: File) => {

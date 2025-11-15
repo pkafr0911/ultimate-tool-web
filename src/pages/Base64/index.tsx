@@ -1,4 +1,4 @@
-import { handleCopy, handlePasteImage } from '@/helpers';
+import { handleCopy } from '@/helpers';
 import { CopyOutlined, DeleteOutlined, PictureOutlined, UploadOutlined } from '@ant-design/icons';
 import { Editor } from '@monaco-editor/react';
 import { Button, Card, Divider, Image, message, Space, Typography, Upload } from 'antd';
@@ -11,7 +11,26 @@ const Base64Converter: React.FC = () => {
   const [imageUrl, setImageUrl] = useState<string>('');
 
   useEffect(() => {
-    handlePasteImage(handleUpload);
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      const imageItem = Array.from(items).find((item) => item.type.includes('image'));
+      if (imageItem) {
+        const blob = imageItem.getAsFile();
+        if (blob) {
+          handleUpload(blob);
+          message.success('Image pasted from clipboard!');
+          e.preventDefault();
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
   }, []);
 
   const handleUpload = (file: File) => {
