@@ -1,6 +1,18 @@
 // src/components/ImageEditor.tsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Slider, Space, Tooltip, Modal, Row, Col, Select, message, Divider } from 'antd';
+import {
+  Button,
+  Slider,
+  Space,
+  Tooltip,
+  Modal,
+  Row,
+  Col,
+  Select,
+  message,
+  Divider,
+  ColorPicker,
+} from 'antd';
 import {
   ArrowLeftOutlined,
   ArrowRightOutlined,
@@ -69,8 +81,9 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   const perspectivePoints = useRef<
     [number, number, number, number, number, number, number, number] | null
   >(null);
-  const [toolBeforeHand, setToolBeforeHand] = useState<Tool | null>(null);
+  const [toolBefore, setToolBefore] = useState<Tool | null>(null);
   const [isSpaceDown, setIsSpaceDown] = useState(false);
+  const [isAltDown, setIsAltDown] = useState(false);
 
   // Color picker state
   const [hoverColor, setHoverColor] = useState<{ x: number; y: number; color: string } | null>(
@@ -347,6 +360,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       ctx.stroke();
       ctx.restore();
     }
+
+    // draw
+    if (hoverColor && tool === 'draw') {
+    }
   };
 
   /** --- COLOR PICKER --- */
@@ -374,6 +391,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         const color = samplePixel(e);
         setHoverColor(color ? { x: e.clientX, y: e.clientY, color } : null);
         drawOverlay();
+      } else if (tool === 'draw') {
+        // const color = samplePixel(e);
+        // setHoverColor(color ? { x: e.clientX, y: e.clientY, color } : null);
+        // drawOverlay();
       }
     };
 
@@ -382,6 +403,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         const color = samplePixel(e);
         if (color) {
           setPickedColor(color);
+          setDrawColor(color);
           navigator.clipboard.writeText(color).catch(() => {});
           message.success(`Picked color ${color}`);
         }
@@ -552,11 +574,12 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === 'z') doUndo();
-      if (e.ctrlKey && e.key === 'y') doRedo();
+      if (e.ctrlKey && e.shiftKey && e.key === 'Z') doRedo();
       if (e.key === 'c') setTool('crop');
       if (e.key === 'v') setTool('pan');
       if (e.key === 'r') rotate(90);
       if (e.key === 'p') setTool('color');
+      if (e.key === 'b') setTool('draw');
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -572,12 +595,27 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         setIsSpaceDown((prev) => {
           if (!prev) {
             // first press
-            setToolBeforeHand((t) => {
+            setToolBefore((t) => {
               // store previous tool safely
               if (t === null) return tool;
               return t;
             });
             setTool('pan');
+          }
+          return true;
+        });
+      } else if (e.code === 'AltLeft' && tool === 'draw') {
+        e.preventDefault();
+
+        setIsAltDown((prev) => {
+          if (!prev) {
+            // first press
+            setToolBefore((t) => {
+              // store previous tool safely
+              if (t === null) return tool;
+              return t;
+            });
+            setTool('color');
           }
           return true;
         });
@@ -588,7 +626,15 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       if (e.code === 'Space') {
         setIsSpaceDown(false);
 
-        setToolBeforeHand((prev) => {
+        setToolBefore((prev) => {
+          if (prev) {
+            setTool(prev); // restore tool
+          }
+          return null; // clear buffer
+        });
+      } else if (e.code === 'AltLeft' && toolBefore === 'draw') {
+        setIsAltDown(false);
+        setToolBefore((prev) => {
           if (prev) {
             setTool(prev); // restore tool
           }
@@ -706,33 +752,15 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
           </div>
 
           <Divider />
-          <Space>
-            <Button icon={<BgColorsOutlined />} onClick={() => setTool('color')}>
-              Color picker
-            </Button>
-            {pickedColor && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 3,
-                    border: '1px solid #999',
-                    background: pickedColor,
-                  }}
-                />
-                <span>{pickedColor}</span>
-              </div>
-            )}
-          </Space>
-          <Divider />
+
           <div>
-            <div style={{ marginBottom: 8 }}>Draw Tool</div>
+            <div style={{ marginBottom: 8 }}>Brush Tool</div>
             <Space>
-              <input
-                type="color"
+              <ColorPicker
                 value={drawColor}
-                onChange={(e) => setDrawColor(e.target.value)}
+                onChange={(color) => setDrawColor(color.toHexString())}
+                allowClear={false}
+                showText
               />
               <input
                 type="number"
@@ -865,7 +893,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
               transformOrigin: 'top left',
             }}
           />
-          {hoverColor && (
+          {hoverColor && tool === 'color' && (
             <div
               style={{
                 position: 'fixed', // use fixed to position relative to viewport
