@@ -787,7 +787,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
           onMouseUp={handleMouseUpViewer}
           style={{
             width: '100%',
-            height: 640,
+            height: '100vh',
             overflow: 'hidden',
             border: '1px solid #eee',
             position: 'relative',
