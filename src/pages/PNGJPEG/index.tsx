@@ -22,7 +22,7 @@ import {
   message,
 } from 'antd';
 import ImageTracer from 'imagetracerjs';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
@@ -43,6 +43,27 @@ const PNGJPEG: React.FC = () => {
   const [pathomit, setPathomit] = useState(8);
   const [colorsampling, setColorsampling] = useState(2);
   const [strokewidth, setStrokewidth] = useState(1);
+
+  // --- Clipboard paste support ---
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      const imageItem = Array.from(items).find((item) => item.type.includes('image'));
+      if (imageItem) {
+        const blob = imageItem.getAsFile();
+        if (blob) {
+          handleUpload(blob);
+          message.success('Image pasted from clipboard!');
+          e.preventDefault();
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, []);
 
   const handleUpload = (file: File) => {
     setFile(file);

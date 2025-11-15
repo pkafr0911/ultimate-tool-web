@@ -12,12 +12,16 @@ const TextOutput: React.FC<Props> = ({ text, setText }) => {
   return (
     <div style={{ height: '100%' }}>
       <Space style={{ marginBottom: 10 }}>
-        <Button onClick={() => handleCopy(text, 'Copied!')}>Copy</Button>
-        <Button onClick={() => downloadText(text)}>Download</Button>
+        <Button size="small" onClick={() => handleCopy(text, 'Copied!')}>
+          Copy
+        </Button>
+        <Button size="small" onClick={() => downloadText(text)}>
+          Download
+        </Button>
       </Space>
 
       <Input.TextArea
-        rows={20}
+        rows={22}
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Extracted text will show here..."

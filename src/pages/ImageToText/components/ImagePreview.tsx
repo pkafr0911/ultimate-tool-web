@@ -146,21 +146,21 @@ const ImagePreview: React.FC<Props> = ({ imageUrl, extractedText = '', upscaleMo
     <div>
       {/* Toolbar */}
       <Space style={{ marginBottom: 10 }}>
-        <Tooltip title="Zoom In">
-          <Button icon={<ZoomInOutlined />} onClick={zoomIn} />
+        <Tooltip title="Zoom In (CTRL+Wheel)">
+          <Button size="small" icon={<ZoomInOutlined />} onClick={zoomIn} />
         </Tooltip>
-        <Tooltip title="Zoom Out">
-          <Button icon={<ZoomOutOutlined />} onClick={zoomOut} />
+        <Tooltip title="Zoom Out (CTRL+Wheel)">
+          <Button size="small" icon={<ZoomOutOutlined />} onClick={zoomOut} />
         </Tooltip>
         <Tooltip title="Reset Zoom">
-          <Button icon={<RedoOutlined />} onClick={resetZoom} />
+          <Button size="small" icon={<RedoOutlined />} onClick={resetZoom} />
         </Tooltip>
         <Tooltip title="Fit Screen">
-          <Button icon={<FullscreenOutlined />} onClick={fitScreen} />
+          <Button size="small" icon={<FullscreenOutlined />} onClick={fitScreen} />
         </Tooltip>
         {upscaleMode === 'manual' && (
           <Tooltip title="Detect & Upscale DPI">
-            <Button icon={<SwapOutlined />} onClick={detectAndUpscale}>
+            <Button size="small" icon={<SwapOutlined />} onClick={detectAndUpscale}>
               Upscale
             </Button>
           </Tooltip>
