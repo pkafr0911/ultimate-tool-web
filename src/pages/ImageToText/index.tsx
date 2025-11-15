@@ -9,7 +9,7 @@ import TextOutput from './components/TextOutput';
 import DragDropWrapper from '@/components/DragDropWrapper';
 import DragOverlay from '@/components/DragOverlay';
 
-import { SettingOutlined } from '@ant-design/icons';
+import { ExclamationCircleOutlined, SettingOutlined } from '@ant-design/icons';
 import { handleOCR, loadSettings } from './utils/helpers';
 import GuideSection from './components/GuideSection';
 import SettingsModal from './components/SettingsModal';
@@ -146,30 +146,51 @@ const ImageToText: React.FC = () => {
         </div>
       </Card>
 
-      {settings.preprocessImage && (
-        <div className={styles.stepsPreview}>
-          {stepImages.map((src, index) => (
-            <div key={index} className={styles.stepImageWrapper}>
-              <Image
-                src={src}
-                alt={`Step ${index + 1}`}
-                className={styles.stepImage}
-                preview={{ mask: <div>Preview Step {index + 1}</div> }} // optional hover preview
-              />
-              {index === 0 && <div>{'Original image'}</div>}
-              {index === 1 && <div>{'Store resized image'}</div>}
-              {index === 2 && <div>{'Grayscale + contrast + threshold'}</div>}
-              {index === 3 && <div>{'Simple sharpening kernel'}</div>}
-              {index > 3 && <div>Step {index + 1}</div>}
-            </div>
-          ))}
-        </div>
+      {settings.textEnhancement && (
+        <Card
+          size="small"
+          title={
+            <>
+              Text Enhancement{' '}
+              <Tooltip
+                title={
+                  <>
+                    Recommended: Turn this on if the image has color. Turn it off if the image is
+                    only black and white in{' '}
+                    <a onClick={() => setIsSettingsModalOpen(true)}>Setting</a>
+                  </>
+                }
+              >
+                <ExclamationCircleOutlined />
+              </Tooltip>
+            </>
+          }
+          style={{ marginTop: 20 }}
+        >
+          <div className={styles.stepsPreview}>
+            {stepImages.map((src, index) => (
+              <div key={index} className={styles.stepImageWrapper}>
+                <Image
+                  src={src}
+                  alt={`Step ${index + 1}`}
+                  className={styles.stepImage}
+                  preview={{ mask: <div>Preview Step {index + 1}</div> }} // optional hover preview
+                />
+                {index === 0 && <div>{'Original image'}</div>}
+                {index === 1 && <div>{'Store resized image'}</div>}
+                {index === 2 && <div>{'Grayscale + contrast + threshold'}</div>}
+                {index === 3 && <div>{'Simple sharpening kernel'}</div>}
+                {index > 3 && <div>Step {index + 1}</div>}
+              </div>
+            ))}
+          </div>
+        </Card>
       )}
 
       {/* --- Guide Section --- */}
       <GuideSection
         callback={(action) => {
-          if (action === 'openSetting') setIsSettingsModalOpen(true);
+          if (action === 'openSettings') setIsSettingsModalOpen(true);
         }}
       />
 

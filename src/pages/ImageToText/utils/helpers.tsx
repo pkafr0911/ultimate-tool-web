@@ -1,5 +1,5 @@
 import { message } from 'antd';
-import { preprocessImage } from './preprocessImage';
+import { textEnhancement } from './textEnhancement';
 import Tesseract from 'tesseract.js';
 import { defaultSettings, OCRSettings, SETTINGS_KEY } from '../constants';
 
@@ -46,11 +46,11 @@ export const handleOCR = async (
     let finalBlob: Blob;
     let steps: string[] = [];
 
-    if (settings.preprocessImage) {
-      // Use preprocessing if enabled
-      const preprocessResult = await preprocessImage(imageFile);
-      steps = preprocessResult.steps;
-      finalBlob = preprocessResult.finalBlob;
+    if (settings.textEnhancement) {
+      // Use text enhance enhance if enabled
+      const enhanceResult = await textEnhancement(imageFile);
+      steps = enhanceResult.steps;
+      finalBlob = enhanceResult.finalBlob;
 
       // Show preprocessing steps in UI
       setStepImages(steps);

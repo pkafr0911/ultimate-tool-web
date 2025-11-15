@@ -144,7 +144,7 @@ const SVGViewer: React.FC = () => {
         {/* --- Guide Section --- */}
         <GuideSection
           callback={(action) => {
-            if (action === 'openSetting') setIsSettingsModalOpen(true);
+            if (action === 'openSettings') setIsSettingsModalOpen(true);
           }}
         />
       </Card>

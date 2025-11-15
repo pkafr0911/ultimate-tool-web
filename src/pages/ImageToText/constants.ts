@@ -4,13 +4,13 @@ export const SETTINGS_KEY = 'image_to_text_settings';
 export type OCRSettings = {
   language: string[]; // e.g. ['eng', 'vie']
   upscaleMode: 'auto' | 'manual' | 'none';
-  preprocessImage: boolean;
+  textEnhancement: boolean;
 };
 
 export const defaultSettings: OCRSettings = {
   language: ['eng', 'vie'], // e.g. ['eng', 'vie']
   upscaleMode: 'manual',
-  preprocessImage: true,
+  textEnhancement: true,
 };
 
 export const languageOptions = [

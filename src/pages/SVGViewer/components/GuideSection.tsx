@@ -163,7 +163,7 @@ const GuideSection: React.FC<{ callback: (action: string) => void }> = ({ callba
           </li>
         ))}
         <li key={'more'}>
-          Click here to open advance <a onClick={() => callback('openSetting')}> Settings</a>
+          Click here to open advance <a onClick={() => callback('openSettings')}> Settings</a>
         </li>
       </ul>
 

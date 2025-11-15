@@ -1,4 +1,4 @@
-export async function preprocessImage(
+export async function textEnhancement(
   file: File,
   options?: { maxWidth?: number; maxHeight?: number; contrastBoost?: number; threshold?: number },
 ): Promise<{ steps: string[]; finalBlob: Blob }> {

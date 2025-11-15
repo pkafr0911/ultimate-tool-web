@@ -1,7 +1,8 @@
 import React from 'react';
-import { Modal, Select, Space, Switch, Typography } from 'antd';
+import { Modal, Select, Space, Switch, Tooltip, Typography } from 'antd';
 import { languageOptions } from '../constants';
 import { useSetting } from '../hooks/useSetting';
+import { ExclamationCircleOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 
@@ -41,11 +42,20 @@ const SettingsModal: React.FC<Props> = ({ open, onClose }) => {
         </div>
 
         <Space direction="vertical">
-          <Text>Preprocess Image:</Text>
+          <Text>
+            Text Enhancemente:{' '}
+            <Tooltip
+              title={
+                'Recommended: Turn this on if the image has color. Turn it off if the image is only black and white.'
+              }
+            >
+              <ExclamationCircleOutlined />
+            </Tooltip>
+          </Text>
           <Switch
             style={{ margin: 5 }}
-            checked={settings.preprocessImage}
-            onChange={(val) => setSettings({ ...settings, preprocessImage: val })}
+            checked={settings.textEnhancement}
+            onChange={(val) => setSettings({ ...settings, textEnhancement: val })}
           />
         </Space>
       </Space>
