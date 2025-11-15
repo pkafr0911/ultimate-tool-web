@@ -44,7 +44,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     menuHeaderRender: (logo, title, props) => (
       <div
         onClick={() => history.push('/')}
-        style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
       >
         {logo}
         <span className="app-title">{title}</span>

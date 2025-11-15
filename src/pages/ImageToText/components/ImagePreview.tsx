@@ -12,19 +12,15 @@ import {
 type Props = {
   imageUrl: string;
   extractedText?: string; // Optional: text extracted from the image
+  upscaleMode;
 };
 
-const ImagePreview: React.FC<Props> = ({ imageUrl, extractedText = '' }) => {
+const ImagePreview: React.FC<Props> = ({ imageUrl, extractedText = '', upscaleMode }) => {
   const [processedImageUrl, setProcessedImageUrl] = useState<string>(imageUrl);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [start, setStart] = useState<{ x: number; y: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-
-  // --- Settings Modal State ---
-  const [settingsVisible, setSettingsVisible] = useState(false);
-  const [language, setLanguage] = useState('en');
-  const [upscaleMode, setUpscaleMode] = useState<'auto' | 'manual' | 'none'>('manual');
 
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -169,9 +165,7 @@ const ImagePreview: React.FC<Props> = ({ imageUrl, extractedText = '' }) => {
             </Button>
           </Tooltip>
         )}
-        <Tooltip title="Settings">
-          <Button icon={<SettingOutlined />} onClick={() => setSettingsVisible(true)} />
-        </Tooltip>
+
         <span>{Math.round(zoom * 100)}%</span>
       </Space>
 
@@ -206,43 +200,6 @@ const ImagePreview: React.FC<Props> = ({ imageUrl, extractedText = '' }) => {
           draggable={false}
         />
       </div>
-
-      {/* Settings Modal */}
-      <Modal
-        title="Settings"
-        open={settingsVisible}
-        onCancel={() => setSettingsVisible(false)}
-        onOk={() => setSettingsVisible(false)}
-        footer={<></>}
-      >
-        <div style={{ marginBottom: 10 }}>
-          <label>Language:</label>
-          <Select
-            style={{ width: '100%', marginTop: 5 }}
-            value={language}
-            onChange={(val) => setLanguage(val)}
-            options={[
-              { label: 'English', value: 'en' },
-              { label: 'Vietnamese', value: 'vi' },
-              { label: 'French', value: 'fr' },
-            ]}
-          />
-        </div>
-
-        <div>
-          <label>Upscale Mode:</label>
-          <Select
-            style={{ width: '100%', marginTop: 5 }}
-            value={upscaleMode}
-            onChange={(val) => setUpscaleMode(val)}
-            options={[
-              { label: 'Auto', value: 'auto' },
-              { label: 'Manual', value: 'manual' },
-              { label: 'None', value: 'none' },
-            ]}
-          />
-        </div>
-      </Modal>
     </div>
   );
 };

@@ -44,7 +44,7 @@
     routes: [
       {
         path: '/image-converter/image-to-text',
-        name: 'Image To Text',
+        name: 'image-to-text',
         icon: 'fileSearch',
         component: './ImageToText',
       },
