@@ -150,7 +150,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   const canvasToDataUrl = (c: HTMLCanvasElement) => c.toDataURL('image/png');
 
   /** Sync canvas & overlay sizes */
-  function syncCanvasSize() {
+  const syncCanvasSize = () => {
     if (!canvasRef.current || !baseCanvas) return;
 
     canvasRef.current.width = baseCanvas.width;
@@ -161,24 +161,24 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     const ctx = canvasRef.current.getContext('2d')!;
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     ctx.drawImage(baseCanvas, 0, 0);
-  }
+  };
 
   /** History management */
-  function pushHistory(dataUrl: string, description = '') {
+  const pushHistory = (dataUrl: string, description = '') => {
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push({ canvasDataUrl: dataUrl, description });
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
-  }
-  function doUndo() {
+  };
+  const doUndo = () => {
     if (historyIndex <= 0) return;
     applyHistory(historyIndex - 1);
-  }
-  function doRedo() {
+  };
+  const doRedo = () => {
     if (historyIndex >= history.length - 1) return;
     applyHistory(historyIndex + 1);
-  }
-  function applyHistory(idx: number) {
+  };
+  const applyHistory = (idx: number) => {
     const item = history[idx];
     if (!item) return;
 
@@ -195,7 +195,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       setHistoryIndex(idx);
     };
     img.src = item.canvasDataUrl;
-  }
+  };
 
   /** --- PAN / ZOOM / TOOL HANDLERS --- */
   const handleMouseDownViewer = (e: React.MouseEvent) => {
@@ -263,7 +263,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   };
 
   /** Draw overlay: crop, ruler, perspective, color hover */
-  function drawOverlay() {
+  const drawOverlay = () => {
     if (!overlayRef.current || !canvasRef.current) return;
     const ctx = overlayRef.current.getContext('2d')!;
     ctx.clearRect(0, 0, overlayRef.current.width, overlayRef.current.height);
@@ -316,7 +316,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       ctx.stroke();
       ctx.restore();
     }
-  }
+  };
 
   /** --- COLOR PICKER --- */
   const samplePixel = (e: MouseEvent) => {
@@ -373,7 +373,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   }, [tool, zoom, offset]);
 
   // Apply brightness/contrast to current canvas (mutates)
-  function applyBrightnessContrastToCanvas() {
+  const applyBrightnessContrastToCanvas = () => {
     if (!canvasRef.current) return;
     const ctx = canvasRef.current.getContext('2d')!;
     const imgData = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
@@ -381,29 +381,29 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     applyBrightnessContrast(cloned, brightness, contrast);
     ctx.putImageData(cloned, 0, 0);
     pushHistory(canvasRef.current.toDataURL(), 'Brightness/Contrast');
-  }
+  };
 
   // Apply kernel (blur/sharpen)
-  async function applyKernel(kernel: number[], size = Math.sqrt(kernel.length)) {
+  const applyKernel = async (kernel: number[], size = Math.sqrt(kernel.length)) => {
     if (!canvasRef.current) return;
     const ctx = canvasRef.current.getContext('2d')!;
     const id = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
     applyConvolution(id, kernel, size);
     ctx.putImageData(id, 0, 0);
     pushHistory(canvasRef.current.toDataURL(), 'Convolution');
-  }
+  };
 
-  function applyThresholdBackground(threshold = 240) {
+  const applyThresholdBackground = (threshold = 240) => {
     if (!canvasRef.current) return;
     const ctx = canvasRef.current.getContext('2d')!;
     const id = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
     applyThresholdAlpha(id, threshold);
     ctx.putImageData(id, 0, 0);
     pushHistory(canvasRef.current.toDataURL(), 'Background removed (threshold)');
-  }
+  };
 
   // Crop: apply cropRect to canvas
-  function applyCrop() {
+  const applyCrop = () => {
     if (!canvasRef.current || !cropRect) return;
     const c = createCanvas(
       Math.max(1, Math.round(cropRect.w)),
@@ -431,9 +431,9 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     wctx.drawImage(c, 0, 0);
     setCropRect(null);
     pushHistory(canvasRef.current.toDataURL(), 'Cropped');
-  }
+  };
 
-  function rotate(deg: number) {
+  const rotate = (deg: number) => {
     if (!canvasRef.current) return;
     // create temp canvas and rotate
     const src = canvasRef.current;
@@ -454,9 +454,9 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     wctx.clearRect(0, 0, dest.width, dest.height);
     wctx.drawImage(dest, 0, 0);
     pushHistory(canvasRef.current.toDataURL(), `Rotate ${deg}`);
-  }
+  };
 
-  async function perspectiveApply() {
+  const perspectiveApply = async () => {
     if (!canvasRef.current || !perspectivePoints.current) return;
     const src = canvasRef.current;
     // dest dims: bounding rect
@@ -471,10 +471,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     canvasRef.current.getContext('2d')!.drawImage(dest, 0, 0);
     pushHistory(canvasRef.current.toDataURL(), 'Perspective corrected');
     setShowPerspectiveModal(false);
-  }
+  };
 
   // flip
-  function flipH() {
+  const flipH = () => {
     if (!canvasRef.current) return;
     const ctx = canvasRef.current.getContext('2d')!;
     const tmp = createCanvas(canvasRef.current.width, canvasRef.current.height);
@@ -485,8 +485,8 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     ctx.drawImage(tmp, -canvasRef.current.width, 0);
     ctx.restore();
     pushHistory(canvasRef.current.toDataURL(), 'Flip horizontal');
-  }
-  function flipV() {
+  };
+  const flipV = () => {
     if (!canvasRef.current) return;
     const ctx = canvasRef.current.getContext('2d')!;
     const tmp = createCanvas(canvasRef.current.width, canvasRef.current.height);
@@ -497,9 +497,9 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     ctx.drawImage(tmp, 0, -canvasRef.current.height);
     ctx.restore();
     pushHistory(canvasRef.current.toDataURL(), 'Flip vertical');
-  }
+  };
 
-  async function exportImage(asJpeg = false) {
+  const exportImage = async (asJpeg = false) => {
     if (!canvasRef.current) return;
     const blob = await exportCanvasToBlob(
       canvasRef.current,
@@ -515,7 +515,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     a.click();
     URL.revokeObjectURL(url);
     message.success('Exported image');
-  }
+  };
 
   // keyboard shortcuts
   useEffect(() => {
@@ -576,7 +576,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   }, [tool]);
 
   // copy to clipboard (image)
-  async function copyToClipboard() {
+  const copyToClipboard = async () => {
     if (!canvasRef.current) return;
     try {
       const blob = await exportCanvasToBlob(canvasRef.current, 'image/png');
@@ -587,7 +587,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       console.warn('clipboard failed', err);
       message.error('Copy failed (browser may not support)');
     }
-  }
+  };
 
   const currentCursor = useMemo(() => {
     if ((tool === 'pan' || tool === 'select') && isPanning) return 'grabbing';
