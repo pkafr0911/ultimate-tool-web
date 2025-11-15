@@ -1,4 +1,4 @@
-import { handleCopy } from '@/helpers';
+import { handleCopy, handlePasteImage } from '@/helpers';
 import {
   BulbOutlined,
   CopyOutlined,
@@ -64,6 +64,11 @@ const TextArtPage: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null); // Hidden canvas for image processing
   const [mode, setMode] = useState<'dark' | 'light'>('dark'); // Dark/light mode
   const imagesEndRef = useRef<HTMLDivElement>(null);
+
+  /**  Clipboard paste support  */
+  useEffect(() => {
+    handlePasteImage((file) => handleUpload([file]));
+  }, []);
 
   /** When mode change convert all the images again */
   useEffect(() => {

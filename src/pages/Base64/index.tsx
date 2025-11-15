@@ -1,14 +1,18 @@
-import { handleCopy } from '@/helpers';
+import { handleCopy, handlePasteImage } from '@/helpers';
 import { CopyOutlined, DeleteOutlined, PictureOutlined, UploadOutlined } from '@ant-design/icons';
 import { Editor } from '@monaco-editor/react';
 import { Button, Card, Divider, Image, message, Space, Typography, Upload } from 'antd';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const { Title, Text } = Typography;
 
 const Base64Converter: React.FC = () => {
   const [base64, setBase64] = useState<string>('data:image/png;base64,...');
   const [imageUrl, setImageUrl] = useState<string>('');
+
+  useEffect(() => {
+    handlePasteImage(handleUpload);
+  }, []);
 
   const handleUpload = (file: File) => {
     const reader = new FileReader();
