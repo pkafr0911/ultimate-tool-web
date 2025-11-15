@@ -306,7 +306,6 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     if (hoverColor && tool === 'color') {
       const rect = canvasRef.current.getBoundingClientRect();
 
-      console.log({ hoverColor, rect, zoom });
       const canvasX = (hoverColor.x - rect.left) / zoom;
       const canvasY = (hoverColor.y - rect.top) / zoom;
       ctx.save();
@@ -590,29 +589,21 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     }
   }
 
-  const getCursorForTool = (tool: Tool) => {
+  const currentCursor = useMemo(() => {
+    if ((tool === 'pan' || tool === 'select') && isPanning) return 'grabbing';
     switch (tool) {
       case 'pan':
         return 'grab';
       case 'crop':
-        return 'crosshair';
       case 'ruler':
-        return 'crosshair';
       case 'perspective':
         return 'crosshair';
-      case 'select':
-        return 'default';
       case 'color':
         return 'copy';
       default:
         return 'default';
     }
-  };
-
-  const containerCursor = (tool) => {
-    if ((tool === 'pan' || tool === 'select') && isPanning) return 'grabbing';
-    return getCursorForTool(tool);
-  };
+  }, [tool, isPanning]);
 
   return (
     <div style={{ display: 'flex', gap: 12 }}>
@@ -796,7 +787,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
             border: '1px solid #eee',
             position: 'relative',
             background: '#fafafa',
-            cursor: containerCursor(tool),
+            cursor: currentCursor,
           }}
         >
           <canvas
