@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Select, Space, Typography } from 'antd';
+import { Modal, Select, Space, Switch, Typography } from 'antd';
 import { languageOptions } from '../constants';
 import { useSetting } from '../hooks/useSetting';
 
@@ -39,6 +39,15 @@ const SettingsModal: React.FC<Props> = ({ open, onClose }) => {
             ]}
           />
         </div>
+
+        <Space direction="vertical">
+          <Text>Preprocess Image:</Text>
+          <Switch
+            style={{ margin: 5 }}
+            checked={settings.preprocessImage}
+            onChange={(val) => setSettings({ ...settings, preprocessImage: val })}
+          />
+        </Space>
       </Space>
     </Modal>
   );

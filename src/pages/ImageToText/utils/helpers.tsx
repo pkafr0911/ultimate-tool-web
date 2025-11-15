@@ -27,15 +27,41 @@ export const downloadText = (text: string) => {
 };
 
 // --- OCR extraction ---
-export const handleOCR = async (imageFile, setExtractedText, setLoading, language) => {
-  if (!imageFile) return message.warning('Please upload an image first.');
+export const handleOCR = async (
+  imageFile: File | null,
+  setExtractedText: (text: string) => void,
+  setLoading: (loading: boolean) => void,
+  language: string[],
+  setStepImages: (steps: string[]) => void,
+) => {
+  if (!imageFile) {
+    return message.warning('Please upload an image first.');
+  }
 
   setLoading(true);
 
   try {
-    const cleanedImage = await preprocessImage(imageFile);
+    const settings = loadSettings();
 
-    const result = await Tesseract.recognize(cleanedImage, language.join('+'), {
+    let finalBlob: Blob;
+    let steps: string[] = [];
+
+    if (settings.preprocessImage) {
+      // Use preprocessing if enabled
+      const preprocessResult = await preprocessImage(imageFile);
+      steps = preprocessResult.steps;
+      finalBlob = preprocessResult.finalBlob;
+
+      // Show preprocessing steps in UI
+      setStepImages(steps);
+    } else {
+      // Skip preprocessing, use original image
+      finalBlob = imageFile;
+      setStepImages([URL.createObjectURL(imageFile)]); // just show original image
+    }
+
+    // OCR
+    const result = await Tesseract.recognize(finalBlob, language.join('+'), {
       logger: (m) => console.log(m),
     });
 

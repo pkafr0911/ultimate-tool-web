@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, Button, Typography, Splitter, Space, message, Spin, Tooltip } from 'antd';
+import { Card, Button, Typography, Splitter, Space, message, Spin, Tooltip, Image } from 'antd';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import styles from './styles.less';
 
@@ -30,6 +30,9 @@ const ImageToText: React.FC = () => {
   // --- Settings Modal State ---
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const settings = loadSettings();
+
+  // step
+  const [stepImages, setStepImages] = useState<string[]>([]);
 
   // --- Revoke previous object URL to avoid memory leaks ---
   useEffect(() => {
@@ -89,7 +92,9 @@ const ImageToText: React.FC = () => {
           <OCRUploader handleOCR={handleUpload} loading={loading} />
           <Button
             type="primary"
-            onClick={() => handleOCR(imageFile, setExtractedText, setLoading, settings.language)}
+            onClick={() =>
+              handleOCR(imageFile, setExtractedText, setLoading, settings.language, setStepImages)
+            }
             loading={loading}
             disabled={!imageFile}
           >
@@ -140,6 +145,26 @@ const ImageToText: React.FC = () => {
           </Splitter>
         </div>
       </Card>
+
+      {settings.preprocessImage && (
+        <div className={styles.stepsPreview}>
+          {stepImages.map((src, index) => (
+            <div key={index} className={styles.stepImageWrapper}>
+              <Image
+                src={src}
+                alt={`Step ${index + 1}`}
+                className={styles.stepImage}
+                preview={{ mask: <div>Preview Step {index + 1}</div> }} // optional hover preview
+              />
+              {index === 0 && <div>{'Original image'}</div>}
+              {index === 1 && <div>{'Store resized image'}</div>}
+              {index === 2 && <div>{'Grayscale + contrast + threshold'}</div>}
+              {index === 3 && <div>{'Simple sharpening kernel'}</div>}
+              {index > 3 && <div>Step {index + 1}</div>}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* --- Guide Section --- */}
       <GuideSection
