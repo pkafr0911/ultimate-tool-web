@@ -363,6 +363,17 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
 
     // draw
     if (hoverColor && tool === 'draw') {
+      const rect = canvasRef.current.getBoundingClientRect();
+
+      const canvasX = (hoverColor.x - rect.left) / zoom;
+      const canvasY = (hoverColor.y - rect.top) / zoom;
+      ctx.save();
+      ctx.strokeStyle = drawColor;
+      ctx.lineWidth = drawLineWidth;
+      ctx.beginPath();
+      ctx.arc(canvasX, canvasY, drawLineWidth, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
     }
   };
 
@@ -392,9 +403,8 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         setHoverColor(color ? { x: e.clientX, y: e.clientY, color } : null);
         drawOverlay();
       } else if (tool === 'draw') {
-        // const color = samplePixel(e);
-        // setHoverColor(color ? { x: e.clientX, y: e.clientY, color } : null);
-        // drawOverlay();
+        setHoverColor(drawColor ? { x: e.clientX, y: e.clientY, color: drawColor } : null);
+        drawOverlay();
       }
     };
 
@@ -677,6 +687,8 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         return 'crosshair';
       case 'color':
         return 'copy';
+      case 'draw':
+        return 'pointer';
       default:
         return 'default';
     }
@@ -707,6 +719,29 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
               <Button icon={<SwapOutlined rotate={90} />} onClick={flipV} />
             </Tooltip>
           </Space>
+
+          <Divider />
+
+          <div>
+            <div style={{ marginBottom: 8 }}>Brush Tool</div>
+            <Space>
+              <ColorPicker
+                value={drawColor}
+                onChange={(color) => setDrawColor(color.toHexString())}
+                allowClear={false}
+                showText
+              />
+              <input
+                type="number"
+                min={1}
+                max={50}
+                value={drawLineWidth}
+                onChange={(e) => setDrawLineWidth(Number(e.target.value))}
+                style={{ width: 60 }}
+              />
+              <Button onClick={() => setTool('draw')}>Draw</Button>
+            </Space>
+          </div>
 
           <Divider />
 
@@ -751,28 +786,6 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
             </Space>
           </div>
 
-          <Divider />
-
-          <div>
-            <div style={{ marginBottom: 8 }}>Brush Tool</div>
-            <Space>
-              <ColorPicker
-                value={drawColor}
-                onChange={(color) => setDrawColor(color.toHexString())}
-                allowClear={false}
-                showText
-              />
-              <input
-                type="number"
-                min={1}
-                max={50}
-                value={drawLineWidth}
-                onChange={(e) => setDrawLineWidth(Number(e.target.value))}
-                style={{ width: 60 }}
-              />
-              <Button onClick={() => setTool('draw')}>Draw</Button>
-            </Space>
-          </div>
           <Divider />
 
           <div>
@@ -850,7 +863,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
               <Option value="crop">Crop</Option>
               <Option value="ruler">Ruler</Option>
               <Option value="perspective">Perspective</Option>
-              <Option value="draw">Draw</Option>
+              <Option value="draw">Brush</Option>
             </Select>
           </Space>
         </div>
