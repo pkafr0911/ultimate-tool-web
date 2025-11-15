@@ -305,8 +305,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     // Color hover
     if (hoverColor && tool === 'color') {
       const rect = canvasRef.current.getBoundingClientRect();
-      const canvasX = (hoverColor.x - rect.left - offset.x) / zoom;
-      const canvasY = (hoverColor.y - rect.top - offset.y) / zoom;
+
+      console.log({ hoverColor, rect, zoom });
+      const canvasX = (hoverColor.x - rect.left) / zoom;
+      const canvasY = (hoverColor.y - rect.top) / zoom;
       ctx.save();
       ctx.strokeStyle = '#ff0000';
       ctx.lineWidth = 2 / zoom;
@@ -323,8 +325,8 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     if (!canvas) return null;
 
     const rect = canvas.getBoundingClientRect();
-    const x = Math.floor((e.clientX - rect.left - offset.x) / zoom);
-    const y = Math.floor((e.clientY - rect.top - offset.y) / zoom);
+    const x = Math.floor((e.clientX - rect.left) / zoom);
+    const y = Math.floor((e.clientY - rect.top) / zoom);
     if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) return null;
 
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -524,6 +526,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       if (e.key === 'c') setTool('crop');
       if (e.key === 'v') setTool('pan');
       if (e.key === 'r') rotate(90);
+      if (e.key === 'p') setTool('color');
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -600,7 +603,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       case 'select':
         return 'default';
       case 'color':
-        return 'copy'; // or 'crosshair' or 'cell'
+        return 'copy';
       default:
         return 'default';
     }
@@ -773,6 +776,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
             </Tooltip>
             <Select value={tool} onChange={(v) => setTool(v as Tool)} style={{ width: 140 }}>
               <Option value="pan">Pan</Option>
+              <Option value="color">Color Picker</Option>
               <Option value="crop">Crop</Option>
               <Option value="ruler">Ruler</Option>
               <Option value="perspective">Perspective</Option>
