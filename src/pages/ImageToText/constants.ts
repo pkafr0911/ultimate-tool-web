@@ -1,3 +1,16 @@
+// --- Helpers for LocalStorage ---
+export const SETTINGS_KEY = 'image_to_text_settings';
+
+export type OCRSettings = {
+  language: string[]; // e.g. ['eng', 'vie']
+  upscaleMode: 'auto' | 'manual' | 'none';
+};
+
+export const defaultSettings: OCRSettings = {
+  language: ['eng', 'vie'], // e.g. ['eng', 'vie']
+  upscaleMode: 'manual',
+};
+
 export const languageOptions = [
   { label: 'English', value: 'eng' },
   { label: 'Vietnamese', value: 'vie' },

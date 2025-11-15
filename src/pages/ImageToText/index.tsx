@@ -1,18 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  Card,
-  Button,
-  Typography,
-  Splitter,
-  Space,
-  message,
-  Spin,
-  Tooltip,
-  Modal,
-  Select,
-} from 'antd';
+import { Card, Button, Typography, Splitter, Space, message, Spin, Tooltip } from 'antd';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import Tesseract from 'tesseract.js';
 import styles from './styles.less';
 
 import OCRUploader from './components/OCRUploader';
@@ -21,9 +9,10 @@ import TextOutput from './components/TextOutput';
 import DragDropWrapper from '@/components/DragDropWrapper';
 import DragOverlay from '@/components/DragOverlay';
 
-import { preprocessImage } from './utils/preprocessImage';
 import { SettingOutlined } from '@ant-design/icons';
-import { languageOptions } from './constants';
+import { handleOCR, loadSettings } from './utils/helpers';
+import GuideSection from './components/GuideSection';
+import SettingsModal from './components/SettingsModal';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -39,9 +28,8 @@ const ImageToText: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   // --- Settings Modal State ---
-  const [settingsVisible, setSettingsVisible] = useState(false);
-  const [language, setLanguage] = useState<string[]>(['eng']);
-  const [upscaleMode, setUpscaleMode] = useState<'auto' | 'manual' | 'none'>('manual');
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const settings = loadSettings();
 
   // --- Revoke previous object URL to avoid memory leaks ---
   useEffect(() => {
@@ -80,30 +68,6 @@ const ImageToText: React.FC = () => {
     setImageUrl(url);
   };
 
-  // --- OCR extraction ---
-
-  const handleOCR = async () => {
-    if (!imageFile) return message.warning('Please upload an image first.');
-
-    setLoading(true);
-
-    try {
-      const cleanedImage = await preprocessImage(imageFile);
-
-      const result = await Tesseract.recognize(cleanedImage, language.join('+'), {
-        logger: (m) => console.log(m),
-      });
-
-      setExtractedText(result.data.text);
-      message.success('Text extracted successfully!');
-    } catch (error) {
-      console.error(error);
-      message.error('Failed to extract text');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <DragDropWrapper
       setDragging={setDragging}
@@ -123,11 +87,16 @@ const ImageToText: React.FC = () => {
         {/* Upload & Extract */}
         <Space wrap>
           <OCRUploader handleOCR={handleUpload} loading={loading} />
-          <Button type="primary" onClick={handleOCR} loading={loading} disabled={!imageFile}>
+          <Button
+            type="primary"
+            onClick={() => handleOCR(imageFile, setExtractedText, setLoading, settings.language)}
+            loading={loading}
+            disabled={!imageFile}
+          >
             Extract Text
           </Button>
           <Tooltip title="Settings">
-            <Button icon={<SettingOutlined />} onClick={() => setSettingsVisible(true)} />
+            <Button icon={<SettingOutlined />} onClick={() => setIsSettingsModalOpen(true)} />
           </Tooltip>
         </Space>
 
@@ -142,7 +111,7 @@ const ImageToText: React.FC = () => {
                 <ImagePreview
                   imageUrl={imageUrl}
                   extractedText={extractedText}
-                  upscaleMode={upscaleMode}
+                  upscaleMode={settings.upscaleMode}
                 />
                 {loading && (
                   <div
@@ -171,40 +140,18 @@ const ImageToText: React.FC = () => {
           </Splitter>
         </div>
       </Card>
-      {/* Settings Modal */}
-      <Modal
-        title="Settings"
-        open={settingsVisible}
-        onCancel={() => setSettingsVisible(false)}
-        onOk={() => setSettingsVisible(false)}
-        footer={<></>}
-      >
-        <div style={{ marginBottom: 10 }}>
-          <label>Language:</label>
-          <Select
-            mode="multiple"
-            style={{ width: '100%', marginTop: 5 }}
-            value={language}
-            onChange={(val) => setLanguage(val)}
-            options={languageOptions}
-          />
-        </div>
 
-        <div>
-          <label>Upscale Mode:</label>
-          <Select
-            style={{ width: '100%', marginTop: 5 }}
-            value={upscaleMode}
-            onChange={(val) => setUpscaleMode(val)}
-            options={[
-              { label: 'Auto', value: 'auto' },
-              { label: 'Manual', value: 'manual' },
-              { label: 'None', value: 'none' },
-            ]}
-          />
-        </div>
-      </Modal>
+      {/* --- Guide Section --- */}
+      <GuideSection
+        callback={(action) => {
+          if (action === 'openSetting') setIsSettingsModalOpen(true);
+        }}
+      />
 
+      {/* --- Settings Modal --- */}
+      <SettingsModal open={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} />
+
+      {/* Drag overlay */}
       {dragging && <DragOverlay />}
     </DragDropWrapper>
   );
