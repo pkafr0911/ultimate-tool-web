@@ -26,7 +26,7 @@ import {
   exportCanvasToBlob,
   perspectiveTransform,
   createCanvas,
-} from './ImageEditorEngine';
+} from '../utils/ImageEditorEngine';
 
 type Tool = 'pan' | 'crop' | 'color' | 'ruler' | 'perspective' | 'select';
 

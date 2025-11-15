@@ -1,6 +1,3 @@
-// src/components/ImageEditorEngine.ts
-// Utilities for canvas image manipulation
-
 export type ImageDataLike = ImageData;
 
 export function createCanvas(w: number, h: number) {
