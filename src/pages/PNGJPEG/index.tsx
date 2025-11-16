@@ -8,7 +8,6 @@ import {
   LoadingOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
-import { PageContainer } from '@ant-design/pro-components';
 import {
   Button,
   Card,

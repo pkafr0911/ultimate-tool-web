@@ -1,4 +1,3 @@
-// src/components/ImageEditorToolbar.tsx
 import React from 'react';
 import { Button, Divider, Slider, Space, Tooltip, message, ColorPicker, InputNumber } from 'antd';
 import {
