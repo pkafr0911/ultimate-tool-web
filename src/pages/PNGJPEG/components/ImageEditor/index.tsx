@@ -148,10 +148,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     const x = (e.clientX - rect.left) / zoom;
     const y = (e.clientY - rect.top) / zoom;
 
+    if (tool === 'color' && e.altKey && e.button === 2) setTool('draw');
     // ALT + right button for brush resize
-    if (tool === 'draw' && e.altKey && e.button === 2) {
+    if ((tool === 'draw' || tool === 'color') && e.altKey && e.button === 2) {
       e.preventDefault();
-      console.log('first');
       resizingBrush.current = true;
       resizeStartX.current = e.clientX;
       initialLineWidth.current = drawLineWidth;
@@ -304,7 +304,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       const canvasX = (hoverColor.x - rect.left) / zoom;
       const canvasY = (hoverColor.y - rect.top) / zoom;
       ctx.save();
-      ctx.strokeStyle = '#ff0000';
+      ctx.strokeStyle = hoverColor.color;
       ctx.lineWidth = 2 / zoom;
       ctx.beginPath();
       ctx.arc(canvasX, canvasY, 8 / zoom, 0, Math.PI * 2);
@@ -320,9 +320,9 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       const canvasY = (hoverColor.y - rect.top) / zoom;
       ctx.save();
       ctx.strokeStyle = drawColor;
-      ctx.lineWidth = drawLineWidth;
+      ctx.lineWidth = 2 / zoom;
       ctx.beginPath();
-      ctx.arc(canvasX, canvasY, drawLineWidth, 0, Math.PI * 2);
+      ctx.arc(canvasX, canvasY, drawLineWidth / 2, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     }
@@ -386,7 +386,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [history.index, history.history]);
 
-  // Quick hand tool when holding Space
+  // Quick hand tool when holding Spaceb
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
