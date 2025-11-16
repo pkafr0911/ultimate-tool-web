@@ -109,6 +109,33 @@ export const Kernels = {
     4 / 273,
     1 / 273,
   ],
+  // -------- New dynamic blur kernel generators --------
+  generateBoxBlurKernel(size: number) {
+    const s = size | 0;
+    const count = s * s;
+    return Array(count).fill(1 / count);
+  },
+
+  generateGaussianKernel(radius: number) {
+    const r = radius | 0;
+    const size = r * 2 + 1;
+    const sigma = r / 2;
+    const twoSigmaSq = 2 * sigma * sigma;
+
+    let kernel: number[] = [];
+    let sum = 0;
+
+    for (let y = -r; y <= r; y++) {
+      for (let x = -r; x <= r; x++) {
+        const v = Math.exp(-(x * x + y * y) / twoSigmaSq);
+        kernel.push(v);
+        sum += v;
+      }
+    }
+
+    // normalize Gaussian kernel
+    return kernel.map((v) => v / sum);
+  },
 };
 
 export function applyThresholdAlpha(data: ImageData, threshold = 250) {

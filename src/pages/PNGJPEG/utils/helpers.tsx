@@ -1,5 +1,5 @@
 import { message } from 'antd';
-import { createCanvas, exportCanvasToBlob } from './ImageEditorEngine';
+import { createCanvas, exportCanvasToBlob, Kernels } from './ImageEditorEngine';
 
 // rotate
 export const rotate = (deg: number, canvasRef, overlayRef, history) => {
