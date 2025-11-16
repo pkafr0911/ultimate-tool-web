@@ -28,7 +28,11 @@ import {
 import useCanvas from './useCanvas';
 import useHistory from './useHistory';
 import {
+  applyBGThreshold,
+  applyBlur,
   applyCrop,
+  applyGaussian,
+  applySharpen,
   copyToClipboard,
   exportImage,
   flipH,
@@ -490,93 +494,6 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     };
   }, [tool]);
 
-  const applyBlur = () => {
-    if (!canvasRef.current || !baseCanvas) return;
-
-    const ctx = canvasRef.current.getContext('2d')!;
-    const baseCtx = baseCanvas.getContext('2d')!;
-
-    const baseData = baseCtx.getImageData(0, 0, baseCanvas.width, baseCanvas.height);
-    const cloned = cloneImageData(baseData);
-
-    if (blur > 0) {
-      const size = blur % 2 === 0 ? blur + 1 : blur;
-      const kernel = Kernels.generateBoxBlurKernel(size);
-      applyConvolution(cloned, kernel, size);
-    }
-
-    ctx.putImageData(cloned, 0, 0);
-    history.push(canvasRef.current.toDataURL(), `Blur (size=${blur})`);
-  };
-
-  const applyGaussian = () => {
-    if (!canvasRef.current || !baseCanvas) return;
-
-    const ctx = canvasRef.current.getContext('2d')!;
-    const baseCtx = baseCanvas.getContext('2d')!;
-
-    const baseData = baseCtx.getImageData(0, 0, baseCanvas.width, baseCanvas.height);
-    const cloned = cloneImageData(baseData);
-
-    if (gaussian > 0) {
-      const radius = gaussian;
-      const kernel = Kernels.generateGaussianKernel(radius);
-      const size = radius * 2 + 1;
-      applyConvolution(cloned, kernel, size);
-    }
-
-    ctx.putImageData(cloned, 0, 0);
-    history.push(canvasRef.current.toDataURL(), 'Gaussian Blur');
-  };
-
-  const applySharpen = () => {
-    if (!canvasRef.current || !baseCanvas) return;
-
-    const ctx = canvasRef.current.getContext('2d')!;
-    const baseCtx = baseCanvas.getContext('2d')!;
-
-    const baseData = baseCtx.getImageData(0, 0, baseCanvas.width, baseCanvas.height);
-    const cloned = cloneImageData(baseData);
-
-    if (sharpen > 0) {
-      // sharpen intensity (1–5)
-      const amount = sharpen;
-
-      // base sharpen kernel
-      //  [  0, -1,  0 ]
-      //  [ -1,  5, -1 ]
-      //  [  0, -1,  0 ]
-      const baseKernel = Kernels.sharpen;
-
-      // dynamic kernel scaling
-      const kernel = baseKernel.map((value) => {
-        if (value === 5) return 1 + amount * 4; // center
-        if (value === -1) return -amount; // neighbors
-        return value;
-      });
-
-      applyConvolution(cloned, kernel, 3);
-    }
-
-    ctx.putImageData(cloned, 0, 0);
-    history.push(canvasRef.current.toDataURL(), 'Sharpen');
-  };
-
-  const applyBGThreshold = () => {
-    if (!canvasRef.current || !baseCanvas) return;
-
-    const ctx = canvasRef.current.getContext('2d')!;
-    const baseCtx = baseCanvas.getContext('2d')!;
-
-    const baseData = baseCtx.getImageData(0, 0, baseCanvas.width, baseCanvas.height);
-    const cloned = cloneImageData(baseData);
-
-    applyThresholdAlpha(cloned, bgThreshold);
-
-    ctx.putImageData(cloned, 0, 0);
-    history.push(canvasRef.current.toDataURL(), 'BG Threshold');
-  };
-
   const currentCursor = useMemo(() => {
     if ((tool === 'pan' || tool === 'select') && isPanning) return 'grabbing';
     switch (tool) {
@@ -678,7 +595,13 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
 
           <div>
             <div style={{ marginBottom: 8 }}>Box Blur</div>
-            <Slider min={0} max={25} value={blur} onChange={setBlur} onChangeComplete={applyBlur} />
+            <Slider
+              min={0}
+              max={25}
+              value={blur}
+              onChange={setBlur}
+              onChangeComplete={(v) => applyBlur(canvasRef, baseCanvas, v, history)}
+            />
 
             <div style={{ marginBottom: 8 }}>Gaussian Blur</div>
             <Slider
@@ -686,7 +609,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
               max={20}
               value={gaussian}
               onChange={setGaussian}
-              onChangeComplete={applyGaussian}
+              onChangeComplete={(v) => applyGaussian(canvasRef, baseCanvas, v, history)}
             />
 
             <div style={{ marginBottom: 8 }}>Sharpen</div>
@@ -695,7 +618,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
               max={5}
               value={sharpen}
               onChange={setSharpen}
-              onChangeComplete={applySharpen}
+              onChangeComplete={(v) => applySharpen(canvasRef, baseCanvas, v, history)}
             />
 
             <div style={{ marginBottom: 8 }}>Background Threshold</div>
@@ -704,7 +627,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
               max={255}
               value={bgThreshold}
               onChange={setBgThreshold}
-              onChangeComplete={applyBGThreshold}
+              onChangeComplete={(v) => applyBGThreshold(canvasRef, baseCanvas, v, history)}
             />
           </div>
 
