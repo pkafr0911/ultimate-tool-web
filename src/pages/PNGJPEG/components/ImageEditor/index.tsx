@@ -376,7 +376,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       if (e.ctrlKey && e.key === 'z') history.undo();
       if (e.ctrlKey && e.shiftKey && e.key === 'Z') history.redo();
       if (e.key === 'c') setTool('crop');
-      if (e.key === 'v') setTool('pan');
+      if (e.key === 'h') setTool('pan');
       if (e.key === 'r') rotate(90, canvasRef, overlayRef, history.history);
       if (e.key === 'p') setTool('color');
       if (e.key === 'b') setTool('draw');

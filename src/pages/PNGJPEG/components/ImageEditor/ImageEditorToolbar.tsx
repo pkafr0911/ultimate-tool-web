@@ -1,6 +1,6 @@
 // src/components/ImageEditorToolbar.tsx
 import React from 'react';
-import { Button, Divider, Slider, Space, Tooltip, message, ColorPicker } from 'antd';
+import { Button, Divider, Slider, Space, Tooltip, message, ColorPicker, InputNumber } from 'antd';
 import {
   UndoOutlined,
   RedoOutlined,
@@ -11,6 +11,7 @@ import {
   ScissorOutlined,
   ExportOutlined,
   CopyOutlined,
+  EditOutlined,
 } from '@ant-design/icons';
 import {
   applyBGThreshold,
@@ -155,7 +156,12 @@ const ImageEditorToolbar: React.FC<Props> = ({
 
         {/* Brush */}
         <div>
-          <div style={{ marginBottom: 8 }}>Brush Tool</div>
+          <div style={{ marginBottom: 8 }}>
+            Brush Tool{' '}
+            <Button size="small" onClick={() => setTool('draw')}>
+              <EditOutlined />
+            </Button>
+          </div>
           <Space>
             <ColorPicker
               value={drawColor}
@@ -163,15 +169,13 @@ const ImageEditorToolbar: React.FC<Props> = ({
               allowClear={false}
               showText
             />
-            <input
-              type="number"
+            <InputNumber
               min={1}
               max={50}
               value={drawLineWidth}
-              onChange={(e) => setDrawLineWidth(Number(e.target.value))}
+              onChange={(v) => setDrawLineWidth(v || 1)}
               style={{ width: 60 }}
             />
-            <Button onClick={() => setTool('draw')}>Draw</Button>
           </Space>
         </div>
 
