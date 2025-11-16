@@ -97,6 +97,19 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   const [sharpen, setSharpen] = useState(0);
   const [bgThreshold, setBgThreshold] = useState(240);
 
+  const resizingBrush = useRef(false);
+  const resizeStartX = useRef<number | null>(null);
+  const initialLineWidth = useRef(drawLineWidth);
+
+  // To prevent the right-click menu from showing
+  useEffect(() => {
+    const canvas = containerRef.current;
+    if (!canvas) return;
+    const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+    canvas.addEventListener('contextmenu', handleContextMenu);
+    return () => canvas.removeEventListener('contextmenu', handleContextMenu);
+  }, []);
+
   // Ctrl+Wheel zoom
   useEffect(() => {
     const container = containerRef.current;
@@ -134,6 +147,16 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     const rect = canvasRef.current!.getBoundingClientRect();
     const x = (e.clientX - rect.left) / zoom;
     const y = (e.clientY - rect.top) / zoom;
+
+    // ALT + right button for brush resize
+    if (tool === 'draw' && e.altKey && e.button === 2) {
+      e.preventDefault();
+      console.log('first');
+      resizingBrush.current = true;
+      resizeStartX.current = e.clientX;
+      initialLineWidth.current = drawLineWidth;
+      return;
+    }
 
     if (tool === 'pan' || tool === 'select') {
       setIsPanning(true);
@@ -174,6 +197,13 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   };
 
   const handleMouseMoveViewer = (e: React.MouseEvent) => {
+    if (resizingBrush.current && resizeStartX.current !== null) {
+      const deltaX = e.clientX - resizeStartX.current;
+      const newWidth = Math.max(1, Math.min(50, initialLineWidth.current + deltaX / 5));
+      setDrawLineWidth(newWidth);
+      return;
+    }
+
     if ((tool === 'pan' || tool === 'select') && isPanning && panStart.current) {
       setOffset({ x: e.clientX - panStart.current.x, y: e.clientY - panStart.current.y });
     } else if (tool === 'crop' && cropStart.current) {
@@ -210,6 +240,13 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   };
 
   const handleMouseUpViewer = () => {
+    if (resizingBrush.current) {
+      resizingBrush.current = false;
+      resizeStartX.current = null;
+      initialLineWidth.current = drawLineWidth;
+      return;
+    }
+
     setIsPanning(false);
     panStart.current = null;
     if (tool === 'crop' && cropRect)
