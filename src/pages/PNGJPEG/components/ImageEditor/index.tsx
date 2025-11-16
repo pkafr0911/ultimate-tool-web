@@ -1,45 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Slider, Space, Tooltip, Modal, Select, message, Divider, ColorPicker } from 'antd';
-import {
-  RotateLeftOutlined,
-  RotateRightOutlined,
-  SwapOutlined,
-  ScissorOutlined,
-  BgColorsOutlined,
-  ZoomInOutlined,
-  ZoomOutOutlined,
-  ExportOutlined,
-  CopyOutlined,
-  UndoOutlined,
-  RedoOutlined,
-} from '@ant-design/icons';
+import { Button, Space, Tooltip, Modal, Select, message } from 'antd';
+import { ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
 
-import {
-  drawImageToCanvasFromUrl,
-  applyBrightnessContrast,
-  cloneImageData,
-  Kernels,
-  applyConvolution,
-  applyThresholdAlpha,
-  perspectiveTransform,
-  createCanvas,
-} from '@/pages/PNGJPEG/utils/ImageEditorEngine';
+import { perspectiveTransform } from '@/pages/PNGJPEG/utils/ImageEditorEngine';
 
 import useCanvas from './useCanvas';
 import useHistory from './useHistory';
-import {
-  applyBGThreshold,
-  applyBlur,
-  applyCrop,
-  applyGaussian,
-  applySharpen,
-  copyToClipboard,
-  exportImage,
-  flipH,
-  flipV,
-  rotate,
-  samplePixel,
-} from '../../utils/helpers';
+import { applyCrop, exportImage, rotate, samplePixel } from '../../utils/helpers';
+import ImageCanvas from './ImageCanvas';
+import ImageEditorToolbar from './ImageEditorToolbar';
 
 type Tool = 'pan' | 'crop' | 'color' | 'ruler' | 'perspective' | 'select' | 'draw';
 
@@ -364,54 +333,6 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     };
   }, [tool, zoom, offset]);
 
-  // Apply brightness/contrast to current canvas (mutates)
-  const applyBrightnessContrastToCanvas = () => {
-    if (!canvasRef.current || !baseCanvas) return;
-    const ctx = canvasRef.current.getContext('2d')!;
-    const baseCtx = baseCanvas.getContext('2d')!;
-    const baseImgData = baseCtx.getImageData(0, 0, baseCanvas.width, baseCanvas.height);
-    const cloned = cloneImageData(baseImgData);
-    applyBrightnessContrast(cloned, brightness, contrast);
-    ctx.putImageData(cloned, 0, 0);
-    history.push(canvasRef.current.toDataURL(), 'Brightness/Contrast');
-  };
-
-  // Apply kernel (blur/sharpen)
-  const applyKernel = async (kernel: number[], size = Math.sqrt(kernel.length)) => {
-    if (!canvasRef.current) return;
-    const ctx = canvasRef.current.getContext('2d')!;
-    const id = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
-    applyConvolution(id, kernel, size);
-    ctx.putImageData(id, 0, 0);
-    history.push(canvasRef.current.toDataURL(), 'Convolution');
-  };
-
-  const applyThresholdBackground = (threshold = 240) => {
-    if (!canvasRef.current) return;
-    const ctx = canvasRef.current.getContext('2d')!;
-    const id = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
-    applyThresholdAlpha(id, threshold);
-    ctx.putImageData(id, 0, 0);
-    history.push(canvasRef.current.toDataURL(), 'Background removed (threshold)');
-  };
-
-  const perspectiveApply = async () => {
-    if (!canvasRef.current || !perspectivePoints.current) return;
-    const src = canvasRef.current;
-    // dest dims: bounding rect
-    const destW = src.width;
-    const destH = src.height;
-    const dest = perspectiveTransform(src, perspectivePoints.current, destW, destH);
-    canvasRef.current.width = dest.width;
-    canvasRef.current.height = dest.height;
-    overlayRef.current!.width = dest.width;
-    overlayRef.current!.height = dest.height;
-    canvasRef.current.getContext('2d')!.clearRect(0, 0, dest.width, dest.height);
-    canvasRef.current.getContext('2d')!.drawImage(dest, 0, 0);
-    history.push(canvasRef.current.toDataURL(), 'Perspective corrected');
-    setShowPerspectiveModal(false);
-  };
-
   // keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -494,6 +415,23 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     };
   }, [tool]);
 
+  const perspectiveApply = async () => {
+    if (!canvasRef.current || !perspectivePoints.current) return;
+    const src = canvasRef.current;
+    // dest dims: bounding rect
+    const destW = src.width;
+    const destH = src.height;
+    const dest = perspectiveTransform(src, perspectivePoints.current, destW, destH);
+    canvasRef.current.width = dest.width;
+    canvasRef.current.height = dest.height;
+    overlayRef.current!.width = dest.width;
+    overlayRef.current!.height = dest.height;
+    canvasRef.current.getContext('2d')!.clearRect(0, 0, dest.width, dest.height);
+    canvasRef.current.getContext('2d')!.drawImage(dest, 0, 0);
+    history.push(canvasRef.current.toDataURL(), 'Perspective corrected');
+    setShowPerspectiveModal(false);
+  };
+
   const currentCursor = useMemo(() => {
     if ((tool === 'pan' || tool === 'select') && isPanning) return 'grabbing';
     switch (tool) {
@@ -514,192 +452,34 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
 
   return (
     <div style={{ display: 'flex', gap: 12 }}>
-      <div style={{ width: 260 }}>
-        {/* Toolbar */}
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <Space wrap>
-            <Tooltip title="Undo (Ctrl+Z)">
-              <Button icon={<UndoOutlined />} onClick={history.undo} />
-            </Tooltip>
-            <Tooltip title="Redo (Ctrl+Shift+Z)">
-              <Button icon={<RedoOutlined />} onClick={history.redo} />
-            </Tooltip>
-            <Tooltip title="Rotate left">
-              <Button
-                icon={<RotateLeftOutlined />}
-                onClick={() => rotate(-90, canvasRef, overlayRef, history)}
-              />
-            </Tooltip>
-            <Tooltip title="Rotate right">
-              <Button
-                icon={<RotateRightOutlined />}
-                onClick={() => rotate(90, canvasRef, overlayRef, history)}
-              />
-            </Tooltip>
-            <Tooltip title="Flip horizontal">
-              <Button icon={<SwapOutlined />} onClick={() => flipH(canvasRef, history)} />
-            </Tooltip>
-            <Tooltip title="Flip vertical">
-              <Button
-                icon={<SwapOutlined rotate={90} />}
-                onClick={() => flipV(canvasRef, history)}
-              />
-            </Tooltip>
-          </Space>
-
-          <Divider />
-
-          <div>
-            <div style={{ marginBottom: 8 }}>Brush Tool</div>
-            <Space>
-              <ColorPicker
-                value={drawColor}
-                onChange={(color) => setDrawColor(color.toHexString())}
-                allowClear={false}
-                showText
-              />
-              <input
-                type="number"
-                min={1}
-                max={50}
-                value={drawLineWidth}
-                onChange={(e) => setDrawLineWidth(Number(e.target.value))}
-                style={{ width: 60 }}
-              />
-              <Button onClick={() => setTool('draw')}>Draw</Button>
-            </Space>
-          </div>
-
-          <Divider />
-
-          <div>
-            <div style={{ marginBottom: 8 }}>Brightness</div>
-            <Slider
-              min={-150}
-              max={150}
-              value={brightness}
-              onChange={(v) => setBrightness(v)}
-              onChangeComplete={() => applyBrightnessContrastToCanvas()}
-            />
-            <div style={{ marginBottom: 8 }}>Contrast</div>
-            <Slider
-              min={-100}
-              max={100}
-              value={contrast}
-              onChange={(v) => setContrast(v)}
-              onChangeComplete={() => applyBrightnessContrastToCanvas()}
-            />
-          </div>
-
-          <Divider />
-
-          <div>
-            <div style={{ marginBottom: 8 }}>Box Blur</div>
-            <Slider
-              min={0}
-              max={25}
-              value={blur}
-              onChange={setBlur}
-              onChangeComplete={(v) => applyBlur(canvasRef, baseCanvas, v, history)}
-            />
-
-            <div style={{ marginBottom: 8 }}>Gaussian Blur</div>
-            <Slider
-              min={0}
-              max={20}
-              value={gaussian}
-              onChange={setGaussian}
-              onChangeComplete={(v) => applyGaussian(canvasRef, baseCanvas, v, history)}
-            />
-
-            <div style={{ marginBottom: 8 }}>Sharpen</div>
-            <Slider
-              min={0}
-              max={5}
-              value={sharpen}
-              onChange={setSharpen}
-              onChangeComplete={(v) => applySharpen(canvasRef, baseCanvas, v, history)}
-            />
-
-            <div style={{ marginBottom: 8 }}>Background Threshold</div>
-            <Slider
-              min={0}
-              max={255}
-              value={bgThreshold}
-              onChange={setBgThreshold}
-              onChangeComplete={(v) => applyBGThreshold(canvasRef, baseCanvas, v, history)}
-            />
-          </div>
-
-          <Divider />
-
-          <div>
-            <div style={{ marginBottom: 8 }}>Background</div>
-            <Space>
-              <Button onClick={() => applyThresholdBackground(235)} icon={<BgColorsOutlined />}>
-                Remove white
-              </Button>
-            </Space>
-          </div>
-
-          <Divider />
-
-          <div>
-            <div style={{ marginBottom: 8 }}>Crop & Perspective</div>
-            <Space>
-              <Button icon={<ScissorOutlined />} onClick={() => setTool('crop')}>
-                Crop (C)
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowPerspectiveModal(true);
-                  setTool('perspective');
-                }}
-              >
-                Perspective
-              </Button>
-            </Space>
-          </div>
-
-          <Divider />
-
-          <div>
-            <div style={{ marginBottom: 8 }}>Ruler / DPI</div>
-            <Space>
-              <Button icon={'📏'} onClick={() => setTool('ruler')}>
-                Ruler
-              </Button>
-              <Button
-                onClick={() => {
-                  setDpiMeasured(null);
-                  message.info('Ruler cleared');
-                }}
-              >
-                Clear
-              </Button>
-            </Space>
-            {dpiMeasured && <div>Estimated DPI: {dpiMeasured}</div>}
-          </div>
-
-          <Divider />
-
-          <div>
-            <div style={{ marginBottom: 8 }}>Export</div>
-            <Space>
-              <Button
-                icon={<ExportOutlined />}
-                onClick={() => exportImage(false, canvasRef, onExport)}
-              >
-                PNG
-              </Button>
-              <Button onClick={() => exportImage(true, canvasRef, onExport)}>JPG</Button>
-              <Button icon={<CopyOutlined />} onClick={() => copyToClipboard(canvasRef)}>
-                Copy
-              </Button>
-            </Space>
-          </div>
-        </Space>
-      </div>
+      <ImageEditorToolbar
+        canvasRef={canvasRef}
+        overlayRef={overlayRef}
+        baseCanvas={baseCanvas}
+        history={history}
+        drawColor={drawColor}
+        setDrawColor={setDrawColor}
+        drawLineWidth={drawLineWidth}
+        setDrawLineWidth={setDrawLineWidth}
+        setTool={setTool}
+        brightness={brightness}
+        setBrightness={setBrightness}
+        contrast={contrast}
+        setContrast={setContrast}
+        blur={blur}
+        setBlur={setBlur}
+        gaussian={gaussian}
+        setGaussian={setGaussian}
+        sharpen={sharpen}
+        setSharpen={setSharpen}
+        bgThreshold={bgThreshold}
+        setBgThreshold={setBgThreshold}
+        setShowPerspectiveModal={setShowPerspectiveModal}
+        dpiMeasured={dpiMeasured}
+        setDpiMeasured={setDpiMeasured}
+        exportImage={exportImage}
+        onExport={onExport}
+      />
 
       <div style={{ flex: 1 }}>
         <div style={{ marginBottom: 8 }}>
@@ -727,75 +507,19 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
           </Space>
         </div>
 
-        <div
-          ref={containerRef}
+        <ImageCanvas
+          canvasRef={canvasRef}
+          overlayRef={overlayRef}
+          containerRef={containerRef}
+          offset={offset}
+          zoom={zoom}
+          tool={tool}
+          currentCursor={currentCursor}
+          hoverColor={hoverColor}
           onMouseDown={handleMouseDownViewer}
           onMouseMove={handleMouseMoveViewer}
           onMouseUp={handleMouseUpViewer}
-          style={{
-            width: '100%',
-            height: '100vh',
-            overflow: 'hidden',
-            border: '1px solid #eee',
-            position: 'relative',
-            background: '#fafafa',
-            cursor: currentCursor,
-          }}
-        >
-          <canvas
-            ref={(el) => {
-              canvasRef.current = el;
-            }}
-            style={{
-              transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
-              transformOrigin: 'top left',
-              display: 'block',
-            }}
-          />
-          <canvas
-            ref={(el) => {
-              overlayRef.current = el;
-            }}
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              pointerEvents: 'none',
-              transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
-              transformOrigin: 'top left',
-            }}
-          />
-          {hoverColor && tool === 'color' && (
-            <div
-              style={{
-                position: 'fixed', // use fixed to position relative to viewport
-                left: hoverColor.x + 12,
-                top: hoverColor.y + 12,
-                background: '#fff',
-                padding: '4px 8px',
-                borderRadius: 4,
-                boxShadow: '0 0 6px rgba(0,0,0,0.2)',
-                fontSize: 12,
-                zIndex: 999999,
-                pointerEvents: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              <span
-                style={{
-                  display: 'inline-block',
-                  width: 12,
-                  height: 12,
-                  background: hoverColor.color,
-                  border: '1px solid #ccc',
-                }}
-              />
-              {hoverColor.color}
-            </div>
-          )}
-        </div>
+        />
       </div>
 
       <Modal
