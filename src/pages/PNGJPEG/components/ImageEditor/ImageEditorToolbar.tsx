@@ -6,18 +6,13 @@ import {
   RotateLeftOutlined,
   RotateRightOutlined,
   SwapOutlined,
-  BgColorsOutlined,
   ScissorOutlined,
   ExportOutlined,
   CopyOutlined,
   EditOutlined,
 } from '@ant-design/icons';
 import { applyEffects, copyToClipboard, flipH, flipV, rotate } from '../../utils/helpers';
-import {
-  applyBrightnessContrast,
-  applyThresholdAlpha,
-  cloneImageData,
-} from '../../utils/ImageEditorEngine';
+
 type HistoryItem = {
   url: string;
   label?: string;
