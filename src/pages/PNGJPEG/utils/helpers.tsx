@@ -3,6 +3,7 @@ import {
   applyBrightnessContrast,
   applyConvolution,
   applyThresholdAlpha,
+  applyThresholdAlphaBlack,
   cloneImageData,
   createCanvas,
   exportCanvasToBlob,
@@ -142,6 +143,7 @@ let previousEffects = {
   gaussian: 0,
   sharpen: 0,
   bgThreshold: 0,
+  bgThresholdBlack: 0,
   brightness: 0,
   contrast: 0,
 };
@@ -152,7 +154,15 @@ let cachedBaseImageData: ImageData | null = null;
 export const applyEffects = (
   canvasRef,
   baseCanvas,
-  { blur = 0, gaussian = 0, sharpen = 0, bgThreshold = 0, brightness = 0, contrast = 0 },
+  {
+    blur = 0,
+    gaussian = 0,
+    sharpen = 0,
+    bgThreshold = 0,
+    bgThresholdBlack = 0,
+    brightness = 0,
+    contrast = 0,
+  },
   history,
 ) => {
   if (!canvasRef.current || !baseCanvas) return;
@@ -174,6 +184,7 @@ export const applyEffects = (
     gaussian === 0 &&
     sharpen === 0 &&
     bgThreshold === 0 &&
+    bgThresholdBlack === 0 &&
     brightness === 0 &&
     contrast === 0
   ) {
@@ -199,7 +210,9 @@ export const applyEffects = (
     applyConvolution(cloned, kernel, 3);
   }
 
-  if (bgThreshold > 0) applyThresholdAlpha(cloned, bgThreshold);
+  if (bgThreshold < 255) applyThresholdAlpha(cloned, bgThreshold);
+
+  if (bgThresholdBlack > 0) applyThresholdAlphaBlack(cloned, bgThresholdBlack);
 
   if (brightness !== 0 || contrast !== 0) applyBrightnessContrast(cloned, brightness, contrast);
 
@@ -211,6 +224,7 @@ export const applyEffects = (
     gaussian,
     sharpen,
     bgThreshold,
+    bgThresholdBlack,
     brightness,
     contrast,
   }).filter(([key, value]) => previousEffects[key] !== value);
@@ -224,5 +238,13 @@ export const applyEffects = (
   history.push(canvasRef.current.toDataURL(), `Effects: ${historyLabel}`);
 
   // Update previous values
-  previousEffects = { blur, gaussian, sharpen, bgThreshold, brightness, contrast };
+  previousEffects = {
+    blur,
+    gaussian,
+    sharpen,
+    bgThreshold,
+    bgThresholdBlack,
+    brightness,
+    contrast,
+  };
 };

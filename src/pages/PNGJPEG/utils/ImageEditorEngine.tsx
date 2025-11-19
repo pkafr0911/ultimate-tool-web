@@ -138,11 +138,22 @@ export const Kernels = {
   },
 };
 
-export function applyThresholdAlpha(data: ImageData, threshold = 250) {
+export function applyThresholdAlpha(data: ImageData, threshold = 255) {
   // If pixel is near-white (all channels > threshold), set alpha = 0
   const d = data.data;
   for (let i = 0; i < d.length; i += 4) {
     if (d[i] > threshold && d[i + 1] > threshold && d[i + 2] > threshold) {
+      d[i + 3] = 0;
+    }
+  }
+  return data;
+}
+
+export function applyThresholdAlphaBlack(data: ImageData, threshold = 0) {
+  // If pixel is near-black (all RGB channels < threshold), set alpha = 0
+  const d = data.data;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i] < threshold && d[i + 1] < threshold && d[i + 2] < threshold) {
       d[i + 3] = 0;
     }
   }

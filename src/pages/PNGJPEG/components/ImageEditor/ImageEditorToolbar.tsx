@@ -51,6 +51,8 @@ type Props = {
   setSharpen: (v: number) => void;
   bgThreshold: number;
   setBgThreshold: (v: number) => void;
+  bgThresholdBlack: number;
+  setBgThresholdBlack: (v: number) => void;
   setShowPerspectiveModal: (show: boolean) => void;
   dpiMeasured?: number | null;
   setDpiMeasured?: (v: number | null) => void;
@@ -84,6 +86,8 @@ const ImageEditorToolbar: React.FC<Props> = ({
   setSharpen,
   bgThreshold,
   setBgThreshold,
+  bgThresholdBlack,
+  setBgThresholdBlack,
   setShowPerspectiveModal,
   dpiMeasured,
   setDpiMeasured,
@@ -91,15 +95,6 @@ const ImageEditorToolbar: React.FC<Props> = ({
   onExport,
   overlayRef,
 }) => {
-  const applyThresholdBackground = (threshold = 240) => {
-    if (!canvasRef.current) return;
-    const ctx = canvasRef.current.getContext('2d')!;
-    const id = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
-    applyThresholdAlpha(id, threshold);
-    ctx.putImageData(id, 0, 0);
-    history.push(canvasRef.current.toDataURL(), 'Background removed (threshold)');
-  };
-
   return (
     <div style={{ width: 260 }}>
       <Space direction="vertical" style={{ width: '100%' }}>
@@ -176,6 +171,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
                   gaussian,
                   sharpen,
                   bgThreshold,
+                  bgThresholdBlack,
                   brightness,
                   contrast,
                 },
@@ -198,6 +194,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
                   gaussian,
                   sharpen,
                   bgThreshold,
+                  bgThresholdBlack,
                   brightness,
                   contrast,
                 },
@@ -246,6 +243,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
                   gaussian,
                   sharpen,
                   bgThreshold,
+                  bgThresholdBlack,
                   brightness,
                   contrast,
                 },
@@ -268,6 +266,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
                   gaussian,
                   sharpen,
                   bgThreshold,
+                  bgThresholdBlack,
                   brightness,
                   contrast,
                 },
@@ -275,7 +274,10 @@ const ImageEditorToolbar: React.FC<Props> = ({
               )
             }
           />
-          <div style={{ marginBottom: 8 }}>Background Threshold</div>
+          <Divider />
+          <div style={{ marginBottom: 8 }}>Background Threshold </div>
+          <div>Remove white </div>
+
           <Slider
             min={0}
             max={255}
@@ -290,6 +292,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
                   gaussian,
                   sharpen,
                   bgThreshold,
+                  bgThresholdBlack,
                   brightness,
                   contrast,
                 },
@@ -297,18 +300,30 @@ const ImageEditorToolbar: React.FC<Props> = ({
               )
             }
           />
-        </div>
 
-        <Divider />
-
-        {/* Background */}
-        <div>
-          <div style={{ marginBottom: 8 }}>Background</div>
-          <Space>
-            <Button onClick={() => applyThresholdBackground(235)} icon={<BgColorsOutlined />}>
-              Remove white
-            </Button>
-          </Space>
+          <div>Remove black </div>
+          <Slider
+            min={0}
+            max={255}
+            value={bgThresholdBlack}
+            onChange={setBgThresholdBlack}
+            onChangeComplete={(v) =>
+              applyEffects(
+                canvasRef,
+                baseCanvas,
+                {
+                  blur,
+                  gaussian,
+                  sharpen,
+                  bgThreshold,
+                  bgThresholdBlack,
+                  brightness,
+                  contrast,
+                },
+                history,
+              )
+            }
+          />
         </div>
 
         <Divider />

@@ -95,7 +95,8 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   const [blur, setBlur] = useState(0); // box blur level
   const [gaussian, setGaussian] = useState(0); // gaussian radius
   const [sharpen, setSharpen] = useState(0);
-  const [bgThreshold, setBgThreshold] = useState(240);
+  const [bgThreshold, setBgThreshold] = useState(255);
+  const [bgThresholdBlack, setBgThresholdBlack] = useState(0);
 
   const resizingBrush = useRef(false);
   const resizeStartX = useRef<number | null>(null);
@@ -511,6 +512,8 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         setSharpen={setSharpen}
         bgThreshold={bgThreshold}
         setBgThreshold={setBgThreshold}
+        bgThresholdBlack={bgThresholdBlack}
+        setBgThresholdBlack={setBgThresholdBlack}
         setShowPerspectiveModal={setShowPerspectiveModal}
         dpiMeasured={dpiMeasured}
         setDpiMeasured={setDpiMeasured}
