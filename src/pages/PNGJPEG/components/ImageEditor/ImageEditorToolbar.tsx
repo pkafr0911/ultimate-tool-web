@@ -91,18 +91,6 @@ const ImageEditorToolbar: React.FC<Props> = ({
   onExport,
   overlayRef,
 }) => {
-  // Apply brightness/contrast to current canvas (mutates)
-  const applyBrightnessContrastToCanvas = () => {
-    if (!canvasRef.current || !baseCanvas) return;
-    const ctx = canvasRef.current.getContext('2d')!;
-    const baseCtx = baseCanvas.getContext('2d')!;
-    const baseImgData = baseCtx.getImageData(0, 0, baseCanvas.width, baseCanvas.height);
-    const cloned = cloneImageData(baseImgData);
-    applyBrightnessContrast(cloned, brightness, contrast);
-    ctx.putImageData(cloned, 0, 0);
-    history.push(canvasRef.current.toDataURL(), 'Brightness/Contrast');
-  };
-
   const applyThresholdBackground = (threshold = 240) => {
     if (!canvasRef.current) return;
     const ctx = canvasRef.current.getContext('2d')!;
@@ -179,7 +167,21 @@ const ImageEditorToolbar: React.FC<Props> = ({
             max={150}
             value={brightness}
             onChange={setBrightness}
-            onChangeComplete={applyBrightnessContrastToCanvas}
+            onChangeComplete={() =>
+              applyEffects(
+                canvasRef,
+                baseCanvas,
+                {
+                  blur,
+                  gaussian,
+                  sharpen,
+                  bgThreshold,
+                  brightness,
+                  contrast,
+                },
+                history,
+              )
+            }
           />
           <div style={{ marginBottom: 8 }}>Contrast</div>
           <Slider
@@ -187,7 +189,21 @@ const ImageEditorToolbar: React.FC<Props> = ({
             max={100}
             value={contrast}
             onChange={setContrast}
-            onChangeComplete={applyBrightnessContrastToCanvas}
+            onChangeComplete={() =>
+              applyEffects(
+                canvasRef,
+                baseCanvas,
+                {
+                  blur,
+                  gaussian,
+                  sharpen,
+                  bgThreshold,
+                  brightness,
+                  contrast,
+                },
+                history,
+              )
+            }
           />
         </div>
 
@@ -230,6 +246,8 @@ const ImageEditorToolbar: React.FC<Props> = ({
                   gaussian,
                   sharpen,
                   bgThreshold,
+                  brightness,
+                  contrast,
                 },
                 history,
               )
@@ -250,6 +268,8 @@ const ImageEditorToolbar: React.FC<Props> = ({
                   gaussian,
                   sharpen,
                   bgThreshold,
+                  brightness,
+                  contrast,
                 },
                 history,
               )
@@ -270,6 +290,8 @@ const ImageEditorToolbar: React.FC<Props> = ({
                   gaussian,
                   sharpen,
                   bgThreshold,
+                  brightness,
+                  contrast,
                 },
                 history,
               )

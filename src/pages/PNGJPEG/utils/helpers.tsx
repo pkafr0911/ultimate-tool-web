@@ -1,5 +1,6 @@
 import { message } from 'antd';
 import {
+  applyBrightnessContrast,
   applyConvolution,
   applyThresholdAlpha,
   cloneImageData,
@@ -135,10 +136,23 @@ export const samplePixel = (e: MouseEvent, canvasRef, zoom) => {
   return `#${[p[0], p[1], p[2]].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 };
 
+// Store previous effects to detect changes
+let previousEffects = {
+  blur: 0,
+  gaussian: 0,
+  sharpen: 0,
+  bgThreshold: 0,
+  brightness: 0,
+  contrast: 0,
+};
+
+//cache the base image once
+let cachedBaseImageData: ImageData | null = null;
+
 export const applyEffects = (
   canvasRef,
   baseCanvas,
-  { blur = 0, gaussian = 0, sharpen = 0, bgThreshold = 0 },
+  { blur = 0, gaussian = 0, sharpen = 0, bgThreshold = 0, brightness = 0, contrast = 0 },
   history,
 ) => {
   if (!canvasRef.current || !baseCanvas) return;
@@ -146,48 +160,69 @@ export const applyEffects = (
   const ctx = canvasRef.current.getContext('2d')!;
   const baseCtx = baseCanvas.getContext('2d')!;
 
-  // Always start from original image
-  const baseData = baseCtx.getImageData(0, 0, baseCanvas.width, baseCanvas.height);
-  const cloned = cloneImageData(baseData);
+  // Cache base data once
+  if (!cachedBaseImageData)
+    cachedBaseImageData = baseCtx.getImageData(0, 0, baseCanvas.width, baseCanvas.height);
 
-  // 1. BLUR (Box Blur)
+  // Always start from cached original
+  if (!cachedBaseImageData) return;
+  let cloned = cloneImageData(cachedBaseImageData);
+
+  // Check if any effect actually applied → if not, return early (optimization)
+  if (
+    blur === 0 &&
+    gaussian === 0 &&
+    sharpen === 0 &&
+    bgThreshold === 0 &&
+    brightness === 0 &&
+    contrast === 0
+  ) {
+    ctx.putImageData(cloned, 0, 0);
+    return;
+  }
+
+  // Apply effects sequentially
   if (blur > 0) {
     const size = blur % 2 === 0 ? blur + 1 : blur;
-    const kernel = Kernels.generateBoxBlurKernel(size);
-    applyConvolution(cloned, kernel, size);
+    applyConvolution(cloned, Kernels.generateBoxBlurKernel(size), size);
   }
 
-  // 2. GAUSSIAN BLUR
   if (gaussian > 0) {
-    const radius = gaussian;
-    const kernel = Kernels.generateGaussianKernel(radius);
-    const size = radius * 2 + 1;
-    applyConvolution(cloned, kernel, size);
+    const r = gaussian;
+    applyConvolution(cloned, Kernels.generateGaussianKernel(r), r * 2 + 1);
   }
 
-  // 3. SHARPEN
   if (sharpen > 0) {
-    const amount = sharpen;
-    const baseKernel = Kernels.sharpen;
-    const kernel = baseKernel.map((value) => {
-      if (value === 5) return 1 + amount * 4; // center
-      if (value === -1) return -amount; // neighbors
-      return value;
-    });
+    const kernel = Kernels.sharpen.map((v) =>
+      v === 5 ? 1 + sharpen * 4 : v === -1 ? -sharpen : v,
+    );
     applyConvolution(cloned, kernel, 3);
   }
 
-  // 4. ALPHA THRESHOLD (BG removal)
-  if (bgThreshold > 0) {
-    applyThresholdAlpha(cloned, bgThreshold);
-  }
+  if (bgThreshold > 0) applyThresholdAlpha(cloned, bgThreshold);
 
-  // Draw result
+  if (brightness !== 0 || contrast !== 0) applyBrightnessContrast(cloned, brightness, contrast);
+
+  // Draw final image
   ctx.putImageData(cloned, 0, 0);
 
-  // Add single history entry
-  history.push(
-    canvasRef.current.toDataURL(),
-    `Effects: blur=${blur}, gaussian=${gaussian}, sharpen=${sharpen}, thresholdAlpha=${bgThreshold}`,
-  );
+  const changedEffects = Object.entries({
+    blur,
+    gaussian,
+    sharpen,
+    bgThreshold,
+    brightness,
+    contrast,
+  }).filter(([key, value]) => previousEffects[key] !== value);
+
+  // If no effect changed → do nothing
+  if (changedEffects.length === 0) return;
+
+  // Create history label using only changed values
+  const historyLabel = changedEffects.map(([key, value]) => `${key}=${value}`).join(', ');
+
+  history.push(canvasRef.current.toDataURL(), `Effects: ${historyLabel}`);
+
+  // Update previous values
+  previousEffects = { blur, gaussian, sharpen, bgThreshold, brightness, contrast };
 };
