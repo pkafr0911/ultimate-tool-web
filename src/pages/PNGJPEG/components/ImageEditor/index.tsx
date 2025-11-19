@@ -92,11 +92,42 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   /** --------------------------------------
    * Filter
    -------------------------------------- */
-  const [blur, setBlur] = useState(0); // box blur level
-  const [gaussian, setGaussian] = useState(0); // gaussian radius
-  const [sharpen, setSharpen] = useState(0);
-  const [bgThreshold, setBgThreshold] = useState(255);
-  const [bgThresholdBlack, setBgThresholdBlack] = useState(0);
+  const [blur, setBlur] = useState(0); // box blur
+  const [gaussian, setGaussian] = useState(0); // gaussian blur
+  const [sharpen, setSharpen] = useState(0); // sharpening intensity
+
+  const [texture, setTexture] = useState(0); // similar to clarity but micro contrast
+  const [clarity, setClarity] = useState(0); // clarity
+
+  const [bgThreshold, setBgThreshold] = useState(255); // white background to transparent
+  const [bgThresholdBlack, setBgThresholdBlack] = useState(0); // black screen extraction
+
+  // Tone adjustment
+  const [highlights, setHighlights] = useState(0);
+  const [shadows, setShadows] = useState(0);
+  const [whites, setWhites] = useState(0);
+  const [blacks, setBlacks] = useState(0);
+
+  // Color adjustment
+  const [vibrance, setVibrance] = useState(0);
+  const [saturation, setSaturation] = useState(0);
+
+  // Fog/Haze
+  const [dehaze, setDehaze] = useState(0);
+
+  // HSL (per-color adjustment – initially empty)
+  const [hslAdjustments, setHslAdjustmentsState] = useState<
+    Record<string, { h?: number; s?: number; l?: number }>
+  >({});
+  const setHslAdjustments = (
+    name: string,
+    values: Partial<{ h: number; s: number; l: number }>,
+  ) => {
+    setHslAdjustmentsState((prev) => ({
+      ...prev,
+      [name]: { ...(prev[name] || {}), ...values },
+    }));
+  };
 
   const resizingBrush = useRef(false);
   const resizeStartX = useRef<number | null>(null);
@@ -500,20 +531,44 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         drawLineWidth={drawLineWidth}
         setDrawLineWidth={setDrawLineWidth}
         setTool={setTool}
+        // Exposure & Color
         brightness={brightness}
         setBrightness={setBrightness}
         contrast={contrast}
         setContrast={setContrast}
+        highlights={highlights}
+        setHighlights={setHighlights}
+        shadows={shadows}
+        setShadows={setShadows}
+        whites={whites}
+        setWhites={setWhites}
+        blacks={blacks}
+        setBlacks={setBlacks}
+        vibrance={vibrance}
+        setVibrance={setVibrance}
+        saturation={saturation}
+        setSaturation={setSaturation}
+        dehaze={dehaze}
+        setDehaze={setDehaze}
+        // Blur / Convolution
         blur={blur}
         setBlur={setBlur}
         gaussian={gaussian}
         setGaussian={setGaussian}
         sharpen={sharpen}
         setSharpen={setSharpen}
+        texture={texture}
+        setTexture={setTexture}
+        clarity={clarity}
+        setClarity={setClarity}
+        // Background removal
         bgThreshold={bgThreshold}
         setBgThreshold={setBgThreshold}
         bgThresholdBlack={bgThresholdBlack}
         setBgThresholdBlack={setBgThresholdBlack}
+        // Color mix (HSL)
+        hslAdjustments={hslAdjustments}
+        setHslAdjustments={setHslAdjustments}
         setShowPerspectiveModal={setShowPerspectiveModal}
         dpiMeasured={dpiMeasured}
         setDpiMeasured={setDpiMeasured}

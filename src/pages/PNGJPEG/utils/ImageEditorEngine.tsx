@@ -263,3 +263,201 @@ export function perspectiveTransform(
   mapTriangle([x2, y2, x3, y3, x0, y0], [destW, destH, 0, destH, destW, 0]);
   return dest;
 }
+
+const clamp = (value: number, min = 0, max = 255) => {
+  return Math.min(max, Math.max(min, value));
+};
+
+// For 0..1 ranges
+const clamp01 = (value: number) => {
+  return Math.min(1, Math.max(0, value));
+};
+
+const rgbToHsl = (r: number, g: number, b: number): [number, number, number] => {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0,
+    s = 0,
+    l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
+    }
+    h /= 6;
+  }
+
+  return [h, s, l];
+};
+
+const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
+  let r: number, g: number, b: number;
+
+  if (s === 0) {
+    r = g = b = l; // achromatic
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+};
+
+export const applyToneAdjustments = (
+  data: ImageData,
+  {
+    highlights = 0,
+    shadows = 0,
+    whites = 0,
+    blacks = 0,
+    vibrance = 0,
+    saturation = 0,
+    clarity = 0, // optional edge enhancement
+    dehaze = 0, // contrast in shadows
+  },
+) => {
+  const d = data.data;
+  for (let i = 0; i < d.length; i += 4) {
+    let [r, g, b] = [d[i], d[i + 1], d[i + 2]];
+
+    // simple highlights/shadows adjustment
+    const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+    if (luma > 192) r = g = b = Math.min(255, r + highlights, g + highlights, b + highlights);
+    if (luma < 64) r = g = b = Math.min(255, r + shadows, g + shadows, b + shadows);
+
+    // whites/blacks
+    r = clamp(r + whites - blacks);
+    g = clamp(g + whites - blacks);
+    b = clamp(b + whites - blacks);
+
+    // saturation/vibrance (simple approximation)
+    const avg = (r + g + b) / 3;
+    if (saturation) {
+      r = clamp(r + (r - avg) * saturation);
+      g = clamp(g + (g - avg) * saturation);
+      b = clamp(b + (b - avg) * saturation);
+    }
+
+    if (vibrance) {
+      const maxDiff = Math.max(r, g, b) - avg;
+      r = clamp(r + ((r - avg) / maxDiff) * vibrance);
+      g = clamp(g + ((g - avg) / maxDiff) * vibrance);
+      b = clamp(b + ((b - avg) / maxDiff) * vibrance);
+    }
+
+    d[i] = r;
+    d[i + 1] = g;
+    d[i + 2] = b;
+  }
+  return data;
+};
+
+export const applyDehaze = (p, i, dehaze) => {
+  const factor = 1 + dehaze / 100;
+  p[i] = clamp(p[i] * factor);
+  p[i + 1] = clamp(p[i + 1] * (1 - dehaze / 200));
+  p[i + 2] = clamp(p[i + 2] * (1 - dehaze / 200));
+};
+
+export const applyVibranceSaturation = (p, i, { vibrance, saturation }) => {
+  let r = p[i],
+    g = p[i + 1],
+    b = p[i + 2];
+  const max = Math.max(r, g, b);
+  const avg = (r + g + b) / 3;
+  let diff = max - avg;
+
+  let satFactor = 1 + saturation / 100;
+  let vibFactor = 1 + (vibrance * (diff / 255)) / 100;
+
+  r = avg + (r - avg) * vibFactor * satFactor;
+  g = avg + (g - avg) * vibFactor * satFactor;
+  b = avg + (b - avg) * vibFactor * satFactor;
+
+  p[i] = clamp(r);
+  p[i + 1] = clamp(g);
+  p[i + 2] = clamp(b);
+};
+
+export const colorRanges = [
+  { name: 'red', range: [345, 15] },
+  { name: 'orange', range: [15, 45] },
+  { name: 'yellow', range: [45, 75] },
+  { name: 'green', range: [75, 165] },
+  { name: 'aqua', range: [165, 195] },
+  { name: 'blue', range: [195, 255] },
+  { name: 'purple', range: [255, 285] },
+  { name: 'magenta', range: [285, 345] },
+];
+
+export const applyColorMixer = (p, i, mixer) => {
+  let [h, s, l] = rgbToHsl(p[i], p[i + 1], p[i + 2]);
+
+  const entry = colorRanges.find(({ name, range }) => h * 360 >= range[0] || h * 360 < range[1]);
+  if (!entry) return;
+
+  const { hue, sat, lum } = mixer[entry.name];
+  h = (h + hue / 360) % 1;
+  s = clamp01(s + sat / 100);
+  l = clamp01(l + lum / 100);
+
+  const [nr, ng, nb] = hslToRgb(h, s, l);
+  p[i] = nr;
+  p[i + 1] = ng;
+  p[i + 2] = nb;
+};
+
+export const applyHslAdjustments = (
+  data: ImageData,
+  adjustments: Record<string, { h?: number; s?: number; l?: number }>, // e.g., {red:{h:10,s:0.2,l:0.1}}
+) => {
+  const d = data.data;
+  for (let i = 0; i < d.length; i += 4) {
+    let [r, g, b] = [d[i], d[i + 1], d[i + 2]];
+    let [h, s, l] = rgbToHsl(r, g, b);
+    h = h * 360; // 0-360 for easy range checking
+
+    // find color range
+    for (const { name, range } of colorRanges) {
+      const [start, end] = range;
+      const inRange = start > end ? h >= start || h <= end : h >= start && h <= end;
+      if (!inRange) continue;
+      const adj = adjustments[name];
+      if (!adj) continue;
+      if (adj.h) h = (h + adj.h) % 360;
+      if (adj.s) s = clamp01(s + adj.s);
+      if (adj.l) l = clamp01(l + adj.l);
+    }
+
+    [d[i], d[i + 1], d[i + 2]] = hslToRgb(h / 360, s, l);
+  }
+  return data;
+};
