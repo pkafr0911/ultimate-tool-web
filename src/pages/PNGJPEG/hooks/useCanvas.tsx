@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { createCanvas, drawImageToCanvasFromUrl } from '../../utils/ImageEditorEngine';
+import { createCanvas, drawImageToCanvasFromUrl } from '../utils/ImageEditorEngine';
 import { message } from 'antd';
-import useHistory from './useHistory';
 
 export default function useCanvas(imageUrl: string, onLoad?: (dataUrl: string) => void) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);

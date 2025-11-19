@@ -4,8 +4,8 @@ import { ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
 
 import { perspectiveTransform } from '@/pages/PNGJPEG/utils/ImageEditorEngine';
 
-import useCanvas from './useCanvas';
-import useHistory from './useHistory';
+import useCanvas from '../../hooks/useCanvas';
+import useHistory from '../../hooks/useHistory';
 import { applyCrop, exportImage, rotate, samplePixel } from '../../utils/helpers';
 import ImageCanvas from './ImageCanvas';
 import ImageEditorToolbar from './ImageEditorToolbar';
