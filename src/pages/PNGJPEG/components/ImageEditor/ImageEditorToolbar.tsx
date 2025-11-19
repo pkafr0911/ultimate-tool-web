@@ -12,16 +12,7 @@ import {
   CopyOutlined,
   EditOutlined,
 } from '@ant-design/icons';
-import {
-  applyBGThreshold,
-  applyBlur,
-  applyGaussian,
-  applySharpen,
-  copyToClipboard,
-  flipH,
-  flipV,
-  rotate,
-} from '../../utils/helpers';
+import { applyEffects, copyToClipboard, flipH, flipV, rotate } from '../../utils/helpers';
 import {
   applyBrightnessContrast,
   applyThresholdAlpha,
@@ -210,7 +201,19 @@ const ImageEditorToolbar: React.FC<Props> = ({
             max={25}
             value={blur}
             onChange={setBlur}
-            onChangeComplete={(v) => applyBlur(canvasRef, baseCanvas, v, history)}
+            onChangeComplete={(v) =>
+              applyEffects(
+                canvasRef,
+                baseCanvas,
+                {
+                  blur,
+                  gaussian,
+                  sharpen,
+                  bgThreshold,
+                },
+                history,
+              )
+            }
           />
           <div style={{ marginBottom: 8 }}>Gaussian Blur</div>
           <Slider
@@ -218,7 +221,19 @@ const ImageEditorToolbar: React.FC<Props> = ({
             max={20}
             value={gaussian}
             onChange={setGaussian}
-            onChangeComplete={(v) => applyGaussian(canvasRef, baseCanvas, v, history)}
+            onChangeComplete={(v) =>
+              applyEffects(
+                canvasRef,
+                baseCanvas,
+                {
+                  blur,
+                  gaussian,
+                  sharpen,
+                  bgThreshold,
+                },
+                history,
+              )
+            }
           />
           <div style={{ marginBottom: 8 }}>Sharpen</div>
           <Slider
@@ -226,7 +241,19 @@ const ImageEditorToolbar: React.FC<Props> = ({
             max={5}
             value={sharpen}
             onChange={setSharpen}
-            onChangeComplete={(v) => applySharpen(canvasRef, baseCanvas, v, history)}
+            onChangeComplete={(v) =>
+              applyEffects(
+                canvasRef,
+                baseCanvas,
+                {
+                  blur,
+                  gaussian,
+                  sharpen,
+                  bgThreshold,
+                },
+                history,
+              )
+            }
           />
           <div style={{ marginBottom: 8 }}>Background Threshold</div>
           <Slider
@@ -234,7 +261,19 @@ const ImageEditorToolbar: React.FC<Props> = ({
             max={255}
             value={bgThreshold}
             onChange={setBgThreshold}
-            onChangeComplete={(v) => applyBGThreshold(canvasRef, baseCanvas, v, history)}
+            onChangeComplete={(v) =>
+              applyEffects(
+                canvasRef,
+                baseCanvas,
+                {
+                  blur,
+                  gaussian,
+                  sharpen,
+                  bgThreshold,
+                },
+                history,
+              )
+            }
           />
         </div>
 

@@ -135,34 +135,29 @@ export const samplePixel = (e: MouseEvent, canvasRef, zoom) => {
   return `#${[p[0], p[1], p[2]].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 };
 
-export const applyBlur = (canvasRef, baseCanvas, blur, history) => {
+export const applyEffects = (
+  canvasRef,
+  baseCanvas,
+  { blur = 0, gaussian = 0, sharpen = 0, bgThreshold = 0 },
+  history,
+) => {
   if (!canvasRef.current || !baseCanvas) return;
 
   const ctx = canvasRef.current.getContext('2d')!;
   const baseCtx = baseCanvas.getContext('2d')!;
 
+  // Always start from original image
   const baseData = baseCtx.getImageData(0, 0, baseCanvas.width, baseCanvas.height);
   const cloned = cloneImageData(baseData);
 
+  // 1. BLUR (Box Blur)
   if (blur > 0) {
     const size = blur % 2 === 0 ? blur + 1 : blur;
     const kernel = Kernels.generateBoxBlurKernel(size);
     applyConvolution(cloned, kernel, size);
   }
 
-  ctx.putImageData(cloned, 0, 0);
-  history.push(canvasRef.current.toDataURL(), `Blur (size=${blur})`);
-};
-
-export const applyGaussian = (canvasRef, baseCanvas, gaussian, history) => {
-  if (!canvasRef.current || !baseCanvas) return;
-
-  const ctx = canvasRef.current.getContext('2d')!;
-  const baseCtx = baseCanvas.getContext('2d')!;
-
-  const baseData = baseCtx.getImageData(0, 0, baseCanvas.width, baseCanvas.height);
-  const cloned = cloneImageData(baseData);
-
+  // 2. GAUSSIAN BLUR
   if (gaussian > 0) {
     const radius = gaussian;
     const kernel = Kernels.generateGaussianKernel(radius);
@@ -170,54 +165,29 @@ export const applyGaussian = (canvasRef, baseCanvas, gaussian, history) => {
     applyConvolution(cloned, kernel, size);
   }
 
-  ctx.putImageData(cloned, 0, 0);
-  history.push(canvasRef.current.toDataURL(), 'Gaussian Blur');
-};
-
-export const applySharpen = (canvasRef, baseCanvas, sharpen, history) => {
-  if (!canvasRef.current || !baseCanvas) return;
-
-  const ctx = canvasRef.current.getContext('2d')!;
-  const baseCtx = baseCanvas.getContext('2d')!;
-
-  const baseData = baseCtx.getImageData(0, 0, baseCanvas.width, baseCanvas.height);
-  const cloned = cloneImageData(baseData);
-
+  // 3. SHARPEN
   if (sharpen > 0) {
-    // sharpen intensity (1–5)
     const amount = sharpen;
-
-    // base sharpen kernel
-    //  [  0, -1,  0 ]
-    //  [ -1,  5, -1 ]
-    //  [  0, -1,  0 ]
     const baseKernel = Kernels.sharpen;
-
-    // dynamic kernel scaling
     const kernel = baseKernel.map((value) => {
       if (value === 5) return 1 + amount * 4; // center
       if (value === -1) return -amount; // neighbors
       return value;
     });
-
     applyConvolution(cloned, kernel, 3);
   }
 
+  // 4. ALPHA THRESHOLD (BG removal)
+  if (bgThreshold > 0) {
+    applyThresholdAlpha(cloned, bgThreshold);
+  }
+
+  // Draw result
   ctx.putImageData(cloned, 0, 0);
-  history.push(canvasRef.current.toDataURL(), 'Sharpen');
-};
 
-export const applyBGThreshold = (canvasRef, baseCanvas, bgThreshold, history) => {
-  if (!canvasRef.current || !baseCanvas) return;
-
-  const ctx = canvasRef.current.getContext('2d')!;
-  const baseCtx = baseCanvas.getContext('2d')!;
-
-  const baseData = baseCtx.getImageData(0, 0, baseCanvas.width, baseCanvas.height);
-  const cloned = cloneImageData(baseData);
-
-  applyThresholdAlpha(cloned, bgThreshold);
-
-  ctx.putImageData(cloned, 0, 0);
-  history.push(canvasRef.current.toDataURL(), 'BG Threshold');
+  // Add single history entry
+  history.push(
+    canvasRef.current.toDataURL(),
+    `Effects: blur=${blur}, gaussian=${gaussian}, sharpen=${sharpen}, thresholdAlpha=${bgThreshold}`,
+  );
 };
