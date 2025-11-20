@@ -233,14 +233,22 @@ const ImageEditorToolbar: React.FC<Props> = ({
 
         {/* 🖌 Brush */}
         <Panel header="🖊 Brush" key="brush">
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <Space size={'small'}>
+          <Space direction="vertical" style={{ width: '100%' }} wrap>
+            {/* Brush Type */}
+            <Select
+              value={brushType}
+              onChange={(v) => setBrushType(v as 'hard' | 'soft')}
+              style={{ width: 80 }}
+            >
+              <Option value="hard">Hard</Option>
+              <Option value="soft">Soft</Option>
+            </Select>
+            <Space>
               {/* Color Picker */}
               <ColorPicker value={drawColor} onChange={(c) => setDrawColor(c.toHexString())} />
 
               {/* Brush Size */}
               <InputNumber
-                size={'small'}
                 min={1}
                 max={50}
                 value={drawLineWidth}
@@ -254,17 +262,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
               </Button>
             </Space>
 
-            <Space>
-              {/* Brush Type */}
-              <Select
-                value={brushType}
-                onChange={(v) => setBrushType(v as 'hard' | 'soft')}
-                style={{ width: 80 }}
-              >
-                <Option value="hard">Hard</Option>
-                <Option value="soft">Soft</Option>
-              </Select>
-
+            <Space wrap>
               {/* Brush Opacity */}
               <div>
                 <span>Opacity:</span>

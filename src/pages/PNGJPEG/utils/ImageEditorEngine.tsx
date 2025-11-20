@@ -340,71 +340,128 @@ export const applyToneAdjustments = (
     blacks = 0,
     vibrance = 0,
     saturation = 0,
-    clarity = 0, // optional edge enhancement
-    dehaze = 0, // contrast in shadows
+    clarity = 0, // local contrast
+    dehaze = 0, // remove fog
+  }: {
+    highlights?: number;
+    shadows?: number;
+    whites?: number;
+    blacks?: number;
+    vibrance?: number;
+    saturation?: number;
+    clarity?: number;
+    dehaze?: number;
   },
 ) => {
   const d = data.data;
+
+  // If clarity is applied, create a shallow copy for local contrast reference
+  const originalData = clarity !== 0 ? new Uint8ClampedArray(d) : null;
+
   for (let i = 0; i < d.length; i += 4) {
-    let [r, g, b] = [d[i], d[i + 1], d[i + 2]];
+    let r = d[i];
+    let g = d[i + 1];
+    let b = d[i + 2];
 
-    // simple highlights/shadows adjustment
+    /** ------------------------ 1️⃣ HIGHLIGHTS / SHADOWS ------------------------ **/
     const luma = 0.299 * r + 0.587 * g + 0.114 * b;
-    if (luma > 192) r = g = b = Math.min(255, r + highlights, g + highlights, b + highlights);
-    if (luma < 64) r = g = b = Math.min(255, r + shadows, g + shadows, b + shadows);
+    if (luma > 192 && highlights !== 0) {
+      const hFactor = (luma - 192) / (255 - 192);
+      r = clamp(r + highlights * hFactor);
+      g = clamp(g + highlights * hFactor);
+      b = clamp(b + highlights * hFactor);
+    }
+    if (luma < 64 && shadows !== 0) {
+      const sFactor = 1 - luma / 64;
+      r = clamp(r + shadows * sFactor);
+      g = clamp(g + shadows * sFactor);
+      b = clamp(b + shadows * sFactor);
+    }
 
-    // whites/blacks
+    /** ------------------------ 2️⃣ WHITES / BLACKS ------------------------ **/
     r = clamp(r + whites - blacks);
     g = clamp(g + whites - blacks);
     b = clamp(b + whites - blacks);
 
-    // saturation/vibrance (simple approximation)
-    const avg = (r + g + b) / 3;
-    if (saturation) {
-      r = clamp(r + (r - avg) * saturation);
-      g = clamp(g + (g - avg) * saturation);
-      b = clamp(b + (b - avg) * saturation);
+    /** ------------------------ 3️⃣ DEHAZE ------------------------ **/
+    if (dehaze !== 0) {
+      const factor = 1 + dehaze / 100;
+      r = clamp(r * factor);
+      g = clamp(g * (1 - dehaze / 200)); // reduce green & blue to reduce 'fog'
+      b = clamp(b * (1 - dehaze / 200));
     }
 
-    if (vibrance) {
-      const maxDiff = Math.max(r, g, b) - avg;
-      r = clamp(r + ((r - avg) / maxDiff) * vibrance);
-      g = clamp(g + ((g - avg) / maxDiff) * vibrance);
-      b = clamp(b + ((b - avg) / maxDiff) * vibrance);
+    /** ------------------------ 4️⃣ VIBRANCE / SATURATION (HSL) ------------------------ **/
+    if (vibrance !== 0 || saturation !== 0) {
+      const tmp = [r, g, b];
+      applyVibranceSaturation(tmp as any, 0, { vibrance, saturation });
+      [r, g, b] = tmp;
     }
 
+    /** ------------------------ 5️⃣ CLARITY (Local contrast) ------------------------ **/
+    if (clarity !== 0 && originalData) {
+      // baseline luma before enhancements
+      const baseLuma =
+        0.299 * originalData[i] + 0.587 * originalData[i + 1] + 0.114 * originalData[i + 2];
+
+      // Clarity: enhance mid-range contrast only
+      const contrastFactor = clarity / 100;
+      const lumaDiff = (luma - baseLuma) * contrastFactor;
+
+      r = clamp(r + lumaDiff);
+      g = clamp(g + lumaDiff);
+      b = clamp(b + lumaDiff);
+    }
+
+    /** ------------------------ WRITE BACK ------------------------ **/
     d[i] = r;
     d[i + 1] = g;
     d[i + 2] = b;
+    // alpha unchanged
   }
+
   return data;
 };
 
-export const applyDehaze = (p, i, dehaze) => {
-  const factor = 1 + dehaze / 100;
-  p[i] = clamp(p[i] * factor);
-  p[i + 1] = clamp(p[i + 1] * (1 - dehaze / 200));
-  p[i + 2] = clamp(p[i + 2] * (1 - dehaze / 200));
+export const applyDehaze = (p: Uint8ClampedArray | number[], i: number, dehaze: number) => {
+  // More natural algorithm: adjust luminance & slight desaturation
+  let [h, s, l] = rgbToHsl(p[i], p[i + 1], p[i + 2]);
+
+  // Example: +20 dehaze → l *= 1.2
+  l = clamp01(l * (1 + dehaze / 100));
+
+  // Slight saturation reduction to avoid color shift
+  s = clamp01(s * (1 - Math.abs(dehaze) / 300));
+
+  const [r, g, b] = hslToRgb(h, s, l);
+  p[i] = r;
+  p[i + 1] = g;
+  p[i + 2] = b;
 };
 
-export const applyVibranceSaturation = (p, i, { vibrance, saturation }) => {
-  let r = p[i],
-    g = p[i + 1],
-    b = p[i + 2];
-  const max = Math.max(r, g, b);
-  const avg = (r + g + b) / 3;
-  let diff = max - avg;
+export const applyVibranceSaturation = (
+  p: Uint8ClampedArray | number[],
+  i: number,
+  { vibrance = 0, saturation = 0 }: { vibrance?: number; saturation?: number },
+) => {
+  let [h, s, l] = rgbToHsl(p[i], p[i + 1], p[i + 2]);
 
-  let satFactor = 1 + saturation / 100;
-  let vibFactor = 1 + (vibrance * (diff / 255)) / 100;
+  // --- 1️⃣ Saturation (multiplicative, more natural) ---
+  // Example: saturation = 20 → s *= 1.2 ; saturation = -10 → s *= 0.9
+  if (saturation !== 0) {
+    s = clamp01(s * (1 + saturation / 100));
+  }
 
-  r = avg + (r - avg) * vibFactor * satFactor;
-  g = avg + (g - avg) * vibFactor * satFactor;
-  b = avg + (b - avg) * vibFactor * satFactor;
+  // --- 2️⃣ Vibrance (only boosts low-saturated areas) ---
+  if (vibrance !== 0) {
+    const factor = vibrance / 100;
+    s = clamp01(s + (1 - s) * factor * (1 - s)); // nonlinear → strong effect only if s < 0.5
+  }
 
-  p[i] = clamp(r);
-  p[i + 1] = clamp(g);
-  p[i + 2] = clamp(b);
+  const [r, g, b] = hslToRgb(h, s, l);
+  p[i] = r;
+  p[i + 1] = g;
+  p[i + 2] = b;
 };
 
 export const colorRanges = [
@@ -418,46 +475,77 @@ export const colorRanges = [
   { name: 'magenta', range: [285, 345] },
 ];
 
-export const applyColorMixer = (p, i, mixer) => {
-  let [h, s, l] = rgbToHsl(p[i], p[i + 1], p[i + 2]);
-
-  const entry = colorRanges.find(({ name, range }) => h * 360 >= range[0] || h * 360 < range[1]);
-  if (!entry) return;
-
-  const { hue, sat, lum } = mixer[entry.name];
-  h = (h + hue / 360) % 1;
-  s = clamp01(s + sat / 100);
-  l = clamp01(l + lum / 100);
-
-  const [nr, ng, nb] = hslToRgb(h, s, l);
-  p[i] = nr;
-  p[i + 1] = ng;
-  p[i + 2] = nb;
-};
-
 export const applyHslAdjustments = (
   data: ImageData,
-  adjustments: Record<string, { h?: number; s?: number; l?: number }>, // e.g., {red:{h:10,s:0.2,l:0.1}}
+  adjustments: Record<string, { h?: number; s?: number; l?: number }>, // h: degrees, s/l: percent or fractional
 ) => {
   const d = data.data;
+
   for (let i = 0; i < d.length; i += 4) {
     let [r, g, b] = [d[i], d[i + 1], d[i + 2]];
     let [h, s, l] = rgbToHsl(r, g, b);
-    h = h * 360; // 0-360 for easy range checking
+    let deg = (h * 360 + 360) % 360; // 0..360
 
-    // find color range
-    for (const { name, range } of colorRanges) {
+    // find color range (handles wrap ranges like [345,15])
+    const entry = colorRanges.find(({ range }) => {
       const [start, end] = range;
-      const inRange = start > end ? h >= start || h <= end : h >= start && h <= end;
-      if (!inRange) continue;
-      const adj = adjustments[name];
-      if (!adj) continue;
-      if (adj.h) h = (h + adj.h) % 360;
-      if (adj.s) s = clamp01(s + adj.s);
-      if (adj.l) l = clamp01(l + adj.l);
+      if (start <= end) {
+        return deg >= start && deg <= end;
+      } else {
+        // wrapped range (e.g. 345 -> 15)
+        return deg >= start || deg <= end;
+      }
+    });
+
+    if (!entry) {
+      // no matching range — write back unchanged
+      [d[i], d[i + 1], d[i + 2]] = hslToRgb(h, s, l);
+      continue;
     }
 
-    [d[i], d[i + 1], d[i + 2]] = hslToRgb(h / 360, s, l);
+    const adj = adjustments[entry.name];
+    if (!adj) {
+      [d[i], d[i + 1], d[i + 2]] = hslToRgb(h, s, l);
+      continue;
+    }
+
+    const [startRaw, endRaw] = entry.range;
+    // Normalize start/end so start <= end (for clamping). If wrapped, push end +360.
+    let start = startRaw;
+    let end = endRaw;
+    if (start > end) end += 360; // e.g., 345..15 => 345..375
+
+    // Normalize deg into the same space as start..end
+    let degNorm = deg;
+    if (degNorm < start) degNorm += 360;
+
+    // ----- HUE: apply degree shift but clamp within the color's range -----
+    if (typeof adj.h === 'number' && adj.h !== 0) {
+      let newDeg = degNorm + adj.h; // tentative
+      // clamp to the range boundaries so it cannot jump outside the color band
+      if (newDeg < start) newDeg = start;
+      if (newDeg > end) newDeg = end;
+      // bring back to 0..360
+      deg = ((newDeg % 360) + 360) % 360;
+      h = deg / 360;
+    }
+
+    // ----- SATURATION: flexible input handling -----
+    if (typeof adj.s === 'number' && adj.s !== 0) {
+      // interpret 0.2 as +20% for backward compatibility
+      const satPercent = Math.abs(adj.s) <= 1 ? adj.s * 100 : adj.s;
+      s = clamp01(s * (1 + satPercent / 100));
+    }
+
+    // ----- LUMINANCE: same handling as saturation -----
+    if (typeof adj.l === 'number' && adj.l !== 0) {
+      const lumPercent = Math.abs(adj.l) <= 1 ? adj.l * 100 : adj.l;
+      l = clamp01(l * (1 + lumPercent / 100));
+    }
+
+    // write back
+    [d[i], d[i + 1], d[i + 2]] = hslToRgb(h, s, l);
   }
+
   return data;
 };
