@@ -9,6 +9,7 @@ import {
   ColorPicker,
   InputNumber,
   Collapse,
+  Select,
 } from 'antd';
 import {
   UndoOutlined,
@@ -30,6 +31,8 @@ type HistoryItem = {
   label?: string;
 };
 
+const { Option } = Select;
+
 type Props = {
   canvasRef: React.RefObject<HTMLCanvasElement>;
   baseCanvas?: HTMLCanvasElement | null;
@@ -45,6 +48,12 @@ type Props = {
   setDrawColor: (color: string) => void;
   drawLineWidth: number;
   setDrawLineWidth: (width: number) => void;
+  brushType: 'hard' | 'soft';
+  setBrushType: (type: 'hard' | 'soft') => void;
+  brushOpacity: number; // 0-1
+  setBrushOpacity: (v: number) => void;
+  brushFlow: number; // 0-1
+  setBrushFlow: (v: number) => void;
   setTool: any;
   brightness: number;
   setBrightness: (v: number) => void;
@@ -100,6 +109,12 @@ const ImageEditorToolbar: React.FC<Props> = ({
   setDrawColor,
   drawLineWidth,
   setDrawLineWidth,
+  brushType,
+  setBrushType,
+  brushOpacity,
+  setBrushOpacity,
+  brushFlow,
+  setBrushFlow,
   setTool,
   brightness,
   setBrightness,
@@ -218,17 +233,64 @@ const ImageEditorToolbar: React.FC<Props> = ({
 
         {/* 🖌 Brush */}
         <Panel header="🖊 Brush" key="brush">
-          <Space>
-            <ColorPicker value={drawColor} onChange={(c) => setDrawColor(c.toHexString())} />
-            <InputNumber
-              min={1}
-              max={50}
-              value={drawLineWidth}
-              onChange={(v) => setDrawLineWidth(v || 1)}
-            />
-            <Button size="small" onClick={() => setTool('draw')}>
-              <EditOutlined />
-            </Button>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Space size={'small'}>
+              {/* Color Picker */}
+              <ColorPicker value={drawColor} onChange={(c) => setDrawColor(c.toHexString())} />
+
+              {/* Brush Size */}
+              <InputNumber
+                size={'small'}
+                min={1}
+                max={50}
+                value={drawLineWidth}
+                onChange={(v) => setDrawLineWidth(v || 1)}
+                addonAfter="px"
+              />
+
+              {/* Select Brush Tool */}
+              <Button size="small" onClick={() => setTool('draw')}>
+                <EditOutlined />
+              </Button>
+            </Space>
+
+            <Space>
+              {/* Brush Type */}
+              <Select
+                value={brushType}
+                onChange={(v) => setBrushType(v as 'hard' | 'soft')}
+                style={{ width: 80 }}
+              >
+                <Option value="hard">Hard</Option>
+                <Option value="soft">Soft</Option>
+              </Select>
+
+              {/* Brush Opacity */}
+              <div>
+                <span>Opacity:</span>
+                <InputNumber
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  style={{ width: 60 }}
+                  value={brushOpacity}
+                  onChange={(v) => setBrushOpacity(v || 1)}
+                />
+              </div>
+
+              {/* Brush Flow */}
+              <div>
+                <span>Flow:</span>
+                <InputNumber
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  style={{ width: 60 }}
+                  value={brushFlow}
+                  onChange={(v) => setBrushFlow(v || 1)}
+                />
+              </div>
+            </Space>
           </Space>
         </Panel>
 

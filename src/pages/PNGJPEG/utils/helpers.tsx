@@ -345,3 +345,38 @@ export const applyEffects = (
     };
   }
 };
+
+export const resetEffectsToBase = (
+  canvasRef: React.RefObject<HTMLCanvasElement>,
+  baseCanvas: HTMLCanvasElement | null | undefined,
+  history: { push: (img: string, label: string) => void },
+) => {
+  if (!canvasRef.current || !baseCanvas || !cachedBaseImageData) return;
+
+  const ctx = canvasRef.current.getContext('2d')!;
+  ctx.putImageData(cachedBaseImageData, 0, 0);
+
+  // Reset previous effects so history won’t re-detect old ones
+  previousEffects = {
+    blur: 0,
+    gaussian: 0,
+    sharpen: 0,
+    texture: 0,
+    clarity: 0,
+    bgThreshold: 0,
+    bgThresholdBlack: 0,
+    brightness: 0,
+    contrast: 0,
+    highlights: 0,
+    shadows: 0,
+    whites: 0,
+    blacks: 0,
+    vibrance: 0,
+    saturation: 0,
+    dehaze: 0,
+    hslAdjustments: {},
+  };
+
+  // Add to history
+  history.push(canvasRef.current.toDataURL(), 'Reset to base image');
+};

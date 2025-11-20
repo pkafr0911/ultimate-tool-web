@@ -1,3 +1,4 @@
+//#region Imports
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Space, Tooltip, Modal, Select, message } from 'antd';
 import { ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
@@ -9,7 +10,9 @@ import useHistory from '../../hooks/useHistory';
 import { applyCrop, exportImage, rotate, samplePixel } from '../../utils/helpers';
 import ImageCanvas from './ImageCanvas';
 import ImageEditorToolbar from './ImageEditorToolbar';
+//#endregion
 
+//#region Types
 type Tool = 'pan' | 'crop' | 'color' | 'ruler' | 'perspective' | 'select' | 'draw';
 
 type Props = {
@@ -18,104 +21,98 @@ type Props = {
 };
 
 const { Option } = Select;
+//#endregion
 
 const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
-  /** --------------------------------------
-   * Canvas Setup
-   -------------------------------------- */
+  //#region Canvas Setup
   const containerRef = useRef<HTMLDivElement | null>(null);
-
-  const onLoad = (dataUrl: string) => {
-    history.push(dataUrl, 'Initial load');
-  };
-
+  const onLoad = (dataUrl: string) => history.push(dataUrl, 'Initial load');
   const { canvasRef, overlayRef, baseCanvas } = useCanvas(imageUrl, onLoad);
   const history = useHistory(canvasRef, overlayRef);
+  //#endregion
 
-  /** --------------------------------------
-   * Viewer State (pan, zoom)
-   -------------------------------------- */
+  //#region Viewer State (pan/zoom)
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const panStart = useRef<{ x: number; y: number } | null>(null);
+  //#endregion
 
-  /** --------------------------------------
-   * Tools + Editing State
-   -------------------------------------- */
+  //#region Active Tool
   const [tool, setTool] = useState<Tool>('pan');
+  //#endregion
 
-  // brightness / contrast
+  //#region Image Adjustments
   const [brightness, setBrightness] = useState(0);
   const [contrast, setContrast] = useState(0);
 
-  // crop
-  const [cropRect, setCropRect] = useState<{ x: number; y: number; w: number; h: number } | null>(
-    null,
-  );
-  const cropStart = useRef<{ x: number; y: number } | null>(null);
-
-  // perspective
-  const [showPerspectiveModal, setShowPerspectiveModal] = useState(false);
-  const perspectivePoints = useRef<
-    [number, number, number, number, number, number, number, number] | null
-  >(null);
-
-  // transient tool swaps (Space, Alt)
-  const [toolBefore, setToolBefore] = useState<Tool | null>(null);
-  const [isSpaceDown, setIsSpaceDown] = useState(false);
-  const [isAltDown, setIsAltDown] = useState(false);
-
-  /** --------------------------------------
-   * Color Picker
-   -------------------------------------- */
-  const [hoverColor, setHoverColor] = useState<{ x: number; y: number; color: string } | null>(
-    null,
-  );
-  const [pickedColor, setPickedColor] = useState<string | null>(null);
-
-  /** --------------------------------------
-   * Ruler
-   -------------------------------------- */
-  const [rulerActive] = useState(false);
-  const rulerPoints = useRef<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
-  const [dpiMeasured, setDpiMeasured] = useState<number | null>(null);
-
-  /** --------------------------------------
-   * Freehand Drawing
-   -------------------------------------- */
-  const [drawColor, setDrawColor] = useState('#ff0000');
-  const [drawLineWidth, setDrawLineWidth] = useState(2);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const drawPoints = useRef<{ x: number; y: number }[]>([]);
-
-  /** --------------------------------------
-   * Filter
-   -------------------------------------- */
-  const [blur, setBlur] = useState(0); // box blur
-  const [gaussian, setGaussian] = useState(0); // gaussian blur
-  const [sharpen, setSharpen] = useState(0); // sharpening intensity
-
-  const [texture, setTexture] = useState(0); // similar to clarity but micro contrast
-  const [clarity, setClarity] = useState(0); // clarity
-
-  const [bgThreshold, setBgThreshold] = useState(255); // white background to transparent
-  const [bgThresholdBlack, setBgThresholdBlack] = useState(0); // black screen extraction
-
-  // Tone adjustment
   const [highlights, setHighlights] = useState(0);
   const [shadows, setShadows] = useState(0);
   const [whites, setWhites] = useState(0);
   const [blacks, setBlacks] = useState(0);
 
-  // Color adjustment
   const [vibrance, setVibrance] = useState(0);
   const [saturation, setSaturation] = useState(0);
 
-  // Fog/Haze
   const [dehaze, setDehaze] = useState(0);
+  //#endregion
 
-  // HSL (per-color adjustment – initially empty)
+  //#region Crop Tool
+  const [cropRect, setCropRect] = useState<{ x: number; y: number; w: number; h: number } | null>(
+    null,
+  );
+  const cropStart = useRef<{ x: number; y: number } | null>(null);
+  //#endregion
+
+  //#region Perspective Tool
+  const [showPerspectiveModal, setShowPerspectiveModal] = useState(false);
+  const perspectivePoints = useRef<
+    [number, number, number, number, number, number, number, number] | null
+  >(null);
+  //#endregion
+
+  //#region Hotkey States
+  const [toolBefore, setToolBefore] = useState<Tool | null>(null);
+  const [isSpaceDown, setIsSpaceDown] = useState(false);
+  const [isAltDown, setIsAltDown] = useState(false);
+  //#endregion
+
+  //#region Color Picker
+  const [hoverColor, setHoverColor] = useState<{ x: number; y: number; color: string } | null>(
+    null,
+  );
+  const [pickedColor, setPickedColor] = useState<string | null>(null);
+  //#endregion
+
+  //#region Ruler Tool
+  const [rulerActive] = useState(false);
+  const rulerPoints = useRef<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
+  const [dpiMeasured, setDpiMeasured] = useState<number | null>(null);
+  //#endregion
+
+  //#region Drawing Tool
+  const [drawColor, setDrawColor] = useState('#ff0000');
+  const [drawLineWidth, setDrawLineWidth] = useState(2);
+  const [brushType, setBrushType] = useState<'hard' | 'soft'>('hard');
+  const [brushOpacity, setBrushOpacity] = useState(1); // 0 - 1
+  const [brushFlow, setBrushFlow] = useState(1); // 0 - 1
+  const [isDrawing, setIsDrawing] = useState(false);
+  const drawPoints = useRef<{ x: number; y: number }[]>([]);
+  const resizingBrush = useRef(false);
+  const resizeStartX = useRef<number | null>(null);
+  const initialLineWidth = useRef(drawLineWidth);
+  //#endregion
+
+  //#region Filters
+  const [blur, setBlur] = useState(0);
+  const [gaussian, setGaussian] = useState(0);
+  const [sharpen, setSharpen] = useState(0);
+  const [texture, setTexture] = useState(0);
+  const [clarity, setClarity] = useState(0);
+
+  const [bgThreshold, setBgThreshold] = useState(255);
+  const [bgThresholdBlack, setBgThresholdBlack] = useState(0);
+
   const [hslAdjustments, setHslAdjustmentsState] = useState<
     Record<string, { h?: number; s?: number; l?: number }>
   >({});
@@ -128,12 +125,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       [name]: { ...(prev[name] || {}), ...values },
     }));
   };
+  //#endregion
 
-  const resizingBrush = useRef(false);
-  const resizeStartX = useRef<number | null>(null);
-  const initialLineWidth = useRef(drawLineWidth);
-
-  // To prevent the right-click menu from showing
+  //#region Event Effects & Handlers
+  // #region 🖱️ Disable Right-Click Context Menu
   useEffect(() => {
     const canvas = containerRef.current;
     if (!canvas) return;
@@ -142,7 +137,9 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     return () => canvas.removeEventListener('contextmenu', handleContextMenu);
   }, []);
 
-  // Ctrl+Wheel zoom
+  //#endregion
+
+  // #region 🔍 Ctrl + Wheel Zoom Handler
   useEffect(() => {
     const container = containerRef.current;
     const canvas = canvasRef.current;
@@ -173,8 +170,9 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     container.addEventListener('wheel', handleWheel, { passive: false });
     return () => container.removeEventListener('wheel', handleWheel);
   }, []);
+  //#endregion
 
-  /** --- PAN / ZOOM / TOOL HANDLERS --- */
+  //#region 🖲️ Mouse Events (Down/Move/Up for Tools)
   const handleMouseDownViewer = (e: React.MouseEvent) => {
     const rect = canvasRef.current!.getBoundingClientRect();
     const x = (e.clientX - rect.left) / zoom;
@@ -257,9 +255,23 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
 
       const ctx = canvasRef.current.getContext('2d')!;
       ctx.save();
+      // Set stroke color with opacity & flow
+      ctx.globalAlpha = brushOpacity * brushFlow;
+
+      // For soft brushes, use shadow blur
+      if (brushType === 'soft') {
+        ctx.shadowColor = drawColor;
+        ctx.shadowBlur = drawLineWidth * 0.5;
+        ctx.lineWidth = drawLineWidth * 0.5;
+      } else {
+        ctx.shadowBlur = 0;
+        ctx.lineWidth = drawLineWidth;
+      }
+
       ctx.strokeStyle = drawColor;
-      ctx.lineWidth = drawLineWidth;
       ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
       ctx.beginPath();
       const points = drawPoints.current;
       ctx.moveTo(points[points.length - 2].x, points[points.length - 2].y);
@@ -288,8 +300,9 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       history.push(canvasRef.current!.toDataURL(), 'Draw');
     }
   };
+  //#endregion
 
-  /** Draw overlay: crop, ruler, perspective, color hover */
+  //#region 🎨 Draw Overlay Layer (Crop / Ruler / Perspective / Hover Preview)
   const drawOverlay = () => {
     if (!overlayRef.current || !canvasRef.current) return;
     const ctx = overlayRef.current.getContext('2d')!;
@@ -360,6 +373,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     }
   };
 
+  //#region 🎯 Color Picker & Hover Preview
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -401,8 +415,9 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       canvas.removeEventListener('mouseleave', handleLeave);
     };
   }, [tool, zoom, offset]);
+  //#endregion
 
-  // keyboard shortcuts
+  //#region ⌨ Keyboard Shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === 'z') history.undo();
@@ -483,7 +498,9 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, [tool]);
+  //#endregion
 
+  // #region 📐 Perspective Transform Apply
   const perspectiveApply = async () => {
     if (!canvasRef.current || !perspectivePoints.current) return;
     const src = canvasRef.current;
@@ -500,7 +517,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     history.push(canvasRef.current.toDataURL(), 'Perspective corrected');
     setShowPerspectiveModal(false);
   };
+  //#endregion
+  //#endregion
 
+  //#region Cursor Style
   const currentCursor = useMemo(() => {
     if ((tool === 'pan' || tool === 'select') && isPanning) return 'grabbing';
     switch (tool) {
@@ -518,6 +538,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         return 'default';
     }
   }, [tool, isPanning]);
+  //#endregion
 
   return (
     <div style={{ display: 'flex', gap: 12 }}>
@@ -530,6 +551,12 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         setDrawColor={setDrawColor}
         drawLineWidth={drawLineWidth}
         setDrawLineWidth={setDrawLineWidth}
+        brushType={brushType}
+        setBrushType={setBrushType}
+        brushOpacity={brushOpacity}
+        setBrushOpacity={setBrushOpacity}
+        brushFlow={brushFlow}
+        setBrushFlow={setBrushFlow}
         setTool={setTool}
         // Exposure & Color
         brightness={brightness}
