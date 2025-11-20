@@ -482,9 +482,10 @@ export const applyHslAdjustments = (
   const d = data.data;
 
   for (let i = 0; i < d.length; i += 4) {
-    let [r, g, b] = [d[i], d[i + 1], d[i + 2]];
-    let [h, s, l] = rgbToHsl(r, g, b);
-    let deg = (h * 360 + 360) % 360; // 0..360
+    // Loop through each pixel (step 4: R,G,B,A)
+    let [r, g, b] = [d[i], d[i + 1], d[i + 2]]; // Extract RGB
+    let [h, s, l] = rgbToHsl(r, g, b); // Convert to HSL (h: 0–1)
+    let deg = (h * 360 + 360) % 360; // Convert hue to 0–360° safely
 
     // find color range (handles wrap ranges like [345,15])
     const entry = colorRanges.find(({ range }) => {
@@ -526,24 +527,24 @@ export const applyHslAdjustments = (
       if (newDeg < start) newDeg = start;
       if (newDeg > end) newDeg = end;
       // bring back to 0..360
-      deg = ((newDeg % 360) + 360) % 360;
-      h = deg / 360;
+      deg = ((newDeg % 360) + 360) % 360; // Normalize back to 0–360°
+      h = deg / 360; // Convert back to 0–1 for HSL
     }
 
     // ----- SATURATION: flexible input handling -----
     if (typeof adj.s === 'number' && adj.s !== 0) {
       // interpret 0.2 as +20% for backward compatibility
-      const satPercent = Math.abs(adj.s) <= 1 ? adj.s * 100 : adj.s;
-      s = clamp01(s * (1 + satPercent / 100));
+      const satPercent = Math.abs(adj.s) <= 1 ? adj.s * 100 : adj.s; // Allow 0.2 or 20 → both = +20%
+      s = clamp01(s * (1 + satPercent / 100)); // Apply proportionally
     }
 
     // ----- LUMINANCE: same handling as saturation -----
     if (typeof adj.l === 'number' && adj.l !== 0) {
-      const lumPercent = Math.abs(adj.l) <= 1 ? adj.l * 100 : adj.l;
-      l = clamp01(l * (1 + lumPercent / 100));
+      const lumPercent = Math.abs(adj.l) <= 1 ? adj.l * 100 : adj.l; // e.g. 0.1 → +10%
+      l = clamp01(l * (1 + lumPercent / 100)); // Apply multiplicatively
     }
 
-    // write back
+    // Write final adjusted color back to RGBA buffer
     [d[i], d[i + 1], d[i + 2]] = hslToRgb(h, s, l);
   }
 
