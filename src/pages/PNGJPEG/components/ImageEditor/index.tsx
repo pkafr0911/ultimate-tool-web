@@ -101,6 +101,14 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   const resizingBrush = useRef(false);
   const resizeStartX = useRef<number | null>(null);
   const initialLineWidth = useRef(drawLineWidth);
+  // Drag-to-adjust opacity refs
+  const draggingOpacity = useRef(false);
+  const opacityDragStartX = useRef<number | null>(null);
+  const opacityStartValue = useRef<number>(brushOpacity);
+  // Drag-to-adjust flow refs
+  const draggingFlow = useRef(false);
+  const flowDragStartX = useRef<number | null>(null);
+  const flowStartValue = useRef<number>(brushFlow);
   //#endregion
 
   //#region Filters
@@ -375,6 +383,74 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       ctx.stroke();
       ctx.restore();
     }
+  };
+
+  const handleOpacityLabelMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return; // only left button
+    e.preventDefault();
+    draggingOpacity.current = true;
+    opacityDragStartX.current = e.clientX;
+    opacityStartValue.current = brushOpacity;
+
+    // prevent text selection while dragging
+    const prevUserSelect = document.body.style.userSelect;
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!draggingOpacity.current || opacityDragStartX.current === null) return;
+      const delta = ev.clientX - opacityDragStartX.current;
+      // sensitivity: 0.005 per pixel = 0.05 change per 10px
+      const sensitivity = 0.005;
+      let newVal = opacityStartValue.current + delta * sensitivity;
+      newVal = Math.max(0, Math.min(1, newVal));
+      setBrushOpacity(Number(newVal.toFixed(2)));
+    };
+
+    const onMouseUp = () => {
+      draggingOpacity.current = false;
+      opacityDragStartX.current = null;
+      opacityStartValue.current = brushOpacity;
+      document.body.style.userSelect = prevUserSelect;
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  const handleFlowLabelMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return; // only left button
+    e.preventDefault();
+    draggingFlow.current = true;
+    flowDragStartX.current = e.clientX;
+    flowStartValue.current = brushFlow;
+
+    // prevent text selection while dragging
+    const prevUserSelect = document.body.style.userSelect;
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!draggingFlow.current || flowDragStartX.current === null) return;
+      const delta = ev.clientX - flowDragStartX.current;
+      // sensitivity: 0.005 per pixel = 0.05 change per 10px
+      const sensitivity = 0.005;
+      let newVal = flowStartValue.current + delta * sensitivity;
+      newVal = Math.max(0, Math.min(1, newVal));
+      setBrushFlow(Number(newVal.toFixed(2)));
+    };
+
+    const onMouseUp = () => {
+      draggingFlow.current = false;
+      flowDragStartX.current = null;
+      flowStartValue.current = brushFlow;
+      document.body.style.userSelect = prevUserSelect;
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
   };
 
   //#region 🎯 Color Picker & Hover Preview
@@ -680,28 +756,40 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
               />
 
               {/* Brush Opacity */}
-              <div>
-                <span>Opacity:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span
+                  onMouseDown={handleOpacityLabelMouseDown}
+                  style={{ cursor: 'ew-resize', userSelect: 'none' }}
+                  title="Drag left/right to change opacity"
+                >
+                  Opacity:
+                </span>
                 <InputNumber
                   min={0}
                   max={1}
                   step={0.01}
                   style={{ width: 60 }}
                   value={brushOpacity}
-                  onChange={(v) => setBrushOpacity(v || 1)}
+                  onChange={(v) => setBrushOpacity(v || 0)}
                 />
               </div>
 
               {/* Brush Flow */}
-              <div>
-                <span>Flow:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span
+                  onMouseDown={handleFlowLabelMouseDown}
+                  style={{ cursor: 'ew-resize', userSelect: 'none' }}
+                  title="Drag left/right to change flow"
+                >
+                  Flow:
+                </span>
                 <InputNumber
                   min={0}
                   max={1}
                   step={0.01}
                   style={{ width: 60 }}
                   value={brushFlow}
-                  onChange={(v) => setBrushFlow(v || 1)}
+                  onChange={(v) => setBrushFlow(v || 0)}
                 />
               </div>
             </Space>
