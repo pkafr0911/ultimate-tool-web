@@ -228,67 +228,10 @@ const ImageEditorToolbar: React.FC<Props> = ({
                 onClick={() => flipV(canvasRef, history)}
               />
             </Tooltip>
-          </Space>
-        </Panel>
 
-        {/* 🖌 Brush */}
-        <Panel header="🖊 Brush" key="brush">
-          <Space direction="vertical" style={{ width: '100%' }} wrap>
-            {/* Brush Type */}
-            <Select
-              value={brushType}
-              onChange={(v) => setBrushType(v as 'hard' | 'soft')}
-              style={{ width: 80 }}
-            >
-              <Option value="hard">Hard</Option>
-              <Option value="soft">Soft</Option>
-            </Select>
-            <Space>
-              {/* Color Picker */}
-              <ColorPicker value={drawColor} onChange={(c) => setDrawColor(c.toHexString())} />
-
-              {/* Brush Size */}
-              <InputNumber
-                min={1}
-                max={50}
-                value={drawLineWidth}
-                onChange={(v) => setDrawLineWidth(v || 1)}
-                addonAfter="px"
-              />
-
-              {/* Select Brush Tool */}
-              <Button size="small" onClick={() => setTool('draw')}>
-                <EditOutlined />
-              </Button>
-            </Space>
-
-            <Space wrap>
-              {/* Brush Opacity */}
-              <div>
-                <span>Opacity:</span>
-                <InputNumber
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  style={{ width: 60 }}
-                  value={brushOpacity}
-                  onChange={(v) => setBrushOpacity(v || 1)}
-                />
-              </div>
-
-              {/* Brush Flow */}
-              <div>
-                <span>Flow:</span>
-                <InputNumber
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  style={{ width: 60 }}
-                  value={brushFlow}
-                  onChange={(v) => setBrushFlow(v || 1)}
-                />
-              </div>
-            </Space>
+            <Tooltip title="Brush">
+              <Button icon={<EditOutlined />} onClick={() => setTool('draw')} />
+            </Tooltip>
           </Space>
         </Panel>
 

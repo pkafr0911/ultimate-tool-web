@@ -1,6 +1,6 @@
 //#region Imports
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Space, Tooltip, Modal, Select, message } from 'antd';
+import { Button, Space, Tooltip, Modal, Select, message, InputNumber, ColorPicker } from 'antd';
 import { ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
 
 import { perspectiveTransform } from '@/pages/PNGJPEG/utils/ImageEditorEngine';
@@ -229,7 +229,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   const handleMouseMoveViewer = (e: React.MouseEvent) => {
     if (resizingBrush.current && resizeStartX.current !== null) {
       const deltaX = e.clientX - resizeStartX.current;
-      const newWidth = Math.max(1, Math.min(50, initialLineWidth.current + deltaX / 5));
+      const newWidth = Math.max(
+        1,
+        Math.round(Math.min(500, initialLineWidth.current + deltaX / 5) * 10) / 10,
+      );
       setDrawLineWidth(newWidth);
       return;
     }
@@ -278,6 +281,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
       ctx.stroke();
       ctx.restore();
+      drawOverlay();
     } else {
       drawOverlay();
     }
@@ -606,6 +610,32 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       <div style={{ flex: 1 }}>
         <div style={{ marginBottom: 8 }}>
           <Space>
+            <Select
+              style={{ width: 150 }}
+              placeholder="History"
+              value={history.index}
+              onChange={(idx) => history.applyHistory(idx)}
+              optionLabelProp="label"
+            >
+              {history.history.map((item, idx) => (
+                <Select.Option key={idx} value={idx} label={item.label || `Step ${idx + 1}`}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <img
+                      src={item.url}
+                      alt=""
+                      style={{
+                        width: 40,
+                        height: 30,
+                        objectFit: 'contain',
+                        border: '1px solid #ddd',
+                      }}
+                    />
+                    <span>{item.label || `Step ${idx + 1}`}</span>
+                  </div>
+                </Select.Option>
+              ))}
+            </Select>
+
             <Tooltip title="Zoom In">
               <Button
                 icon={<ZoomInOutlined />}
@@ -626,6 +656,55 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
               <Option value="perspective">Perspective</Option>
               <Option value="draw">Brush</Option>
             </Select>
+            <Space style={{ width: '100%' }} wrap>
+              {/* Brush Type */}
+              <Select
+                value={brushType}
+                onChange={(v) => setBrushType(v as 'hard' | 'soft')}
+                style={{ width: 80 }}
+              >
+                <Option value="hard">Hard</Option>
+                <Option value="soft">Soft</Option>
+              </Select>
+              {/* Color Picker */}
+              <ColorPicker value={drawColor} onChange={(c) => setDrawColor(c.toHexString())} />
+
+              {/* Brush Size */}
+              <InputNumber
+                style={{ width: 100 }}
+                min={1}
+                max={500}
+                value={drawLineWidth}
+                onChange={(v) => setDrawLineWidth(v || 1)}
+                addonAfter="px"
+              />
+
+              {/* Brush Opacity */}
+              <div>
+                <span>Opacity:</span>
+                <InputNumber
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  style={{ width: 60 }}
+                  value={brushOpacity}
+                  onChange={(v) => setBrushOpacity(v || 1)}
+                />
+              </div>
+
+              {/* Brush Flow */}
+              <div>
+                <span>Flow:</span>
+                <InputNumber
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  style={{ width: 60 }}
+                  value={brushFlow}
+                  onChange={(v) => setBrushFlow(v || 1)}
+                />
+              </div>
+            </Space>
           </Space>
         </div>
 

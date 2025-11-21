@@ -50,5 +50,5 @@ export default function useHistory(
     img.src = item.url;
   };
 
-  return { history, index, current, push, undo, redo };
+  return { history, index, current, push, undo, redo, applyHistory };
 }

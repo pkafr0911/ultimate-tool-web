@@ -151,7 +151,7 @@ let previousEffects = {
   clarity: 0,
 
   // Threshold
-  bgThreshold: 0,
+  bgThreshold: 255,
   bgThresholdBlack: 0,
 
   // Brightness / contrast
@@ -181,7 +181,7 @@ export const applyEffects = (
     blur = 0,
     gaussian = 0,
     sharpen = 0,
-    bgThreshold = 0,
+    bgThreshold = 255,
     bgThresholdBlack = 0,
     brightness = 0,
     contrast = 0,
@@ -217,7 +217,7 @@ export const applyEffects = (
     sharpen === 0 &&
     texture === 0 &&
     clarity === 0 &&
-    bgThreshold === 0 &&
+    bgThreshold === 255 &&
     bgThresholdBlack === 0 &&
     brightness === 0 &&
     contrast === 0 &&
@@ -323,7 +323,7 @@ export const applyEffects = (
     const historyLabel = changedEffects
       .map(([key, value]) => `${key}=${JSON.stringify(value)}`)
       .join(', ');
-    history.push(canvasRef.current.toDataURL(), `Effects: ${historyLabel}`);
+    history.push(canvasRef.current.toDataURL(), `${historyLabel}`);
     previousEffects = {
       blur,
       gaussian,
@@ -363,7 +363,7 @@ export const resetEffectsToBase = (
     sharpen: 0,
     texture: 0,
     clarity: 0,
-    bgThreshold: 0,
+    bgThreshold: 255,
     bgThresholdBlack: 0,
     brightness: 0,
     contrast: 0,
