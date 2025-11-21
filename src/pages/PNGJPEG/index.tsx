@@ -24,6 +24,7 @@ import {
 import ImageTracer from 'imagetracerjs';
 import React, { useEffect, useRef, useState } from 'react';
 import ImageEditor from './components/ImageEditor';
+import './styles.less';
 
 const { Title } = Typography;
 const { TabPane } = Tabs;

@@ -1,0 +1,38 @@
+.hsl-slider-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 8px;
+}
+
+.hsl-label {
+  width: 50px;
+  font-size: 12px;
+}
+
+.hsl-slider {
+  flex: 1;
+  .ant-slider-rail,
+  .ant-slider-track {
+    height: 2px;
+    border-radius: 0;
+  }
+  .ant-slider-handle {
+    width: 8px;
+    height: 8px;
+    margin-top: -3px;
+    background: #ddd;
+    border: none;
+    box-shadow: 0 0 3px rgba(255, 255, 255, 0.6);
+  }
+}
+
+.hsl-number {
+  width: 48px;
+  background: transparent;
+
+  input {
+    text-align: right;
+    border: none;
+  }
+}

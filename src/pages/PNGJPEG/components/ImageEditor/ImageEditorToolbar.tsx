@@ -23,6 +23,7 @@ import {
   EditOutlined,
 } from '@ant-design/icons';
 import { applyEffects, copyToClipboard, flipH, flipV, rotate } from '../../utils/helpers';
+import { HslSlider } from './HslSlider';
 
 const { Panel } = Collapse;
 
@@ -169,6 +170,30 @@ const ImageEditorToolbar: React.FC<Props> = ({
     { name: 'magenta', color: '#ff00aa' },
   ];
 
+  const getSliderGradient = (activeColor: string, type: 'h' | 's' | 'l') => {
+    const base = colorSwatches.find((c) => c.name === activeColor)?.color || '#ffffff';
+
+    const index = colorSwatches.findIndex((c) => c.name === activeColor);
+
+    // If not found, default to grayscale
+    if (index === -1) return '#555';
+
+    const current = colorSwatches[index].color;
+    const left = colorSwatches[index - 1]?.color || current; // If first, use itself
+    const right = colorSwatches[index + 1]?.color || current; // If last, use itself
+
+    switch (type) {
+      case 'h':
+        return `linear-gradient(90deg, ${left}, ${current}, ${right})`;
+      case 's':
+        return `linear-gradient(90deg, gray, ${base})`;
+      case 'l':
+        return `linear-gradient(90deg, black, ${base}, white)`;
+      default:
+        return '#555';
+    }
+  };
+
   const apply = () =>
     applyEffects(
       canvasRef,
@@ -288,36 +313,40 @@ const ImageEditorToolbar: React.FC<Props> = ({
           <div style={{ marginTop: 10 }}>HSL Mixer</div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
             {colorSwatches.map(({ name, color }) => (
-              <div
-                key={name}
-                onClick={() => setActiveColor(name)}
-                style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: '50%',
-                  background: color,
-                  border: activeColor === name ? '2px solid white' : '1px solid #555',
-                  boxShadow: activeColor === name ? '0 0 6px rgba(255,255,255,0.8)' : '',
-                  cursor: 'pointer',
-                }}
-              />
+              <Tooltip title={name.toUpperCase()}>
+                <div
+                  key={name}
+                  onClick={() => setActiveColor(name)}
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: '50%',
+                    background: color,
+                    border: activeColor === name ? '2px solid white' : '1px solid #555',
+                    boxShadow: activeColor === name ? '0 0 6px rgba(255,255,255,0.8)' : '',
+                    cursor: 'pointer',
+                  }}
+                />
+              </Tooltip>
             ))}
           </div>
-          <div>{activeColor.toUpperCase()}</div>
+          {/* <div>{activeColor.toUpperCase()}</div> */}
 
-          {['Hue', 'Saturation', 'Luminance'].map((label) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ width: 80 }}>{label}</span>
-              <Slider
+          {['Hue', 'Saturation', 'Luminance'].map((label) => {
+            const key = label[0].toLowerCase(); // h/s/l
+            return (
+              <HslSlider
+                key={label}
+                label={label}
+                value={hslAdjustments[activeColor]?.[key] ?? 0}
                 min={label === 'Hue' ? -180 : -100}
                 max={label === 'Hue' ? 180 : 100}
-                value={hslAdjustments[activeColor]?.[label[0].toLowerCase()] ?? 0}
-                onChange={(v) => setHslAdjustments(activeColor, { [label[0].toLowerCase()]: v })}
+                onChange={(v) => setHslAdjustments(activeColor, { [key]: v })}
                 onChangeComplete={apply}
-                style={{ flex: 1 }}
+                gradient={getSliderGradient(activeColor, key as 'h' | 's' | 'l')}
               />
-            </div>
-          ))}
+            );
+          })}
 
           <Button size="small" onClick={() => setHslAdjustments(activeColor, { h: 0, s: 0, l: 0 })}>
             Reset
