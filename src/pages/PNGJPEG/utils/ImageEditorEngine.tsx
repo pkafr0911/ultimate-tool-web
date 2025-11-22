@@ -138,7 +138,8 @@ export const Kernels = {
   },
 };
 
-export function applyThresholdAlpha(data: ImageData, threshold = 255) {
+export function applyThresholdAlpha(data: ImageData, threshold = 0) {
+  threshold = 255 - threshold;
   // If pixel is near-white (all channels > threshold), set alpha = 0
   const d = data.data;
   for (let i = 0; i < d.length; i += 4) {

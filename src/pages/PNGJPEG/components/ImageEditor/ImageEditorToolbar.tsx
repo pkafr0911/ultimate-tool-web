@@ -45,16 +45,6 @@ type Props = {
     undo: () => void;
     redo: () => void;
   };
-  drawColor: string;
-  setDrawColor: (color: string) => void;
-  drawLineWidth: number;
-  setDrawLineWidth: (width: number) => void;
-  brushType: 'hard' | 'soft';
-  setBrushType: (type: 'hard' | 'soft') => void;
-  brushOpacity: number; // 0-1
-  setBrushOpacity: (v: number) => void;
-  brushFlow: number; // 0-1
-  setBrushFlow: (v: number) => void;
   setTool: any;
   brightness: number;
   setBrightness: (v: number) => void;
@@ -106,16 +96,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
   canvasRef,
   baseCanvas,
   history,
-  drawColor,
-  setDrawColor,
-  drawLineWidth,
-  setDrawLineWidth,
-  brushType,
-  setBrushType,
-  brushOpacity,
-  setBrushOpacity,
-  brushFlow,
-  setBrushFlow,
+
   setTool,
   brightness,
   setBrightness,
@@ -193,6 +174,37 @@ const ImageEditorToolbar: React.FC<Props> = ({
         return '#555';
     }
   };
+
+  const toneSliders = [
+    { key: 'texture', label: 'Texture', value: texture, setter: setTexture },
+    { key: 'clarity', label: 'Clarity', value: clarity, setter: setClarity },
+    { key: 'highlights', label: 'Highlights', value: highlights, setter: setHighlights },
+    { key: 'shadows', label: 'Shadows', value: shadows, setter: setShadows },
+    { key: 'whites', label: 'Whites', value: whites, setter: setWhites },
+    { key: 'blacks', label: 'Blacks', value: blacks, setter: setBlacks },
+  ];
+
+  const effectSliders = [
+    { key: 'blur', label: 'Box Blur', min: 0, max: 25, value: blur, setter: setBlur },
+    { key: 'gaussian', label: 'Gaussian', min: 0, max: 20, value: gaussian, setter: setGaussian },
+    { key: 'sharpen', label: 'Sharpen', min: 0, max: 5, value: sharpen, setter: setSharpen },
+    {
+      key: 'bgThreshold',
+      label: 'Remove White',
+      min: 0,
+      max: 255,
+      value: bgThreshold,
+      setter: setBgThreshold,
+    },
+    {
+      key: 'bgThresholdBlack',
+      label: 'Remove Black',
+      min: 0,
+      max: 255,
+      value: bgThresholdBlack,
+      setter: setBgThresholdBlack,
+    },
+  ];
 
   const apply = () =>
     applyEffects(
@@ -360,91 +372,32 @@ const ImageEditorToolbar: React.FC<Props> = ({
 
         {/* ✨ Effects */}
         <Panel header="✨ Effects" key="effects">
-          <div>Texture</div>
-          <Slider
-            min={-100}
-            max={100}
-            value={texture}
-            onChange={setTexture}
-            onChangeComplete={apply}
-          />
-          <div>Clarity</div>
-          <Slider
-            min={-100}
-            max={100}
-            value={clarity}
-            onChange={setClarity}
-            onChangeComplete={apply}
-          />
-
-          <div>Highlights</div>
-          <Slider
-            min={-100}
-            max={100}
-            value={highlights}
-            onChange={setHighlights}
-            onChangeComplete={apply}
-          />
-
-          <div>Shadows</div>
-          <Slider
-            min={-100}
-            max={100}
-            value={shadows}
-            onChange={setShadows}
-            onChangeComplete={apply}
-          />
-
-          <div>Whites</div>
-          <Slider
-            min={-100}
-            max={100}
-            value={whites}
-            onChange={setWhites}
-            onChangeComplete={apply}
-          />
-
-          <div>Blacks</div>
-          <Slider
-            min={-100}
-            max={100}
-            value={blacks}
-            onChange={setBlacks}
-            onChangeComplete={apply}
-          />
+          {toneSliders.map(({ key, label, value, setter }) => (
+            <CustomSlider
+              key={key}
+              label={label}
+              value={value}
+              min={-100}
+              max={100}
+              onChange={setter}
+              onChangeComplete={apply}
+            />
+          ))}
         </Panel>
 
         {/* 🎭 Filters */}
         <Panel header="🎭 Filters" key="filters">
-          <div>Box Blur</div>
-          <Slider min={0} max={25} value={blur} onChange={setBlur} onChangeComplete={apply} />
-          <div>Gaussian</div>
-          <Slider
-            min={0}
-            max={20}
-            value={gaussian}
-            onChange={setGaussian}
-            onChangeComplete={apply}
-          />
-          <div>Sharpen</div>
-          <Slider min={0} max={5} value={sharpen} onChange={setSharpen} onChangeComplete={apply} />
-
-          <div>Remove White</div>
-          <Slider
-            min={0}
-            max={255}
-            value={bgThreshold}
-            onChange={setBgThreshold}
-            onChangeComplete={apply}
-          />
-          <div>Remove Black</div>
-          <Slider
-            min={0}
-            max={255}
-            value={bgThresholdBlack}
-            onChange={setBgThresholdBlack}
-            onChangeComplete={apply}
-          />
+          {effectSliders.map(({ key, label, min, max, value, setter }) => (
+            <CustomSlider
+              key={key}
+              label={label}
+              value={value}
+              min={min}
+              max={max}
+              onChange={setter}
+              onChangeComplete={apply}
+            />
+          ))}
         </Panel>
 
         {/* 📐 Crop / Ruler */}

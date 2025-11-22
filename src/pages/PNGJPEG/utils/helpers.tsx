@@ -151,7 +151,7 @@ let previousEffects = {
   clarity: 0,
 
   // Threshold
-  bgThreshold: 255,
+  bgThreshold: 0,
   bgThresholdBlack: 0,
 
   // Brightness / contrast
@@ -181,7 +181,7 @@ export const applyEffects = (
     blur = 0,
     gaussian = 0,
     sharpen = 0,
-    bgThreshold = 255,
+    bgThreshold = 0,
     bgThresholdBlack = 0,
     brightness = 0,
     contrast = 0,
@@ -217,7 +217,7 @@ export const applyEffects = (
     sharpen === 0 &&
     texture === 0 &&
     clarity === 0 &&
-    bgThreshold === 255 &&
+    bgThreshold === 0 &&
     bgThresholdBlack === 0 &&
     brightness === 0 &&
     contrast === 0 &&
@@ -259,7 +259,7 @@ export const applyEffects = (
   }
 
   // Threshold effects
-  if (bgThreshold < 255) applyThresholdAlpha(cloned, bgThreshold);
+  if (bgThreshold > 0) applyThresholdAlpha(cloned, bgThreshold);
   if (bgThresholdBlack > 0) applyThresholdAlphaBlack(cloned, bgThresholdBlack);
 
   // Brightness/Contrast
@@ -363,7 +363,7 @@ export const resetEffectsToBase = (
     sharpen: 0,
     texture: 0,
     clarity: 0,
-    bgThreshold: 255,
+    bgThreshold: 0,
     bgThresholdBlack: 0,
     brightness: 0,
     contrast: 0,

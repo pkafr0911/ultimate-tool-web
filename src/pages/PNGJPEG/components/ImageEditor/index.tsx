@@ -118,7 +118,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   const [texture, setTexture] = useState(0);
   const [clarity, setClarity] = useState(0);
 
-  const [bgThreshold, setBgThreshold] = useState(255);
+  const [bgThreshold, setBgThreshold] = useState(0);
   const [bgThresholdBlack, setBgThresholdBlack] = useState(0);
 
   const [hslAdjustments, setHslAdjustmentsState] = useState<
@@ -629,16 +629,6 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         overlayRef={overlayRef}
         baseCanvas={baseCanvas}
         history={history}
-        drawColor={drawColor}
-        setDrawColor={setDrawColor}
-        drawLineWidth={drawLineWidth}
-        setDrawLineWidth={setDrawLineWidth}
-        brushType={brushType}
-        setBrushType={setBrushType}
-        brushOpacity={brushOpacity}
-        setBrushOpacity={setBrushOpacity}
-        brushFlow={brushFlow}
-        setBrushFlow={setBrushFlow}
         setTool={setTool}
         // Exposure & Color
         brightness={brightness}
