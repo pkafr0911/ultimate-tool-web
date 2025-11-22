@@ -239,9 +239,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       const deltaX = e.clientX - resizeStartX.current;
       const newWidth = Math.max(
         1,
-        Math.round(Math.min(500, initialLineWidth.current + deltaX / 5) * 10) / 10,
+        Math.round(Math.min(500, initialLineWidth.current + deltaX / 2) * 10) / 10,
       );
       setDrawLineWidth(newWidth);
+      drawOverlay();
       return;
     }
 
@@ -512,6 +513,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     return () => window.removeEventListener('keydown', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [history.index, history.history]);
+  //#endregion
 
   // Quick hand tool when holding Spaceb
   useEffect(() => {
