@@ -23,7 +23,7 @@ import {
   EditOutlined,
 } from '@ant-design/icons';
 import { applyEffects, copyToClipboard, flipH, flipV, rotate } from '../../utils/helpers';
-import { HslSlider } from './HslSlider';
+import { CustomSlider } from './CustomSlider';
 
 const { Panel } = Collapse;
 
@@ -262,19 +262,21 @@ const ImageEditorToolbar: React.FC<Props> = ({
 
         {/* 🔆 Light */}
         <Panel header="🔆 Light" key="lights">
-          <div>Brightness</div>
-          <Slider
+          <CustomSlider
+            key={'brightness'}
+            label={'Brightness'}
+            value={brightness}
             min={-150}
             max={150}
-            value={brightness}
             onChange={setBrightness}
             onChangeComplete={apply}
           />
-          <div>Contrast</div>
-          <Slider
+          <CustomSlider
+            key={'contrast'}
+            label={'Contrast'}
+            value={contrast}
             min={-100}
             max={100}
-            value={contrast}
             onChange={setContrast}
             onChangeComplete={apply}
           />
@@ -282,29 +284,32 @@ const ImageEditorToolbar: React.FC<Props> = ({
 
         {/* 🎨 Color & HSL */}
         <Panel header="🎨 Color" key="color">
-          <div style={{ marginBottom: 8 }}>Vibrance</div>
-          <Slider
+          <CustomSlider
+            key={'vibrance'}
+            label={'Vibrance'}
+            value={vibrance}
             min={-100}
             max={100}
-            value={vibrance}
             onChange={setVibrance}
             onChangeComplete={apply}
           />
 
-          <div style={{ marginBottom: 8 }}>Saturation</div>
-          <Slider
+          <CustomSlider
+            key={'saturation'}
+            label={'Saturation'}
+            value={saturation}
             min={-100}
             max={100}
-            value={saturation}
             onChange={setSaturation}
             onChangeComplete={apply}
           />
 
-          <div style={{ marginBottom: 8 }}>Dehaze</div>
-          <Slider
+          <CustomSlider
+            key={'dehaze'}
+            label={'Dehaze'}
+            value={dehaze}
             min={-100}
             max={100}
-            value={dehaze}
             onChange={setDehaze}
             onChangeComplete={apply}
           />
@@ -335,7 +340,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
           {['Hue', 'Saturation', 'Luminance'].map((label) => {
             const key = label[0].toLowerCase(); // h/s/l
             return (
-              <HslSlider
+              <CustomSlider
                 key={label}
                 label={label}
                 value={hslAdjustments[activeColor]?.[key] ?? 0}

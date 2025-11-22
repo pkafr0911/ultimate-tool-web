@@ -1,33 +1,38 @@
-.hsl-slider-container {
-  display: flex;
+.custom-slider-container {
   align-items: center;
-  margin-bottom: 6px;
   gap: 8px;
 }
 
-.hsl-label {
+.custom-label {
   width: 50px;
   font-size: 12px;
 }
 
-.hsl-slider {
+.custom-slider {
   flex: 1;
+  margin: 2px;
   .ant-slider-rail,
   .ant-slider-track {
     height: 2px;
     border-radius: 0;
   }
   .ant-slider-handle {
-    width: 8px;
-    height: 8px;
-    margin-top: -3px;
+    width: 4px;
+    height: 4px;
     background: #ddd;
     border: none;
     box-shadow: 0 0 3px rgba(255, 255, 255, 0.6);
   }
+
+  .ant-slider-step {
+    height: 2px;
+    border-radius: 0;
+    background: var(--custom-slider-gradient) !important;
+  }
 }
 
-.hsl-number {
+.custom-number {
+  float: right;
   width: 48px;
   background: transparent;
 
@@ -35,4 +40,16 @@
     text-align: right;
     border: none;
   }
+}
+
+.custom-number.ant-input-number {
+  height: 22px; // smaller height
+  padding: 0 6px; // reduce horizontal padding
+  font-size: 12px; // optional
+}
+
+.custom-number .ant-input-number-input {
+  height: 20px; // shrink inner input
+  line-height: 20px;
+  padding: 0;
 }
