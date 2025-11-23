@@ -10,13 +10,6 @@ type RGBHistogramProps = {
 
 const RGBHistogram: React.FC<RGBHistogramProps> = ({ redData, greenData, blueData }) => {
   const options = useMemo(() => {
-    // Combine all data
-    const allData = [...redData, ...greenData, ...blueData];
-
-    // Safe min/max calculation
-    const xMin = allData.reduce((min, val) => (val < min ? val : min), allData[0] ?? 0);
-    const xMax = allData.reduce((max, val) => (val > max ? val : max), allData[0] ?? 0);
-
     return {
       chart: {
         backgroundColor: '#2b2b2b',

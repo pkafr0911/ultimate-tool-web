@@ -139,19 +139,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
       const extracted = extractRGBHistogram(canvasRef.current);
       setHistogramData(extracted);
     }
-  }, [
-    canvasRef, // image load
-    hslAdjustments, // user changes HSL
-    brightness,
-    contrast,
-    highlights,
-    shadows,
-    whites,
-    blacks,
-    vibrance,
-    saturation,
-    dehaze,
-  ]);
+  }, [canvasRef.current]);
   const colorSwatches = [
     { name: 'red', color: '#ff4d4d' },
     { name: 'orange', color: '#ffa500' },
@@ -242,11 +230,23 @@ const ImageEditorToolbar: React.FC<Props> = ({
         hslAdjustments,
       },
       history,
+      setHistogramData,
     );
 
   return (
     <div style={{ width: 260 }}>
-      <Collapse defaultActiveKey={['basic', 'lights', 'effects']} ghost expandIconPosition="end">
+      <Collapse
+        defaultActiveKey={['histogram', 'basic', 'lights', 'effects']}
+        ghost
+        expandIconPosition="end"
+      >
+        <Panel header="Histogram" key="histogram">
+          <RGBHistogram
+            redData={histogramData.red}
+            greenData={histogramData.green}
+            blueData={histogramData.blue}
+          />
+        </Panel>
         {/* 🔧 Basic Tools */}
         <Panel header="🛠 Basic" key="basic">
           <Space wrap>
@@ -308,11 +308,6 @@ const ImageEditorToolbar: React.FC<Props> = ({
 
         {/* 🎨 Color & HSL */}
         <Panel header="🎨 Color" key="color">
-          <RGBHistogram
-            redData={histogramData.red}
-            greenData={histogramData.green}
-            blueData={histogramData.blue}
-          />
           <CustomSlider
             key={'vibrance'}
             label={'Vibrance'}

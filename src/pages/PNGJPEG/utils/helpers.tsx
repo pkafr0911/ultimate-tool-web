@@ -197,6 +197,7 @@ export const applyEffects = (
     hslAdjustments = {} as Record<string, { h?: number; s?: number; l?: number }>,
   },
   history: { push: (img: string, label: string) => void },
+  setHistogramData,
 ) => {
   if (!canvasRef.current || !baseCanvas) return;
 
@@ -231,6 +232,12 @@ export const applyEffects = (
     Object.keys(hslAdjustments).length === 0
   ) {
     ctx.putImageData(cloned, 0, 0);
+
+    //
+    if (canvasRef.current) {
+      const extracted = extractRGBHistogram(canvasRef.current);
+      setHistogramData(extracted);
+    }
     return;
   }
 
@@ -343,6 +350,12 @@ export const applyEffects = (
       dehaze,
       hslAdjustments,
     };
+  }
+
+  //
+  if (canvasRef.current) {
+    const extracted = extractRGBHistogram(canvasRef.current);
+    setHistogramData(extracted);
   }
 };
 
