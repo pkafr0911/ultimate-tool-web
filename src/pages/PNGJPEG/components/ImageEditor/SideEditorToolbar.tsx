@@ -1,16 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Button,
-  Divider,
-  Slider,
-  Space,
-  Tooltip,
-  message,
-  ColorPicker,
-  InputNumber,
-  Collapse,
-  Select,
-} from 'antd';
+import { Button, Space, Tooltip, message, Collapse } from 'antd';
 import {
   UndoOutlined,
   RedoOutlined,
@@ -24,27 +13,14 @@ import {
 } from '@ant-design/icons';
 import { applyEffects, copyToClipboard, flipH, flipV, rotate } from '../../utils/helpers';
 import { CustomSlider } from './CustomSlider';
+import { HistoryController } from '../../hooks/useHistory';
 
 const { Panel } = Collapse;
-
-type HistoryItem = {
-  url: string;
-  label?: string;
-};
-
-const { Option } = Select;
 
 type Props = {
   canvasRef: React.RefObject<HTMLCanvasElement>;
   baseCanvas?: HTMLCanvasElement | null;
-  history: {
-    history: HistoryItem[];
-    index: number;
-    current: HistoryItem;
-    push: (url: string, label?: string) => void;
-    undo: () => void;
-    redo: () => void;
-  };
+  history: HistoryController;
   setTool: any;
   brightness: number;
   setBrightness: (v: number) => void;

@@ -5,6 +5,16 @@ type HistoryItem = {
   label?: string;
 };
 
+export type HistoryController = {
+  history: HistoryItem[];
+  index: number;
+  current: HistoryItem;
+  push: (url: string, label?: string) => void;
+  undo: () => void;
+  redo: () => void;
+  applyHistory: (idx: number) => void;
+};
+
 export default function useHistory(
   canvasRef: MutableRefObject<HTMLCanvasElement | null>,
   overlayRef: MutableRefObject<HTMLCanvasElement | null>,

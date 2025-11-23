@@ -9,11 +9,12 @@ import useCanvas from '../../hooks/useCanvas';
 import useHistory from '../../hooks/useHistory';
 import { applyCrop, exportImage, rotate, samplePixel } from '../../utils/helpers';
 import ImageCanvas from './ImageCanvas';
-import ImageEditorToolbar from './ImageEditorToolbar';
+import ImageEditorToolbar from './SideEditorToolbar';
+import TopEditorToolbar from './TopEditorToolbar';
 //#endregion
 
 //#region Types
-type Tool = 'pan' | 'crop' | 'color' | 'ruler' | 'perspective' | 'select' | 'draw';
+export type Tool = 'pan' | 'crop' | 'color' | 'ruler' | 'perspective' | 'select' | 'draw';
 
 type Props = {
   imageUrl: string;
@@ -676,117 +677,24 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       />
 
       <div style={{ flex: 1 }}>
-        <div style={{ marginBottom: 8 }}>
-          <Space>
-            <Select
-              style={{ width: 150 }}
-              placeholder="History"
-              value={history.index}
-              onChange={(idx) => history.applyHistory(idx)}
-              optionLabelProp="label"
-            >
-              {history.history.map((item, idx) => (
-                <Select.Option key={idx} value={idx} label={item.label || `Step ${idx + 1}`}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <img
-                      src={item.url}
-                      alt=""
-                      style={{
-                        width: 40,
-                        height: 30,
-                        objectFit: 'contain',
-                        border: '1px solid #ddd',
-                      }}
-                    />
-                    <span>{item.label || `Step ${idx + 1}`}</span>
-                  </div>
-                </Select.Option>
-              ))}
-            </Select>
-
-            <Tooltip title="Zoom In">
-              <Button
-                icon={<ZoomInOutlined />}
-                onClick={() => setZoom((z) => Math.min(z * 1.2, 8))}
-              />
-            </Tooltip>
-            <Tooltip title="Zoom Out">
-              <Button
-                icon={<ZoomOutOutlined />}
-                onClick={() => setZoom((z) => Math.max(z / 1.2, 0.1))}
-              />
-            </Tooltip>
-            <Select value={tool} onChange={(v) => setTool(v as Tool)} style={{ width: 140 }}>
-              <Option value="pan">Pan</Option>
-              <Option value="color">Color Picker</Option>
-              <Option value="crop">Crop</Option>
-              <Option value="ruler">Ruler</Option>
-              <Option value="perspective">Perspective</Option>
-              <Option value="draw">Brush</Option>
-            </Select>
-            <Space style={{ width: '100%' }} wrap>
-              {/* Brush Type */}
-              <Select
-                value={brushType}
-                onChange={(v) => setBrushType(v as 'hard' | 'soft')}
-                style={{ width: 80 }}
-              >
-                <Option value="hard">Hard</Option>
-                <Option value="soft">Soft</Option>
-              </Select>
-              {/* Color Picker */}
-              <ColorPicker value={drawColor} onChange={(c) => setDrawColor(c.toHexString())} />
-
-              {/* Brush Size */}
-              <InputNumber
-                style={{ width: 100 }}
-                min={1}
-                max={500}
-                value={drawLineWidth}
-                onChange={(v) => setDrawLineWidth(v || 1)}
-                addonAfter="px"
-              />
-
-              {/* Brush Opacity */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span
-                  onMouseDown={handleOpacityLabelMouseDown}
-                  style={{ cursor: 'ew-resize', userSelect: 'none' }}
-                  title="Drag left/right to change opacity"
-                >
-                  Opacity:
-                </span>
-                <InputNumber
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  style={{ width: 60 }}
-                  value={brushOpacity}
-                  onChange={(v) => setBrushOpacity(v || 0)}
-                />
-              </div>
-
-              {/* Brush Flow */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span
-                  onMouseDown={handleFlowLabelMouseDown}
-                  style={{ cursor: 'ew-resize', userSelect: 'none' }}
-                  title="Drag left/right to change flow"
-                >
-                  Flow:
-                </span>
-                <InputNumber
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  style={{ width: 60 }}
-                  value={brushFlow}
-                  onChange={(v) => setBrushFlow(v || 0)}
-                />
-              </div>
-            </Space>
-          </Space>
-        </div>
+        <TopEditorToolbar
+          history={history}
+          setZoom={setZoom}
+          tool={tool}
+          setTool={setTool}
+          brushType={brushType}
+          setBrushType={setBrushType}
+          drawColor={drawColor}
+          setDrawColor={setDrawColor}
+          drawLineWidth={drawLineWidth}
+          setDrawLineWidth={setDrawLineWidth}
+          brushOpacity={brushOpacity}
+          setBrushOpacity={setBrushOpacity}
+          brushFlow={brushFlow}
+          setBrushFlow={setBrushFlow}
+          handleOpacityLabelMouseDown={handleOpacityLabelMouseDown}
+          handleFlowLabelMouseDown={handleFlowLabelMouseDown}
+        />
 
         <ImageCanvas
           canvasRef={canvasRef}
