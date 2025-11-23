@@ -380,3 +380,26 @@ export const resetEffectsToBase = (
   // Add to history
   history.push(canvasRef.current.toDataURL(), 'Reset to base image');
 };
+
+export const extractRGBHistogram = (canvas: HTMLCanvasElement | null) => {
+  if (!canvas)
+    return { red: Array(256).fill(0), green: Array(256).fill(0), blue: Array(256).fill(0) };
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return { red: Array(256).fill(0), green: Array(256).fill(0), blue: Array(256).fill(0) };
+
+  const { width, height } = canvas;
+  const { data } = ctx.getImageData(0, 0, width, height);
+
+  const red = Array(256).fill(0);
+  const green = Array(256).fill(0);
+  const blue = Array(256).fill(0);
+
+  for (let i = 0; i < data.length; i += 4) {
+    red[data[i]]++; // count R value
+    green[data[i + 1]]++; // count G value
+    blue[data[i + 2]]++; // count B value
+  }
+
+  return { red, green, blue };
+};

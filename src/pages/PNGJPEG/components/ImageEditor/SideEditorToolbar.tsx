@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, Space, Tooltip, message, Collapse } from 'antd';
 import {
   UndoOutlined,
@@ -11,9 +11,17 @@ import {
   CopyOutlined,
   EditOutlined,
 } from '@ant-design/icons';
-import { applyEffects, copyToClipboard, flipH, flipV, rotate } from '../../utils/helpers';
+import {
+  applyEffects,
+  copyToClipboard,
+  extractRGBHistogram,
+  flipH,
+  flipV,
+  rotate,
+} from '../../utils/helpers';
 import { CustomSlider } from './CustomSlider';
 import { HistoryController } from '../../hooks/useHistory';
+import RGBHistogram from './RGBHistogram';
 
 const { Panel } = Collapse;
 
@@ -116,6 +124,34 @@ const ImageEditorToolbar: React.FC<Props> = ({
   setHslAdjustments,
 }) => {
   const [activeColor, setActiveColor] = useState('red');
+  const [histogramData, setHistogramData] = useState<{
+    red: number[];
+    green: number[];
+    blue: number[];
+  }>({
+    red: [],
+    green: [],
+    blue: [],
+  });
+
+  useEffect(() => {
+    if (canvasRef.current) {
+      const extracted = extractRGBHistogram(canvasRef.current);
+      setHistogramData(extracted);
+    }
+  }, [
+    canvasRef, // image load
+    hslAdjustments, // user changes HSL
+    brightness,
+    contrast,
+    highlights,
+    shadows,
+    whites,
+    blacks,
+    vibrance,
+    saturation,
+    dehaze,
+  ]);
   const colorSwatches = [
     { name: 'red', color: '#ff4d4d' },
     { name: 'orange', color: '#ffa500' },
@@ -272,6 +308,11 @@ const ImageEditorToolbar: React.FC<Props> = ({
 
         {/* 🎨 Color & HSL */}
         <Panel header="🎨 Color" key="color">
+          <RGBHistogram
+            redData={histogramData.red}
+            greenData={histogramData.green}
+            blueData={histogramData.blue}
+          />
           <CustomSlider
             key={'vibrance'}
             label={'Vibrance'}

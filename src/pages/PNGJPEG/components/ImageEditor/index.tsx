@@ -1,7 +1,6 @@
 //#region Imports
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Space, Tooltip, Modal, Select, message, InputNumber, ColorPicker } from 'antd';
-import { ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
+import { Modal, message } from 'antd';
 
 import { perspectiveTransform } from '@/pages/PNGJPEG/utils/ImageEditorEngine';
 
@@ -20,8 +19,6 @@ type Props = {
   imageUrl: string;
   onExport?: (blob: Blob) => void;
 };
-
-const { Option } = Select;
 //#endregion
 
 const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
@@ -127,6 +124,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       [name]: { ...(prev[name] || {}), ...values },
     }));
   };
+
   //#endregion
 
   //#region Event Effects & Handlers
