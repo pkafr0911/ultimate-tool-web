@@ -1,3 +1,4 @@
+// #region Imports
 import { message } from 'antd';
 import {
   applyBrightnessContrast,
@@ -14,7 +15,9 @@ import {
   exportCanvasToBlob,
   Kernels,
 } from './ImageEditorEngine';
+// #endregion
 
+// #region Rotate / Transform Helpers
 // rotate
 export const rotate = (deg: number, canvasRef, overlayRef, history) => {
   if (!canvasRef.current) return;
@@ -38,7 +41,9 @@ export const rotate = (deg: number, canvasRef, overlayRef, history) => {
   wctx.drawImage(dest, 0, 0);
   history.push(canvasRef.current.toDataURL(), `Rotate ${deg}`);
 };
+// #endregion
 
+// #region Export / Clipboard
 // exportImage
 export const exportImage = async (asJpeg = false, canvasRef, onExport) => {
   if (!canvasRef.current) return;
@@ -59,6 +64,7 @@ export const exportImage = async (asJpeg = false, canvasRef, onExport) => {
 };
 
 // copy to clipboard (image)
+// copy to clipboard (image)
 export const copyToClipboard = async (canvasRef) => {
   if (!canvasRef.current) return;
   try {
@@ -71,7 +77,9 @@ export const copyToClipboard = async (canvasRef) => {
     message.error('Copy failed (browser may not support)');
   }
 };
+// #endregion
 
+// #region Flip
 // flip
 export const flipH = (canvasRef, history) => {
   if (!canvasRef.current) return;
@@ -97,7 +105,9 @@ export const flipV = (canvasRef, history) => {
   ctx.restore();
   history.push(canvasRef.current.toDataURL(), 'Flip vertical');
 };
+// #endregion
 
+// #region Crop
 // Crop: apply cropRect to canvas
 export const applyCrop = (canvasRef, overlayRef, cropRect, setCropRect, history) => {
   if (!canvasRef.current || !cropRect) return;
@@ -125,7 +135,9 @@ export const applyCrop = (canvasRef, overlayRef, cropRect, setCropRect, history)
   setCropRect(null);
   history.push(canvasRef.current.toDataURL(), 'Cropped');
 };
+// #endregion
 
+// #region Color Picker
 /** --- COLOR PICKER --- */
 export const samplePixel = (e: MouseEvent, canvasRef, zoom) => {
   const canvas = canvasRef.current;
@@ -141,7 +153,9 @@ export const samplePixel = (e: MouseEvent, canvasRef, zoom) => {
   const p = ctx.getImageData(x, y, 1, 1).data;
   return `#${[p[0], p[1], p[2]].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 };
+// #endregion
 
+// #region Effects / Tone Adjustments
 // Store previous effects to detect changes
 let previousEffects = {
   // Convolution / blur effects
@@ -394,7 +408,9 @@ export const resetEffectsToBase = (
   // Add to history
   history.push(canvasRef.current.toDataURL(), 'Reset to base image');
 };
+// #endregion
 
+// #region Utilities
 export const extractRGBHistogram = (canvas: HTMLCanvasElement | null) => {
   if (!canvas)
     return { red: Array(256).fill(0), green: Array(256).fill(0), blue: Array(256).fill(0) };
@@ -417,8 +433,10 @@ export const extractRGBHistogram = (canvas: HTMLCanvasElement | null) => {
 
   return { red, green, blue };
 };
+// #endregion
 
 // ---------------- Overlay / Layer Helpers ----------------
+// #region Overlay / Layer Helpers
 export const addOverlayImage = (
   file: File,
   canvasRef: React.RefObject<HTMLCanvasElement>,
@@ -720,6 +738,9 @@ export const drawOverlayHelper = (
   }
 };
 
+// #endregion
+
+// #region Perspective Helper
 export const perspectiveApplyHelper = async (
   canvasRef: React.RefObject<HTMLCanvasElement>,
   overlayRef: React.RefObject<HTMLCanvasElement>,
