@@ -6,7 +6,21 @@ import { perspectiveTransform, createCanvas } from '@/pages/PNGJPEG/utils/ImageE
 
 import useCanvas from '../../hooks/useCanvas';
 import useHistory from '../../hooks/useHistory';
-import { applyCrop, exportImage, rotate, samplePixel } from '../../utils/helpers';
+import {
+  applyCrop,
+  exportImage,
+  rotate,
+  samplePixel,
+  addOverlayImage,
+  exportWithOverlay as helperExportWithOverlay,
+  mergeLayerIntoBase as helperMergeLayerIntoBase,
+  setLayerOpacity as helperSetLayerOpacity,
+  setLayerBlend as helperSetLayerBlend,
+  moveLayerUp as helperMoveLayerUp,
+  moveLayerDown as helperMoveLayerDown,
+  deleteLayer as helperDeleteLayer,
+  selectLayer as helperSelectLayer,
+} from '../../utils/helpers';
 import ImageCanvas from './ImageCanvas';
 import ImageEditorToolbar from './SideEditorToolbar';
 import TopEditorToolbar from './TopEditorToolbar';
@@ -142,135 +156,30 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   //#endregion
   //#endregion
 
-  // --- overlay image handlers ---
-  const onAddImage = (file: File) => {
-    const img = new Image();
-    img.onload = () => {
-      // place center with reasonable scale
-      const cw = canvasRef.current?.width || img.naturalWidth;
-      const ch = canvasRef.current?.height || img.naturalHeight;
-      let w = img.naturalWidth;
-      let h = img.naturalHeight;
-      // scale down if larger than canvas
-      const scale = Math.min(1, Math.min(cw / (w * 1.2), ch / (h * 1.2)));
-      w = Math.round(w * scale);
-      h = Math.round(h * scale);
-      const x = Math.round((cw - w) / 2);
-      const y = Math.round((ch - h) / 2);
-      const id = `${Date.now()}_${Math.round(Math.random() * 10000)}`;
-      const newLayer: Layer = { id, img, rect: { x, y, w, h }, opacity: 1, blend: 'source-over' };
-      setLayers((prev) => [...prev, newLayer]);
-      setActiveLayerId(id);
-      setOverlaySelected(true);
-      drawOverlay();
-      message.success('Overlay image added');
-    };
-    img.onerror = () => message.error('Failed to load overlay image');
-    img.src = URL.createObjectURL(file);
-  };
+  // --- overlay image handlers (delegated to helpers) ---
+  const onAddImage = (file: File) =>
+    addOverlayImage(file, canvasRef, setLayers, setActiveLayerId, setOverlaySelected, drawOverlay);
 
   const exportWithOverlay = async (
     asJpeg: boolean,
     canvasRefArg: React.RefObject<HTMLCanvasElement>,
     callback?: (blob: Blob) => void,
-  ) => {
-    if (!canvasRefArg.current) return;
-    const base = canvasRefArg.current;
-    const tmp = createCanvas(base.width, base.height);
-    const tctx = tmp.getContext('2d')!;
-    tctx.clearRect(0, 0, tmp.width, tmp.height);
-    tctx.drawImage(base, 0, 0);
-    // draw layers in order
-    for (const L of layers) {
-      try {
-        tctx.globalAlpha = L.opacity;
-        tctx.globalCompositeOperation = L.blend || 'source-over';
-        tctx.drawImage(L.img, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
-      } catch (err) {
-        // ignore
-      }
-    }
-    // restore defaults
-    tctx.globalAlpha = 1;
-    tctx.globalCompositeOperation = 'source-over';
-    const blob = await new Promise<Blob | null>((res) =>
-      tmp.toBlob((b) => res(b), asJpeg ? 'image/jpeg' : 'image/png', 0.92),
-    );
-    if (blob) {
-      if (callback) callback(blob);
-      // also download
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = asJpeg ? 'edited.jpg' : 'edited.png';
-      a.click();
-      URL.revokeObjectURL(url);
-      message.success('Exported image (with overlays)');
-    }
-  };
+  ) => helperExportWithOverlay(asJpeg, canvasRefArg, layers, callback);
 
   // Merge active layer into base canvas and record history
-  const mergeLayerIntoBase = (id?: string) => {
-    if (!canvasRef.current) return;
-    // if id not given, merge all layers
-    const toMerge = id ? layers.filter((l) => l.id === id) : layers.slice();
-    if (toMerge.length === 0) return;
-
-    const ctx = canvasRef.current.getContext('2d')!;
-    // draw each layer onto base canvas
-    for (const L of toMerge) {
-      try {
-        ctx.save();
-        ctx.globalAlpha = L.opacity;
-        ctx.globalCompositeOperation = L.blend || 'source-over';
-        ctx.drawImage(L.img, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
-        ctx.restore();
-      } catch (err) {
-        // ignore
-      }
-    }
-
-    // remove merged layers from stack
-    setLayers((prev) => prev.filter((l) => !toMerge.find((m) => m.id === l.id)));
-
-    // push to history
-    history.push(canvasRef.current.toDataURL(), id ? 'Merge layer' : 'Merge layers');
-    message.success('Layer(s) merged into base');
-  };
+  const mergeLayerIntoBase = (id?: string) =>
+    helperMergeLayerIntoBase(canvasRef, layers, setLayers, history, id);
 
   // Layer controls
   const setLayerOpacity = (id: string, opacity: number) =>
-    setLayers((prev) => prev.map((L) => (L.id === id ? { ...L, opacity } : L)));
+    helperSetLayerOpacity(setLayers, id, opacity);
   const setLayerBlend = (id: string, blend: GlobalCompositeOperation) =>
-    setLayers((prev) => prev.map((L) => (L.id === id ? { ...L, blend } : L)));
-  const moveLayerUp = (id: string) =>
-    setLayers((prev) => {
-      const idx = prev.findIndex((p) => p.id === id);
-      if (idx === -1 || idx === prev.length - 1) return prev;
-      const copy = prev.slice();
-      const tmp = copy[idx + 1];
-      copy[idx + 1] = copy[idx];
-      copy[idx] = tmp;
-      return copy;
-    });
-  const moveLayerDown = (id: string) =>
-    setLayers((prev) => {
-      const idx = prev.findIndex((p) => p.id === id);
-      if (idx <= 0) return prev;
-      const copy = prev.slice();
-      const tmp = copy[idx - 1];
-      copy[idx - 1] = copy[idx];
-      copy[idx] = tmp;
-      return copy;
-    });
-  const deleteLayer = (id: string) =>
-    setLayers((prev) => {
-      const copy = prev.filter((p) => p.id !== id);
-      if (activeLayerId === id) setActiveLayerId(copy.length ? copy[copy.length - 1].id : null);
-      return copy;
-    });
+    helperSetLayerBlend(setLayers, id, blend);
+  const moveLayerUp = (id: string) => helperMoveLayerUp(setLayers, id);
+  const moveLayerDown = (id: string) => helperMoveLayerDown(setLayers, id);
+  const deleteLayer = (id: string) => helperDeleteLayer(setLayers, id, setActiveLayerId);
   const selectLayer = (id: string) => {
-    setActiveLayerId(id);
+    helperSelectLayer(setActiveLayerId, id);
     setOverlaySelected(true);
   };
 
@@ -1194,15 +1103,6 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
           onMouseMove={handleMouseMoveViewer}
           onMouseUp={handleMouseUpViewer}
           onAddImage={onAddImage}
-          layers={layers}
-          activeLayerId={activeLayerId}
-          setLayerOpacity={setLayerOpacity}
-          setLayerBlend={setLayerBlend}
-          moveLayerUp={moveLayerUp}
-          moveLayerDown={moveLayerDown}
-          deleteLayer={deleteLayer}
-          selectLayer={selectLayer}
-          mergeLayer={mergeLayerIntoBase}
         />
       </div>
 

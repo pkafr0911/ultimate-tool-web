@@ -1,5 +1,7 @@
 // src/components/ImageCanvas.tsx
 import React from 'react';
+import { Button } from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
 
 type HoverColor = {
   x: number;
@@ -20,15 +22,6 @@ type ImageCanvasProps = {
   onMouseMove: (e: React.MouseEvent) => void;
   onMouseUp: () => void;
   onAddImage?: (file: File) => void;
-  layers?: Array<any>;
-  activeLayerId?: string | null;
-  setLayerOpacity?: (id: string, v: number) => void;
-  setLayerBlend?: (id: string, v: GlobalCompositeOperation) => void;
-  moveLayerUp?: (id: string) => void;
-  moveLayerDown?: (id: string) => void;
-  deleteLayer?: (id: string) => void;
-  selectLayer?: (id: string) => void;
-  mergeLayer?: (id?: string) => void;
 };
 
 const ImageCanvas: React.FC<ImageCanvasProps> = ({
@@ -44,15 +37,6 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
   onMouseMove,
   onMouseUp,
   onAddImage,
-  layers,
-  activeLayerId,
-  setLayerOpacity,
-  setLayerBlend,
-  moveLayerUp,
-  moveLayerDown,
-  deleteLayer,
-  selectLayer,
-  mergeLayer,
 }) => {
   const fileRef = React.useRef<HTMLInputElement | null>(null);
   const triggerFile = () => fileRef.current && fileRef.current.click();
@@ -86,24 +70,11 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
         style={{ display: 'none' }}
         onChange={onFileChange}
       />
-      <button
-        onClick={triggerFile}
-        title="Add overlay image"
-        style={{
-          position: 'absolute',
-          left: 8,
-          top: 8,
-          zIndex: 9999,
-          padding: '6px 8px',
-          fontSize: 12,
-          borderRadius: 4,
-          border: '1px solid rgba(0,0,0,0.08)',
-          background: '#fff',
-          cursor: 'pointer',
-        }}
-      >
-        + Image
-      </button>
+      <div style={{ position: 'absolute', left: 8, top: 8, zIndex: 9999 }}>
+        <Button size="small" icon={<UploadOutlined />} onClick={triggerFile}>
+          Add Image
+        </Button>
+      </div>
       <canvas
         ref={canvasRef}
         style={{
@@ -123,6 +94,7 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
           transformOrigin: 'top left',
         }}
       />
+      {/* Drag & drop support: dropped images become overlay images (onAddImage) */}
       {hoverColor && tool === 'color' && (
         <div
           style={{

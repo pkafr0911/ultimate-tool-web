@@ -1,6 +1,13 @@
 import React, { useRef } from 'react';
 import { Button, Space, Tooltip, Select, InputNumber, ColorPicker } from 'antd';
-import { ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
+import {
+  ZoomInOutlined,
+  ZoomOutOutlined,
+  MergeCellsOutlined,
+  UpOutlined,
+  DownOutlined,
+  DeleteOutlined,
+} from '@ant-design/icons';
 import { HistoryController } from '../../hooks/useHistory';
 import { Tool } from '.';
 
@@ -295,9 +302,13 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
                   </div>
 
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <button onClick={() => mergeLayer && mergeLayer()} style={{ fontSize: 12 }}>
+                    <Button
+                      size="small"
+                      icon={<MergeCellsOutlined />}
+                      onClick={() => mergeLayer && mergeLayer()}
+                    >
                       Merge All
-                    </button>
+                    </Button>
                   </div>
 
                   {/* per-active-layer actions */}
@@ -307,30 +318,29 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
                       if (!active) return null;
                       return (
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                          <button
+                          <Button
+                            size="small"
+                            icon={<MergeCellsOutlined />}
                             onClick={() => mergeLayer && mergeLayer(active.id)}
-                            style={{ fontSize: 12 }}
                           >
                             Merge
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            size="small"
+                            icon={<UpOutlined />}
                             onClick={() => moveLayerUp && moveLayerUp(active.id)}
-                            style={{ fontSize: 12 }}
-                          >
-                            ▲
-                          </button>
-                          <button
+                          />
+                          <Button
+                            size="small"
+                            icon={<DownOutlined />}
                             onClick={() => moveLayerDown && moveLayerDown(active.id)}
-                            style={{ fontSize: 12 }}
-                          >
-                            ▼
-                          </button>
-                          <button
+                          />
+                          <Button
+                            size="small"
+                            danger
+                            icon={<DeleteOutlined />}
                             onClick={() => deleteLayer && deleteLayer(active.id)}
-                            style={{ fontSize: 12 }}
-                          >
-                            🗑
-                          </button>
+                          />
 
                           {/* opacity & blend controls */}
                           <div
