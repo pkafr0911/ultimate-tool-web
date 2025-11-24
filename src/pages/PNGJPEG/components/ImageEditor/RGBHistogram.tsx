@@ -1,14 +1,15 @@
-import React, { useMemo } from 'react';
+import React, { RefObject, useMemo } from 'react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 
 type RGBHistogramProps = {
+  canvasRef: RefObject<HTMLCanvasElement>;
   redData: number[];
   greenData: number[];
   blueData: number[];
 };
 
-const RGBHistogram: React.FC<RGBHistogramProps> = ({ redData, greenData, blueData }) => {
+const RGBHistogram: React.FC<RGBHistogramProps> = ({ canvasRef, redData, greenData, blueData }) => {
   const options = useMemo(() => {
     return {
       chart: {
@@ -30,12 +31,40 @@ const RGBHistogram: React.FC<RGBHistogramProps> = ({ redData, greenData, blueDat
       },
       legend: { enabled: false },
       plotOptions: {
+        histogram: { binWidth: 4 },
         series: { animation: false, marker: { enabled: false } },
       },
       series: [
-        { name: 'Red', data: redData, color: '#ff4444', zIndex: 3, lineWidth: 1 },
-        { name: 'Green', data: greenData, color: '#44ff44', zIndex: 2, lineWidth: 1 },
-        { name: 'Blue', data: blueData, color: '#4444ff', zIndex: 1, lineWidth: 1 },
+        {
+          name: 'Red',
+          data: redData,
+          color: '#ff4444',
+          zIndex: 3,
+          lineWidth: 1,
+          marker: {
+            radius: 1,
+          },
+        },
+        {
+          name: 'Green',
+          data: greenData,
+          color: '#44ff44',
+          zIndex: 2,
+          lineWidth: 1,
+          marker: {
+            radius: 1,
+          },
+        },
+        {
+          name: 'Blue',
+          data: blueData,
+          color: '#4444ff',
+          zIndex: 1,
+          lineWidth: 1,
+          marker: {
+            radius: 1,
+          },
+        },
       ],
       credits: { enabled: false },
       tooltip: { enabled: false },

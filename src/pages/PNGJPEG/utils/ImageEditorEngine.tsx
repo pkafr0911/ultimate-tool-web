@@ -208,60 +208,135 @@ export function exportCanvasToBlob(
   return new Promise((res) => canvas.toBlob((b) => res(b as Blob), type, quality));
 }
 
-/**
- * Simple homography for perspective correction using ctx.setTransform is not enough.
- * We'll implement a basic 4-point to 4-point transform by drawing using an offscreen canvas with
- * path clipping and mapping via getImageData sampling. For moderate sizes, this works.
- * Note: For high-quality projective transforms consider using WebGL or external libs.
- */
+// Compute 3x3 homography H such that dst = H * src
+export function computeHomography(src: [number, number][], dst: [number, number][]): number[][] {
+  if (src.length !== 4 || dst.length !== 4) {
+    throw new Error('computeHomography requires exactly 4 points for src and dst');
+  }
+
+  const A: number[][] = [];
+
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = src[i];
+    const [u, v] = dst[i];
+
+    A.push([-x, -y, -1, 0, 0, 0, x * u, y * u, u]);
+    A.push([0, 0, 0, -x, -y, -1, x * v, y * v, v]);
+  }
+
+  // Solve Ah = 0 using Gaussian elimination for 8x8
+  const M: number[][] = [];
+  const b: number[] = [];
+  for (let i = 0; i < 8; i++) {
+    M.push(A[i].slice(0, 8));
+    b.push(-A[i][8]);
+  }
+
+  const h8 = solveLinearSystem(M, b); // returns 8 elements
+  const h = [...h8, 1]; // last element = 1
+
+  return [
+    [h[0], h[1], h[2]],
+    [h[3], h[4], h[5]],
+    [h[6], h[7], h[8]],
+  ];
+}
+
+// Simple Gaussian elimination solver for 8x8
+function solveLinearSystem(A: number[][], b: number[]): number[] {
+  const n = b.length;
+  const M = A.map((row, i) => [...row, b[i]]); // augmented matrix
+
+  for (let i = 0; i < n; i++) {
+    // find pivot
+    let maxRow = i;
+    for (let k = i + 1; k < n; k++) {
+      if (Math.abs(M[k][i]) > Math.abs(M[maxRow][i])) maxRow = k;
+    }
+    [M[i], M[maxRow]] = [M[maxRow], M[i]];
+
+    // eliminate column
+    for (let k = i + 1; k < n; k++) {
+      const factor = M[k][i] / M[i][i];
+      for (let j = i; j <= n; j++) M[k][j] -= factor * M[i][j];
+    }
+  }
+
+  // back substitution
+  const x = new Array(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) {
+    let sum = M[i][n];
+    for (let j = i + 1; j < n; j++) sum -= M[i][j] * x[j];
+    x[i] = sum / M[i][i];
+  }
+  return x;
+}
+
+// Map a destination point (x, y) back to source coordinates using inverse of H
+function applyHomographyInverse(H: number[][], x: number, y: number): [number, number] {
+  const [[h00, h01, h02], [h10, h11, h12], [h20, h21, h22]] = H;
+
+  const det =
+    h00 * (h11 * h22 - h12 * h21) - h01 * (h10 * h22 - h12 * h20) + h02 * (h10 * h21 - h11 * h20);
+  if (Math.abs(det) < 1e-10) return [0, 0];
+
+  const inv = [
+    [(h11 * h22 - h12 * h21) / det, (h02 * h21 - h01 * h22) / det, (h01 * h12 - h02 * h11) / det],
+    [(h12 * h20 - h10 * h22) / det, (h00 * h22 - h02 * h20) / det, (h02 * h10 - h00 * h12) / det],
+    [(h10 * h21 - h11 * h20) / det, (h01 * h20 - h00 * h21) / det, (h00 * h11 - h01 * h10) / det],
+  ];
+
+  const sx = inv[0][0] * x + inv[0][1] * y + inv[0][2];
+  const sy = inv[1][0] * x + inv[1][1] * y + inv[1][2];
+  const w = inv[2][0] * x + inv[2][1] * y + inv[2][2];
+
+  return [sx / w, sy / w];
+}
+
+// Perspective transform using homography
 export function perspectiveTransform(
   srcCanvas: HTMLCanvasElement,
   srcQuad: [number, number, number, number, number, number, number, number],
   destW: number,
   destH: number,
 ): HTMLCanvasElement {
-  // srcQuad: [x0,y0, x1,y1, x2,y2, x3,y3] (clockwise)
-  // create dest canvas
   const dest = createCanvas(destW, destH);
   const dctx = dest.getContext('2d')!;
-  // We'll use a very simple approach: use temporary canvas and ctx.setTransform for affine approx
-  // That is, we split quad into two triangles and map each triangle using affine transform
-  const sctx = srcCanvas.getContext('2d')!;
-  const sData = sctx.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
+  const src = srcCanvas.getContext('2d')!.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
+  const destData = dctx.createImageData(destW, destH);
 
-  function mapTriangle(sTri: number[], dTri: number[]) {
-    // sTri and dTri are arrays of 3 points [x0,y0,x1,y1,x2,y2]
-    // compute affine transform matrix from d -> s, then draw via setTransform + clipping
-    const [sx0, sy0, sx1, sy1, sx2, sy2] = sTri;
-    const [dx0, dy0, dx1, dy1, dx2, dy2] = dTri;
+  const srcPts: [number, number][] = [
+    [srcQuad[0], srcQuad[1]],
+    [srcQuad[2], srcQuad[3]],
+    [srcQuad[4], srcQuad[5]],
+    [srcQuad[6], srcQuad[7]],
+  ];
+  const dstPts: [number, number][] = [
+    [0, 0],
+    [destW, 0],
+    [destW, destH],
+    [0, destH],
+  ];
 
-    // compute matrix A so that [sx] = A * [dx,dy,1]
-    // Solve linear equations for a,b,c,d,e,f
-    const denom = dx0 * (dy1 - dy2) + dx1 * (dy2 - dy0) + dx2 * (dy0 - dy1);
-    if (Math.abs(denom) < 1e-6) return;
+  const H = computeHomography(srcPts, dstPts);
 
-    // Use Canvas API trick:
-    // create path for dTri on dest canvas, clip, set transform to map dTri bbox -> sTri and draw sCanvas
-    dctx.save();
-    dctx.beginPath();
-    dctx.moveTo(dx0, dy0);
-    dctx.lineTo(dx1, dy1);
-    dctx.lineTo(dx2, dy2);
-    dctx.closePath();
-    dctx.clip();
-
-    // compute affine matrix that maps dest tri -> src tri
-    // Build matrices and solve. Simpler: use ctx.transform to map bounding boxes; this is approximate.
-    // For simplicity and decent quality, draw full src into dest and let clip mask show triangle - this tends to be fine for small edits
-    dctx.drawImage(srcCanvas, 0, 0, destW, destH);
-    dctx.restore();
+  for (let y = 0; y < destH; y++) {
+    for (let x = 0; x < destW; x++) {
+      const [sx, sy] = applyHomographyInverse(H, x, y);
+      if (sx >= 0 && sx < srcCanvas.width && sy >= 0 && sy < srcCanvas.height) {
+        const ix = Math.floor(sx);
+        const iy = Math.floor(sy);
+        const srcIndex = (iy * srcCanvas.width + ix) * 4;
+        const dstIndex = (y * destW + x) * 4;
+        destData.data[dstIndex] = src.data[srcIndex];
+        destData.data[dstIndex + 1] = src.data[srcIndex + 1];
+        destData.data[dstIndex + 2] = src.data[srcIndex + 2];
+        destData.data[dstIndex + 3] = src.data[srcIndex + 3];
+      }
+    }
   }
 
-  // split into two triangles:
-  const [x0, y0, x1, y1, x2, y2, x3, y3] = srcQuad;
-  // dest triangles are basically rectangle triangles
-  mapTriangle([x0, y0, x1, y1, x2, y2], [0, 0, destW, 0, 0, destH]);
-  mapTriangle([x2, y2, x3, y3, x0, y0], [destW, destH, 0, destH, destW, 0]);
+  dctx.putImageData(destData, 0, 0);
   return dest;
 }
 

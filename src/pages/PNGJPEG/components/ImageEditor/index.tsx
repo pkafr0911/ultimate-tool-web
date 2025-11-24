@@ -64,9 +64,34 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
 
   //#region Perspective Tool
   const [showPerspectiveModal, setShowPerspectiveModal] = useState(false);
+
+  // initialize to NaN pairs so we can detect "empty" slots
   const perspectivePoints = useRef<
     [number, number, number, number, number, number, number, number] | null
   >(null);
+
+  // helper: ensure we have an array of 8 numbers (NaNs if empty)
+  const ensurePerspectiveInit = () => {
+    if (!perspectivePoints.current) {
+      perspectivePoints.current = [NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN];
+    }
+  };
+
+  // helper: find index of a "near" point (within tolerance), else -1
+  const findNearPointIndex = (x: number, y: number, tol = 12) => {
+    if (!perspectivePoints.current) return -1;
+    const p = perspectivePoints.current;
+    for (let i = 0; i < 8; i += 2) {
+      const px = p[i];
+      const py = p[i + 1];
+      if (!isNaN(px) && !isNaN(py)) {
+        const dx = px - x;
+        const dy = py - y;
+        if (Math.sqrt(dx * dx + dy * dy) <= tol) return i;
+      }
+    }
+    return -1;
+  };
   //#endregion
 
   //#region Hotkey States
@@ -211,15 +236,44 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         rulerPoints.current = null;
       }
     } else if (tool === 'perspective') {
-      if (!perspectivePoints.current) perspectivePoints.current = [x, y, x, y, x, y, x, y];
+      // initialize if needed
+      ensurePerspectiveInit();
+
+      // if click near an existing point, replace/move it
+      const nearIdx = findNearPointIndex(x, y);
+      if (nearIdx >= 0) {
+        // move existing point
+        perspectivePoints.current![nearIdx] = x;
+        perspectivePoints.current![nearIdx + 1] = y;
+        drawOverlay();
+        return;
+      }
+
+      // otherwise, fill first empty (NaN) slot
       const p = perspectivePoints.current!;
+      let placed = false;
       for (let i = 0; i < 8; i += 2) {
-        if (isNaN(p[i]) || isNaN(p[i + 1]) || (p[i] === 0 && p[i + 1] === 0)) {
+        if (isNaN(p[i]) || isNaN(p[i + 1])) {
           p[i] = x;
           p[i + 1] = y;
+          placed = true;
           break;
         }
       }
+      // if all filled and user clicks again, cycle replace the nearest point
+      if (!placed) {
+        const nearest = findNearPointIndex(x, y, 200); // large tol to find nearest
+        if (nearest >= 0) {
+          perspectivePoints.current![nearest] = x;
+          perspectivePoints.current![nearest + 1] = y;
+        } else {
+          // replace index 0 (wrap) if nothing better
+          perspectivePoints.current![0] = x;
+          perspectivePoints.current![1] = y;
+        }
+      }
+
+      drawOverlay();
     } else if (tool === 'draw') {
       setIsDrawing(true);
       drawPoints.current = [{ x, y }];
@@ -337,12 +391,34 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
 
     // Perspective points
     if (perspectivePoints.current) {
+      const p = perspectivePoints.current;
       ctx.save();
-      ctx.fillStyle = 'rgba(0,255,0,0.8)';
+      // draw polygon edges if at least two points present
+      const validPoints: { x: number; y: number }[] = [];
       for (let i = 0; i < 8; i += 2) {
-        const x = perspectivePoints.current[i];
-        const y = perspectivePoints.current[i + 1];
-        if (!isNaN(x) && !isNaN(y)) ctx.fillRect(x - 4, y - 4, 8, 8);
+        const px = p[i];
+        const py = p[i + 1];
+        if (!isNaN(px) && !isNaN(py)) validPoints.push({ x: px, y: py });
+      }
+
+      if (validPoints.length >= 2) {
+        ctx.strokeStyle = 'rgba(0,255,0,0.9)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(validPoints[0].x, validPoints[0].y);
+        for (let i = 1; i < validPoints.length; i++) ctx.lineTo(validPoints[i].x, validPoints[i].y);
+        // close polygon only if 4 points
+        if (validPoints.length === 4) ctx.closePath();
+        ctx.stroke();
+      }
+
+      // draw point handles
+      ctx.fillStyle = 'rgba(0,255,0,0.9)';
+      for (let i = 0; i < 8; i += 2) {
+        const x = p[i];
+        const y = p[i + 1];
+        if (!isNaN(x) && !isNaN(y)) ctx.fillRect(x - 5, y - 5, 10, 10);
       }
       ctx.restore();
     }
@@ -508,21 +584,112 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
 
   // #region 📐 Perspective Transform Apply
   const perspectiveApply = async () => {
-    if (!canvasRef.current || !perspectivePoints.current) return;
-    const src = canvasRef.current;
-    // dest dims: bounding rect
-    const destW = src.width;
-    const destH = src.height;
-    const dest = perspectiveTransform(src, perspectivePoints.current, destW, destH);
-    canvasRef.current.width = dest.width;
-    canvasRef.current.height = dest.height;
-    overlayRef.current!.width = dest.width;
-    overlayRef.current!.height = dest.height;
-    canvasRef.current.getContext('2d')!.clearRect(0, 0, dest.width, dest.height);
-    canvasRef.current.getContext('2d')!.drawImage(dest, 0, 0);
-    history.push(canvasRef.current.toDataURL(), 'Perspective corrected');
-    setShowPerspectiveModal(false);
+    if (!canvasRef.current || !perspectivePoints.current) {
+      message.warning('No perspective points defined.');
+      return;
+    }
+
+    // gather 4 valid points
+    const p = perspectivePoints.current;
+    const srcPoints: [number, number][] = [];
+    for (let i = 0; i < 8; i += 2) {
+      const x = p[i];
+      const y = p[i + 1];
+      if (!isNaN(x) && !isNaN(y)) srcPoints.push([x, y]);
+    }
+
+    if (srcPoints.length !== 4) {
+      message.error('Please select 4 corner points before applying perspective correction.');
+      return;
+    }
+
+    // --- helper: order points clockwise and rotate so top-left is first ---
+    const orderPointsClockwise = (pts: [number, number][]) => {
+      const cx = pts.reduce((s, r) => s + r[0], 0) / pts.length;
+      const cy = pts.reduce((s, r) => s + r[1], 0) / pts.length;
+
+      const sorted = pts
+        .map((pt) => ({ pt, angle: Math.atan2(pt[1] - cy, pt[0] - cx) }))
+        .sort((a, b) => a.angle - b.angle)
+        .map((o) => o.pt as [number, number]);
+
+      // signed area (shoelace). If > 0 it's CCW, reverse to make clockwise
+      let area = 0;
+      for (let i = 0; i < sorted.length; i++) {
+        const [x1, y1] = sorted[i];
+        const [x2, y2] = sorted[(i + 1) % sorted.length];
+        area += x1 * y2 - x2 * y1;
+      }
+      if (area > 0) sorted.reverse();
+
+      // find top-left (smallest y, then smallest x) and rotate array so it's first
+      let tlIndex = 0;
+      for (let i = 1; i < sorted.length; i++) {
+        if (
+          sorted[i][1] < sorted[tlIndex][1] ||
+          (sorted[i][1] === sorted[tlIndex][1] && sorted[i][0] < sorted[tlIndex][0])
+        ) {
+          tlIndex = i;
+        }
+      }
+      return Array.from(
+        { length: sorted.length },
+        (_, i) => sorted[(tlIndex + i) % sorted.length],
+      ) as any;
+    };
+
+    const srcCanvas = canvasRef.current;
+    const destW = srcCanvas.width;
+    const destH = srcCanvas.height;
+
+    // order points -> returns [TL, TR, BR, BL] (clockwise)
+    const ordered = orderPointsClockwise(srcPoints);
+
+    // build srcFlat using ordered points
+    const srcFlat: [number, number, number, number, number, number, number, number] = [
+      Math.round(ordered[0][0]),
+      Math.round(ordered[0][1]),
+      Math.round(ordered[1][0]),
+      Math.round(ordered[1][1]),
+      Math.round(ordered[2][0]),
+      Math.round(ordered[2][1]),
+      Math.round(ordered[3][0]),
+      Math.round(ordered[3][1]),
+    ];
+
+    try {
+      // IMPORTANT:
+      // For the two-triangle affine method we must map these src points to destination triangles:
+      // triangle A: TL, TR, BL  -> dest triangle [0,0  destW,0  0,destH]
+      // triangle B: TR, BR, BL  -> dest triangle [destW,0  destW,destH  0,destH]
+      //
+      // Your perspectiveTransform currently expects srcQuad (TL,TR,BR,BL) and internally
+      // maps triangles — so pass srcFlat and let it map using the same dest triangles.
+      const destCanvas = perspectiveTransform(srcCanvas, srcFlat, destW, destH);
+
+      // resize canvas to destination
+      canvasRef.current.width = destCanvas.width;
+      canvasRef.current.height = destCanvas.height;
+      overlayRef.current!.width = destCanvas.width;
+      overlayRef.current!.height = destCanvas.height;
+
+      const ctx = canvasRef.current.getContext('2d')!;
+      ctx.clearRect(0, 0, destCanvas.width, destCanvas.height);
+      ctx.drawImage(destCanvas, 0, 0);
+
+      history.push(canvasRef.current.toDataURL(), 'Perspective corrected');
+
+      // clear points and UI
+      perspectivePoints.current = null;
+      setShowPerspectiveModal(false);
+      drawOverlay();
+      message.success('Perspective correction applied.');
+    } catch (err) {
+      console.error('Perspective transform failed', err);
+      message.error('Failed to apply perspective correction.');
+    }
   };
+
   //#endregion
   //#endregion
 
@@ -640,6 +807,9 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         okText="Apply"
       >
         <p>Click four points on the image (clockwise) to define the corners, then Apply.</p>
+        <p style={{ marginTop: 8 }}>
+          Tip: click a corner again to move it (or click near a point to reposition).
+        </p>
       </Modal>
     </div>
   );
