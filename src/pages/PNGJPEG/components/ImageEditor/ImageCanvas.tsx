@@ -125,7 +125,6 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
           {hoverColor.color}
         </div>
       )}
-      {/* Layer panel removed from here — all layer actions moved to TopEditorToolbar */}
     </div>
   );
 };
