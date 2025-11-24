@@ -140,6 +140,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
       setHistogramData(extracted);
     }
   }, [canvasRef.current]);
+
   const colorSwatches = [
     { name: 'red', color: '#ff4d4d' },
     { name: 'orange', color: '#ffa500' },
@@ -242,6 +243,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
       >
         <Panel header="Histogram" key="histogram">
           <RGBHistogram
+            canvasRef={canvasRef}
             redData={histogramData.red}
             greenData={histogramData.green}
             blueData={histogramData.blue}

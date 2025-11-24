@@ -21,6 +21,23 @@ type TopEditorToolbarProps = {
   setBrushOpacity: (v: number) => void;
   brushFlow: number;
   setBrushFlow: (v: number) => void;
+  // layer controls (optional)
+  layers?: Array<{
+    id: string;
+    img?: HTMLImageElement;
+    rect?: { x: number; y: number; w: number; h: number };
+    opacity: number;
+    blend?: GlobalCompositeOperation;
+  }>;
+  activeLayerId?: string | null;
+  setLayerOpacity?: (id: string, v: number) => void;
+  setLayerBlend?: (id: string, v: GlobalCompositeOperation) => void;
+  // full layer actions
+  moveLayerUp?: (id: string) => void;
+  moveLayerDown?: (id: string) => void;
+  deleteLayer?: (id: string) => void;
+  selectLayer?: (id: string) => void;
+  mergeLayer?: (id?: string) => void;
 };
 
 const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
@@ -38,6 +55,15 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
   setBrushOpacity,
   brushFlow,
   setBrushFlow,
+  layers,
+  activeLayerId,
+  setLayerOpacity,
+  setLayerBlend,
+  moveLayerUp,
+  moveLayerDown,
+  deleteLayer,
+  selectLayer,
+  mergeLayer,
 }) => {
   // Drag-to-adjust opacity refs
   const draggingOpacity = useRef(false);
@@ -159,6 +185,7 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
         {/* Tool selector */}
         <Select value={tool} onChange={(v) => setTool(v as Tool)} style={{ width: 140 }}>
           <Option value="pan">Pan</Option>
+          <Option value="move">Move</Option>
           <Option value="color">Color Picker</Option>
           <Option value="crop">Crop</Option>
           <Option value="ruler">Ruler</Option>
@@ -167,66 +194,185 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
         </Select>
 
         <Space style={{ width: '100%' }} wrap>
-          {/* Brush Type */}
-          <Select
-            value={brushType}
-            onChange={(v) => setBrushType(v as 'hard' | 'soft')}
-            style={{ width: 80 }}
-          >
-            <Option value="hard">Hard</Option>
-            <Option value="soft">Soft</Option>
-          </Select>
+          {tool === 'color' ? (
+            <ColorPicker value={drawColor} onChange={(c) => setDrawColor(c.toHexString())} />
+          ) : null}
+          {tool === 'draw' ? (
+            <>
+              {/* Brush Type */}
+              <Select
+                value={brushType}
+                onChange={(v) => setBrushType(v as 'hard' | 'soft')}
+                style={{ width: 80 }}
+              >
+                <Option value="hard">Hard</Option>
+                <Option value="soft">Soft</Option>
+              </Select>
 
-          {/* Color Picker */}
-          <ColorPicker value={drawColor} onChange={(c) => setDrawColor(c.toHexString())} />
+              {/* Color Picker */}
+              <ColorPicker value={drawColor} onChange={(c) => setDrawColor(c.toHexString())} />
 
-          {/* Brush Size */}
-          <InputNumber
-            style={{ width: 100 }}
-            min={1}
-            max={500}
-            value={drawLineWidth}
-            onChange={(v) => setDrawLineWidth(v || 1)}
-            addonAfter="px"
-          />
+              {/* Brush Size */}
+              <InputNumber
+                style={{ width: 100 }}
+                min={1}
+                max={500}
+                value={drawLineWidth}
+                onChange={(v) => setDrawLineWidth(v || 1)}
+                addonAfter="px"
+              />
 
-          {/* Opacity */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span
-              onMouseDown={handleOpacityLabelMouseDown}
-              style={{ cursor: 'ew-resize', userSelect: 'none' }}
-              title="Drag left/right to change opacity"
-            >
-              Opacity:
-            </span>
-            <InputNumber
-              min={0}
-              max={1}
-              step={0.01}
-              style={{ width: 60 }}
-              value={brushOpacity}
-              onChange={(v) => setBrushOpacity(v || 0)}
-            />
-          </div>
+              {/* Opacity */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span
+                  onMouseDown={handleOpacityLabelMouseDown}
+                  style={{ cursor: 'ew-resize', userSelect: 'none' }}
+                  title="Drag left/right to change opacity"
+                >
+                  Opacity:
+                </span>
+                <InputNumber
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  style={{ width: 60 }}
+                  value={brushOpacity}
+                  onChange={(v) => setBrushOpacity(v || 0)}
+                />
+              </div>
 
-          {/* Flow */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span
-              onMouseDown={handleFlowLabelMouseDown}
-              style={{ cursor: 'ew-resize', userSelect: 'none' }}
-              title="Drag left/right to change flow"
-            >
-              Flow:
-            </span>
-            <InputNumber
-              min={0}
-              max={1}
-              step={0.01}
-              style={{ width: 60 }}
-              value={brushFlow}
-              onChange={(v) => setBrushFlow(v || 0)}
-            />
-          </div>
+              {/* Flow */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span
+                  onMouseDown={handleFlowLabelMouseDown}
+                  style={{ cursor: 'ew-resize', userSelect: 'none' }}
+                  title="Drag left/right to change flow"
+                >
+                  Flow:
+                </span>
+                <InputNumber
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  style={{ width: 60 }}
+                  value={brushFlow}
+                  onChange={(v) => setBrushFlow(v || 0)}
+                />
+              </div>
+            </>
+          ) : null}
+
+          {tool === 'move' ? (
+            <>
+              {/* Layer controls (select + actions + opacity/blend for active) */}
+              {layers && layers.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600 }}>Layers</span>
+                    <Select
+                      value={activeLayerId || undefined}
+                      placeholder="Select layer"
+                      onChange={(v) => selectLayer && selectLayer(v as string)}
+                      style={{ width: 180 }}
+                      showSearch
+                    >
+                      {layers
+                        .slice()
+                        .reverse()
+                        .map((L) => (
+                          <Option key={L.id} value={L.id} label={`Layer ${L.id}`}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <img
+                                src={L.img?.src}
+                                alt=""
+                                style={{ width: 40, height: 28, objectFit: 'cover' }}
+                              />
+                              <span style={{ fontSize: 12 }}>{L.id}</span>
+                            </div>
+                          </Option>
+                        ))}
+                    </Select>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <button onClick={() => mergeLayer && mergeLayer()} style={{ fontSize: 12 }}>
+                      Merge All
+                    </button>
+                  </div>
+
+                  {/* per-active-layer actions */}
+                  {activeLayerId &&
+                    (() => {
+                      const active = layers.find((l) => l.id === activeLayerId);
+                      if (!active) return null;
+                      return (
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <button
+                            onClick={() => mergeLayer && mergeLayer(active.id)}
+                            style={{ fontSize: 12 }}
+                          >
+                            Merge
+                          </button>
+                          <button
+                            onClick={() => moveLayerUp && moveLayerUp(active.id)}
+                            style={{ fontSize: 12 }}
+                          >
+                            ▲
+                          </button>
+                          <button
+                            onClick={() => moveLayerDown && moveLayerDown(active.id)}
+                            style={{ fontSize: 12 }}
+                          >
+                            ▼
+                          </button>
+                          <button
+                            onClick={() => deleteLayer && deleteLayer(active.id)}
+                            style={{ fontSize: 12 }}
+                          >
+                            🗑
+                          </button>
+
+                          {/* opacity & blend controls */}
+                          <div
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 8 }}
+                          >
+                            <span style={{ userSelect: 'none' }}>Opacity:</span>
+                            <InputNumber
+                              min={0}
+                              max={1}
+                              step={0.01}
+                              style={{ width: 80 }}
+                              value={Number(active.opacity.toFixed(2))}
+                              onChange={(v) =>
+                                setLayerOpacity && setLayerOpacity(active.id, Number(v || 0))
+                              }
+                            />
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ userSelect: 'none' }}>Blend:</span>
+                            <Select
+                              value={active.blend || 'source-over'}
+                              onChange={(v) =>
+                                setLayerBlend &&
+                                setLayerBlend(active.id, v as GlobalCompositeOperation)
+                              }
+                              style={{ width: 140 }}
+                            >
+                              <Option value="source-over">Normal</Option>
+                              <Option value="multiply">Multiply</Option>
+                              <Option value="screen">Screen</Option>
+                              <Option value="overlay">Overlay</Option>
+                              <Option value="lighter">Lighten</Option>
+                              <Option value="darken">Darken</Option>
+                            </Select>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                </div>
+              )}
+            </>
+          ) : null}
         </Space>
       </Space>
     </div>

@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, message } from 'antd';
 
-import { perspectiveTransform } from '@/pages/PNGJPEG/utils/ImageEditorEngine';
+import { perspectiveTransform, createCanvas } from '@/pages/PNGJPEG/utils/ImageEditorEngine';
 
 import useCanvas from '../../hooks/useCanvas';
 import useHistory from '../../hooks/useHistory';
@@ -13,7 +13,7 @@ import TopEditorToolbar from './TopEditorToolbar';
 //#endregion
 
 //#region Types
-export type Tool = 'pan' | 'crop' | 'color' | 'ruler' | 'perspective' | 'select' | 'draw';
+export type Tool = 'pan' | 'crop' | 'color' | 'ruler' | 'perspective' | 'select' | 'draw' | 'move';
 
 type Props = {
   imageUrl: string;
@@ -113,6 +113,167 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   const [dpiMeasured, setDpiMeasured] = useState<number | null>(null);
   //#endregion
 
+  //#region Overlay Image (added)
+  type Layer = {
+    id: string;
+    img: HTMLImageElement;
+    rect: { x: number; y: number; w: number; h: number };
+    opacity: number;
+    blend: GlobalCompositeOperation;
+  };
+
+  const [layers, setLayers] = useState<Layer[]>([]);
+  const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
+  const [overlaySelected, setOverlaySelected] = useState(false);
+  const overlayDrag = useRef<null | {
+    layerId: string;
+    startX: number;
+    startY: number;
+    origX: number;
+    origY: number;
+  }>(null);
+  const overlayResize = useRef<null | {
+    layerId: string;
+    handle: 'tl' | 'tr' | 'bl' | 'br';
+    startX: number;
+    startY: number;
+    orig: { x: number; y: number; w: number; h: number };
+  }>(null);
+  //#endregion
+  //#endregion
+
+  // --- overlay image handlers ---
+  const onAddImage = (file: File) => {
+    const img = new Image();
+    img.onload = () => {
+      // place center with reasonable scale
+      const cw = canvasRef.current?.width || img.naturalWidth;
+      const ch = canvasRef.current?.height || img.naturalHeight;
+      let w = img.naturalWidth;
+      let h = img.naturalHeight;
+      // scale down if larger than canvas
+      const scale = Math.min(1, Math.min(cw / (w * 1.2), ch / (h * 1.2)));
+      w = Math.round(w * scale);
+      h = Math.round(h * scale);
+      const x = Math.round((cw - w) / 2);
+      const y = Math.round((ch - h) / 2);
+      const id = `${Date.now()}_${Math.round(Math.random() * 10000)}`;
+      const newLayer: Layer = { id, img, rect: { x, y, w, h }, opacity: 1, blend: 'source-over' };
+      setLayers((prev) => [...prev, newLayer]);
+      setActiveLayerId(id);
+      setOverlaySelected(true);
+      drawOverlay();
+      message.success('Overlay image added');
+    };
+    img.onerror = () => message.error('Failed to load overlay image');
+    img.src = URL.createObjectURL(file);
+  };
+
+  const exportWithOverlay = async (
+    asJpeg: boolean,
+    canvasRefArg: React.RefObject<HTMLCanvasElement>,
+    callback?: (blob: Blob) => void,
+  ) => {
+    if (!canvasRefArg.current) return;
+    const base = canvasRefArg.current;
+    const tmp = createCanvas(base.width, base.height);
+    const tctx = tmp.getContext('2d')!;
+    tctx.clearRect(0, 0, tmp.width, tmp.height);
+    tctx.drawImage(base, 0, 0);
+    // draw layers in order
+    for (const L of layers) {
+      try {
+        tctx.globalAlpha = L.opacity;
+        tctx.globalCompositeOperation = L.blend || 'source-over';
+        tctx.drawImage(L.img, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
+      } catch (err) {
+        // ignore
+      }
+    }
+    // restore defaults
+    tctx.globalAlpha = 1;
+    tctx.globalCompositeOperation = 'source-over';
+    const blob = await new Promise<Blob | null>((res) =>
+      tmp.toBlob((b) => res(b), asJpeg ? 'image/jpeg' : 'image/png', 0.92),
+    );
+    if (blob) {
+      if (callback) callback(blob);
+      // also download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = asJpeg ? 'edited.jpg' : 'edited.png';
+      a.click();
+      URL.revokeObjectURL(url);
+      message.success('Exported image (with overlays)');
+    }
+  };
+
+  // Merge active layer into base canvas and record history
+  const mergeLayerIntoBase = (id?: string) => {
+    if (!canvasRef.current) return;
+    // if id not given, merge all layers
+    const toMerge = id ? layers.filter((l) => l.id === id) : layers.slice();
+    if (toMerge.length === 0) return;
+
+    const ctx = canvasRef.current.getContext('2d')!;
+    // draw each layer onto base canvas
+    for (const L of toMerge) {
+      try {
+        ctx.save();
+        ctx.globalAlpha = L.opacity;
+        ctx.globalCompositeOperation = L.blend || 'source-over';
+        ctx.drawImage(L.img, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
+        ctx.restore();
+      } catch (err) {
+        // ignore
+      }
+    }
+
+    // remove merged layers from stack
+    setLayers((prev) => prev.filter((l) => !toMerge.find((m) => m.id === l.id)));
+
+    // push to history
+    history.push(canvasRef.current.toDataURL(), id ? 'Merge layer' : 'Merge layers');
+    message.success('Layer(s) merged into base');
+  };
+
+  // Layer controls
+  const setLayerOpacity = (id: string, opacity: number) =>
+    setLayers((prev) => prev.map((L) => (L.id === id ? { ...L, opacity } : L)));
+  const setLayerBlend = (id: string, blend: GlobalCompositeOperation) =>
+    setLayers((prev) => prev.map((L) => (L.id === id ? { ...L, blend } : L)));
+  const moveLayerUp = (id: string) =>
+    setLayers((prev) => {
+      const idx = prev.findIndex((p) => p.id === id);
+      if (idx === -1 || idx === prev.length - 1) return prev;
+      const copy = prev.slice();
+      const tmp = copy[idx + 1];
+      copy[idx + 1] = copy[idx];
+      copy[idx] = tmp;
+      return copy;
+    });
+  const moveLayerDown = (id: string) =>
+    setLayers((prev) => {
+      const idx = prev.findIndex((p) => p.id === id);
+      if (idx <= 0) return prev;
+      const copy = prev.slice();
+      const tmp = copy[idx - 1];
+      copy[idx - 1] = copy[idx];
+      copy[idx] = tmp;
+      return copy;
+    });
+  const deleteLayer = (id: string) =>
+    setLayers((prev) => {
+      const copy = prev.filter((p) => p.id !== id);
+      if (activeLayerId === id) setActiveLayerId(copy.length ? copy[copy.length - 1].id : null);
+      return copy;
+    });
+  const selectLayer = (id: string) => {
+    setActiveLayerId(id);
+    setOverlaySelected(true);
+  };
+
   //#region Drawing Tool
   const [drawColor, setDrawColor] = useState('#ff0000');
   const [drawLineWidth, setDrawLineWidth] = useState(2);
@@ -202,6 +363,51 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     const rect = canvasRef.current!.getBoundingClientRect();
     const x = (e.clientX - rect.left) / zoom;
     const y = (e.clientY - rect.top) / zoom;
+    // overlay hit-test (priority: if clicking overlay and not using pan tool)
+    // overlay hit-test (topmost first)
+    if (layers.length > 0) {
+      for (let i = layers.length - 1; i >= 0; i--) {
+        const L = layers[i];
+        const r = L.rect;
+        const inside = x >= r.x && y >= r.y && x <= r.x + r.w && y <= r.y + r.h;
+        if (!inside) continue;
+        // detect corner handles
+        const tol = 8 / Math.max(1, zoom);
+        const near = (xx: number, yy: number) => Math.abs(x - xx) <= tol && Math.abs(y - yy) <= tol;
+        const tl = near(r.x, r.y);
+        const tr = near(r.x + r.w, r.y);
+        const bl = near(r.x, r.y + r.h);
+        const br = near(r.x + r.w, r.y + r.h);
+
+        if (tool === 'move') {
+          setActiveLayerId(L.id);
+          setOverlaySelected(true);
+          if (tl || tr || bl || br) {
+            const handle = tl ? 'tl' : tr ? 'tr' : bl ? 'bl' : 'br';
+            overlayResize.current = {
+              layerId: L.id,
+              handle,
+              startX: x,
+              startY: y,
+              orig: { ...r },
+            } as any;
+            return;
+          }
+          overlayDrag.current = {
+            layerId: L.id,
+            startX: x,
+            startY: y,
+            origX: r.x,
+            origY: r.y,
+          } as any;
+          return;
+        }
+        // if pan tool, ignore overlay so pan will take effect
+        break;
+      }
+      // if clicked outside any layer
+      setOverlaySelected(false);
+    }
 
     if (tool === 'color' && e.altKey && e.button === 2) setTool('draw');
     // ALT + right button for brush resize
@@ -294,6 +500,71 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
 
     if ((tool === 'pan' || tool === 'select') && isPanning && panStart.current) {
       setOffset({ x: e.clientX - panStart.current.x, y: e.clientY - panStart.current.y });
+      return;
+    }
+
+    // pointer / handle hover cursors
+    try {
+      const rect = canvasRef.current!.getBoundingClientRect();
+      const cx = (e.clientX - rect.left) / zoom;
+      const cy = (e.clientY - rect.top) / zoom;
+      let foundHandle: 'tl' | 'tr' | 'bl' | 'br' | 'move' | null = null;
+      for (let i = layers.length - 1; i >= 0; i--) {
+        const L = layers[i];
+        const r = L.rect;
+        const inside = cx >= r.x && cy >= r.y && cx <= r.x + r.w && cy <= r.y + r.h;
+        const tol = 8 / Math.max(1, zoom);
+        const near = (xx: number, yy: number) =>
+          Math.abs(cx - xx) <= tol && Math.abs(cy - yy) <= tol;
+        if (near(r.x, r.y)) {
+          foundHandle = 'tl';
+          break;
+        }
+        if (near(r.x + r.w, r.y)) {
+          foundHandle = 'tr';
+          break;
+        }
+        if (near(r.x, r.y + r.h)) {
+          foundHandle = 'bl';
+          break;
+        }
+        if (near(r.x + r.w, r.y + r.h)) {
+          foundHandle = 'br';
+          break;
+        }
+        if (inside) {
+          foundHandle = 'move';
+          break;
+        }
+      }
+      if (containerRef.current) {
+        if (!foundHandle) containerRef.current.style.cursor = currentCursor;
+        else if (foundHandle === 'move') containerRef.current.style.cursor = 'move';
+        else if (foundHandle === 'tl' || foundHandle === 'br')
+          containerRef.current.style.cursor = 'nwse-resize';
+        else containerRef.current.style.cursor = 'nesw-resize';
+      }
+    } catch (err) {
+      // ignore
+    }
+
+    // overlay dragging
+    const od = overlayDrag.current;
+    if (od) {
+      const rect = canvasRef.current!.getBoundingClientRect();
+      const cx = (e.clientX - rect.left) / zoom;
+      const cy = (e.clientY - rect.top) / zoom;
+      const dx = cx - od.startX;
+      const dy = cy - od.startY;
+      setLayers((prev) =>
+        prev.map((L) =>
+          L.id === od.layerId
+            ? { ...L, rect: { x: od.origX + dx, y: od.origY + dy, w: L.rect.w, h: L.rect.h } }
+            : L,
+        ),
+      );
+      drawOverlay();
+      return;
     } else if (tool === 'crop' && cropStart.current) {
       const rect = canvasRef.current!.getBoundingClientRect();
       const cur = { x: (e.clientX - rect.left) / zoom, y: (e.clientY - rect.top) / zoom };
@@ -338,6 +609,71 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       ctx.restore();
       drawOverlay();
     } else {
+      // overlay resize handling (mouse move without active drag)
+      const or = overlayResize.current;
+      if (or) {
+        const rect = canvasRef.current!.getBoundingClientRect();
+        const cx = (e.clientX - rect.left) / zoom;
+        const cy = (e.clientY - rect.top) / zoom;
+        const { layerId, handle, startX, startY, orig } = or;
+        // compute new rect depending on handle
+        let nx = orig.x;
+        let ny = orig.y;
+        let nw = orig.w;
+        let nh = orig.h;
+        if (handle === 'tl') {
+          nx = cx;
+          ny = cy;
+          nw = orig.w + (orig.x - nx);
+          nh = orig.h + (orig.y - ny);
+        } else if (handle === 'tr') {
+          ny = cy;
+          nw = cx - orig.x;
+          nh = orig.h + (orig.y - ny);
+        } else if (handle === 'bl') {
+          nx = cx;
+          nw = orig.w + (orig.x - nx);
+          nh = cy - orig.y;
+        } else if (handle === 'br') {
+          nw = cx - orig.x;
+          nh = cy - orig.y;
+        }
+        // aspect ratio lock when Shift pressed
+        if (e.shiftKey) {
+          const aspect = orig.w / Math.max(1, orig.h);
+          if (handle === 'tl' || handle === 'tr' || handle === 'bl' || handle === 'br') {
+            // derive size by larger delta
+            const signW = nw < 0 ? -1 : 1;
+            const signH = nh < 0 ? -1 : 1;
+            const absW = Math.abs(nw);
+            const absH = Math.abs(nh);
+            if (absW / Math.max(1, absH) > aspect) {
+              // width changed more -> adjust height
+              nh = (absW / aspect) * signH;
+            } else {
+              nw = absH * aspect * signW;
+            }
+            // when changing top handles, adjust nx/ny to keep corner anchored
+            if (handle === 'tl') {
+              nx = orig.x + (orig.w - nw);
+              ny = orig.y + (orig.h - nh);
+            } else if (handle === 'tr') {
+              ny = orig.y + (orig.h - nh);
+            } else if (handle === 'bl') {
+              nx = orig.x + (orig.w - nw);
+            }
+          }
+        }
+        // enforce min size
+        nw = Math.max(4 / zoom, nw);
+        nh = Math.max(4 / zoom, nh);
+        setLayers((prev) =>
+          prev.map((L) => (L.id === layerId ? { ...L, rect: { x: nx, y: ny, w: nw, h: nh } } : L)),
+        );
+        drawOverlay();
+        return;
+      }
+
       drawOverlay();
     }
   };
@@ -347,6 +683,15 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       resizingBrush.current = false;
       resizeStartX.current = null;
       initialLineWidth.current = drawLineWidth;
+      return;
+    }
+    // finalize overlay drag/resize
+    if (overlayDrag.current || overlayResize.current) {
+      overlayDrag.current = null;
+      overlayResize.current = null;
+      // leave overlaySelected true
+      // do not push to history for now (overlay is non-destructive until user exports)
+      drawOverlay();
       return;
     }
 
@@ -438,6 +783,46 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       ctx.restore();
     }
 
+    // draw layers
+    for (const L of layers) {
+      try {
+        ctx.save();
+        ctx.globalAlpha = L.opacity;
+        ctx.globalCompositeOperation = L.blend || 'source-over';
+        ctx.drawImage(L.img, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
+        ctx.restore();
+      } catch (err) {
+        // ignore draw errors per layer
+      }
+    }
+
+    // draw selection for active layer on top
+    if (overlaySelected && activeLayerId) {
+      const L = layers.find((x) => x.id === activeLayerId);
+      if (L) {
+        const r = L.rect;
+        ctx.save();
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.strokeStyle = 'rgba(255,165,0,0.95)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 3]);
+        ctx.strokeRect(r.x, r.y, r.w, r.h);
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(255,165,0,0.95)';
+        const size = Math.max(6 / Math.max(1, zoom), 6);
+        const half = size / 2;
+        const corners = [
+          [r.x, r.y],
+          [r.x + r.w, r.y],
+          [r.x, r.y + r.h],
+          [r.x + r.w, r.y + r.h],
+        ];
+        corners.forEach(([cx, cy]) => ctx.fillRect(cx - half, cy - half, size, size));
+        ctx.restore();
+      }
+    }
+
     // draw
     if (hoverColor && tool === 'draw') {
       const rect = canvasRef.current.getBoundingClientRect();
@@ -505,6 +890,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'Z') history.redo();
       if (e.key === 'c') setTool('crop');
       if (e.key === 'h') setTool('pan');
+      if (e.key === 't') setTool('move');
       if (e.key === 'r') rotate(90, canvasRef, overlayRef, history.history);
       if (e.key === 'p') setTool('color');
       if (e.key === 'b') setTool('draw');
@@ -699,6 +1085,8 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     switch (tool) {
       case 'pan':
         return 'grab';
+      case 'move':
+        return 'move';
       case 'crop':
       case 'ruler':
       case 'perspective':
@@ -762,7 +1150,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         setShowPerspectiveModal={setShowPerspectiveModal}
         dpiMeasured={dpiMeasured}
         setDpiMeasured={setDpiMeasured}
-        exportImage={exportImage}
+        exportImage={exportWithOverlay}
         onExport={onExport}
       />
 
@@ -782,6 +1170,15 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
           setBrushOpacity={setBrushOpacity}
           brushFlow={brushFlow}
           setBrushFlow={setBrushFlow}
+          layers={layers}
+          activeLayerId={activeLayerId}
+          setLayerOpacity={setLayerOpacity}
+          setLayerBlend={setLayerBlend}
+          moveLayerUp={moveLayerUp}
+          moveLayerDown={moveLayerDown}
+          deleteLayer={deleteLayer}
+          selectLayer={selectLayer}
+          mergeLayer={mergeLayerIntoBase}
         />
 
         <ImageCanvas
@@ -796,6 +1193,16 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
           onMouseDown={handleMouseDownViewer}
           onMouseMove={handleMouseMoveViewer}
           onMouseUp={handleMouseUpViewer}
+          onAddImage={onAddImage}
+          layers={layers}
+          activeLayerId={activeLayerId}
+          setLayerOpacity={setLayerOpacity}
+          setLayerBlend={setLayerBlend}
+          moveLayerUp={moveLayerUp}
+          moveLayerDown={moveLayerDown}
+          deleteLayer={deleteLayer}
+          selectLayer={selectLayer}
+          mergeLayer={mergeLayerIntoBase}
         />
       </div>
 

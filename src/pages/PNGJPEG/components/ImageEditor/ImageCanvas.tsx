@@ -19,6 +19,16 @@ type ImageCanvasProps = {
   onMouseDown: (e: React.MouseEvent) => void;
   onMouseMove: (e: React.MouseEvent) => void;
   onMouseUp: () => void;
+  onAddImage?: (file: File) => void;
+  layers?: Array<any>;
+  activeLayerId?: string | null;
+  setLayerOpacity?: (id: string, v: number) => void;
+  setLayerBlend?: (id: string, v: GlobalCompositeOperation) => void;
+  moveLayerUp?: (id: string) => void;
+  moveLayerDown?: (id: string) => void;
+  deleteLayer?: (id: string) => void;
+  selectLayer?: (id: string) => void;
+  mergeLayer?: (id?: string) => void;
 };
 
 const ImageCanvas: React.FC<ImageCanvasProps> = ({
@@ -33,7 +43,25 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
   onMouseDown,
   onMouseMove,
   onMouseUp,
+  onAddImage,
+  layers,
+  activeLayerId,
+  setLayerOpacity,
+  setLayerBlend,
+  moveLayerUp,
+  moveLayerDown,
+  deleteLayer,
+  selectLayer,
+  mergeLayer,
 }) => {
+  const fileRef = React.useRef<HTMLInputElement | null>(null);
+  const triggerFile = () => fileRef.current && fileRef.current.click();
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files && e.target.files[0];
+    if (f && onAddImage) onAddImage(f);
+    // clear selection so same file can be re-picked
+    if (fileRef.current) fileRef.current.value = '';
+  };
   return (
     <div
       ref={containerRef}
@@ -50,6 +78,32 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
         cursor: currentCursor,
       }}
     >
+      {/* Add overlay image button */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={onFileChange}
+      />
+      <button
+        onClick={triggerFile}
+        title="Add overlay image"
+        style={{
+          position: 'absolute',
+          left: 8,
+          top: 8,
+          zIndex: 9999,
+          padding: '6px 8px',
+          fontSize: 12,
+          borderRadius: 4,
+          border: '1px solid rgba(0,0,0,0.08)',
+          background: '#fff',
+          cursor: 'pointer',
+        }}
+      >
+        + Image
+      </button>
       <canvas
         ref={canvasRef}
         style={{
@@ -99,6 +153,7 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
           {hoverColor.color}
         </div>
       )}
+      {/* Layer panel removed from here — all layer actions moved to TopEditorToolbar */}
     </div>
   );
 };
