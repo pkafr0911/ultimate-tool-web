@@ -82,35 +82,51 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
   const flowStartValue = useRef<number>(brushFlow);
 
   const handleOpacityLabelMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return; // only left button
+    if (e.button !== 0) return;
     e.preventDefault();
+
     draggingOpacity.current = true;
     opacityDragStartX.current = e.clientX;
-    opacityStartValue.current = brushOpacity;
 
-    // prevent text selection while dragging
     const prevUserSelect = document.body.style.userSelect;
     document.body.style.userSelect = 'none';
+
+    // === TRANSFORMERS ===
+    const getStartValue = () => {
+      if (tool === 'draw') return brushOpacity;
+      if (tool === 'move' && layers) {
+        const active = layers.find((l) => l.id === activeLayerId);
+        return active?.opacity ?? brushOpacity;
+      }
+      return brushOpacity;
+    };
+
+    const applyValue = (value: number) => {
+      const val = Number(value.toFixed(2));
+      if (tool === 'draw') {
+        setBrushOpacity(val);
+        return;
+      }
+
+      if (tool === 'move' && layers) {
+        const active = layers.find((l) => l.id === activeLayerId);
+        if (active && setLayerOpacity) setLayerOpacity(active.id, val);
+      }
+    };
+
+    opacityStartValue.current = getStartValue();
 
     const onMouseMove = (ev: MouseEvent) => {
       if (!draggingOpacity.current || opacityDragStartX.current === null) return;
       const delta = ev.clientX - opacityDragStartX.current;
-      // sensitivity: 0.005 per pixel = 0.05 change per 10px
       const sensitivity = 0.005;
-      let newVal = opacityStartValue.current + delta * sensitivity;
-      newVal = Math.max(0, Math.min(1, newVal));
-
-      if (tool === 'draw') setBrushOpacity(Number(newVal.toFixed(2)));
-      if (tool === 'move' && layers) {
-        const active = layers.find((l) => l.id === activeLayerId);
-        active && setLayerOpacity && setLayerOpacity(active.id, Number(newVal.toFixed(2)));
-      }
+      const newVal = Math.min(1, Math.max(0, opacityStartValue.current + delta * sensitivity));
+      applyValue(newVal);
     };
 
     const onMouseUp = () => {
       draggingOpacity.current = false;
       opacityDragStartX.current = null;
-      opacityStartValue.current = brushOpacity;
       document.body.style.userSelect = prevUserSelect;
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
