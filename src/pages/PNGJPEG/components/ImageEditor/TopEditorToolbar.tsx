@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Button, Space, Tooltip, Select, InputNumber, ColorPicker } from 'antd';
+import { Button, Space, Tooltip, Select, InputNumber, ColorPicker, Input } from 'antd';
 import {
   ZoomInOutlined,
   ZoomOutOutlined,
@@ -7,6 +7,13 @@ import {
   UpOutlined,
   DownOutlined,
   DeleteOutlined,
+  BoldOutlined,
+  ItalicOutlined,
+  UnderlineOutlined,
+  AlignLeftOutlined,
+  AlignCenterOutlined,
+  AlignRightOutlined,
+  PlusOutlined,
 } from '@ant-design/icons';
 import { HistoryController } from '../../hooks/useHistory';
 import { Tool } from '.';
@@ -31,10 +38,19 @@ type TopEditorToolbarProps = {
   // layer controls (optional)
   layers?: Array<{
     id: string;
+    type?: 'image' | 'text';
     img?: HTMLImageElement;
     rect?: { x: number; y: number; w: number; h: number };
     opacity: number;
     blend?: GlobalCompositeOperation;
+    text?: string;
+    font?: string;
+    fontSize?: number;
+    fontWeight?: any;
+    fontItalic?: boolean;
+    textDecoration?: 'none' | 'underline' | 'line-through';
+    textColor?: string;
+    textAlign?: 'left' | 'center' | 'right';
   }>;
   activeLayerId?: string | null;
   setLayerOpacity?: (id: string, v: number) => void;
@@ -45,6 +61,24 @@ type TopEditorToolbarProps = {
   deleteLayer?: (id: string) => void;
   selectLayer?: (id: string) => void;
   mergeLayer?: (id?: string) => void;
+  // text tool controls
+  textContent?: string;
+  setTextContent?: (v: string) => void;
+  textFont?: string;
+  setTextFont?: (v: string) => void;
+  textFontSize?: number;
+  setTextFontSize?: (v: number) => void;
+  textColor?: string;
+  setTextColor?: (v: string) => void;
+  textWeight?: 'normal' | 'bold' | 'lighter' | string;
+  setTextWeight?: (v: any) => void;
+  textItalic?: boolean;
+  setTextItalic?: (v: boolean) => void;
+  textDecoration?: 'none' | 'underline' | 'line-through';
+  setTextDecoration?: (v: 'none' | 'underline' | 'line-through') => void;
+  textAlign?: 'left' | 'center' | 'right';
+  setTextAlign?: (v: 'left' | 'center' | 'right') => void;
+  onAddTextLayer?: () => void;
 };
 
 const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
@@ -71,6 +105,23 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
   deleteLayer,
   selectLayer,
   mergeLayer,
+  textContent,
+  setTextContent,
+  textFont,
+  setTextFont,
+  textFontSize,
+  setTextFontSize,
+  textColor,
+  setTextColor,
+  textWeight,
+  setTextWeight,
+  textItalic,
+  setTextItalic,
+  textDecoration,
+  setTextDecoration,
+  textAlign,
+  setTextAlign,
+  onAddTextLayer,
 }) => {
   // Drag-to-adjust opacity refs
   const draggingOpacity = useRef(false);
@@ -219,6 +270,7 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
           <Option value="ruler">Ruler</Option>
           <Option value="perspective">Perspective</Option>
           <Option value="draw">Brush</Option>
+          <Option value="text">Text</Option>
         </Select>
 
         <Space style={{ width: '100%' }} wrap>
@@ -287,6 +339,108 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
                   onChange={(v) => setBrushFlow(v || 0)}
                 />
               </div>
+            </>
+          ) : null}
+
+          {tool === 'text' ? (
+            <>
+              {/* Text tool controls */}
+              <Input
+                placeholder="Enter text..."
+                style={{ width: 200 }}
+                value={textContent || ''}
+                onChange={(e) => setTextContent && setTextContent(e.target.value)}
+                onPressEnter={() => onAddTextLayer && onAddTextLayer()}
+              />
+
+              <Select
+                value={textFont || 'Arial'}
+                onChange={(v) => setTextFont && setTextFont(v)}
+                style={{ width: 100 }}
+              >
+                <Option value="Arial">Arial</Option>
+                <Option value="Helvetica">Helvetica</Option>
+                <Option value="Times New Roman">Times New Roman</Option>
+                <Option value="Courier New">Courier New</Option>
+                <Option value="Georgia">Georgia</Option>
+                <Option value="Verdana">Verdana</Option>
+              </Select>
+
+              <InputNumber
+                min={8}
+                max={200}
+                value={textFontSize || 32}
+                onChange={(v) => setTextFontSize && setTextFontSize(v || 32)}
+                addonAfter="px"
+                style={{ width: 90 }}
+              />
+
+              <ColorPicker
+                value={textColor || '#000000'}
+                onChange={(c) => setTextColor && setTextColor(c.toHexString())}
+              />
+
+              <Select
+                value={textWeight || 'normal'}
+                onChange={(v) => setTextWeight && setTextWeight(v)}
+                style={{ width: 80 }}
+              >
+                <Option value="lighter">Lighter</Option>
+                <Option value="normal">Normal</Option>
+                <Option value="bold">Bold</Option>
+                <Option value="900">900</Option>
+              </Select>
+
+              <Tooltip title="Italic">
+                <Button
+                  size="small"
+                  icon={<ItalicOutlined />}
+                  type={textItalic ? 'primary' : 'default'}
+                  onClick={() => setTextItalic && setTextItalic(!textItalic)}
+                />
+              </Tooltip>
+
+              <Select
+                value={textDecoration || 'none'}
+                onChange={(v) => setTextDecoration && setTextDecoration(v as any)}
+                style={{ width: 100 }}
+              >
+                <Option value="none">No decoration</Option>
+                <Option value="underline">Underline</Option>
+                <Option value="line-through">Strike</Option>
+              </Select>
+
+              <Tooltip title="Align">
+                <Space size="small">
+                  <Button
+                    size="small"
+                    icon={<AlignLeftOutlined />}
+                    type={textAlign === 'left' ? 'primary' : 'default'}
+                    onClick={() => setTextAlign && setTextAlign('left')}
+                  />
+                  <Button
+                    size="small"
+                    icon={<AlignCenterOutlined />}
+                    type={textAlign === 'center' ? 'primary' : 'default'}
+                    onClick={() => setTextAlign && setTextAlign('center')}
+                  />
+                  <Button
+                    size="small"
+                    icon={<AlignRightOutlined />}
+                    type={textAlign === 'right' ? 'primary' : 'default'}
+                    onClick={() => setTextAlign && setTextAlign('right')}
+                  />
+                </Space>
+              </Tooltip>
+
+              <Button
+                type="primary"
+                size="small"
+                icon={<PlusOutlined />}
+                onClick={() => onAddTextLayer && onAddTextLayer()}
+              >
+                Add Text
+              </Button>
             </>
           ) : null}
 

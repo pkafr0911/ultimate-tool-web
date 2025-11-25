@@ -19,6 +19,15 @@ import {
   deleteLayer as helperDeleteLayer,
   selectLayer as helperSelectLayer,
   perspectiveApplyHelper,
+  addTextLayer as helperAddTextLayer,
+  setLayerText as helperSetLayerText,
+  setLayerFont as helperSetLayerFont,
+  setLayerFontSize as helperSetLayerFontSize,
+  setLayerFontWeight as helperSetLayerFontWeight,
+  setLayerFontItalic as helperSetLayerFontItalic,
+  setLayerTextDecoration as helperSetLayerTextDecoration,
+  setLayerTextColor as helperSetLayerTextColor,
+  setLayerTextAlign as helperSetLayerTextAlign,
 } from '../../utils/helpers';
 import ImageCanvas from './ImageCanvas';
 import ImageEditorToolbar from './SideEditorToolbar';
@@ -26,7 +35,16 @@ import TopEditorToolbar from './TopEditorToolbar';
 //#endregion
 
 //#region Types
-export type Tool = 'pan' | 'crop' | 'color' | 'ruler' | 'perspective' | 'select' | 'draw' | 'move';
+export type Tool =
+  | 'pan'
+  | 'crop'
+  | 'color'
+  | 'ruler'
+  | 'perspective'
+  | 'select'
+  | 'draw'
+  | 'move'
+  | 'text';
 
 type Props = {
   imageUrl: string;
@@ -125,18 +143,53 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   const [dpiMeasured, setDpiMeasured] = useState<number | null>(null);
   //#endregion
 
-  //#region Overlay Image (added)
+  //#region Overlay Image & Text (added)
   type Layer = {
     id: string;
-    img: HTMLImageElement;
+    type: 'image' | 'text'; // distinguish between image and text layers
+    img?: HTMLImageElement; // for image layers
     rect: { x: number; y: number; w: number; h: number };
     opacity: number;
     blend: GlobalCompositeOperation;
+    // Text layer properties
+    text?: string;
+    font?: string; // e.g., 'Arial', 'Helvetica'
+    fontSize?: number; // in pixels
+    fontWeight?:
+      | 'normal'
+      | 'bold'
+      | 'lighter'
+      | '100'
+      | '200'
+      | '300'
+      | '400'
+      | '500'
+      | '600'
+      | '700'
+      | '800'
+      | '900';
+    fontItalic?: boolean;
+    textDecoration?: 'none' | 'underline' | 'line-through';
+    textColor?: string; // hex or rgb color
+    textAlign?: 'left' | 'center' | 'right';
   };
 
   const [layers, setLayers] = useState<Layer[]>([]);
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
   const [overlaySelected, setOverlaySelected] = useState(false);
+
+  // Text tool controls
+  const [textContent, setTextContent] = useState('');
+  const [textFont, setTextFont] = useState('Arial');
+  const [textFontSize, setTextFontSize] = useState(32);
+  const [textColor, setTextColor] = useState('#000000');
+  const [textWeight, setTextWeight] = useState<Layer['fontWeight']>('normal');
+  const [textItalic, setTextItalic] = useState(false);
+  const [textDecoration, setTextDecoration] = useState<'none' | 'underline' | 'line-through'>(
+    'none',
+  );
+  const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('left');
+  const [isAddingText, setIsAddingText] = useState(false); // track if user clicked to place text
   const overlayDrag = useRef<null | {
     layerId: string;
     startX: number;
@@ -188,6 +241,34 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     helperSelectLayer(setActiveLayerId, id);
     setOverlaySelected(true);
   };
+
+  // Text tool callbacks
+  const onAddTextLayer = () =>
+    helperAddTextLayer(canvasRef, setLayers, setActiveLayerId, setOverlaySelected, drawOverlay, {
+      text: textContent,
+      font: textFont,
+      fontSize: textFontSize,
+      fontWeight: textWeight,
+      fontItalic: textItalic,
+      textDecoration: textDecoration,
+      textColor: textColor,
+      textAlign: textAlign,
+    });
+
+  const updateTextContent = (id: string, text: string) => helperSetLayerText(setLayers, id, text);
+  const updateTextFont = (id: string, font: string) => helperSetLayerFont(setLayers, id, font);
+  const updateTextFontSize = (id: string, size: number) =>
+    helperSetLayerFontSize(setLayers, id, size);
+  const updateTextWeight = (id: string, weight: any) =>
+    helperSetLayerFontWeight(setLayers, id, weight);
+  const updateTextItalic = (id: string, italic: boolean) =>
+    helperSetLayerFontItalic(setLayers, id, italic);
+  const updateTextDecoration = (id: string, decoration: 'none' | 'underline' | 'line-through') =>
+    helperSetLayerTextDecoration(setLayers, id, decoration);
+  const updateTextColor = (id: string, color: string) =>
+    helperSetLayerTextColor(setLayers, id, color);
+  const updateTextAlign = (id: string, align: 'left' | 'center' | 'right') =>
+    helperSetLayerTextAlign(setLayers, id, align);
 
   //#region Drawing Tool
   const [drawColor, setDrawColor] = useState('#ff0000');
@@ -692,6 +773,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       if (e.key === 'r') rotate(90, canvasRef, overlayRef, history.history);
       if (e.key === 'p') setTool('color');
       if (e.key === 'b') setTool('draw');
+      if (e.key === 'x') setTool('text');
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -863,6 +945,23 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
           deleteLayer={deleteLayer}
           selectLayer={selectLayer}
           mergeLayer={mergeLayerIntoBase}
+          textContent={textContent}
+          setTextContent={setTextContent}
+          textFont={textFont}
+          setTextFont={setTextFont}
+          textFontSize={textFontSize}
+          setTextFontSize={setTextFontSize}
+          textColor={textColor}
+          setTextColor={setTextColor}
+          textWeight={textWeight}
+          setTextWeight={setTextWeight}
+          textItalic={textItalic}
+          setTextItalic={setTextItalic}
+          textDecoration={textDecoration}
+          setTextDecoration={setTextDecoration}
+          textAlign={textAlign}
+          setTextAlign={setTextAlign}
+          onAddTextLayer={onAddTextLayer}
         />
 
         <ImageCanvas

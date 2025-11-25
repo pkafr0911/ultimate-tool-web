@@ -459,7 +459,14 @@ export const addOverlayImage = (
     const x = Math.round((cw - w) / 2);
     const y = Math.round((ch - h) / 2);
     const id = `${Date.now()}_${Math.round(Math.random() * 10000)}`;
-    const newLayer = { id, img, rect: { x, y, w, h }, opacity: 1, blend: 'source-over' } as any;
+    const newLayer = {
+      id,
+      type: 'image' as const,
+      img,
+      rect: { x, y, w, h },
+      opacity: 1,
+      blend: 'source-over' as const,
+    } as any;
     setLayers((prev: any) => [...prev, newLayer]);
     setActiveLayerId(id);
     setOverlaySelected(true);
@@ -488,7 +495,50 @@ export const exportWithOverlay = async (
     try {
       tctx.globalAlpha = L.opacity;
       tctx.globalCompositeOperation = L.blend || 'source-over';
-      tctx.drawImage(L.img, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
+      if (L.type === 'image' && L.img) {
+        tctx.drawImage(L.img, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
+      } else if (L.type === 'text') {
+        // Render text layer
+        const fontStyle = L.fontItalic ? 'italic' : 'normal';
+        const fontWeight = L.fontWeight || 'normal';
+        const fontSize = L.fontSize || 16;
+        tctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${L.font || 'Arial'}`;
+        tctx.fillStyle = L.textColor || '#000000';
+        tctx.textAlign = L.textAlign || 'left';
+        tctx.textBaseline = 'top';
+
+        // Draw text
+        const lines = (L.text || '').split('\n');
+        const lineHeight = fontSize * 1.2;
+        let currentY = L.rect.y;
+        for (const line of lines) {
+          let xPos = L.rect.x;
+          if (L.textAlign === 'center') xPos += L.rect.w / 2;
+          else if (L.textAlign === 'right') xPos += L.rect.w;
+
+          tctx.fillText(line, xPos, currentY);
+
+          // Draw decoration
+          if (L.textDecoration === 'underline') {
+            const metrics = tctx.measureText(line);
+            tctx.strokeStyle = L.textColor || '#000000';
+            tctx.lineWidth = 1;
+            tctx.beginPath();
+            tctx.moveTo(xPos, currentY + fontSize);
+            tctx.lineTo(xPos + metrics.width, currentY + fontSize);
+            tctx.stroke();
+          } else if (L.textDecoration === 'line-through') {
+            const metrics = tctx.measureText(line);
+            tctx.strokeStyle = L.textColor || '#000000';
+            tctx.lineWidth = 1;
+            tctx.beginPath();
+            tctx.moveTo(xPos, currentY + fontSize / 2);
+            tctx.lineTo(xPos + metrics.width, currentY + fontSize / 2);
+            tctx.stroke();
+          }
+          currentY += lineHeight;
+        }
+      }
     } catch (err) {
       // ignore
     }
@@ -527,7 +577,50 @@ export const mergeLayerIntoBase = (
       ctx.save();
       ctx.globalAlpha = L.opacity;
       ctx.globalCompositeOperation = L.blend || 'source-over';
-      ctx.drawImage(L.img, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
+
+      if (L.type === 'image' && L.img) {
+        ctx.drawImage(L.img, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
+      } else if (L.type === 'text') {
+        // Render text layer
+        const fontStyle = L.fontItalic ? 'italic' : 'normal';
+        const fontWeight = L.fontWeight || 'normal';
+        const fontSize = L.fontSize || 16;
+        ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${L.font || 'Arial'}`;
+        ctx.fillStyle = L.textColor || '#000000';
+        ctx.textAlign = L.textAlign || 'left';
+        ctx.textBaseline = 'top';
+
+        const lines = (L.text || '').split('\n');
+        const lineHeight = fontSize * 1.2;
+        let currentY = L.rect.y;
+        for (const line of lines) {
+          let xPos = L.rect.x;
+          if (L.textAlign === 'center') xPos += L.rect.w / 2;
+          else if (L.textAlign === 'right') xPos += L.rect.w;
+
+          ctx.fillText(line, xPos, currentY);
+
+          // Draw decoration
+          if (L.textDecoration === 'underline') {
+            const metrics = ctx.measureText(line);
+            ctx.strokeStyle = L.textColor || '#000000';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(xPos, currentY + fontSize);
+            ctx.lineTo(xPos + metrics.width, currentY + fontSize);
+            ctx.stroke();
+          } else if (L.textDecoration === 'line-through') {
+            const metrics = ctx.measureText(line);
+            ctx.strokeStyle = L.textColor || '#000000';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(xPos, currentY + fontSize / 2);
+            ctx.lineTo(xPos + metrics.width, currentY + fontSize / 2);
+            ctx.stroke();
+          }
+          currentY += lineHeight;
+        }
+      }
       ctx.restore();
     } catch (err) {
       // ignore
@@ -584,7 +677,118 @@ export const selectLayer = (setActiveLayerId: (id: string | null) => void, id: s
   setActiveLayerId(id);
 };
 
-//#region Overlay Helpers (draw & perspective)
+// #region Text Layer Helpers
+/**
+ * Add a new text layer to the canvas.
+ */
+export const addTextLayer = (
+  canvasRef: React.RefObject<HTMLCanvasElement>,
+  setLayers: React.Dispatch<any>,
+  setActiveLayerId: (id: string | null) => void,
+  setOverlaySelected: (v: boolean) => void,
+  drawOverlay: () => void,
+  textProps: {
+    text: string;
+    font: string;
+    fontSize: number;
+    fontWeight: any;
+    fontItalic: boolean;
+    textDecoration: 'none' | 'underline' | 'line-through';
+    textColor: string;
+    textAlign: 'left' | 'center' | 'right';
+  },
+) => {
+  if (!textProps.text.trim()) {
+    message.warning('Please enter text first');
+    return;
+  }
+
+  const cw = canvasRef.current?.width || 400;
+  const ch = canvasRef.current?.height || 300;
+  const x = Math.round(cw / 4);
+  const y = Math.round(ch / 4);
+  const id = `text_${Date.now()}_${Math.round(Math.random() * 10000)}`;
+
+  const newLayer = {
+    id,
+    type: 'text' as const,
+    rect: { x, y, w: Math.min(300, cw / 2), h: textProps.fontSize + 20 },
+    opacity: 1,
+    blend: 'source-over' as const,
+    text: textProps.text,
+    font: textProps.font,
+    fontSize: textProps.fontSize,
+    fontWeight: textProps.fontWeight,
+    fontItalic: textProps.fontItalic,
+    textDecoration: textProps.textDecoration,
+    textColor: textProps.textColor,
+    textAlign: textProps.textAlign,
+  } as any;
+
+  setLayers((prev: any) => [...prev, newLayer]);
+  setActiveLayerId(id);
+  setOverlaySelected(true);
+  drawOverlay();
+  message.success('Text layer added');
+};
+
+/**
+ * Update text content of a layer.
+ */
+export const setLayerText = (setLayers: React.Dispatch<any>, id: string, text: string) =>
+  setLayers((prev: any) => prev.map((L: any) => (L.id === id ? { ...L, text } : L)));
+
+/**
+ * Update font of a text layer.
+ */
+export const setLayerFont = (setLayers: React.Dispatch<any>, id: string, font: string) =>
+  setLayers((prev: any) => prev.map((L: any) => (L.id === id ? { ...L, font } : L)));
+
+/**
+ * Update font size of a text layer.
+ */
+export const setLayerFontSize = (setLayers: React.Dispatch<any>, id: string, fontSize: number) =>
+  setLayers((prev: any) => prev.map((L: any) => (L.id === id ? { ...L, fontSize } : L)));
+
+/**
+ * Update font weight of a text layer.
+ */
+export const setLayerFontWeight = (setLayers: React.Dispatch<any>, id: string, fontWeight: any) =>
+  setLayers((prev: any) => prev.map((L: any) => (L.id === id ? { ...L, fontWeight } : L)));
+
+/**
+ * Toggle italic of a text layer.
+ */
+export const setLayerFontItalic = (
+  setLayers: React.Dispatch<any>,
+  id: string,
+  fontItalic: boolean,
+) => setLayers((prev: any) => prev.map((L: any) => (L.id === id ? { ...L, fontItalic } : L)));
+
+/**
+ * Update text decoration of a text layer.
+ */
+export const setLayerTextDecoration = (
+  setLayers: React.Dispatch<any>,
+  id: string,
+  textDecoration: 'none' | 'underline' | 'line-through',
+) => setLayers((prev: any) => prev.map((L: any) => (L.id === id ? { ...L, textDecoration } : L)));
+
+/**
+ * Update text color of a text layer.
+ */
+export const setLayerTextColor = (setLayers: React.Dispatch<any>, id: string, textColor: string) =>
+  setLayers((prev: any) => prev.map((L: any) => (L.id === id ? { ...L, textColor } : L)));
+
+/**
+ * Update text align of a text layer.
+ */
+export const setLayerTextAlign = (
+  setLayers: React.Dispatch<any>,
+  id: string,
+  textAlign: 'left' | 'center' | 'right',
+) => setLayers((prev: any) => prev.map((L: any) => (L.id === id ? { ...L, textAlign } : L)));
+// #endregion
 export const drawOverlayHelper = (
   overlayRef: React.RefObject<HTMLCanvasElement>,
   canvasRef: React.RefObject<HTMLCanvasElement>,
@@ -693,7 +897,50 @@ export const drawOverlayHelper = (
       ctx.save();
       ctx.globalAlpha = L.opacity;
       ctx.globalCompositeOperation = L.blend || 'source-over';
-      ctx.drawImage(L.img, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
+
+      if (L.type === 'image' && L.img) {
+        ctx.drawImage(L.img, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
+      } else if (L.type === 'text') {
+        // Render text layer in overlay
+        const fontStyle = L.fontItalic ? 'italic' : 'normal';
+        const fontWeight = L.fontWeight || 'normal';
+        const fontSize = L.fontSize || 16;
+        ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${L.font || 'Arial'}`;
+        ctx.fillStyle = L.textColor || '#000000';
+        ctx.textAlign = L.textAlign || 'left';
+        ctx.textBaseline = 'top';
+
+        const lines = (L.text || '').split('\n');
+        const lineHeight = fontSize * 1.2;
+        let currentY = L.rect.y;
+        for (const line of lines) {
+          let xPos = L.rect.x;
+          if (L.textAlign === 'center') xPos += L.rect.w / 2;
+          else if (L.textAlign === 'right') xPos += L.rect.w;
+
+          ctx.fillText(line, xPos, currentY);
+
+          // Draw decoration
+          if (L.textDecoration === 'underline') {
+            const metrics = ctx.measureText(line);
+            ctx.strokeStyle = L.textColor || '#000000';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(xPos, currentY + fontSize);
+            ctx.lineTo(xPos + metrics.width, currentY + fontSize);
+            ctx.stroke();
+          } else if (L.textDecoration === 'line-through') {
+            const metrics = ctx.measureText(line);
+            ctx.strokeStyle = L.textColor || '#000000';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(xPos, currentY + fontSize / 2);
+            ctx.lineTo(xPos + metrics.width, currentY + fontSize / 2);
+            ctx.stroke();
+          }
+          currentY += lineHeight;
+        }
+      }
       ctx.restore();
     } catch (err) {
       // ignore draw errors per layer

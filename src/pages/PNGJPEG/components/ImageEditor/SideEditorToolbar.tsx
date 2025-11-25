@@ -11,6 +11,7 @@ import {
   CopyOutlined,
   EditOutlined,
   DragOutlined,
+  FontColorsOutlined,
 } from '@ant-design/icons';
 import {
   applyEffects,
@@ -284,6 +285,9 @@ const ImageEditorToolbar: React.FC<Props> = ({
 
             <Tooltip title="Brush">
               <Button icon={<EditOutlined />} onClick={() => setTool('draw')} />
+            </Tooltip>
+            <Tooltip title="Text">
+              <Button icon={<FontColorsOutlined />} onClick={() => setTool('text')} />
             </Tooltip>
             <Tooltip title="Move">
               <Button icon={<DragOutlined />} onClick={() => setTool('move')} />
