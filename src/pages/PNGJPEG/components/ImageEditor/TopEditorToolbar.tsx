@@ -99,7 +99,12 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
       const sensitivity = 0.005;
       let newVal = opacityStartValue.current + delta * sensitivity;
       newVal = Math.max(0, Math.min(1, newVal));
-      setBrushOpacity(Number(newVal.toFixed(2)));
+
+      if (tool === 'draw') setBrushOpacity(Number(newVal.toFixed(2)));
+      if (tool === 'move' && layers) {
+        const active = layers.find((l) => l.id === activeLayerId);
+        active && setLayerOpacity && setLayerOpacity(active.id, Number(newVal.toFixed(2)));
+      }
     };
 
     const onMouseUp = () => {
@@ -346,7 +351,13 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
                           <div
                             style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 8 }}
                           >
-                            <span style={{ userSelect: 'none' }}>Opacity:</span>
+                            <span
+                              onMouseDown={handleOpacityLabelMouseDown}
+                              style={{ cursor: 'ew-resize', userSelect: 'none' }}
+                              title="Drag left/right to change opacity"
+                            >
+                              Opacity:
+                            </span>
                             <InputNumber
                               min={0}
                               max={1}
@@ -358,6 +369,7 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
                               }
                             />
                           </div>
+
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span style={{ userSelect: 'none' }}>Blend:</span>
                             <Select

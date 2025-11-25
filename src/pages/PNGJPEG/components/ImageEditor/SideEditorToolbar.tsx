@@ -10,6 +10,7 @@ import {
   ExportOutlined,
   CopyOutlined,
   EditOutlined,
+  DragOutlined,
 } from '@ant-design/icons';
 import {
   applyEffects,
@@ -22,6 +23,7 @@ import {
 import { CustomSlider } from './CustomSlider';
 import { HistoryController } from '../../hooks/useHistory';
 import RGBHistogram from './RGBHistogram';
+import { Tool } from '.';
 
 const { Panel } = Collapse;
 
@@ -29,7 +31,7 @@ type Props = {
   canvasRef: React.RefObject<HTMLCanvasElement>;
   baseCanvas?: HTMLCanvasElement | null;
   history: HistoryController;
-  setTool: any;
+  setTool: (value: React.SetStateAction<Tool>) => void;
   brightness: number;
   setBrightness: (v: number) => void;
   contrast: number;
@@ -282,6 +284,9 @@ const ImageEditorToolbar: React.FC<Props> = ({
 
             <Tooltip title="Brush">
               <Button icon={<EditOutlined />} onClick={() => setTool('draw')} />
+            </Tooltip>
+            <Tooltip title="Move">
+              <Button icon={<DragOutlined />} onClick={() => setTool('move')} />
             </Tooltip>
           </Space>
         </Panel>

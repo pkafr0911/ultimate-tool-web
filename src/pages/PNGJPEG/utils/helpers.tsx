@@ -15,6 +15,7 @@ import {
   exportCanvasToBlob,
   Kernels,
 } from './ImageEditorEngine';
+import { Tool } from '../components/ImageEditor';
 // #endregion
 
 // #region Rotate / Transform Helpers
@@ -444,6 +445,7 @@ export const addOverlayImage = (
   setActiveLayerId: (id: string | null) => void,
   setOverlaySelected: (v: boolean) => void,
   drawOverlay: () => void,
+  setTool: React.Dispatch<React.SetStateAction<Tool>>,
 ) => {
   const img = new Image();
   img.onload = () => {
@@ -462,10 +464,12 @@ export const addOverlayImage = (
     setActiveLayerId(id);
     setOverlaySelected(true);
     drawOverlay();
+
     message.success('Overlay image added');
   };
   img.onerror = () => message.error('Failed to load overlay image');
   img.src = URL.createObjectURL(file);
+  setTool('move');
 };
 
 export const exportWithOverlay = async (

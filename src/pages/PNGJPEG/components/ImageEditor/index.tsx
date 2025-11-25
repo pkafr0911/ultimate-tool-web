@@ -156,7 +156,15 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
 
   // --- overlay image handlers (delegated to helpers) ---
   const onAddImage = (file: File) =>
-    addOverlayImage(file, canvasRef, setLayers, setActiveLayerId, setOverlaySelected, drawOverlay);
+    addOverlayImage(
+      file,
+      canvasRef,
+      setLayers,
+      setActiveLayerId,
+      setOverlaySelected,
+      drawOverlay,
+      setTool,
+    );
 
   const exportWithOverlay = async (
     asJpeg: boolean,
@@ -694,58 +702,39 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   // Quick hand tool when holding Spaceb
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
-        e.preventDefault(); // stop page scroll
-
-        setIsSpaceDown((prev) => {
-          if (!prev) {
-            // first press
-            setToolBefore((t) => {
-              // store previous tool safely
-              if (t === null) return tool;
-              return t;
-            });
-            setTool('pan');
-          }
+      const triggerTool = (key: 'Space' | 'AltLeft', newTool: Tool, condition = true) => {
+        if (e.code === key && condition) {
+          e.preventDefault();
+          setToolBefore((prev) => prev ?? tool);
+          setTool(newTool);
           return true;
-        });
-      } else if (e.code === 'AltLeft' && tool === 'draw') {
-        e.preventDefault();
+        }
+        return false;
+      };
 
-        setIsAltDown((prev) => {
-          if (!prev) {
-            // first press
-            setToolBefore((t) => {
-              // store previous tool safely
-              if (t === null) return tool;
-              return t;
-            });
-            setTool('color');
-          }
-          return true;
-        });
+      if (triggerTool('Space', 'pan')) {
+        setIsSpaceDown(true);
+      } else if (triggerTool('AltLeft', 'color', tool === 'draw')) {
+        setIsAltDown(true);
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
-        setIsSpaceDown(false);
+      const resetTool = (
+        key: 'Space' | 'AltLeft',
+        setter: React.Dispatch<React.SetStateAction<boolean>>,
+      ) => {
+        if (e.code === key) {
+          setter(false);
+          setToolBefore((prev) => {
+            if (prev) setTool(prev);
+            return null;
+          });
+        }
+      };
 
-        setToolBefore((prev) => {
-          if (prev) {
-            setTool(prev); // restore tool
-          }
-          return null; // clear buffer
-        });
-      } else if (e.code === 'AltLeft' && toolBefore === 'draw') {
-        setIsAltDown(false);
-        setToolBefore((prev) => {
-          if (prev) {
-            setTool(prev); // restore tool
-          }
-          return null; // clear buffer
-        });
-      }
+      resetTool('Space', setIsSpaceDown);
+      resetTool('AltLeft', setIsAltDown);
     };
 
     window.addEventListener('keydown', handleKeyDown, { passive: false });
@@ -756,6 +745,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, [tool]);
+
   //#endregion
 
   // #region 📐 Perspective Transform Apply
