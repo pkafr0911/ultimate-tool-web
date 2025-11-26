@@ -697,6 +697,8 @@ export const addTextLayer = (
     textColor: string;
     textAlign: 'left' | 'center' | 'right';
   },
+  // optional position to place the text (canvas coordinates)
+  pos?: { x: number; y: number },
 ) => {
   if (!textProps.text.trim()) {
     message.warning('Please enter text first');
@@ -705,8 +707,8 @@ export const addTextLayer = (
 
   const cw = canvasRef.current?.width || 400;
   const ch = canvasRef.current?.height || 300;
-  const x = Math.round(cw / 4);
-  const y = Math.round(ch / 4);
+  const x = pos ? Math.round(pos.x) : Math.round(cw / 4);
+  const y = pos ? Math.round(pos.y) : Math.round(ch / 4);
   const id = `text_${Date.now()}_${Math.round(Math.random() * 10000)}`;
 
   const newLayer = {
@@ -1089,5 +1091,153 @@ export const perspectiveApplyHelper = async (
     console.error('Perspective transform failed', err);
     message.error('Failed to apply perspective correction.');
   }
+};
+//#endregion
+
+//#region Text Editor Overlay
+// Create inline textarea editor for text placement and editing
+type CreateTextEditorParams = {
+  canvasX: number;
+  canvasY: number;
+  canvasRect: DOMRect;
+  containerRef: React.RefObject<HTMLDivElement>;
+  inlineEditorRef: React.MutableRefObject<HTMLTextAreaElement | null>;
+  zoom: number;
+  initial?: string;
+  layerId?: string;
+  layer?: any;
+  textColor?: string;
+  textFont?: string;
+  textFontSize?: number;
+  textWeight?: any;
+  textItalic?: boolean;
+  onCommit: (value: string) => void;
+  onCancel?: () => void;
+};
+
+export const createTextEditorOverlay = (params: CreateTextEditorParams) => {
+  const {
+    canvasX,
+    canvasY,
+    canvasRect,
+    containerRef,
+    inlineEditorRef,
+    zoom,
+    initial = '',
+    layerId,
+    layer,
+    textColor = '#000',
+    textFont = 'Arial',
+    textFontSize = 16,
+    textWeight = 'normal',
+    textItalic = false,
+    onCommit,
+    onCancel,
+  } = params;
+
+  // remove any existing editor
+  if (inlineEditorRef.current) {
+    inlineEditorRef.current.remove();
+    inlineEditorRef.current = null;
+  }
+
+  const cont = containerRef.current;
+  const contRect = cont ? cont.getBoundingClientRect() : { left: 0, top: 0 };
+  const clientLeft = canvasRect.left + canvasX * zoom;
+  const clientTop = canvasRect.top + canvasY * zoom;
+  const left = clientLeft - contRect.left;
+  const top = clientTop - contRect.top;
+
+  const ta = document.createElement('textarea');
+  ta.value = initial;
+  ta.style.position = 'absolute';
+  ta.style.left = `${left}px`;
+  ta.style.top = `${top}px`;
+  ta.style.zIndex = '10000';
+  ta.style.minWidth = '60px';
+  ta.style.minHeight = '24px';
+  ta.style.background = 'transparent';
+  ta.style.border = '1px dashed rgba(0,0,0,0.4)';
+  ta.style.color = (layer && layer.textColor) || textColor || '#000';
+  ta.style.fontFamily = (layer && layer.font) || textFont || 'Arial';
+  const fontSizeValue = (layer && layer.fontSize) || textFontSize || 16;
+  ta.style.fontSize = `${fontSizeValue * zoom}px`;
+  ta.style.fontWeight = String((layer && layer.fontWeight) || textWeight || 'normal');
+  ta.style.fontStyle = (layer && layer.fontItalic) || textItalic ? 'italic' : 'normal';
+  ta.style.resize = 'both';
+  ta.style.outline = 'none';
+  ta.style.padding = '4px';
+  ta.placeholder = 'Type text and press Enter';
+
+  const doCommit = () => {
+    onCommit(ta.value || '');
+    ta.remove();
+    inlineEditorRef.current = null;
+  };
+
+  const doCancel = () => {
+    ta.remove();
+    inlineEditorRef.current = null;
+    if (onCancel) onCancel();
+  };
+
+  ta.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' && !ev.shiftKey) {
+      ev.preventDefault();
+      doCommit();
+    } else if (ev.key === 'Escape') {
+      ev.preventDefault();
+      doCancel();
+    }
+  });
+
+  ta.addEventListener('blur', () => {
+    doCommit();
+  });
+
+  const appendToContainer = () => {
+    try {
+      if (cont) cont.appendChild(ta);
+      else throw new Error('no container');
+    } catch (err) {
+      console.warn('[DEBUG] append to container failed, will fallback to body', err);
+      appendToBody();
+      return;
+    }
+    inlineEditorRef.current = ta;
+    ta.focus();
+    ta.selectionStart = ta.selectionEnd = ta.value.length;
+    // quick sanity check: if element seems invisible, fallback
+    requestAnimationFrame(() => {
+      try {
+        const r = ta.getBoundingClientRect();
+        if (r.width === 0 && r.height === 0) {
+          console.warn('[DEBUG] appended editor has zero size; falling back to body');
+          ta.remove();
+          appendToBody();
+        }
+      } catch (e) {
+        // ignore
+      }
+    });
+  };
+
+  const appendToBody = () => {
+    const fixedLeft = clientLeft;
+    const fixedTop = clientTop;
+    ta.style.position = 'fixed';
+    ta.style.left = `${fixedLeft}px`;
+    ta.style.top = `${fixedTop}px`;
+    ta.style.zIndex = '200000';
+    document.body.appendChild(ta);
+    inlineEditorRef.current = ta;
+    ta.focus();
+    ta.selectionStart = ta.selectionEnd = ta.value.length;
+    console.log('[DEBUG] appended editor to document.body at', { fixedLeft, fixedTop });
+  };
+
+  // Try append to container first; fallback to body when necessary
+  if (cont) appendToContainer();
+  else appendToBody();
 };
 //#endregion

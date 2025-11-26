@@ -28,6 +28,7 @@ import {
   setLayerTextDecoration as helperSetLayerTextDecoration,
   setLayerTextColor as helperSetLayerTextColor,
   setLayerTextAlign as helperSetLayerTextAlign,
+  createTextEditorOverlay,
 } from '../../utils/helpers';
 import ImageCanvas from './ImageCanvas';
 import ImageEditorToolbar from './SideEditorToolbar';
@@ -197,6 +198,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     origX: number;
     origY: number;
   }>(null);
+  const inlineEditorRef = useRef<HTMLTextAreaElement | null>(null);
   const overlayResize = useRef<null | {
     layerId: string;
     handle: 'tl' | 'tr' | 'bl' | 'br';
@@ -240,20 +242,26 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   const selectLayer = (id: string) => {
     helperSelectLayer(setActiveLayerId, id);
     setOverlaySelected(true);
+    // when selecting a text layer, populate toolbar globals so controls reflect the layer
+    const layer = layers.find((l) => l.id === id);
+    if (layer && layer.type === 'text') {
+      setTextContent(layer.text || '');
+      setTextFont(layer.font || 'Arial');
+      setTextFontSize(layer.fontSize || 32);
+      setTextColor(layer.textColor || '#000000');
+      setTextWeight(layer.fontWeight || 'normal');
+      setTextItalic(Boolean(layer.fontItalic));
+      setTextDecoration((layer.textDecoration as any) || 'none');
+      setTextAlign((layer.textAlign as any) || 'left');
+    }
   };
 
   // Text tool callbacks
-  const onAddTextLayer = () =>
-    helperAddTextLayer(canvasRef, setLayers, setActiveLayerId, setOverlaySelected, drawOverlay, {
-      text: textContent,
-      font: textFont,
-      fontSize: textFontSize,
-      fontWeight: textWeight,
-      fontItalic: textItalic,
-      textDecoration: textDecoration,
-      textColor: textColor,
-      textAlign: textAlign,
-    });
+  // Start placement mode; actual layer will be created when user clicks canvas
+  const onAddTextLayer = () => {
+    setIsAddingText(true);
+    message.info('Click on the image to place the text');
+  };
 
   const updateTextContent = (id: string, text: string) => helperSetLayerText(setLayers, id, text);
   const updateTextFont = (id: string, font: string) => helperSetLayerFont(setLayers, id, font);
@@ -269,6 +277,48 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     helperSetLayerTextColor(setLayers, id, color);
   const updateTextAlign = (id: string, align: 'left' | 'center' | 'right') =>
     helperSetLayerTextAlign(setLayers, id, align);
+
+  // wrapper setters: if an active layer (text) exists, update that layer; otherwise modify global defaults
+  const handleSetTextContent = (v: string) => {
+    const active = layers.find((l) => l.id === activeLayerId);
+    if (active && active.type === 'text') updateTextContent(active.id, v);
+    else setTextContent(v);
+  };
+  const handleSetTextFont = (v: string) => {
+    const active = layers.find((l) => l.id === activeLayerId);
+    if (active && active.type === 'text') updateTextFont(active.id, v);
+    else setTextFont(v);
+  };
+  const handleSetTextFontSize = (v: number) => {
+    const active = layers.find((l) => l.id === activeLayerId);
+    if (active && active.type === 'text') updateTextFontSize(active.id, v);
+    else setTextFontSize(v);
+  };
+  const handleSetTextWeight = (v: any) => {
+    const active = layers.find((l) => l.id === activeLayerId);
+    if (active && active.type === 'text') updateTextWeight(active.id, v);
+    else setTextWeight(v);
+  };
+  const handleSetTextItalic = (v: boolean) => {
+    const active = layers.find((l) => l.id === activeLayerId);
+    if (active && active.type === 'text') updateTextItalic(active.id, v);
+    else setTextItalic(v);
+  };
+  const handleSetTextDecoration = (v: 'none' | 'underline' | 'line-through') => {
+    const active = layers.find((l) => l.id === activeLayerId);
+    if (active && active.type === 'text') updateTextDecoration(active.id, v);
+    else setTextDecoration(v);
+  };
+  const handleSetTextColor = (v: string) => {
+    const active = layers.find((l) => l.id === activeLayerId);
+    if (active && active.type === 'text') updateTextColor(active.id, v);
+    else setTextColor(v);
+  };
+  const handleSetTextAlign = (v: 'left' | 'center' | 'right') => {
+    const active = layers.find((l) => l.id === activeLayerId);
+    if (active && active.type === 'text') updateTextAlign(active.id, v);
+    else setTextAlign(v);
+  };
 
   //#region Drawing Tool
   const [drawColor, setDrawColor] = useState('#ff0000');
@@ -359,6 +409,62 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     const rect = canvasRef.current!.getBoundingClientRect();
     const x = (e.clientX - rect.left) / zoom;
     const y = (e.clientY - rect.top) / zoom;
+    const canvasRect = rect;
+    // helper: create inline textarea overlay at canvas coords
+    const createEditorAt = (
+      canvasX: number,
+      canvasY: number,
+      initial = '',
+      opts?: { layerId?: string; layer?: any },
+    ) => {
+      createTextEditorOverlay({
+        canvasX,
+        canvasY,
+        canvasRect,
+        containerRef,
+        inlineEditorRef,
+        zoom,
+        initial,
+        layerId: opts?.layerId,
+        layer: opts?.layer,
+        textColor,
+        textFont,
+        textFontSize,
+        textWeight,
+        textItalic,
+        onCommit: (val) => {
+          if (opts && opts.layerId) {
+            // editing existing layer
+            helperSetLayerText(setLayers, opts.layerId, val);
+            drawOverlay();
+          } else {
+            // add layer with position in canvas coords
+            helperAddTextLayer(
+              canvasRef,
+              setLayers,
+              setActiveLayerId,
+              setOverlaySelected,
+              drawOverlay,
+              {
+                text: val,
+                font: textFont,
+                fontSize: textFontSize,
+                fontWeight: textWeight,
+                fontItalic: textItalic,
+                textDecoration: textDecoration,
+                textColor: textColor,
+                textAlign: textAlign,
+              },
+              { x: canvasX, y: canvasY },
+            );
+          }
+          setIsAddingText(false);
+        },
+        onCancel: () => {
+          setIsAddingText(false);
+        },
+      });
+    };
     // overlay hit-test (priority: if clicking overlay and not using pan tool)
     // overlay hit-test (topmost first)
     if (layers.length > 0) {
@@ -375,7 +481,17 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         const bl = near(r.x, r.y + r.h);
         const br = near(r.x + r.w, r.y + r.h);
 
-        if (tool === 'move') {
+        // If double-clicking a text layer while in text tool, open inline editor for editing
+        if (tool === 'text' && L.type === 'text' && e.detail === 2) {
+          setActiveLayerId(L.id);
+          setOverlaySelected(true);
+          // open editor via helper (edit existing layer)
+          createEditorAt(x, y, L.text || '', { layerId: L.id, layer: L });
+          return;
+        }
+
+        // Allow moving/resizing for layers when tool is 'move', or when tool is 'text' and the layer is a text layer
+        if (tool === 'move' || (tool === 'text' && L.type === 'text')) {
           setActiveLayerId(L.id);
           setOverlaySelected(true);
           if (tl || tr || bl || br) {
@@ -479,6 +595,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
     } else if (tool === 'draw') {
       setIsDrawing(true);
       drawPoints.current = [{ x, y }];
+    } else if (tool === 'text') {
+      // If text tool is active and user clicked empty canvas, open inline editor to place new text
+      createEditorAt(x, y, textContent || '');
+      return;
     }
   };
 
@@ -664,7 +784,16 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         nw = Math.max(4 / zoom, nw);
         nh = Math.max(4 / zoom, nh);
         setLayers((prev) =>
-          prev.map((L) => (L.id === layerId ? { ...L, rect: { x: nx, y: ny, w: nw, h: nh } } : L)),
+          prev.map((L) => {
+            if (L.id !== layerId) return L;
+            // if text layer, also adjust fontSize to roughly match new height
+            if (L.type === 'text') {
+              const padding = 10; // small padding inside rect
+              const newFontSize = Math.max(8, Math.round(Math.max(1, nh) - padding));
+              return { ...L, rect: { x: nx, y: ny, w: nw, h: nh }, fontSize: newFontSize };
+            }
+            return { ...L, rect: { x: nx, y: ny, w: nw, h: nh } };
+          }),
         );
         drawOverlay();
         return;
@@ -765,15 +894,17 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   //#region ⌨ Keyboard Shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // disable global shortcuts while inline editor is focused
+      if (inlineEditorRef.current && document.activeElement === inlineEditorRef.current) return;
       if (e.ctrlKey && e.key === 'z') history.undo();
       if (e.ctrlKey && e.shiftKey && e.key === 'Z') history.redo();
       if (e.key === 'c') setTool('crop');
       if (e.key === 'h') setTool('pan');
-      if (e.key === 't') setTool('move');
+      if (e.key === 'v') setTool('move');
+      if (e.key === 't') setTool('text');
       if (e.key === 'r') rotate(90, canvasRef, overlayRef, history.history);
       if (e.key === 'p') setTool('color');
       if (e.key === 'b') setTool('draw');
-      if (e.key === 'x') setTool('text');
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -946,22 +1077,24 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
           selectLayer={selectLayer}
           mergeLayer={mergeLayerIntoBase}
           textContent={textContent}
-          setTextContent={setTextContent}
+          setTextContent={handleSetTextContent}
           textFont={textFont}
-          setTextFont={setTextFont}
+          setTextFont={handleSetTextFont}
           textFontSize={textFontSize}
-          setTextFontSize={setTextFontSize}
+          setTextFontSize={handleSetTextFontSize}
           textColor={textColor}
-          setTextColor={setTextColor}
+          setTextColor={handleSetTextColor}
           textWeight={textWeight}
-          setTextWeight={setTextWeight}
+          setTextWeight={handleSetTextWeight}
           textItalic={textItalic}
-          setTextItalic={setTextItalic}
+          setTextItalic={handleSetTextItalic}
           textDecoration={textDecoration}
-          setTextDecoration={setTextDecoration}
+          setTextDecoration={handleSetTextDecoration}
           textAlign={textAlign}
-          setTextAlign={setTextAlign}
+          setTextAlign={handleSetTextAlign}
           onAddTextLayer={onAddTextLayer}
+          isAddingText={isAddingText}
+          setIsAddingText={setIsAddingText}
         />
 
         <ImageCanvas

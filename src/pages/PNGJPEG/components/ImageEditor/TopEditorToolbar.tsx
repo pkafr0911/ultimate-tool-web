@@ -79,6 +79,8 @@ type TopEditorToolbarProps = {
   textAlign?: 'left' | 'center' | 'right';
   setTextAlign?: (v: 'left' | 'center' | 'right') => void;
   onAddTextLayer?: () => void;
+  isAddingText?: boolean;
+  setIsAddingText?: (v: boolean) => void;
 };
 
 const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
@@ -122,6 +124,8 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
   textAlign,
   setTextAlign,
   onAddTextLayer,
+  isAddingText,
+  setIsAddingText,
 }) => {
   // Drag-to-adjust opacity refs
   const draggingOpacity = useRef(false);
@@ -345,13 +349,7 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
           {tool === 'text' ? (
             <>
               {/* Text tool controls */}
-              <Input
-                placeholder="Enter text..."
-                style={{ width: 200 }}
-                value={textContent || ''}
-                onChange={(e) => setTextContent && setTextContent(e.target.value)}
-                onPressEnter={() => onAddTextLayer && onAddTextLayer()}
-              />
+              {/* Text placement and editing handled on-canvas; toolbar shows controls only */}
 
               <Select
                 value={textFont || 'Arial'}
@@ -433,14 +431,7 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
                 </Space>
               </Tooltip>
 
-              <Button
-                type="primary"
-                size="small"
-                icon={<PlusOutlined />}
-                onClick={() => onAddTextLayer && onAddTextLayer()}
-              >
-                Add Text
-              </Button>
+              {/* add button removed — placement via canvas click */}
             </>
           ) : null}
 
