@@ -962,7 +962,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   //#endregion
 
   // #region 📐 Perspective Transform Apply
-  const perspectiveApply = async () => {
+  const perspectiveApply = async () =>
     await perspectiveApplyHelper(
       canvasRef,
       overlayRef,
@@ -971,7 +971,6 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
       setShowPerspectiveModal,
       drawOverlay,
     );
-  };
 
   //#endregion
   //#endregion
@@ -992,6 +991,8 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
         return 'copy';
       case 'draw':
         return 'pointer';
+      case 'text':
+        return 'text';
       default:
         return 'default';
     }

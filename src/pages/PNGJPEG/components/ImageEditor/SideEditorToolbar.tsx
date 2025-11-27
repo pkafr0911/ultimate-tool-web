@@ -267,7 +267,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
                 onClick={() => rotate(-90, canvasRef, overlayRef, history)}
               />
             </Tooltip>
-            <Tooltip title="Rotate right">
+            <Tooltip title="Rotate right (R)">
               <Button
                 icon={<RotateRightOutlined />}
                 onClick={() => rotate(90, canvasRef, overlayRef, history)}
@@ -283,13 +283,13 @@ const ImageEditorToolbar: React.FC<Props> = ({
               />
             </Tooltip>
 
-            <Tooltip title="Brush">
+            <Tooltip title="Brush (B)">
               <Button icon={<EditOutlined />} onClick={() => setTool('draw')} />
             </Tooltip>
-            <Tooltip title="Text">
+            <Tooltip title="Text (T)">
               <Button icon={<FontColorsOutlined />} onClick={() => setTool('text')} />
             </Tooltip>
-            <Tooltip title="Move">
+            <Tooltip title="Move (V)">
               <Button icon={<DragOutlined />} onClick={() => setTool('move')} />
             </Tooltip>
           </Space>
