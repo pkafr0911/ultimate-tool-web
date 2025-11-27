@@ -660,7 +660,8 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
       }
       if (containerRef.current) {
         if (!foundHandle) containerRef.current.style.cursor = currentCursor;
-        else if (foundHandle === 'move') containerRef.current.style.cursor = 'move';
+        else if (foundHandle === 'move')
+          containerRef.current.style.cursor = currentCursor; // containerRef.current.style.cursor = 'move';
         else if (foundHandle === 'tl' || foundHandle === 'br')
           containerRef.current.style.cursor = 'nwse-resize';
         else containerRef.current.style.cursor = 'nesw-resize';

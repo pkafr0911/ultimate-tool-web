@@ -67,7 +67,7 @@ const PNGJPEG: React.FC = () => {
 
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
-  }, []);
+  }, [preview]);
 
   const handleUpload = (file: File) => {
     setFile(file);
