@@ -21,7 +21,6 @@ type ImageCanvasProps = {
   onMouseDown: (e: React.MouseEvent) => void;
   onMouseMove: (e: React.MouseEvent) => void;
   onMouseUp: () => void;
-  onAddImage?: (file: File) => void;
 };
 
 const ImageCanvas: React.FC<ImageCanvasProps> = ({
@@ -36,16 +35,7 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
   onMouseDown,
   onMouseMove,
   onMouseUp,
-  onAddImage,
 }) => {
-  const fileRef = React.useRef<HTMLInputElement | null>(null);
-  const triggerFile = () => fileRef.current && fileRef.current.click();
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files && e.target.files[0];
-    if (f && onAddImage) onAddImage(f);
-    // clear selection so same file can be re-picked
-    if (fileRef.current) fileRef.current.value = '';
-  };
   return (
     <div
       ref={containerRef}
@@ -62,19 +52,6 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
         cursor: currentCursor,
       }}
     >
-      {/* Add overlay image button */}
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        style={{ display: 'none' }}
-        onChange={onFileChange}
-      />
-      <div style={{ position: 'absolute', left: 8, top: 8, zIndex: 9999 }}>
-        <Button size="small" icon={<UploadOutlined />} onClick={triggerFile}>
-          Add Image
-        </Button>
-      </div>
       <canvas
         ref={canvasRef}
         style={{

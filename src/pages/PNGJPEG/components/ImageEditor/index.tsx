@@ -49,11 +49,12 @@ export type Tool =
 
 type Props = {
   imageUrl: string;
+  addOnFile?: File | null;
   onExport?: (blob: Blob) => void;
 };
 //#endregion
 
-const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
+const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
   //#region Canvas Setup
   const containerRef = useRef<HTMLDivElement | null>(null);
   const onLoad = (dataUrl: string) => history.push(dataUrl, 'Initial load');
@@ -210,6 +211,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
   //#endregion
 
   // --- overlay image handlers (delegated to helpers) ---
+  useEffect(() => {
+    if (addOnFile) onAddImage(addOnFile);
+  }, [addOnFile]);
+
   const onAddImage = (file: File) =>
     addOverlayImage(
       file,
@@ -1110,7 +1115,6 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, onExport }) => {
           onMouseDown={handleMouseDownViewer}
           onMouseMove={handleMouseMoveViewer}
           onMouseUp={handleMouseUpViewer}
-          onAddImage={onAddImage}
         />
       </div>
 

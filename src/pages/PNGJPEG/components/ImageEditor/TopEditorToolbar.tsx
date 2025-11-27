@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Button, Space, Tooltip, Select, InputNumber, ColorPicker, Input } from 'antd';
+import { Button, Space, Tooltip, Select, InputNumber, ColorPicker } from 'antd';
 import {
   ZoomInOutlined,
   ZoomOutOutlined,
@@ -7,13 +7,10 @@ import {
   UpOutlined,
   DownOutlined,
   DeleteOutlined,
-  BoldOutlined,
   ItalicOutlined,
-  UnderlineOutlined,
   AlignLeftOutlined,
   AlignCenterOutlined,
   AlignRightOutlined,
-  PlusOutlined,
 } from '@ant-design/icons';
 import { HistoryController } from '../../hooks/useHistory';
 import { Tool } from '.';

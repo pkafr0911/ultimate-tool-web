@@ -36,6 +36,8 @@ const PNGJPEG: React.FC = () => {
   const [dragging, setDragging] = useState(false);
   const [processing, setProcessing] = useState(false);
 
+  const [addOnFile, setAddOnFile] = useState<File | null>(null);
+
   const dragCounter = useRef(0);
 
   // Tracing options
@@ -70,7 +72,7 @@ const PNGJPEG: React.FC = () => {
   const handleUpload = (file: File) => {
     setFile(file);
     const reader = new FileReader();
-    reader.onload = (e) => setPreview(e.target?.result as string);
+    reader.onload = (e) => (preview ? setAddOnFile(file) : setPreview(e.target?.result as string));
     reader.readAsDataURL(file);
     setDragging(false);
     dragCounter.current = 0;
@@ -113,6 +115,7 @@ const PNGJPEG: React.FC = () => {
     setFile(null);
     setPreview(null);
     setSvgContent(null);
+    setAddOnFile(null);
     message.info('Image and SVG cleared.');
   };
 
@@ -148,6 +151,7 @@ const PNGJPEG: React.FC = () => {
             <div>
               <Title level={5}>Preview & Editor:</Title>
               <ImageEditor
+                addOnFile={addOnFile}
                 imageUrl={preview}
                 onExport={(blob) => {
                   // optional: show download link or handle upload
