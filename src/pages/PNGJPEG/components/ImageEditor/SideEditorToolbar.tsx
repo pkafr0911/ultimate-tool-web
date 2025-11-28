@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Space, Tooltip, message, Collapse } from 'antd';
+import { Button, Space, Tooltip, message, Collapse, Modal, InputNumber, Slider, Radio } from 'antd';
 import {
   UndoOutlined,
   RedoOutlined,
@@ -77,6 +77,7 @@ type Props = {
   setDehaze: (v: number) => void;
   hslAdjustments: Record<string, { h?: number; s?: number; l?: number }>;
   setHslAdjustments: (name: string, values: Partial<{ h: number; s: number; l: number }>) => void;
+  upscaleImage?: (factor: number, preset?: 'low' | 'medium' | 'high') => void;
 };
 
 const ImageEditorToolbar: React.FC<Props> = ({
@@ -125,8 +126,12 @@ const ImageEditorToolbar: React.FC<Props> = ({
   setDehaze,
   hslAdjustments,
   setHslAdjustments,
+  upscaleImage,
 }) => {
   const [activeColor, setActiveColor] = useState('red');
+  const [showUpscaleModal, setShowUpscaleModal] = useState(false);
+  const [upscaleFactor, setUpscaleFactor] = useState<number>(2);
+  const [presetLocal, setPresetLocal] = useState<'low' | 'medium' | 'high'>('medium');
   const [histogramData, setHistogramData] = useState<{
     red: number[];
     green: number[];
@@ -237,6 +242,12 @@ const ImageEditorToolbar: React.FC<Props> = ({
       setHistogramData,
     );
 
+  const handleCustomUpscale = () => {
+    setTool('upscale');
+    upscaleImage?.(upscaleFactor, presetLocal);
+    setShowUpscaleModal(false);
+  };
+
   return (
     <div style={{ width: 260 }}>
       <Collapse
@@ -252,6 +263,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
             blueData={histogramData.blue}
           />
         </Panel>
+
         {/* 🔧 Basic Tools */}
         <Panel header="🛠 Basic" key="basic">
           <Space wrap>
@@ -454,6 +466,17 @@ const ImageEditorToolbar: React.FC<Props> = ({
           {dpiMeasured && <div>Estimated DPI: {dpiMeasured}</div>}
         </Panel>
 
+        {/* Custom Upscale Modal launcher */}
+        <Panel header="🔼 Upscale Options" key="upscaleOptions">
+          <Button
+            onClick={() => {
+              setShowUpscaleModal(true);
+            }}
+          >
+            Custom Upscale...
+          </Button>
+        </Panel>
+
         {/* 📤 Export */}
         <Panel header="📤 Export" key="export">
           <Space>
@@ -470,6 +493,42 @@ const ImageEditorToolbar: React.FC<Props> = ({
           </Space>
         </Panel>
       </Collapse>
+      <Modal
+        title="Custom Upscale"
+        open={showUpscaleModal}
+        onCancel={() => setShowUpscaleModal(false)}
+        onOk={handleCustomUpscale}
+        okText="Upscale"
+      >
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div style={{ minWidth: 120 }}>
+            <div>Multiplier</div>
+            <InputNumber
+              min={1}
+              step={0.1}
+              value={upscaleFactor}
+              onChange={(v) => setUpscaleFactor(Number(v || 1))}
+            />
+          </div>
+          <div style={{ minWidth: 220 }}>
+            <div>Enhancement Preset</div>
+            <div style={{ marginTop: 8 }}>
+              <Radio.Group
+                value={presetLocal}
+                onChange={(e) => setPresetLocal(e.target.value)}
+                options={[
+                  { label: 'Low', value: 'low' },
+                  { label: 'Medium', value: 'medium' },
+                  { label: 'High', value: 'high' },
+                ]}
+                optionType="button"
+                buttonStyle="solid"
+              />
+            </div>
+          </div>
+        </div>
+        {/* enhancement option removed */}
+      </Modal>
     </div>
   );
 };

@@ -29,6 +29,7 @@ import {
   setLayerTextColor as helperSetLayerTextColor,
   setLayerTextAlign as helperSetLayerTextAlign,
   createTextEditorOverlay,
+  applyUpscale,
 } from '../../utils/helpers';
 import ImageCanvas from './ImageCanvas';
 import ImageEditorToolbar from './SideEditorToolbar';
@@ -45,6 +46,7 @@ export type Tool =
   | 'select'
   | 'draw'
   | 'move'
+  | 'upscale'
   | 'text';
 
 type Props = {
@@ -58,7 +60,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
   //#region Canvas Setup
   const containerRef = useRef<HTMLDivElement | null>(null);
   const onLoad = (dataUrl: string) => history.push(dataUrl, 'Initial load');
-  const { canvasRef, overlayRef, baseCanvas } = useCanvas(imageUrl, onLoad);
+  const { canvasRef, overlayRef, baseCanvas, setBaseCanvas, syncCanvasSize } = useCanvas(
+    imageUrl,
+    onLoad,
+  );
   const history = useHistory(canvasRef, overlayRef);
   //#endregion
 
@@ -174,6 +179,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
     textDecoration?: 'none' | 'underline' | 'line-through';
     textColor?: string; // hex or rgb color
     textAlign?: 'left' | 'center' | 'right';
+    locked?: boolean;
   };
 
   const [layers, setLayers] = useState<Layer[]>([]);
@@ -214,6 +220,34 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
   useEffect(() => {
     if (addOnFile) onAddImage(addOnFile);
   }, [addOnFile]);
+
+  // Ensure base overlay layer exists (locked, opacity 0) so overlay tools can reference it
+  useEffect(() => {
+    if (!baseCanvas) return;
+    setLayers((prev) => {
+      if (prev[0] && prev[0].locked) return prev;
+      const img = new Image();
+      img.src = baseCanvas.toDataURL();
+      const id = `base_overlay_${Date.now()}`;
+      const baseLayer = {
+        id,
+        type: 'image' as const,
+        img,
+        rect: { x: 0, y: 0, w: baseCanvas.width, h: baseCanvas.height },
+        opacity: 0,
+        blend: 'source-over' as const,
+        locked: true,
+      } as any;
+      return [baseLayer, ...prev];
+    });
+    // redraw overlay and sync sizes
+    setTimeout(() => {
+      try {
+        syncCanvasSize();
+        drawOverlay();
+      } catch (_) {}
+    }, 50);
+  }, [baseCanvas]);
 
   const onAddImage = (file: File) =>
     addOverlayImage(
@@ -324,6 +358,40 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
     if (active && active.type === 'text') updateTextAlign(active.id, v);
     else setTextAlign(v);
   };
+
+  //#region Upscale
+  // Upscale whole image: delegated to helpers.applyUpscale
+  const upscaleImage = (factor: number) =>
+    applyUpscale(canvasRef, overlayRef, history, setBaseCanvas, setLayers, drawOverlay, factor);
+
+  // Sync base canvas when in upscaled mode
+  useEffect(() => {
+    if (!canvasRef.current) return;
+
+    const src = canvasRef.current;
+    const c = document.createElement('canvas');
+    c.width = src.width;
+    c.height = src.height;
+    c.getContext('2d')!.drawImage(src, 0, 0);
+
+    setBaseCanvas(c);
+    setLayers((prev) => {
+      if (!prev[0]) return prev;
+      const base = { ...prev[0] };
+      if (base.img) base.img.src = c.toDataURL();
+      base.rect = { x: 0, y: 0, w: c.width, h: c.height };
+      // base.opacity = 1;
+      return [base, ...prev.slice(1)];
+    });
+
+    if (overlayRef.current) {
+      overlayRef.current.width = c.width;
+      overlayRef.current.height = c.height;
+    }
+
+    drawOverlay();
+  }, [history.index]);
+  //#endregion
 
   //#region Drawing Tool
   const [drawColor, setDrawColor] = useState('#ff0000');
@@ -1005,12 +1073,20 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
   }, [tool, isPanning]);
   //#endregion
 
+  const resolution = useMemo(() => {
+    const c = canvasRef.current;
+    if (c) return `${c.width} × ${c.height}`;
+    if (baseCanvas) return `${baseCanvas.width} × ${baseCanvas.height}`;
+    return null;
+  }, [canvasRef.current, baseCanvas]);
+
   return (
     <div style={{ display: 'flex', gap: 12 }}>
       <ImageEditorToolbar
         canvasRef={canvasRef}
         overlayRef={overlayRef}
         baseCanvas={baseCanvas}
+        upscaleImage={upscaleImage}
         history={history}
         setTool={setTool}
         // Exposure & Color
@@ -1112,6 +1188,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
           zoom={zoom}
           tool={tool}
           currentCursor={currentCursor}
+          resolution={resolution}
           hoverColor={hoverColor}
           onMouseDown={handleMouseDownViewer}
           onMouseMove={handleMouseMoveViewer}

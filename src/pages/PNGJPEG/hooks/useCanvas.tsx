@@ -56,5 +56,5 @@ export default function useCanvas(imageUrl: string, onLoad?: (dataUrl: string) =
     ctx.drawImage(baseCanvas, 0, 0);
   };
 
-  return { canvasRef, overlayRef, baseCanvas, syncCanvasSize };
+  return { canvasRef, overlayRef, baseCanvas, setBaseCanvas, syncCanvasSize };
 }

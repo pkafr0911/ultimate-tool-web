@@ -18,6 +18,7 @@ type ImageCanvasProps = {
   tool: string;
   currentCursor: string;
   hoverColor: HoverColor | null;
+  resolution?: string | null;
   onMouseDown: (e: React.MouseEvent) => void;
   onMouseMove: (e: React.MouseEvent) => void;
   onMouseUp: () => void;
@@ -32,6 +33,7 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
   tool,
   currentCursor,
   hoverColor,
+  resolution,
   onMouseDown,
   onMouseMove,
   onMouseUp,
@@ -52,6 +54,24 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
         cursor: currentCursor,
       }}
     >
+      {resolution && (
+        <div
+          style={{
+            position: 'absolute',
+            right: 12,
+            top: 12,
+            background: 'rgba(0,0,0,0.6)',
+            color: '#fff',
+            padding: '4px 8px',
+            borderRadius: 4,
+            fontSize: 12,
+            zIndex: 99999,
+            pointerEvents: 'none',
+          }}
+        >
+          {resolution}
+        </div>
+      )}
       <canvas
         ref={canvasRef}
         style={{
