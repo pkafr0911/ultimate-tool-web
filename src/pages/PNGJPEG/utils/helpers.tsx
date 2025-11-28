@@ -190,7 +190,7 @@ let previousEffects = {
 //cache the base image once
 let cachedBaseImageData: ImageData | null = null;
 
-export const applyEffects = (
+export const applyEffects = async (
   canvasRef: React.RefObject<HTMLCanvasElement>,
   baseCanvas: HTMLCanvasElement | null | undefined,
   {
@@ -214,6 +214,7 @@ export const applyEffects = (
   },
   history: { push: (img: string, label: string) => void },
   setHistogramData,
+  workerProcessImage?: (imageData: ImageData, effects: any) => Promise<ImageData>,
 ) => {
   if (!canvasRef.current || !baseCanvas) return;
 
@@ -257,69 +258,79 @@ export const applyEffects = (
     return;
   }
 
-  // Apply convolution effects
-  if (blur > 0) {
-    const size = blur % 2 === 0 ? blur + 1 : blur;
-    applyConvolution(cloned, Kernels.generateBoxBlurKernel(size), size);
-  }
-  if (gaussian > 0) {
-    const r = gaussian;
-    applyConvolution(cloned, Kernels.generateGaussianKernel(r), r * 2 + 1);
-  }
-  if (sharpen > 0) {
-    const kernel = Kernels.sharpen.map((v) =>
-      v === 5 ? 1 + sharpen * 4 : v === -1 ? -sharpen : v,
-    );
-    applyConvolution(cloned, kernel, 3);
-  }
-  if (texture !== 0) {
-    const detailKernel = [0, -1, 0, -1, 5 + texture * 0.05, -1, 0, -1, 0];
-    applyConvolution(cloned, detailKernel, 3);
-  }
-  if (clarity !== 0) {
-    const midtoneKernel = [0, -1, 0, -1, 5 + clarity * 0.08, -1, 0, -1, 0];
-    applyConvolution(cloned, midtoneKernel, 3);
-  }
+  // Use worker if available, otherwise process on main thread
+  if (workerProcessImage) {
+    try {
+      const processedData = await workerProcessImage(cloned, {
+        blur,
+        gaussian,
+        sharpen,
+        texture,
+        clarity,
+        bgThreshold,
+        bgThresholdBlack,
+        brightness,
+        contrast,
+        highlights,
+        shadows,
+        whites,
+        blacks,
+        vibrance,
+        saturation,
+        dehaze,
+        hslAdjustments,
+      });
 
-  // Threshold effects
-  if (bgThreshold > 0) applyThresholdAlpha(cloned, bgThreshold);
-  if (bgThresholdBlack > 0) applyThresholdAlphaBlack(cloned, bgThresholdBlack);
-
-  // Brightness/Contrast
-  if (brightness !== 0 || contrast !== 0) applyBrightnessContrast(cloned, brightness, contrast);
-
-  // Tone adjustments (highlights, shadows, whites, blacks, vibrance, saturation, dehaze)
-  if (
-    highlights !== 0 ||
-    shadows !== 0 ||
-    whites !== 0 ||
-    blacks !== 0 ||
-    vibrance !== 0 ||
-    saturation !== 0 ||
-    dehaze !== 0
-  ) {
-    const d = cloned.data;
-    for (let i = 0; i < d.length; i += 4) {
-      if (dehaze) applyDehaze(d, i, dehaze);
-      if (vibrance || saturation) applyVibranceSaturation(d, i, { vibrance, saturation });
+      ctx.putImageData(processedData, 0, 0);
+    } catch (error) {
+      console.error('Worker processing failed, falling back to main thread:', error);
+      // Fall back to main thread processing with fresh data from base
+      if (!cachedBaseImageData) return;
+      const freshClone = cloneImageData(cachedBaseImageData);
+      const processed = await processEffectsMainThread(freshClone, {
+        blur,
+        gaussian,
+        sharpen,
+        texture,
+        clarity,
+        bgThreshold,
+        bgThresholdBlack,
+        brightness,
+        contrast,
+        highlights,
+        shadows,
+        whites,
+        blacks,
+        vibrance,
+        saturation,
+        dehaze,
+        hslAdjustments,
+      });
+      ctx.putImageData(processed, 0, 0);
     }
-    applyToneAdjustments(cloned, {
+  } else {
+    // Process on main thread (fallback)
+    cloned = await processEffectsMainThread(cloned, {
+      blur,
+      gaussian,
+      sharpen,
+      texture,
+      clarity,
+      bgThreshold,
+      bgThresholdBlack,
+      brightness,
+      contrast,
       highlights,
       shadows,
       whites,
       blacks,
       vibrance,
       saturation,
-      clarity,
       dehaze,
+      hslAdjustments,
     });
+    ctx.putImageData(cloned, 0, 0);
   }
-
-  // HSL / Color mixer
-  if (Object.keys(hslAdjustments).length > 0) applyHslAdjustments(cloned, hslAdjustments);
-
-  // Draw final image
-  ctx.putImageData(cloned, 0, 0);
 
   // Detect changes for history
   const changedEffects = Object.entries({
@@ -373,6 +384,94 @@ export const applyEffects = (
     const extracted = extractRGBHistogram(canvasRef.current);
     setHistogramData(extracted);
   }
+};
+
+// Main thread processing fallback (optimized version)
+const processEffectsMainThread = async (
+  cloned: ImageData,
+  {
+    blur = 0,
+    gaussian = 0,
+    sharpen = 0,
+    texture = 0,
+    clarity = 0,
+    bgThreshold = 0,
+    bgThresholdBlack = 0,
+    brightness = 0,
+    contrast = 0,
+    highlights = 0,
+    shadows = 0,
+    whites = 0,
+    blacks = 0,
+    vibrance = 0,
+    saturation = 0,
+    dehaze = 0,
+    hslAdjustments = {} as Record<string, { h?: number; s?: number; l?: number }>,
+  },
+): Promise<ImageData> => {
+  // Optimize blur with capped values
+  if (blur > 0) {
+    const size = Math.min(blur % 2 === 0 ? blur + 1 : blur, 15);
+    applyConvolution(cloned, Kernels.generateBoxBlurKernel(size), size);
+  }
+  if (gaussian > 0) {
+    const r = Math.min(gaussian, 10);
+    applyConvolution(cloned, Kernels.generateGaussianKernel(r), r * 2 + 1);
+  }
+  // Optimize sharpen with limited passes
+  if (sharpen > 0) {
+    const passes = Math.min(Math.ceil(sharpen), 3);
+    for (let i = 0; i < passes; i++) {
+      applyConvolution(cloned, Kernels.sharpen, 3);
+    }
+  }
+  if (texture !== 0) {
+    const detailKernel = [0, -1, 0, -1, 5 + texture * 0.05, -1, 0, -1, 0];
+    applyConvolution(cloned, detailKernel, 3);
+  }
+  if (clarity !== 0) {
+    const midtoneKernel = [0, -1, 0, -1, 5 + clarity * 0.08, -1, 0, -1, 0];
+    applyConvolution(cloned, midtoneKernel, 3);
+  }
+
+  // Threshold effects
+  if (bgThreshold > 0) applyThresholdAlpha(cloned, bgThreshold);
+  if (bgThresholdBlack > 0) applyThresholdAlphaBlack(cloned, bgThresholdBlack);
+
+  // Brightness/Contrast
+  if (brightness !== 0 || contrast !== 0) applyBrightnessContrast(cloned, brightness, contrast);
+
+  // Tone adjustments (highlights, shadows, whites, blacks, vibrance, saturation, dehaze)
+  if (
+    highlights !== 0 ||
+    shadows !== 0 ||
+    whites !== 0 ||
+    blacks !== 0 ||
+    vibrance !== 0 ||
+    saturation !== 0 ||
+    dehaze !== 0
+  ) {
+    const d = cloned.data;
+    for (let i = 0; i < d.length; i += 4) {
+      if (dehaze) applyDehaze(d, i, dehaze);
+      if (vibrance || saturation) applyVibranceSaturation(d, i, { vibrance, saturation });
+    }
+    applyToneAdjustments(cloned, {
+      highlights,
+      shadows,
+      whites,
+      blacks,
+      vibrance,
+      saturation,
+      clarity,
+      dehaze,
+    });
+  }
+
+  // HSL / Color mixer
+  if (Object.keys(hslAdjustments).length > 0) applyHslAdjustments(cloned, hslAdjustments);
+
+  return cloned;
 };
 
 export const resetEffectsToBase = (

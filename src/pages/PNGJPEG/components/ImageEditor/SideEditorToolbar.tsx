@@ -78,6 +78,7 @@ type Props = {
   hslAdjustments: Record<string, { h?: number; s?: number; l?: number }>;
   setHslAdjustments: (name: string, values: Partial<{ h: number; s: number; l: number }>) => void;
   upscaleImage?: (factor: number, preset?: 'low' | 'medium' | 'high') => void;
+  workerProcessImage?: (imageData: ImageData, effects: any) => Promise<ImageData>;
 };
 
 const ImageEditorToolbar: React.FC<Props> = ({
@@ -127,6 +128,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
   hslAdjustments,
   setHslAdjustments,
   upscaleImage,
+  workerProcessImage,
 }) => {
   const [activeColor, setActiveColor] = useState('red');
   const [showUpscaleModal, setShowUpscaleModal] = useState(false);
@@ -240,6 +242,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
       },
       history,
       setHistogramData,
+      workerProcessImage,
     );
 
   const handleCustomUpscale = () => {

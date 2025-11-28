@@ -4,6 +4,7 @@ import { Modal, message } from 'antd';
 
 import useCanvas from '../../hooks/useCanvas';
 import useHistory from '../../hooks/useHistory';
+import useImageWorker from '../../hooks/useImageWorker';
 import {
   applyCrop,
   rotate,
@@ -65,6 +66,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
     onLoad,
   );
   const history = useHistory(canvasRef, overlayRef);
+  //#endregion
+
+  //#region Worker Setup
+  const { processImage, isProcessing: isWorkerProcessing } = useImageWorker();
   //#endregion
 
   //#region Viewer State (pan/zoom)
@@ -1132,6 +1137,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
         setDpiMeasured={setDpiMeasured}
         exportImage={exportWithOverlay}
         onExport={onExport}
+        workerProcessImage={processImage}
       />
 
       <div style={{ flex: 1 }}>
@@ -1194,6 +1200,48 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
           onMouseMove={handleMouseMoveViewer}
           onMouseUp={handleMouseUpViewer}
         />
+
+        {/* Worker Processing Indicator */}
+        {isWorkerProcessing && (
+          <div
+            style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: 'rgba(0, 0, 0, 0.75)',
+              color: '#fff',
+              padding: '16px 24px',
+              borderRadius: '8px',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            <div
+              style={{
+                width: '20px',
+                height: '20px',
+                border: '3px solid rgba(255, 255, 255, 0.3)',
+                borderTop: '3px solid #fff',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+              }}
+            />
+            <span style={{ fontSize: '14px', fontWeight: 500 }}>Processing image...</span>
+          </div>
+        )}
+
+        <style>
+          {`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}
+        </style>
       </div>
 
       <Modal
