@@ -287,7 +287,7 @@ export const applyEffects = async (
       // Fall back to main thread processing with fresh data from base
       if (!cachedBaseImageData) return;
       const freshClone = cloneImageData(cachedBaseImageData);
-      const processed = await processEffectsMainThread(freshClone, {
+      const processed = processEffectsMainThread(freshClone, {
         blur,
         gaussian,
         sharpen,
@@ -309,8 +309,8 @@ export const applyEffects = async (
       ctx.putImageData(processed, 0, 0);
     }
   } else {
-    // Process on main thread (fallback)
-    cloned = await processEffectsMainThread(cloned, {
+    // Process on main thread (no worker available) - synchronous, fast
+    cloned = processEffectsMainThread(cloned, {
       blur,
       gaussian,
       sharpen,
@@ -386,8 +386,8 @@ export const applyEffects = async (
   }
 };
 
-// Main thread processing fallback (optimized version)
-const processEffectsMainThread = async (
+// Main thread processing fallback (optimized version - synchronous)
+const processEffectsMainThread = (
   cloned: ImageData,
   {
     blur = 0,
@@ -408,7 +408,7 @@ const processEffectsMainThread = async (
     dehaze = 0,
     hslAdjustments = {} as Record<string, { h?: number; s?: number; l?: number }>,
   },
-): Promise<ImageData> => {
+): ImageData => {
   // Optimize blur with capped values
   if (blur > 0) {
     const size = Math.min(blur % 2 === 0 ? blur + 1 : blur, 15);

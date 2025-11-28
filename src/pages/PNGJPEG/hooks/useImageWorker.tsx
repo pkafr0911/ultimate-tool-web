@@ -29,6 +29,8 @@ export default function useImageWorker(): UseImageWorkerReturn {
   const requestIdCounter = useRef(0);
   const lastRequestTime = useRef<number>(0);
   const minRequestInterval = 100; // Minimum 100ms between requests
+  const failureCount = useRef(0);
+  const maxFailures = 3; // Disable worker after 3 consecutive failures
 
   // Initialize worker on mount
   useEffect(() => {
@@ -96,8 +98,9 @@ export default function useImageWorker(): UseImageWorkerReturn {
     imageData: ImageData,
     effects: WorkerRequest['effects'],
   ): Promise<ImageData> => {
-    if (!workerRef.current) {
-      throw new Error('Worker not initialized');
+    // Check if worker is disabled due to repeated failures
+    if (!workerRef.current || failureCount.current >= maxFailures) {
+      throw new Error('Worker not available');
     }
 
     // Throttle requests to prevent overwhelming the worker
@@ -155,10 +158,17 @@ export default function useImageWorker(): UseImageWorkerReturn {
       pendingRequestsRef.current.set(id, {
         resolve: (data) => {
           clearTimeout(timeoutId);
+          failureCount.current = 0; // Reset on success
           originalResolve(data);
         },
         reject: (error) => {
           clearTimeout(timeoutId);
+          failureCount.current += 1; // Increment on failure
+          if (failureCount.current >= maxFailures) {
+            console.warn(
+              `Worker disabled after ${maxFailures} consecutive failures. Using main thread.`,
+            );
+          }
           originalReject(error);
         },
       });
