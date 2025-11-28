@@ -476,7 +476,7 @@ export const addOverlayImage = (
   };
   img.onerror = () => message.error('Failed to load overlay image');
   img.src = URL.createObjectURL(file);
-  setTool('move');
+  setTool('layer');
 };
 
 export const exportWithOverlay = async (
@@ -568,7 +568,7 @@ export const mergeLayerIntoBase = (
   id?: string,
 ) => {
   if (!canvasRef.current) return;
-  const toMerge = id ? layers.filter((l) => l.id === id) : layers.slice();
+  const toMerge = id ? layers.filter((l) => l.id === id && !l.locked) : layers.slice();
   if (toMerge.length === 0) return;
 
   const ctx = canvasRef.current.getContext('2d')!;
@@ -668,7 +668,7 @@ export const deleteLayer = (
   setActiveLayerId?: (id: string | null) => void,
 ) =>
   setLayers((prev: any) => {
-    const copy = prev.filter((p: any) => p.id !== id);
+    const copy = prev.filter((p: any) => p.id !== id || p.locked);
     if (setActiveLayerId) setActiveLayerId(copy.length ? copy[copy.length - 1].id : null);
     return copy;
   });
@@ -1291,7 +1291,10 @@ export const createTextEditorOverlay = (params: CreateTextEditorParams) => {
   ta.style.padding = '4px';
   ta.placeholder = 'Type text and press Enter';
 
+  let commited = false;
   const doCommit = () => {
+    if (commited) return;
+    commited = Boolean(ta.value) && !Boolean(initial);
     onCommit(ta.value || '');
     ta.remove();
     inlineEditorRef.current = null;

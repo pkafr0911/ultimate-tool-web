@@ -152,6 +152,7 @@ const PNGJPEG: React.FC = () => {
               <Title level={5}>Preview & Editor:</Title>
               <ImageEditor
                 addOnFile={addOnFile}
+                setAddOnFile={setAddOnFile}
                 imageUrl={preview}
                 onExport={(blob) => {
                   // optional: show download link or handle upload

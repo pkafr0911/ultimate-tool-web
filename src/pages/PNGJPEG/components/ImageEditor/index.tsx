@@ -45,18 +45,19 @@ export type Tool =
   | 'perspective'
   | 'select'
   | 'draw'
-  | 'move'
+  | 'layer'
   | 'upscale'
   | 'text';
 
 type Props = {
   imageUrl: string;
   addOnFile?: File | null;
+  setAddOnFile: React.Dispatch<React.SetStateAction<File | null>>;
   onExport?: (blob: Blob) => void;
 };
 //#endregion
 
-const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
+const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExport }) => {
   //#region Canvas Setup
   const containerRef = useRef<HTMLDivElement | null>(null);
   const onLoad = (dataUrl: string) => history.push(dataUrl, 'Initial load');
@@ -218,7 +219,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
 
   // --- overlay image handlers (delegated to helpers) ---
   useEffect(() => {
-    if (addOnFile) onAddImage(addOnFile);
+    if (addOnFile) {
+      onAddImage(addOnFile);
+      setAddOnFile(null);
+    }
   }, [addOnFile]);
 
   // Ensure base overlay layer exists (locked, opacity 0) so overlay tools can reference it
@@ -564,7 +568,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
         }
 
         // Allow moving/resizing for layers when tool is 'move', or when tool is 'text' and the layer is a text layer
-        if (tool === 'move' || (tool === 'text' && L.type === 'text')) {
+        if (tool === 'layer' || (tool === 'text' && L.type === 'text')) {
           setActiveLayerId(L.id);
           setOverlaySelected(true);
           if (tl || tr || bl || br) {
@@ -705,6 +709,11 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
         const tol = 8 / Math.max(1, zoom);
         const near = (xx: number, yy: number) =>
           Math.abs(cx - xx) <= tol && Math.abs(cy - yy) <= tol;
+
+        if (L.locked || (tool !== 'layer' && tool !== 'text')) {
+          foundHandle = null;
+          break;
+        }
         if (near(r.x, r.y)) {
           foundHandle = 'tl';
           break;
@@ -726,10 +735,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
           break;
         }
       }
+
       if (containerRef.current) {
         if (!foundHandle) containerRef.current.style.cursor = currentCursor;
-        else if (foundHandle === 'move')
-          containerRef.current.style.cursor = currentCursor; // containerRef.current.style.cursor = 'move';
+        else if (foundHandle === 'move') containerRef.current.style.cursor = 'move';
         else if (foundHandle === 'tl' || foundHandle === 'br')
           containerRef.current.style.cursor = 'nwse-resize';
         else containerRef.current.style.cursor = 'nesw-resize';
@@ -748,7 +757,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
       const dy = cy - od.startY;
       setLayers((prev) =>
         prev.map((L) =>
-          L.id === od.layerId
+          L.id === od.layerId && !L.locked
             ? { ...L, rect: { x: od.origX + dx, y: od.origY + dy, w: L.rect.w, h: L.rect.h } }
             : L,
         ),
@@ -860,6 +869,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
         setLayers((prev) =>
           prev.map((L) => {
             if (L.id !== layerId) return L;
+            if (L.locked) return L;
             // if text layer, also adjust fontSize to roughly match new height
             if (L.type === 'text') {
               const padding = 10; // small padding inside rect
@@ -965,7 +975,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
   }, [tool, zoom, offset]);
   //#endregion
 
-  //#region ⌨ Keyboard Shortcuts
+  //#region ⌨ Keyboard Shortcuts (key down)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       // disable global shortcuts while inline editor is focused
@@ -974,19 +984,25 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'Z') history.redo();
       if (e.key === 'c') setTool('crop');
       if (e.key === 'h') setTool('pan');
-      if (e.key === 'v') setTool('move');
+      if (e.key === 'v') setTool('layer');
       if (e.key === 't') setTool('text');
       if (e.key === 'r') rotate(90, canvasRef, overlayRef, history.history);
       if (e.key === 'p') setTool('color');
       if (e.key === 'b') setTool('draw');
+
+      // action
+      if (e.key === 'Delete' && (tool === 'layer' || tool === 'text') && activeLayerId)
+        deleteLayer(activeLayerId);
+      if (e.ctrlKey && e.key === 's' && (tool === 'layer' || tool === 'text'))
+        mergeLayerIntoBase(activeLayerId as string | undefined);
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [history.index, history.history]);
+  }, [history.index, history.history, tool, activeLayerId]);
   //#endregion
 
-  // Quick hand tool when holding Spaceb
+  // Quick hand tool when holding
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const triggerTool = (key: 'Space' | 'AltLeft', newTool: Tool, condition = true) => {
@@ -1055,8 +1071,8 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, onExport }) => {
     switch (tool) {
       case 'pan':
         return 'grab';
-      case 'move':
-        return 'move';
+      // case 'move':
+      //   return 'move';
       case 'crop':
       case 'ruler':
       case 'perspective':

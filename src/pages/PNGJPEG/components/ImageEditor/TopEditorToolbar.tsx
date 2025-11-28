@@ -11,6 +11,7 @@ import {
   AlignLeftOutlined,
   AlignCenterOutlined,
   AlignRightOutlined,
+  FontColorsOutlined,
 } from '@ant-design/icons';
 import { HistoryController } from '../../hooks/useHistory';
 import { Tool } from '.';
@@ -146,7 +147,7 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
     // === TRANSFORMERS ===
     const getStartValue = () => {
       if (tool === 'draw') return brushOpacity;
-      if (tool === 'move' && layers) {
+      if (tool === 'layer' && layers) {
         const active = layers.find((l) => l.id === activeLayerId);
         return active?.opacity ?? brushOpacity;
       }
@@ -160,7 +161,7 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
         return;
       }
 
-      if (tool === 'move' && layers) {
+      if (tool === 'layer' && layers) {
         const active = layers.find((l) => l.id === activeLayerId);
         if (active && setLayerOpacity) setLayerOpacity(active.id, val);
       }
@@ -432,7 +433,7 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
             </>
           ) : null}
 
-          {tool === 'move' ? (
+          {tool === 'layer' ? (
             <>
               {/* Layer controls (select + actions + opacity/blend for active) */}
               {layers && layers.length > 0 && (
@@ -452,11 +453,14 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
                         .map((L) => (
                           <Option key={L.id} value={L.id} label={`Layer ${L.id}`}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <img
-                                src={L.img?.src}
-                                alt=""
-                                style={{ width: 40, height: 28, objectFit: 'cover' }}
-                              />
+                              {L.img && (
+                                <img
+                                  src={L.img?.src}
+                                  alt=""
+                                  style={{ width: 40, height: 28, objectFit: 'cover' }}
+                                />
+                              )}
+                              {L.text && <FontColorsOutlined />}
                               <span style={{ fontSize: 12 }}>{L.id}</span>
                             </div>
                           </Option>
