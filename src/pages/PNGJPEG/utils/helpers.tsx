@@ -1304,6 +1304,7 @@ export const createTextEditorOverlay = (params: CreateTextEditorParams) => {
   };
 
   ta.addEventListener('keydown', (ev) => {
+    if (ev.shiftKey && ev.key === 'Enter') return;
     if (ev.key === 'Enter' && !ev.shiftKey) {
       ev.preventDefault();
       doCommit();
