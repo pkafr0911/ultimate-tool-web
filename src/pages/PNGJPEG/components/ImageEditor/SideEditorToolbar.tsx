@@ -12,6 +12,7 @@ import {
   EditOutlined,
   DragOutlined,
   FontColorsOutlined,
+  BorderInnerOutlined,
 } from '@ant-design/icons';
 import {
   applyEffects,
@@ -295,14 +296,26 @@ const ImageEditorToolbar: React.FC<Props> = ({
               />
             </Tooltip>
 
+            <Tooltip title="Crop (C)">
+              <Button icon={<ScissorOutlined />} onClick={() => setTool('crop')} />
+            </Tooltip>
+            <Tooltip title="Perspective">
+              <Button
+                icon={<BorderInnerOutlined />}
+                onClick={() => {
+                  setShowPerspectiveModal(true);
+                  setTool('perspective');
+                }}
+              />
+            </Tooltip>
             <Tooltip title="Brush (B)">
               <Button icon={<EditOutlined />} onClick={() => setTool('draw')} />
             </Tooltip>
             <Tooltip title="Text (T)">
               <Button icon={<FontColorsOutlined />} onClick={() => setTool('text')} />
             </Tooltip>
-            <Tooltip title="Move (V)">
-              <Button icon={<DragOutlined />} onClick={() => setTool('move')} />
+            <Tooltip title="Layer (V)">
+              <Button icon={<DragOutlined />} onClick={() => setTool('layer')} />
             </Tooltip>
           </Space>
         </Panel>

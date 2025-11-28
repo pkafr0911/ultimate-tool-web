@@ -212,7 +212,7 @@ export const applyEffects = (
     dehaze = 0,
     hslAdjustments = {} as Record<string, { h?: number; s?: number; l?: number }>,
   },
-  history: { push: (img: string, label: string) => void },
+  history: { push: (img: string, label: string, isSetBase: boolean) => void },
   setHistogramData,
 ) => {
   if (!canvasRef.current || !baseCanvas) return;
@@ -220,12 +220,13 @@ export const applyEffects = (
   const ctx = canvasRef.current.getContext('2d')!;
   const baseCtx = baseCanvas.getContext('2d')!;
 
+  const BaseImageData = baseCtx.getImageData(0, 0, baseCanvas.width, baseCanvas.height);
+
   // cache original image data once
-  if (!cachedBaseImageData)
-    cachedBaseImageData = baseCtx.getImageData(0, 0, baseCanvas.width, baseCanvas.height);
+  if (!cachedBaseImageData) cachedBaseImageData = BaseImageData;
   if (!cachedBaseImageData) return;
 
-  let cloned = cloneImageData(cachedBaseImageData);
+  let cloned = cloneImageData(BaseImageData);
 
   // Early exit if no effects
   if (
@@ -346,7 +347,7 @@ export const applyEffects = (
     const historyLabel = changedEffects
       .map(([key, value]) => `${key}=${JSON.stringify(value)}`)
       .join(', ');
-    history.push(canvasRef.current.toDataURL(), `${historyLabel}`);
+    history.push(canvasRef.current.toDataURL(), `${historyLabel}`, false);
     previousEffects = {
       blur,
       gaussian,
@@ -683,7 +684,11 @@ export const selectLayer = (setActiveLayerId: (id: string | null) => void, id: s
  * - `scale` can be a number >= 1 (e.g. 2, 3, 4 or 1.5)
  * - Note: enhancement option removed; upscaling only performs progressive resampling
  */
-export const upscaleCanvas = async (srcCanvas: HTMLCanvasElement, scale: number) => {
+export const upscaleCanvas = async (
+  srcCanvas: HTMLCanvasElement,
+  scale: number,
+  preset?: 'low' | 'medium' | 'high',
+) => {
   if (!srcCanvas || scale <= 1) return srcCanvas;
 
   // progressive upscaling in steps (max 2x per step) to reduce artifacts
@@ -699,7 +704,7 @@ export const upscaleCanvas = async (srcCanvas: HTMLCanvasElement, scale: number)
     const dctx = dest.getContext('2d')!;
     dctx.imageSmoothingEnabled = true;
     // @ts-ignore - lib.dom types allow 'low'|'medium'|'high' but be defensive
-    dctx.imageSmoothingQuality = 'high';
+    dctx.imageSmoothingQuality = preset;
     dctx.clearRect(0, 0, nextW, nextH);
     dctx.drawImage(tmp, 0, 0, tmp.width, tmp.height, 0, 0, nextW, nextH);
     tmp = dest;
@@ -727,10 +732,11 @@ export const applyUpscale = async (
   setLayers: React.Dispatch<any>,
   drawOverlay: () => void,
   factor: number,
+  preset?: 'low' | 'medium' | 'high',
 ) => {
   if (!canvasRef.current) return;
   try {
-    const newCanvas = await upscaleCanvas(canvasRef.current, factor);
+    const newCanvas = await upscaleCanvas(canvasRef.current, factor, preset);
     if (!newCanvas) return;
 
     const dataUrl = newCanvas.toDataURL();
@@ -769,7 +775,7 @@ export const applyUpscale = async (
           if (!prev[0]) return prev;
           const copy = prev.slice();
           const base = { ...(copy[0] as any) } as any;
-          base.opacity = 1;
+          // base.opacity = 1;
           if (base.img) base.img.src = dataUrl;
           base.rect = { x: 0, y: 0, w: c2.width, h: c2.height };
           copy[0] = base;

@@ -365,12 +365,24 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
 
   //#region Upscale
   // Upscale whole image: delegated to helpers.applyUpscale
-  const upscaleImage = (factor: number) =>
-    applyUpscale(canvasRef, overlayRef, history, setBaseCanvas, setLayers, drawOverlay, factor);
+  const upscaleImage = (factor: number, preset?: 'low' | 'medium' | 'high') =>
+    applyUpscale(
+      canvasRef,
+      overlayRef,
+      history,
+      setBaseCanvas,
+      setLayers,
+      drawOverlay,
+      factor,
+      preset,
+    );
+  //#endregion
 
-  // Sync base canvas when in upscaled mode
+  //#region Sync base canvas when in upscaled mode
   useEffect(() => {
     if (!canvasRef.current) return;
+
+    if (!history.history[history.index]?.isSetBase) return;
 
     const src = canvasRef.current;
     const c = document.createElement('canvas');
@@ -445,7 +457,6 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
     canvas.addEventListener('contextmenu', handleContextMenu);
     return () => canvas.removeEventListener('contextmenu', handleContextMenu);
   }, []);
-
   //#endregion
 
   // #region 🔍 Ctrl + Wheel Zoom Handler
@@ -548,7 +559,13 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
       for (let i = layers.length - 1; i >= 0; i--) {
         const L = layers[i];
         const r = L.rect;
-        const inside = x >= r.x && y >= r.y && x <= r.x + r.w && y <= r.y + r.h;
+        // detect inside area with tolerance
+        const hitTol = 6 / Math.max(1, zoom); // increase to 8 if you want easier hit
+        const inside =
+          x >= r.x - hitTol &&
+          y >= r.y - hitTol &&
+          x <= r.x + r.w + hitTol &&
+          y <= r.y + r.h + hitTol;
         if (!inside) continue;
         // detect corner handles
         const tol = 8 / Math.max(1, zoom);
@@ -993,13 +1010,15 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
       // action
       if (e.key === 'Delete' && (tool === 'layer' || tool === 'text') && activeLayerId)
         deleteLayer(activeLayerId);
-      if (e.ctrlKey && e.key === 's' && (tool === 'layer' || tool === 'text'))
+      if (e.ctrlKey && e.key === 's' && (tool === 'layer' || tool === 'text')) {
+        e.preventDefault();
         mergeLayerIntoBase(activeLayerId as string | undefined);
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [history.index, history.history, tool, activeLayerId]);
+  }, [history.index, history.history, tool, activeLayerId, layers]);
   //#endregion
 
   // Quick hand tool when holding

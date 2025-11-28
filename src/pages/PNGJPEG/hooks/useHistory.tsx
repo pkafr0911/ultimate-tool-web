@@ -1,8 +1,9 @@
-import { MutableRefObject, useState } from 'react';
+import { MutableRefObject, useEffect, useState } from 'react';
 
 type HistoryItem = {
   url: string;
   label?: string;
+  isSetBase: boolean;
 };
 
 export type HistoryController = {
@@ -26,9 +27,9 @@ export default function useHistory(
 
   //
   /** History management */
-  const push = (url: string, label = '') => {
+  const push = (url: string, label = '', isSetBase = true) => {
     const next = history.slice(0, index + 1);
-    next.push({ url, label });
+    next.push({ url, label, isSetBase });
     setHistory(next);
     setIndex(next.length - 1);
   };
