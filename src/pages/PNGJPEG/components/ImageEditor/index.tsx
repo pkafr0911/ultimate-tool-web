@@ -137,6 +137,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
   const [toolBefore, setToolBefore] = useState<Tool | null>(null);
   const [isSpaceDown, setIsSpaceDown] = useState(false);
   const [isAltDown, setIsAltDown] = useState(false);
+  const [isShiftDown, setIsShiftDown] = useState(false);
   //#endregion
 
   //#region Color Picker
@@ -772,7 +773,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
       const rect = canvasRef.current!.getBoundingClientRect();
       const cx = (e.clientX - rect.left) / zoom;
       const cy = (e.clientY - rect.top) / zoom;
-      let foundHandle: 'tl' | 'tr' | 'bl' | 'br' | 'move' | null = null;
+      let foundHandle: 'tl' | 'tr' | 'bl' | 'br' | 't' | 'b' | 'l' | 'r' | 'move' | null = null;
       for (let i = layers.length - 1; i >= 0; i--) {
         const L = layers[i];
         const r = L.rect;
@@ -785,6 +786,8 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
           foundHandle = null;
           break;
         }
+
+        // Check corners
         if (near(r.x, r.y)) {
           foundHandle = 'tl';
           break;
@@ -801,6 +804,25 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
           foundHandle = 'br';
           break;
         }
+
+        // Check midpoints
+        if (near(r.x + r.w / 2, r.y)) {
+          foundHandle = 't';
+          break;
+        }
+        if (near(r.x + r.w / 2, r.y + r.h)) {
+          foundHandle = 'b';
+          break;
+        }
+        if (near(r.x, r.y + r.h / 2)) {
+          foundHandle = 'l';
+          break;
+        }
+        if (near(r.x + r.w, r.y + r.h / 2)) {
+          foundHandle = 'r';
+          break;
+        }
+
         if (inside) {
           foundHandle = 'move';
           break;
@@ -808,11 +830,28 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
       }
 
       if (containerRef.current) {
-        if (!foundHandle) containerRef.current.style.cursor = currentCursor;
-        else if (foundHandle === 'move') containerRef.current.style.cursor = 'move';
-        else if (foundHandle === 'tl' || foundHandle === 'br')
+        if (!foundHandle) {
+          containerRef.current.style.cursor = currentCursor;
+        } else if (foundHandle === 'move') {
+          containerRef.current.style.cursor = 'move';
+        } else if (foundHandle === 't' || foundHandle === 'b') {
+          containerRef.current.style.cursor = 'ns-resize';
+        } else if (foundHandle === 'l' || foundHandle === 'r') {
+          containerRef.current.style.cursor = 'ew-resize';
+        } else if (
+          e.shiftKey &&
+          (foundHandle === 'tl' ||
+            foundHandle === 'tr' ||
+            foundHandle === 'bl' ||
+            foundHandle === 'br')
+        ) {
+          // Show rotation cursor when shift is held over corners
+          containerRef.current.style.cursor = 'crosshair';
+        } else if (foundHandle === 'tl' || foundHandle === 'br') {
           containerRef.current.style.cursor = 'nwse-resize';
-        else containerRef.current.style.cursor = 'nesw-resize';
+        } else {
+          containerRef.current.style.cursor = 'nesw-resize';
+        }
       }
     } catch (err) {
       // ignore
@@ -1126,7 +1165,9 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
         return false;
       };
 
-      if (triggerTool('Space', 'pan')) {
+      if (e.key === 'Shift') {
+        setIsShiftDown(true);
+      } else if (triggerTool('Space', 'pan')) {
         setIsSpaceDown(true);
       } else if (triggerTool('AltLeft', 'color', tool === 'draw')) {
         setIsAltDown(true);
@@ -1147,6 +1188,9 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
         }
       };
 
+      if (e.key === 'Shift') {
+        setIsShiftDown(false);
+      }
       resetTool('Space', setIsSpaceDown);
       resetTool('AltLeft', setIsAltDown);
     };
