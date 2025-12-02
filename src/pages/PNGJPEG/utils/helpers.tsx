@@ -679,15 +679,23 @@ export const selectLayer = (setActiveLayerId: (id: string | null) => void, id: s
 };
 
 //#region Upscale
+export type UpscaleQualityOptions = {
+  sharpen?: number; // 0-100
+  edgeEnhancement?: number; // 0-100
+  denoise?: number; // 0-100
+};
+
 /**
- * Upscale a canvas progressively and optionally apply a sharpening pass to improve perceived clarity.
+ * Upscale a canvas progressively and optionally apply quality enhancements.
  * - `scale` can be a number >= 1 (e.g. 2, 3, 4 or 1.5)
- * - Note: enhancement option removed; upscaling only performs progressive resampling
+ * - `preset` controls imageSmoothingQuality ('low' | 'medium' | 'high')
+ * - `qualityOptions` controls post-upscale enhancements (sharpen, edge, denoise)
  */
 export const upscaleCanvas = async (
   srcCanvas: HTMLCanvasElement,
   scale: number,
   preset?: 'low' | 'medium' | 'high',
+  qualityOptions?: UpscaleQualityOptions,
 ) => {
   if (!srcCanvas || scale <= 1) return srcCanvas;
 
@@ -714,7 +722,52 @@ export const upscaleCanvas = async (
     await new Promise((r) => setTimeout(r, 0));
   }
 
-  // Enhancement removed: return the upscaled canvas as-is
+  // Apply quality enhancements if specified
+  if (
+    qualityOptions &&
+    (qualityOptions.sharpen || qualityOptions.edgeEnhancement || qualityOptions.denoise)
+  ) {
+    const ctx = tmp.getContext('2d')!;
+    const imageData = ctx.getImageData(0, 0, tmp.width, tmp.height);
+
+    // Apply denoise first (blur to reduce noise)
+    if (qualityOptions.denoise && qualityOptions.denoise > 0) {
+      const denoiseStrength = qualityOptions.denoise / 100;
+      const blurKernel = Kernels.gaussian5;
+      const iterations = Math.ceil(denoiseStrength * 2);
+      for (let i = 0; i < iterations; i++) {
+        applyConvolution(imageData, blurKernel, 5);
+      }
+    }
+
+    // Apply edge enhancement (unsharp mask variation)
+    if (qualityOptions.edgeEnhancement && qualityOptions.edgeEnhancement > 0) {
+      const edgeStrength = qualityOptions.edgeEnhancement / 100;
+      const edgeKernel = [
+        0,
+        -1 * edgeStrength,
+        0,
+        -1 * edgeStrength,
+        1 + 4 * edgeStrength,
+        -1 * edgeStrength,
+        0,
+        -1 * edgeStrength,
+        0,
+      ];
+      applyConvolution(imageData, edgeKernel, 3);
+    }
+
+    // Apply sharpening
+    if (qualityOptions.sharpen && qualityOptions.sharpen > 0) {
+      const sharpenStrength = qualityOptions.sharpen / 100;
+      const iterations = Math.ceil(sharpenStrength * 3);
+      for (let i = 0; i < iterations; i++) {
+        applyConvolution(imageData, Kernels.sharpen, 3);
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  }
 
   return tmp;
 };
@@ -733,10 +786,11 @@ export const applyUpscale = async (
   drawOverlay: () => void,
   factor: number,
   preset?: 'low' | 'medium' | 'high',
+  qualityOptions?: UpscaleQualityOptions,
 ) => {
   if (!canvasRef.current) return;
   try {
-    const newCanvas = await upscaleCanvas(canvasRef.current, factor, preset);
+    const newCanvas = await upscaleCanvas(canvasRef.current, factor, preset, qualityOptions);
     if (!newCanvas) return;
 
     const dataUrl = newCanvas.toDataURL();
@@ -1028,6 +1082,15 @@ export const drawOverlayHelper = (
       ctx.globalAlpha = L.opacity;
       ctx.globalCompositeOperation = L.blend || 'source-over';
 
+      // Apply rotation if specified
+      if (L.rotation && L.rotation !== 0) {
+        const centerX = L.rect.x + L.rect.w / 2;
+        const centerY = L.rect.y + L.rect.h / 2;
+        ctx.translate(centerX, centerY);
+        ctx.rotate((L.rotation * Math.PI) / 180);
+        ctx.translate(-centerX, -centerY);
+      }
+
       if (L.type === 'image' && L.img) {
         ctx.drawImage(L.img, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
       } else if (L.type === 'text') {
@@ -1093,6 +1156,8 @@ export const drawOverlayHelper = (
       ctx.fillStyle = 'rgba(255,165,0,0.95)';
       const size = Math.max(6 / Math.max(1, zoom), 6);
       const half = size / 2;
+
+      // Draw corner handles
       const corners = [
         [r.x, r.y],
         [r.x + r.w, r.y],
@@ -1100,6 +1165,19 @@ export const drawOverlayHelper = (
         [r.x + r.w, r.y + r.h],
       ];
       corners.forEach(([cx, cy]) => ctx.fillRect(cx - half, cy - half, size, size));
+
+      // Draw midpoint handles (new feature)
+      ctx.fillStyle = 'rgba(0,180,255,0.95)'; // Different color for midpoints
+      const midpoints = [
+        [r.x + r.w / 2, r.y], // top
+        [r.x + r.w / 2, r.y + r.h], // bottom
+        [r.x, r.y + r.h / 2], // left
+        [r.x + r.w, r.y + r.h / 2], // right
+      ];
+      midpoints.forEach(([mx, my]) => {
+        ctx.fillRect(mx - half, my - half, size, size);
+      });
+
       ctx.restore();
     }
   }

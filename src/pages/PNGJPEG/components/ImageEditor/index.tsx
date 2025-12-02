@@ -159,6 +159,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
     rect: { x: number; y: number; w: number; h: number };
     opacity: number;
     blend: GlobalCompositeOperation;
+    rotation?: number; // rotation angle in degrees
     // Text layer properties
     text?: string;
     font?: string; // e.g., 'Arial', 'Helvetica'
@@ -209,10 +210,19 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
   const inlineEditorRef = useRef<HTMLTextAreaElement | null>(null);
   const overlayResize = useRef<null | {
     layerId: string;
-    handle: 'tl' | 'tr' | 'bl' | 'br';
+    handle: 'tl' | 'tr' | 'bl' | 'br' | 't' | 'b' | 'l' | 'r';
     startX: number;
     startY: number;
     orig: { x: number; y: number; w: number; h: number };
+  }>(null);
+  const overlayRotate = useRef<null | {
+    layerId: string;
+    startX: number;
+    startY: number;
+    centerX: number;
+    centerY: number;
+    startAngle: number;
+    originalRotation: number;
   }>(null);
   //#endregion
   //#endregion
@@ -365,7 +375,11 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
 
   //#region Upscale
   // Upscale whole image: delegated to helpers.applyUpscale
-  const upscaleImage = (factor: number, preset?: 'low' | 'medium' | 'high') =>
+  const upscaleImage = (
+    factor: number,
+    preset?: 'low' | 'medium' | 'high',
+    qualityOptions?: { sharpen?: number; edgeEnhancement?: number; denoise?: number },
+  ) =>
     applyUpscale(
       canvasRef,
       overlayRef,
@@ -375,6 +389,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
       drawOverlay,
       factor,
       preset,
+      qualityOptions,
     );
   //#endregion
 
@@ -588,7 +603,46 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
         if (tool === 'layer' || (tool === 'text' && L.type === 'text')) {
           setActiveLayerId(L.id);
           setOverlaySelected(true);
+
+          // Check for midpoint handles (new feature)
+          const midTol = 8 / Math.max(1, zoom);
+          const nearMid = (xx: number, yy: number) =>
+            Math.abs(x - xx) <= midTol && Math.abs(y - yy) <= midTol;
+          const midT = nearMid(r.x + r.w / 2, r.y); // top
+          const midB = nearMid(r.x + r.w / 2, r.y + r.h); // bottom
+          const midL = nearMid(r.x, r.y + r.h / 2); // left
+          const midR = nearMid(r.x + r.w, r.y + r.h / 2); // right
+
+          if (midT || midB || midL || midR) {
+            const handle = midT ? 't' : midB ? 'b' : midL ? 'l' : 'r';
+            overlayResize.current = {
+              layerId: L.id,
+              handle,
+              startX: x,
+              startY: y,
+              orig: { ...r },
+            } as any;
+            return;
+          }
+
           if (tl || tr || bl || br) {
+            // Check if holding Shift for rotation in corners
+            if (e.shiftKey) {
+              const centerX = r.x + r.w / 2;
+              const centerY = r.y + r.h / 2;
+              const startAngle = Math.atan2(y - centerY, x - centerX);
+              overlayRotate.current = {
+                layerId: L.id,
+                startX: x,
+                startY: y,
+                centerX,
+                centerY,
+                startAngle,
+                originalRotation: L.rotation || 0,
+              };
+              return;
+            }
+
             const handle = tl ? 'tl' : tr ? 'tr' : bl ? 'bl' : 'br';
             overlayResize.current = {
               layerId: L.id,
@@ -825,6 +879,26 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
       ctx.restore();
       drawOverlay();
     } else {
+      // overlay rotation handling
+      const orot = overlayRotate.current;
+      if (orot) {
+        const rect = canvasRef.current!.getBoundingClientRect();
+        const cx = (e.clientX - rect.left) / zoom;
+        const cy = (e.clientY - rect.top) / zoom;
+        const { layerId, centerX, centerY, startAngle, originalRotation } = orot;
+        const currentAngle = Math.atan2(cy - centerY, cx - centerX);
+        const angleDelta = (currentAngle - startAngle) * (180 / Math.PI);
+
+        setLayers((prev) =>
+          prev.map((L) => {
+            if (L.id !== layerId || L.locked) return L;
+            return { ...L, rotation: originalRotation + angleDelta };
+          }),
+        );
+        drawOverlay();
+        return;
+      }
+
       // overlay resize handling (mouse move without active drag)
       const or = overlayResize.current;
       if (or) {
@@ -837,7 +911,23 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
         let ny = orig.y;
         let nw = orig.w;
         let nh = orig.h;
-        if (handle === 'tl') {
+
+        // Handle midpoint resizing (new feature)
+        if (handle === 't') {
+          // Top midpoint - only move top edge
+          ny = cy;
+          nh = orig.h + (orig.y - ny);
+        } else if (handle === 'b') {
+          // Bottom midpoint - only move bottom edge
+          nh = cy - orig.y;
+        } else if (handle === 'l') {
+          // Left midpoint - only move left edge
+          nx = cx;
+          nw = orig.w + (orig.x - nx);
+        } else if (handle === 'r') {
+          // Right midpoint - only move right edge
+          nw = cx - orig.x;
+        } else if (handle === 'tl') {
           nx = cx;
           ny = cy;
           nw = orig.w + (orig.x - nx);
@@ -854,30 +944,31 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
           nw = cx - orig.x;
           nh = cy - orig.y;
         }
-        // aspect ratio lock when Shift pressed
-        if (e.shiftKey) {
+        // aspect ratio lock when Shift pressed (only for corner handles)
+        if (
+          e.shiftKey &&
+          (handle === 'tl' || handle === 'tr' || handle === 'bl' || handle === 'br')
+        ) {
           const aspect = orig.w / Math.max(1, orig.h);
-          if (handle === 'tl' || handle === 'tr' || handle === 'bl' || handle === 'br') {
-            // derive size by larger delta
-            const signW = nw < 0 ? -1 : 1;
-            const signH = nh < 0 ? -1 : 1;
-            const absW = Math.abs(nw);
-            const absH = Math.abs(nh);
-            if (absW / Math.max(1, absH) > aspect) {
-              // width changed more -> adjust height
-              nh = (absW / aspect) * signH;
-            } else {
-              nw = absH * aspect * signW;
-            }
-            // when changing top handles, adjust nx/ny to keep corner anchored
-            if (handle === 'tl') {
-              nx = orig.x + (orig.w - nw);
-              ny = orig.y + (orig.h - nh);
-            } else if (handle === 'tr') {
-              ny = orig.y + (orig.h - nh);
-            } else if (handle === 'bl') {
-              nx = orig.x + (orig.w - nw);
-            }
+          // derive size by larger delta
+          const signW = nw < 0 ? -1 : 1;
+          const signH = nh < 0 ? -1 : 1;
+          const absW = Math.abs(nw);
+          const absH = Math.abs(nh);
+          if (absW / Math.max(1, absH) > aspect) {
+            // width changed more -> adjust height
+            nh = (absW / aspect) * signH;
+          } else {
+            nw = absH * aspect * signW;
+          }
+          // when changing top handles, adjust nx/ny to keep corner anchored
+          if (handle === 'tl') {
+            nx = orig.x + (orig.w - nw);
+            ny = orig.y + (orig.h - nh);
+          } else if (handle === 'tr') {
+            ny = orig.y + (orig.h - nh);
+          } else if (handle === 'bl') {
+            nx = orig.x + (orig.w - nw);
           }
         }
         // enforce min size
@@ -911,10 +1002,11 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
       initialLineWidth.current = drawLineWidth;
       return;
     }
-    // finalize overlay drag/resize
-    if (overlayDrag.current || overlayResize.current) {
+    // finalize overlay drag/resize/rotate
+    if (overlayDrag.current || overlayResize.current || overlayRotate.current) {
       overlayDrag.current = null;
       overlayResize.current = null;
+      overlayRotate.current = null;
       // leave overlaySelected true
       // do not push to history for now (overlay is non-destructive until user exports)
       drawOverlay();
