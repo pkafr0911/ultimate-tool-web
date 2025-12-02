@@ -569,27 +569,62 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
         },
       });
     };
+
+    // Helper to transform point by rotation around center
+    const rotatePoint = (px: number, py: number, cx: number, cy: number, angle: number) => {
+      const rad = (angle * Math.PI) / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      const dx = px - cx;
+      const dy = py - cy;
+      return {
+        x: cx + dx * cos - dy * sin,
+        y: cy + dx * sin + dy * cos,
+      };
+    };
+
     // overlay hit-test (priority: if clicking overlay and not using pan tool)
     // overlay hit-test (topmost first)
     if (layers.length > 0) {
       for (let i = layers.length - 1; i >= 0; i--) {
         const L = layers[i];
         const r = L.rect;
+        const rotation = L.rotation || 0;
+        const centerX = r.x + r.w / 2;
+        const centerY = r.y + r.h / 2;
+
+        // Transform mouse position by inverse rotation to check against unrotated rect
+        const inverseMouse = rotatePoint(x, y, centerX, centerY, -rotation);
+
         // detect inside area with tolerance
-        const hitTol = 6 / Math.max(1, zoom); // increase to 8 if you want easier hit
+        const hitTol = 6 / Math.max(1, zoom);
         const inside =
-          x >= r.x - hitTol &&
-          y >= r.y - hitTol &&
-          x <= r.x + r.w + hitTol &&
-          y <= r.y + r.h + hitTol;
+          inverseMouse.x >= r.x - hitTol &&
+          inverseMouse.y >= r.y - hitTol &&
+          inverseMouse.x <= r.x + r.w + hitTol &&
+          inverseMouse.y <= r.y + r.h + hitTol;
         if (!inside) continue;
-        // detect corner handles
+
+        // detect corner handles - transform corners to rotated positions
         const tol = 8 / Math.max(1, zoom);
-        const near = (xx: number, yy: number) => Math.abs(x - xx) <= tol && Math.abs(y - yy) <= tol;
-        const tl = near(r.x, r.y);
-        const tr = near(r.x + r.w, r.y);
-        const bl = near(r.x, r.y + r.h);
-        const br = near(r.x + r.w, r.y + r.h);
+        const corners = {
+          tl: rotatePoint(r.x, r.y, centerX, centerY, rotation),
+          tr: rotatePoint(r.x + r.w, r.y, centerX, centerY, rotation),
+          bl: rotatePoint(r.x, r.y + r.h, centerX, centerY, rotation),
+          br: rotatePoint(r.x + r.w, r.y + r.h, centerX, centerY, rotation),
+        };
+        const midpoints = {
+          t: rotatePoint(r.x + r.w / 2, r.y, centerX, centerY, rotation),
+          b: rotatePoint(r.x + r.w / 2, r.y + r.h, centerX, centerY, rotation),
+          l: rotatePoint(r.x, r.y + r.h / 2, centerX, centerY, rotation),
+          r: rotatePoint(r.x + r.w, r.y + r.h / 2, centerX, centerY, rotation),
+        };
+
+        const near = (px: number, py: number) => Math.abs(x - px) <= tol && Math.abs(y - py) <= tol;
+        const tl = near(corners.tl.x, corners.tl.y);
+        const tr = near(corners.tr.x, corners.tr.y);
+        const bl = near(corners.bl.x, corners.bl.y);
+        const br = near(corners.br.x, corners.br.y);
 
         // If double-clicking a text layer while in text tool, open inline editor for editing
         if (tool === 'text' && L.type === 'text' && e.detail === 2) {
@@ -605,14 +640,11 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
           setActiveLayerId(L.id);
           setOverlaySelected(true);
 
-          // Check for midpoint handles (new feature)
-          const midTol = 8 / Math.max(1, zoom);
-          const nearMid = (xx: number, yy: number) =>
-            Math.abs(x - xx) <= midTol && Math.abs(y - yy) <= midTol;
-          const midT = nearMid(r.x + r.w / 2, r.y); // top
-          const midB = nearMid(r.x + r.w / 2, r.y + r.h); // bottom
-          const midL = nearMid(r.x, r.y + r.h / 2); // left
-          const midR = nearMid(r.x + r.w, r.y + r.h / 2); // right
+          // Check for midpoint handles (using rotated positions)
+          const midT = near(midpoints.t.x, midpoints.t.y);
+          const midB = near(midpoints.b.x, midpoints.b.y);
+          const midL = near(midpoints.l.x, midpoints.l.y);
+          const midR = near(midpoints.r.x, midpoints.r.y);
 
           if (midT || midB || midL || midR) {
             const handle = midT ? 't' : midB ? 'b' : midL ? 'l' : 'r';
@@ -629,8 +661,6 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
           if (tl || tr || bl || br) {
             // Check if holding Shift for rotation in corners
             if (e.shiftKey) {
-              const centerX = r.x + r.w / 2;
-              const centerY = r.y + r.h / 2;
               const startAngle = Math.atan2(y - centerY, x - centerX);
               overlayRotate.current = {
                 layerId: L.id,
@@ -774,51 +804,97 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
       const cx = (e.clientX - rect.left) / zoom;
       const cy = (e.clientY - rect.top) / zoom;
       let foundHandle: 'tl' | 'tr' | 'bl' | 'br' | 't' | 'b' | 'l' | 'r' | 'move' | null = null;
+
+      // Helper to transform point by rotation
+      const rotatePoint = (
+        px: number,
+        py: number,
+        centerX: number,
+        centerY: number,
+        angle: number,
+      ) => {
+        const rad = (angle * Math.PI) / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+        const dx = px - centerX;
+        const dy = py - centerY;
+        return {
+          x: centerX + dx * cos - dy * sin,
+          y: centerY + dx * sin + dy * cos,
+        };
+      };
+
       for (let i = layers.length - 1; i >= 0; i--) {
         const L = layers[i];
         const r = L.rect;
-        const inside = cx >= r.x && cy >= r.y && cx <= r.x + r.w && cy <= r.y + r.h;
-        const tol = 8 / Math.max(1, zoom);
-        const near = (xx: number, yy: number) =>
-          Math.abs(cx - xx) <= tol && Math.abs(cy - yy) <= tol;
+        const rotation = L.rotation || 0;
+        const centerX = r.x + r.w / 2;
+        const centerY = r.y + r.h / 2;
 
         if (L.locked || (tool !== 'layer' && tool !== 'text')) {
           foundHandle = null;
           break;
         }
 
+        // Transform mouse position by inverse rotation
+        const inverseMouse = rotatePoint(cx, cy, centerX, centerY, -rotation);
+        const inside =
+          inverseMouse.x >= r.x &&
+          inverseMouse.y >= r.y &&
+          inverseMouse.x <= r.x + r.w &&
+          inverseMouse.y <= r.y + r.h;
+
+        const tol = 8 / Math.max(1, zoom);
+
+        // Transform corners and midpoints to rotated positions
+        const corners = {
+          tl: rotatePoint(r.x, r.y, centerX, centerY, rotation),
+          tr: rotatePoint(r.x + r.w, r.y, centerX, centerY, rotation),
+          bl: rotatePoint(r.x, r.y + r.h, centerX, centerY, rotation),
+          br: rotatePoint(r.x + r.w, r.y + r.h, centerX, centerY, rotation),
+        };
+        const midpoints = {
+          t: rotatePoint(r.x + r.w / 2, r.y, centerX, centerY, rotation),
+          b: rotatePoint(r.x + r.w / 2, r.y + r.h, centerX, centerY, rotation),
+          l: rotatePoint(r.x, r.y + r.h / 2, centerX, centerY, rotation),
+          r: rotatePoint(r.x + r.w, r.y + r.h / 2, centerX, centerY, rotation),
+        };
+
+        const near = (px: number, py: number) =>
+          Math.abs(cx - px) <= tol && Math.abs(cy - py) <= tol;
+
         // Check corners
-        if (near(r.x, r.y)) {
+        if (near(corners.tl.x, corners.tl.y)) {
           foundHandle = 'tl';
           break;
         }
-        if (near(r.x + r.w, r.y)) {
+        if (near(corners.tr.x, corners.tr.y)) {
           foundHandle = 'tr';
           break;
         }
-        if (near(r.x, r.y + r.h)) {
+        if (near(corners.bl.x, corners.bl.y)) {
           foundHandle = 'bl';
           break;
         }
-        if (near(r.x + r.w, r.y + r.h)) {
+        if (near(corners.br.x, corners.br.y)) {
           foundHandle = 'br';
           break;
         }
 
         // Check midpoints
-        if (near(r.x + r.w / 2, r.y)) {
+        if (near(midpoints.t.x, midpoints.t.y)) {
           foundHandle = 't';
           break;
         }
-        if (near(r.x + r.w / 2, r.y + r.h)) {
+        if (near(midpoints.b.x, midpoints.b.y)) {
           foundHandle = 'b';
           break;
         }
-        if (near(r.x, r.y + r.h / 2)) {
+        if (near(midpoints.l.x, midpoints.l.y)) {
           foundHandle = 'l';
           break;
         }
-        if (near(r.x + r.w, r.y + r.h / 2)) {
+        if (near(midpoints.r.x, midpoints.r.y)) {
           foundHandle = 'r';
           break;
         }
