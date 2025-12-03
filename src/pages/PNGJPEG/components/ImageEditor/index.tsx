@@ -279,7 +279,8 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
     asJpeg: boolean,
     canvasRefArg: React.RefObject<HTMLCanvasElement>,
     callback?: (blob: Blob) => void,
-  ) => helperExportWithOverlay(asJpeg, canvasRefArg, layers, callback);
+    includeOverlays: boolean = true,
+  ) => helperExportWithOverlay(asJpeg, canvasRefArg, includeOverlays ? layers : [], callback);
 
   // Merge active layer into base canvas and record history
   const mergeLayerIntoBase = (id?: string) =>

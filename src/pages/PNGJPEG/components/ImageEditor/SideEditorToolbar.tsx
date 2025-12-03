@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Space, Tooltip, message, Collapse, Modal, InputNumber, Slider, Radio } from 'antd';
+import { Button, Space, Tooltip, message, Collapse } from 'antd';
 import {
   UndoOutlined,
   RedoOutlined,
@@ -14,6 +14,7 @@ import {
   FontColorsOutlined,
   BorderInnerOutlined,
 } from '@ant-design/icons';
+import ImageTracer from 'imagetracerjs';
 import {
   applyEffects,
   copyToClipboard,
@@ -26,6 +27,8 @@ import { CustomSlider } from './CustomSlider';
 import { HistoryController } from '../../hooks/useHistory';
 import RGBHistogram from './RGBHistogram';
 import { Tool } from '.';
+import UpscaleModal from './UpscaleModal';
+import ExportModal from './ExportModal';
 
 const { Panel } = Collapse;
 
@@ -55,6 +58,7 @@ type Props = {
     jpg: boolean,
     canvasRef: React.RefObject<HTMLCanvasElement>,
     callback?: (blob: Blob) => void,
+    includeOverlays?: boolean,
   ) => void;
   onExport?: (blob: Blob) => void;
   overlayRef: React.RefObject<HTMLCanvasElement>;
@@ -135,11 +139,22 @@ const ImageEditorToolbar: React.FC<Props> = ({
 }) => {
   const [activeColor, setActiveColor] = useState('red');
   const [showUpscaleModal, setShowUpscaleModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [upscaleFactor, setUpscaleFactor] = useState<number>(2);
   const [presetLocal, setPresetLocal] = useState<'low' | 'medium' | 'high'>('medium');
   const [sharpenAmount, setSharpenAmount] = useState<number>(0);
   const [edgeEnhancement, setEdgeEnhancement] = useState<number>(0);
   const [denoiseAmount, setDenoiseAmount] = useState<number>(0);
+
+  // SVG conversion states
+  const [svgContent, setSvgContent] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const [scale, setScale] = useState(1);
+  const [ltres, setLtres] = useState(1);
+  const [qtres, setQtres] = useState(1);
+  const [pathomit, setPathomit] = useState(8);
+  const [colorsampling, setColorsampling] = useState(2);
+  const [strokewidth, setStrokewidth] = useState(1);
   const [histogramData, setHistogramData] = useState<{
     red: number[];
     green: number[];
@@ -259,6 +274,63 @@ const ImageEditorToolbar: React.FC<Props> = ({
     };
     upscaleImage?.(upscaleFactor, presetLocal, qualityOptions);
     setShowUpscaleModal(false);
+  };
+
+  const handleExportClick = () => {
+    setShowExportModal(true);
+  };
+
+  const handleExportImage = (format: 'png' | 'jpg', includeOverlays: boolean) => {
+    exportImage(format === 'jpg', canvasRef, onExport, includeOverlays);
+  };
+
+  const handleConvertToSvg = () => {
+    if (!canvasRef.current) {
+      message.error('No image to convert');
+      return;
+    }
+
+    setProcessing(true);
+    const dataUrl = canvasRef.current.toDataURL();
+
+    try {
+      ImageTracer.imageToSVG(
+        dataUrl,
+        (svgString) => {
+          setSvgContent(svgString);
+          setProcessing(false);
+          message.success('Image converted to SVG successfully!');
+        },
+        { scale, ltres, qtres, pathomit, colorsampling, strokewidth },
+      );
+    } catch (err: any) {
+      console.error(err);
+      setProcessing(false);
+      message.error('Error converting image to SVG.');
+    }
+  };
+
+  const getSvgModalWidth = () => {
+    if (!canvasRef.current) return 700;
+    const canvasWidth = canvasRef.current.width;
+    const minWidth = 500;
+    const maxWidth = window.innerWidth * 0.9;
+    return Math.min(Math.max(canvasWidth + 100, minWidth), maxWidth);
+  };
+
+  const getSvgModalHeight = () => {
+    if (!canvasRef.current) return undefined;
+    const canvasHeight = canvasRef.current.height;
+    const maxHeight = window.innerHeight * 0.85;
+    return Math.min(canvasHeight + 300, maxHeight);
+  };
+
+  const handleDownloadSvg = (content: string, filename: string) => {
+    const blob = new Blob([content], { type: 'image/svg+xml' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
   };
 
   return (
@@ -504,105 +576,60 @@ const ImageEditorToolbar: React.FC<Props> = ({
 
         {/* 📤 Export */}
         <Panel header="📤 Export" key="export">
-          <Space>
-            <Button
-              icon={<ExportOutlined />}
-              onClick={() => exportImage(false, canvasRef, onExport)}
-            >
-              PNG
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Button icon={<ExportOutlined />} onClick={handleExportClick} type="primary" block>
+              Export Image / SVG
             </Button>
-            <Button onClick={() => exportImage(true, canvasRef, onExport)}>JPG</Button>
-            <Button icon={<CopyOutlined />} onClick={() => copyToClipboard(canvasRef)}>
-              Copy
+            <Button icon={<CopyOutlined />} onClick={() => copyToClipboard(canvasRef)} block>
+              Copy to Clipboard
             </Button>
           </Space>
         </Panel>
       </Collapse>
-      <Modal
-        title="Custom Upscale"
+
+      <UpscaleModal
         open={showUpscaleModal}
         onCancel={() => setShowUpscaleModal(false)}
         onOk={handleCustomUpscale}
-        okText="Upscale"
-        width={500}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <div style={{ minWidth: 120 }}>
-              <div>Multiplier</div>
-              <InputNumber
-                min={1}
-                max={8}
-                step={0.1}
-                value={upscaleFactor}
-                onChange={(v) => setUpscaleFactor(Number(v || 1))}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div>Smoothing Quality</div>
-              <div style={{ marginTop: 8 }}>
-                <Radio.Group
-                  value={presetLocal}
-                  onChange={(e) => setPresetLocal(e.target.value)}
-                  options={[
-                    { label: 'Low', value: 'low' },
-                    { label: 'Medium', value: 'medium' },
-                    { label: 'High', value: 'high' },
-                  ]}
-                  optionType="button"
-                  buttonStyle="solid"
-                />
-              </div>
-            </div>
-          </div>
+        upscaleFactor={upscaleFactor}
+        setUpscaleFactor={setUpscaleFactor}
+        presetLocal={presetLocal}
+        setPresetLocal={setPresetLocal}
+        sharpenAmount={sharpenAmount}
+        setSharpenAmount={setSharpenAmount}
+        edgeEnhancement={edgeEnhancement}
+        setEdgeEnhancement={setEdgeEnhancement}
+        denoiseAmount={denoiseAmount}
+        setDenoiseAmount={setDenoiseAmount}
+      />
 
-          <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 12 }}>
-            <div style={{ marginBottom: 8, fontWeight: 500 }}>Quality Enhancements</div>
-
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span>Sharpen</span>
-                <span>{sharpenAmount}%</span>
-              </div>
-              <Slider
-                min={0}
-                max={100}
-                value={sharpenAmount}
-                onChange={setSharpenAmount}
-                tooltip={{ formatter: (v) => `${v}%` }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span>Edge Enhancement</span>
-                <span>{edgeEnhancement}%</span>
-              </div>
-              <Slider
-                min={0}
-                max={100}
-                value={edgeEnhancement}
-                onChange={setEdgeEnhancement}
-                tooltip={{ formatter: (v) => `${v}%` }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span>Denoise</span>
-                <span>{denoiseAmount}%</span>
-              </div>
-              <Slider
-                min={0}
-                max={100}
-                value={denoiseAmount}
-                onChange={setDenoiseAmount}
-                tooltip={{ formatter: (v) => `${v}%` }}
-              />
-            </div>
-          </div>
-        </div>
-      </Modal>
+      <ExportModal
+        open={showExportModal}
+        onCancel={() => {
+          setShowExportModal(false);
+          setSvgContent(null);
+        }}
+        onExportImage={handleExportImage}
+        onExportSvg={handleConvertToSvg}
+        canvasRef={canvasRef}
+        processing={processing}
+        svgContent={svgContent}
+        scale={scale}
+        setScale={setScale}
+        ltres={ltres}
+        setLtres={setLtres}
+        qtres={qtres}
+        setQtres={setQtres}
+        pathomit={pathomit}
+        setPathomit={setPathomit}
+        colorsampling={colorsampling}
+        setColorsampling={setColorsampling}
+        strokewidth={strokewidth}
+        setStrokewidth={setStrokewidth}
+        onDownload={handleDownloadSvg}
+        getSvgModalWidth={getSvgModalWidth}
+        getSvgModalHeight={getSvgModalHeight}
+      />
     </div>
   );
 };
