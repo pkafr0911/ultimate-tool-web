@@ -87,7 +87,7 @@ export const drawOverlayHelper = (
   }
 
   // Color hover
-  if (hoverColor && tool === 'color') {
+  if (hoverColor && (tool === 'color' || tool === 'removeColor')) {
     const rect = canvasRef.current.getBoundingClientRect();
     const canvasX = (hoverColor.x - rect.left) / zoom;
     const canvasY = (hoverColor.y - rect.top) / zoom;

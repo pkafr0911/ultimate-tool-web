@@ -14,6 +14,8 @@ import {
   FontColorsOutlined,
   BorderInnerOutlined,
   SignatureOutlined,
+  RetweetOutlined,
+  BgColorsOutlined,
 } from '@ant-design/icons';
 import ImageTracer from 'imagetracerjs';
 import {
@@ -89,6 +91,7 @@ type Props = {
     preset?: 'low' | 'medium' | 'high',
     qualityOptions?: { sharpen?: number; edgeEnhancement?: number; denoise?: number },
   ) => void;
+  onColorRemovalToolClick?: () => void;
 };
 
 const ImageEditorToolbar: React.FC<Props> = ({
@@ -138,6 +141,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
   hslAdjustments,
   setHslAdjustments,
   upscaleImage,
+  onColorRemovalToolClick,
 }) => {
   const [activeColor, setActiveColor] = useState('red');
   const [showUpscaleModal, setShowUpscaleModal] = useState(false);
@@ -404,7 +408,13 @@ const ImageEditorToolbar: React.FC<Props> = ({
               <Button icon={<DragOutlined />} onClick={() => setTool('layer')} />
             </Tooltip>
             <Tooltip title="Invert Colors (Ctrl+I)">
-              <Button onClick={() => applyInvertColors(canvasRef, history)}>Invert</Button>
+              <Button
+                icon={<RetweetOutlined />}
+                onClick={() => applyInvertColors(canvasRef, history)}
+              />
+            </Tooltip>
+            <Tooltip title="Remove color">
+              <Button icon={<BgColorsOutlined />} onClick={onColorRemovalToolClick} />
             </Tooltip>
           </Space>
         </Panel>

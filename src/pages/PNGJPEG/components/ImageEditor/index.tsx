@@ -31,8 +31,10 @@ import {
   createTextEditorOverlay,
   applyUpscale,
   applyInvertColors,
+  applyColorRemoval,
 } from '../../utils/helpers';
 import ImageCanvas from './ImageCanvas';
+import ColorRemovalModal from './ColorRemovalModal';
 import ImageEditorToolbar from './SideEditorToolbar';
 import TopEditorToolbar from './TopEditorToolbar';
 //#endregion
@@ -48,7 +50,8 @@ export type Tool =
   | 'draw'
   | 'layer'
   | 'upscale'
-  | 'text';
+  | 'text'
+  | 'removeColor';
 
 type Props = {
   imageUrl: string;
@@ -146,6 +149,11 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
     null,
   );
   const [pickedColor, setPickedColor] = useState<string | null>(null);
+  //#endregion
+
+  //#region Color Removal Tool
+  const [showColorRemovalModal, setShowColorRemovalModal] = useState(false);
+  const [selectedColorForRemoval, setSelectedColorForRemoval] = useState<string | null>(null);
   //#endregion
 
   //#region Ruler Tool
@@ -1163,7 +1171,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
     if (!canvas) return;
 
     const handleMove = (e: MouseEvent) => {
-      if (tool === 'color') {
+      if (tool === 'color' || tool === 'removeColor') {
         const color = samplePixel(e, canvasRef, zoom);
         setHoverColor(color ? { x: e.clientX, y: e.clientY, color } : null);
         drawOverlay();
@@ -1182,11 +1190,18 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
           navigator.clipboard.writeText(color).catch(() => {});
           message.success(`Picked color ${color}`);
         }
+      } else if (tool === 'removeColor') {
+        const color = samplePixel(e, canvasRef, zoom);
+        if (color) {
+          setSelectedColorForRemoval(color);
+          setShowColorRemovalModal(true);
+          setTool('pan'); // Switch back to pan after picking color
+        }
       }
     };
 
     const handleLeave = () => {
-      if (tool === 'color') setHoverColor(null);
+      if (tool === 'color' || tool === 'removeColor') setHoverColor(null);
     };
 
     canvas.addEventListener('mousemove', handleMove);
@@ -1316,6 +1331,8 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
         return 'crosshair';
       case 'color':
         return 'copy';
+      case 'removeColor':
+        return 'crosshair';
       case 'draw':
         return 'pointer';
       case 'text':
@@ -1385,6 +1402,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
         setDpiMeasured={setDpiMeasured}
         exportImage={exportWithOverlay}
         onExport={onExport}
+        onColorRemovalToolClick={() => setTool('removeColor')}
       />
 
       <div style={{ flex: 1 }}>
@@ -1461,6 +1479,30 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
           Tip: click a corner again to move it (or click near a point to reposition).
         </p>
       </Modal>
+
+      <ColorRemovalModal
+        open={showColorRemovalModal}
+        onCancel={() => {
+          setShowColorRemovalModal(false);
+          setSelectedColorForRemoval(null);
+        }}
+        onApply={(tolerance, invert, feather) => {
+          if (selectedColorForRemoval) {
+            applyColorRemoval(
+              canvasRef,
+              selectedColorForRemoval,
+              tolerance,
+              history,
+              invert,
+              feather,
+            );
+            setShowColorRemovalModal(false);
+            setSelectedColorForRemoval(null);
+          }
+        }}
+        selectedColor={selectedColorForRemoval}
+        canvasRef={canvasRef}
+      />
     </div>
   );
 };
