@@ -1,7 +1,5 @@
 // src/components/ImageCanvas.tsx
 import React from 'react';
-import { Button } from 'antd';
-import { UploadOutlined } from '@ant-design/icons';
 
 type HoverColor = {
   x: number;
@@ -72,25 +70,36 @@ const ImageCanvas: React.FC<ImageCanvasProps> = ({
           {resolution}
         </div>
       )}
-      <canvas
-        ref={canvasRef}
-        style={{
-          transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
-          transformOrigin: 'top left',
-          display: 'block',
-        }}
-      />
-      <canvas
-        ref={overlayRef}
+      <div
         style={{
           position: 'absolute',
-          left: 0,
           top: 0,
-          pointerEvents: 'none',
-          transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
-          transformOrigin: 'top left',
+          left: 0,
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
         }}
-      />
+      >
+        <canvas
+          ref={canvasRef}
+          style={{
+            transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+            transformOrigin: 'top left',
+            display: 'block',
+          }}
+        />
+        <canvas
+          ref={overlayRef}
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            pointerEvents: 'none',
+            transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+            transformOrigin: 'top left',
+          }}
+        />
+      </div>
       {/* Drag & drop support: dropped images become overlay images (onAddImage) */}
       {hoverColor && tool === 'color' && (
         <div

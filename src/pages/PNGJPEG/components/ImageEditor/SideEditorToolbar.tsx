@@ -13,6 +13,7 @@ import {
   DragOutlined,
   FontColorsOutlined,
   BorderInnerOutlined,
+  SignatureOutlined,
 } from '@ant-design/icons';
 import ImageTracer from 'imagetracerjs';
 import {
@@ -394,7 +395,7 @@ const ImageEditorToolbar: React.FC<Props> = ({
               />
             </Tooltip>
             <Tooltip title="Brush (B)">
-              <Button icon={<EditOutlined />} onClick={() => setTool('draw')} />
+              <Button icon={<SignatureOutlined />} onClick={() => setTool('draw')} />
             </Tooltip>
             <Tooltip title="Text (T)">
               <Button icon={<FontColorsOutlined />} onClick={() => setTool('text')} />
