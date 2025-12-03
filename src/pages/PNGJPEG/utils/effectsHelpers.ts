@@ -127,11 +127,20 @@ export const applyEffects = (
     applyConvolution(cloned, kernel, 3);
   }
   if (texture !== 0) {
-    const detailKernel = [0, -1, 0, -1, 5 + texture * 0.05, -1, 0, -1, 0];
+    // Texture: -100 = extreme blur, 0 = no effect, +100 = extreme sharpening
+    // At 0, no effect should be visible
+    const strength = texture / 100; // -1 to +1
+    const center = 1 + strength * 8; // -7 to 9
+    const edge = -strength * 2; // 2 to -2
+    const detailKernel = [0, edge, 0, edge, center, edge, 0, edge, 0];
     applyConvolution(cloned, detailKernel, 3);
   }
   if (clarity !== 0) {
-    const midtoneKernel = [0, -1, 0, -1, 5 + clarity * 0.08, -1, 0, -1, 0];
+    // Clarity: -100 = soft/blurry, 0 = no effect, +100 = clear/sharp
+    const strength = clarity / 100; // -1 to +1
+    const center = 1 + strength * 10; // -9 to 11
+    const edge = -strength * 2.5; // 2.5 to -2.5
+    const midtoneKernel = [0, edge, 0, edge, center, edge, 0, edge, 0];
     applyConvolution(cloned, midtoneKernel, 3);
   }
 
@@ -284,4 +293,27 @@ export const extractRGBHistogram = (canvas: HTMLCanvasElement | null) => {
   }
 
   return { red, green, blue };
+};
+
+export const applyInvertColors = (
+  canvasRef: React.RefObject<HTMLCanvasElement>,
+  history: { push: (img: string, label: string, isSetBase: boolean) => void },
+) => {
+  if (!canvasRef.current) return;
+
+  const canvas = canvasRef.current;
+  const ctx = canvas.getContext('2d')!;
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+
+  // Invert each RGB channel (keep alpha unchanged)
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = 255 - data[i]; // Red
+    data[i + 1] = 255 - data[i + 1]; // Green
+    data[i + 2] = 255 - data[i + 2]; // Blue
+    // data[i + 3] stays the same (Alpha)
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  history.push(canvas.toDataURL(), 'Invert colors', false);
 };

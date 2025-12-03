@@ -30,6 +30,7 @@ import {
   setLayerTextAlign as helperSetLayerTextAlign,
   createTextEditorOverlay,
   applyUpscale,
+  applyInvertColors,
 } from '../../utils/helpers';
 import ImageCanvas from './ImageCanvas';
 import ImageEditorToolbar from './SideEditorToolbar';
@@ -1221,6 +1222,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
       if (e.ctrlKey && e.key === 's' && (tool === 'layer' || tool === 'text')) {
         e.preventDefault();
         mergeLayerIntoBase(activeLayerId as string | undefined);
+      }
+      if (e.ctrlKey && e.key === 'i') {
+        e.preventDefault();
+        applyInvertColors(canvasRef, history);
       }
     };
     window.addEventListener('keydown', handler);

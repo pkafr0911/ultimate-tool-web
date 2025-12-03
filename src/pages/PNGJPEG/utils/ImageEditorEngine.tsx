@@ -500,16 +500,44 @@ export const applyToneAdjustments = (
 };
 
 export const applyDehaze = (p: Uint8ClampedArray | number[], i: number, dehaze: number) => {
-  // More natural algorithm: adjust luminance & slight desaturation
-  let [h, s, l] = rgbToHsl(p[i], p[i + 1], p[i + 2]);
+  // Lightroom-style dehaze: increases contrast and clarity, removes atmospheric haze
+  // Positive values: remove haze (increase contrast, saturation)
+  // Negative values: add haze (decrease contrast, saturation)
 
-  // Example: +20 dehaze → l *= 1.2
-  l = clamp01(l * (1 + dehaze / 100));
+  let r = p[i];
+  let g = p[i + 1];
+  let b = p[i + 2];
 
-  // Slight saturation reduction to avoid color shift
-  s = clamp01(s * (1 - Math.abs(dehaze) / 300));
+  // Convert to HSL for saturation control
+  let [h, s, l] = rgbToHsl(r, g, b);
 
-  const [r, g, b] = hslToRgb(h, s, l);
+  // Apply contrast enhancement/reduction around midtones
+  // Positive dehaze increases contrast, negative reduces it
+  const contrastFactor = 1 + (dehaze / 100) * 1.5;
+  const pivot = 128;
+
+  r = clamp(pivot + (r - pivot) * contrastFactor);
+  g = clamp(pivot + (g - pivot) * contrastFactor);
+  b = clamp(pivot + (b - pivot) * contrastFactor);
+
+  // Update HSL after contrast adjustment
+  [h, s, l] = rgbToHsl(r, g, b);
+
+  // Adjust saturation based on dehaze value
+  // Positive: increase saturation (remove haze)
+  // Negative: decrease saturation (add haze)
+  const satFactor = 1 + (dehaze / 100) * 0.6;
+  s = clamp01(s * satFactor);
+
+  // Adjust luminance slightly to maintain brightness
+  // Positive dehaze: slight brightness boost
+  // Negative dehaze: slight darkening
+  const lumFactor = 1 + (dehaze / 100) * 0.15;
+  l = clamp01(l * lumFactor);
+
+  // Convert back to RGB
+  [r, g, b] = hslToRgb(h, s, l);
+
   p[i] = r;
   p[i + 1] = g;
   p[i + 2] = b;

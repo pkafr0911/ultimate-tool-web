@@ -22,6 +22,7 @@ import {
   flipH,
   flipV,
   rotate,
+  applyInvertColors,
 } from '../../utils/helpers';
 import { CustomSlider } from './CustomSlider';
 import { HistoryController } from '../../hooks/useHistory';
@@ -400,6 +401,9 @@ const ImageEditorToolbar: React.FC<Props> = ({
             </Tooltip>
             <Tooltip title="Layer (V)">
               <Button icon={<DragOutlined />} onClick={() => setTool('layer')} />
+            </Tooltip>
+            <Tooltip title="Invert Colors (Ctrl+I)">
+              <Button onClick={() => applyInvertColors(canvasRef, history)}>Invert</Button>
             </Tooltip>
           </Space>
         </Panel>
