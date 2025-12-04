@@ -92,9 +92,11 @@ type Props = {
     qualityOptions?: { sharpen?: number; edgeEnhancement?: number; denoise?: number },
   ) => void;
   onColorRemovalToolClick?: () => void;
+  showExportModal: boolean;
+  setShowExportModal: (v: boolean) => void;
 };
 
-const ImageEditorToolbar: React.FC<Props> = ({
+const SideEditorToolbar: React.FC<Props> = ({
   canvasRef,
   baseCanvas,
   history,
@@ -142,10 +144,11 @@ const ImageEditorToolbar: React.FC<Props> = ({
   setHslAdjustments,
   upscaleImage,
   onColorRemovalToolClick,
+  showExportModal,
+  setShowExportModal,
 }) => {
   const [activeColor, setActiveColor] = useState('red');
   const [showUpscaleModal, setShowUpscaleModal] = useState(false);
-  const [showExportModal, setShowExportModal] = useState(false);
   const [upscaleFactor, setUpscaleFactor] = useState<number>(2);
   const [presetLocal, setPresetLocal] = useState<'low' | 'medium' | 'high'>('medium');
   const [sharpenAmount, setSharpenAmount] = useState<number>(0);
@@ -649,4 +652,4 @@ const ImageEditorToolbar: React.FC<Props> = ({
   );
 };
 
-export default ImageEditorToolbar;
+export default SideEditorToolbar;

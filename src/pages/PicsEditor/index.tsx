@@ -1,33 +1,13 @@
 import DragDropWrapper from '@/components/DragDropWrapper';
 import DragOverlay from '@/components/DragOverlay';
-import { handleCopy } from '@/helpers';
-import {
-  CopyOutlined,
-  DownloadOutlined,
-  InfoCircleOutlined,
-  LoadingOutlined,
-  UploadOutlined,
-} from '@ant-design/icons';
-import {
-  Button,
-  Card,
-  InputNumber,
-  Space,
-  Spin,
-  Tabs,
-  Tag,
-  Tooltip,
-  Typography,
-  Upload,
-  message,
-} from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
+import { Button, Card, Space, Tabs, Tag, Typography, Upload, message } from 'antd';
 import ImageTracer from 'imagetracerjs';
 import React, { useEffect, useRef, useState } from 'react';
 import ImageEditor from './components/ImageEditor';
 import './styles.less';
 
 const { Title } = Typography;
-const { TabPane } = Tabs;
 
 const PicsEditor: React.FC = () => {
   const [preview, setPreview] = useState<string | null>(null);
