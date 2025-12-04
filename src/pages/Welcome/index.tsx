@@ -31,7 +31,7 @@ const categories = [
   {
     title: 'Image Converter',
     keys: [
-      'PNG / JPEG Viewer',
+      'Pics Editor',
       'SVG Viewer',
       'Image Base64 Converter',
       'Text Art Generator',

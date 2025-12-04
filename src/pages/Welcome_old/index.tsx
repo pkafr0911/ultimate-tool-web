@@ -25,7 +25,7 @@ const categories = [
   },
   {
     title: 'Image Converter',
-    keys: ['PNG / JPEG Viewer', 'SVG Viewer', 'Image Base64 Converter', 'Text Art Generator'],
+    keys: ['Pics Editor', 'SVG Viewer', 'Image Base64 Converter', 'Text Art Generator'],
   },
 
   {

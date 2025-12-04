@@ -101,8 +101,8 @@ export const pages = [
     desc: 'View and inspect SVG files in the browser.',
   },
   {
-    name: 'PNG / JPEG Viewer',
-    path: '/image-converter/pnj-jpeg',
+    name: 'Pics Editor',
+    path: '/image-converter/pics-editor',
     icon: '🖌️',
     desc: 'Convert images between PNG and JPEG.',
   },

@@ -55,10 +55,10 @@
         component: './SVGViewer',
       },
       {
-        path: '/image-converter/pnj-jpeg',
-        name: 'pnj-jpeg',
+        path: '/image-converter/pics-editor',
+        name: 'pics-editor',
         icon: 'fileImage',
-        component: './PNGJPEG',
+        component: './PicsEditor',
       },
       { path: '/image-converter/base64', name: 'base64', icon: 'fileText', component: './Base64' },
       {

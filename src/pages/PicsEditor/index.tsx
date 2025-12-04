@@ -29,7 +29,7 @@ import './styles.less';
 const { Title } = Typography;
 const { TabPane } = Tabs;
 
-const PNGJPEG: React.FC = () => {
+const PicsEditor: React.FC = () => {
   const [preview, setPreview] = useState<string | null>(null);
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -84,7 +84,7 @@ const PNGJPEG: React.FC = () => {
       <Card
         title={
           <>
-            🖼️ PNG / JPEG Viewer <Tag color="cyan">Beta</Tag>
+            🖼️ Pics Editor <Tag color="cyan">Beta</Tag>
           </>
         }
         variant={'borderless'}
@@ -122,4 +122,4 @@ const PNGJPEG: React.FC = () => {
   );
 };
 
-export default PNGJPEG;
+export default PicsEditor;
