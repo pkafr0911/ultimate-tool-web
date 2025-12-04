@@ -1,3 +1,5 @@
+import { drawBrushCursor } from './brushHelpers';
+
 export const drawOverlayHelper = (
   overlayRef: React.RefObject<HTMLCanvasElement>,
   canvasRef: React.RefObject<HTMLCanvasElement>,
@@ -91,13 +93,7 @@ export const drawOverlayHelper = (
     const rect = canvasRef.current.getBoundingClientRect();
     const canvasX = (hoverColor.x - rect.left) / zoom;
     const canvasY = (hoverColor.y - rect.top) / zoom;
-    ctx.save();
-    ctx.strokeStyle = hoverColor.color;
-    ctx.lineWidth = 2 / zoom;
-    ctx.beginPath();
-    ctx.arc(canvasX, canvasY, 8 / zoom, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
+    drawBrushCursor(ctx, canvasX, canvasY, 16 / zoom, hoverColor.color, zoom);
   }
 
   // draw layers
@@ -117,7 +113,19 @@ export const drawOverlayHelper = (
       }
 
       if (L.type === 'image' && L.img) {
-        ctx.drawImage(L.img, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
+        if (L.mask) {
+          // Apply mask for preview
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = L.rect.w;
+          tempCanvas.height = L.rect.h;
+          const tempCtx = tempCanvas.getContext('2d')!;
+          tempCtx.drawImage(L.img, 0, 0, L.rect.w, L.rect.h);
+          tempCtx.globalCompositeOperation = 'destination-in';
+          tempCtx.drawImage(L.mask, 0, 0, L.rect.w, L.rect.h);
+          ctx.drawImage(tempCanvas, L.rect.x, L.rect.y);
+        } else {
+          ctx.drawImage(L.img, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
+        }
       } else if (L.type === 'text') {
         // Render text layer in overlay
         const fontStyle = L.fontItalic ? 'italic' : 'normal';
@@ -222,13 +230,7 @@ export const drawOverlayHelper = (
     const rect = canvasRef.current.getBoundingClientRect();
     const canvasX = (hoverColor.x - rect.left) / zoom;
     const canvasY = (hoverColor.y - rect.top) / zoom;
-    ctx.save();
-    ctx.strokeStyle = drawColor;
-    ctx.lineWidth = 2 / zoom;
-    ctx.beginPath();
-    ctx.arc(canvasX, canvasY, drawLineWidth / 2, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
+    drawBrushCursor(ctx, canvasX, canvasY, drawLineWidth, drawColor, zoom);
   }
 };
 

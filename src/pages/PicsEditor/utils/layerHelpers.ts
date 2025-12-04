@@ -43,6 +43,42 @@ export const addOverlayImage = (
   setTool('layer');
 };
 
+/**
+ * Apply mask to a layer by creating a temporary canvas with the mask applied
+ */
+const applyMaskToLayer = (
+  layer: any,
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+) => {
+  if (!layer.mask) {
+    // No mask, draw normally
+    if (layer.type === 'image' && layer.img) {
+      ctx.drawImage(layer.img, x, y, w, h);
+    }
+    return;
+  }
+
+  // Create temporary canvas for masked content
+  const tempCanvas = createCanvas(w, h);
+  const tempCtx = tempCanvas.getContext('2d')!;
+
+  // Draw the layer content
+  if (layer.type === 'image' && layer.img) {
+    tempCtx.drawImage(layer.img, 0, 0, w, h);
+  }
+
+  // Apply mask using destination-in composite mode
+  tempCtx.globalCompositeOperation = 'destination-in';
+  tempCtx.drawImage(layer.mask, 0, 0, w, h);
+
+  // Draw the masked result to main canvas
+  ctx.drawImage(tempCanvas, x, y);
+};
+
 export const exportWithOverlay = async (
   asJpeg: boolean,
   canvasRefArg: React.RefObject<HTMLCanvasElement>,
@@ -57,6 +93,7 @@ export const exportWithOverlay = async (
   tctx.drawImage(base, 0, 0);
   for (const L of layers) {
     try {
+      tctx.save();
       tctx.globalAlpha = L.opacity;
       tctx.globalCompositeOperation = L.blend || 'source-over';
 
@@ -70,7 +107,8 @@ export const exportWithOverlay = async (
       }
 
       if (L.type === 'image' && L.img) {
-        tctx.drawImage(L.img, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
+        // Apply mask if present
+        applyMaskToLayer(L, tctx, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
       } else if (L.type === 'text') {
         // Render text layer
         const fontStyle = L.fontItalic ? 'italic' : 'normal';
@@ -114,10 +152,7 @@ export const exportWithOverlay = async (
         }
       }
 
-      // Reset transformation
-      if (L.rotation && L.rotation !== 0) {
-        tctx.setTransform(1, 0, 0, 1, 0, 0);
-      }
+      tctx.restore();
     } catch (err) {
       // ignore
     }
@@ -167,7 +202,8 @@ export const mergeLayerIntoBase = (
       }
 
       if (L.type === 'image' && L.img) {
-        ctx.drawImage(L.img, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
+        // Apply mask if present
+        applyMaskToLayer(L, ctx, L.rect.x, L.rect.y, L.rect.w, L.rect.h);
       } else if (L.type === 'text') {
         // Render text layer
         const fontStyle = L.fontItalic ? 'italic' : 'normal';

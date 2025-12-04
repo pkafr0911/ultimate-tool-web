@@ -12,6 +12,7 @@ import {
   AlignCenterOutlined,
   AlignRightOutlined,
   FontColorsOutlined,
+  HighlightOutlined,
 } from '@ant-design/icons';
 import { HistoryController } from '../../hooks/useHistory';
 import { Tool } from '.';
@@ -79,6 +80,8 @@ type TopEditorToolbarProps = {
   onAddTextLayer?: () => void;
   isAddingText?: boolean;
   setIsAddingText?: (v: boolean) => void;
+  // mask tool controls
+  onOpenMaskTool?: (layerId: string) => void;
 };
 
 const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
@@ -124,6 +127,7 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
   onAddTextLayer,
   isAddingText,
   setIsAddingText,
+  onOpenMaskTool,
 }) => {
   // Drag-to-adjust opacity refs
   const draggingOpacity = useRef(false);
@@ -491,6 +495,13 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
                             onClick={() => mergeLayer && mergeLayer(active.id)}
                           >
                             Merge
+                          </Button>
+                          <Button
+                            size="small"
+                            icon={<HighlightOutlined />}
+                            onClick={() => onOpenMaskTool && onOpenMaskTool(active.id)}
+                          >
+                            Mask
                           </Button>
                           <Button
                             size="small"

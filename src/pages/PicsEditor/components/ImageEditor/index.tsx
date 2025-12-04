@@ -35,8 +35,10 @@ import {
   applyInvertColors,
   applyColorRemoval,
 } from '../../utils/helpers';
+import { drawBrushStroke, BrushSettings } from '../../utils/brushHelpers';
 import ImageCanvas from './ImageCanvas';
 import ColorRemovalModal from './ColorRemovalModal';
+import LayerMaskModal from './LayerMaskModal';
 import SideEditorToolbar from './SideEditorToolbar';
 import TopEditorToolbar from './TopEditorToolbar';
 //#endregion
@@ -158,6 +160,11 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
   const [selectedColorForRemoval, setSelectedColorForRemoval] = useState<string | null>(null);
   //#endregion
 
+  //#region Layer Mask Tool
+  const [showLayerMaskModal, setShowLayerMaskModal] = useState(false);
+  const [maskEditingLayerId, setMaskEditingLayerId] = useState<string | null>(null);
+  //#endregion
+
   //#region Ruler Tool
   const rulerPoints = useRef<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const [dpiMeasured, setDpiMeasured] = useState<number | null>(null);
@@ -194,6 +201,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
     textColor?: string; // hex or rgb color
     textAlign?: 'left' | 'center' | 'right';
     locked?: boolean;
+    mask?: HTMLCanvasElement; // layer mask (grayscale canvas where white=keep, black=remove)
   };
 
   const [layers, setLayers] = useState<Layer[]>([]);
@@ -396,6 +404,112 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
     if (active && active.type === 'text') updateTextAlign(active.id, v);
     else setTextAlign(v);
   };
+
+  //#region Layer Mask Handlers
+  const handleOpenMaskTool = (layerId: string) => {
+    setMaskEditingLayerId(layerId);
+    setShowLayerMaskModal(true);
+  };
+
+  const handleApplyMask = (maskCanvas: HTMLCanvasElement) => {
+    if (!maskEditingLayerId) return;
+
+    const layer = layers.find((l) => l.id === maskEditingLayerId);
+    if (!layer || layer.type !== 'image' || !layer.img) {
+      message.error('Can only apply mask to image layers');
+      return;
+    }
+
+    // Convert the black/white mask to an alpha mask
+    const alphaMaskCanvas = document.createElement('canvas');
+    alphaMaskCanvas.width = maskCanvas.width;
+    alphaMaskCanvas.height = maskCanvas.height;
+    const amCtx = alphaMaskCanvas.getContext('2d')!;
+    amCtx.drawImage(maskCanvas, 0, 0);
+
+    const maskImageData = amCtx.getImageData(0, 0, alphaMaskCanvas.width, alphaMaskCanvas.height);
+    const data = maskImageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      // Use Red channel as Alpha (White=255=Opaque, Black=0=Transparent)
+      const brightness = data[i];
+      data[i + 3] = brightness;
+    }
+    amCtx.putImageData(maskImageData, 0, 0);
+
+    setLayers((prev) => {
+      const newLayers = prev.map((l) => {
+        if (l.id === maskEditingLayerId) {
+          return {
+            ...l,
+            mask: alphaMaskCanvas,
+          };
+        }
+        return l;
+      });
+
+      // Update overlay immediately with new layers
+      drawOverlayHelper(overlayRef, canvasRef, {
+        zoom,
+        cropRect,
+        rulerPoints: rulerPoints.current,
+        perspectivePoints: perspectivePoints.current,
+        hoverColor,
+        tool,
+        drawColor,
+        drawLineWidth,
+        layers: newLayers,
+        overlaySelected,
+        activeLayerId,
+      });
+
+      return newLayers;
+    });
+
+    setShowLayerMaskModal(false);
+    setMaskEditingLayerId(null);
+    message.success('Mask applied to layer');
+  };
+
+  const getMaskEditingLayer = (): Layer | undefined => {
+    return layers.find((l) => l.id === maskEditingLayerId);
+  };
+
+  const getMaskSourceCanvas = (): HTMLCanvasElement | null => {
+    const layer = getMaskEditingLayer();
+    if (!layer) return null;
+
+    // Create a temporary canvas with the layer content
+    const tempCanvas = document.createElement('canvas');
+    if (layer.type === 'image' && layer.img) {
+      tempCanvas.width = layer.img.width;
+      tempCanvas.height = layer.img.height;
+      const ctx = tempCanvas.getContext('2d')!;
+      ctx.drawImage(layer.img, 0, 0);
+    } else if (layer.type === 'text') {
+      // For text layers, render the text to a canvas
+      tempCanvas.width = layer.rect.w;
+      tempCanvas.height = layer.rect.h;
+      const ctx = tempCanvas.getContext('2d')!;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+      const fontStyle = layer.fontItalic ? 'italic' : 'normal';
+      const fontWeight = layer.fontWeight || 'normal';
+      const fontSize = layer.fontSize || 16;
+      ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${layer.font || 'Arial'}`;
+      ctx.fillStyle = layer.textColor || '#000000';
+      ctx.textAlign = layer.textAlign || 'left';
+      ctx.textBaseline = 'top';
+      const lines = (layer.text || '').split('\n');
+      const lineHeight = fontSize * 1.2;
+      let currentY = 0;
+      for (const line of lines) {
+        ctx.fillText(line, 0, currentY);
+        currentY += lineHeight;
+      }
+    }
+    return tempCanvas;
+  };
+  //#endregion
 
   //#region Upscale
   // Upscale whole image: delegated to helpers.applyUpscale
@@ -797,6 +911,27 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
     } else if (tool === 'draw') {
       setIsDrawing(true);
       drawPoints.current = [{ x, y }];
+
+      // Draw initial dot
+      if (canvasRef.current) {
+        const ctx = canvasRef.current.getContext('2d')!;
+        const settings: BrushSettings = {
+          color: drawColor,
+          lineWidth: drawLineWidth,
+          opacity: brushOpacity,
+          flow: brushFlow,
+          type: brushType,
+        };
+        drawBrushStroke(
+          ctx,
+          [
+            { x, y },
+            { x, y },
+          ],
+          settings,
+        );
+        drawOverlay();
+      }
     } else if (tool === 'text') {
       // If text tool is active and user clicked empty canvas, open inline editor to place new text
       createEditorAt(x, y, textContent || '');
@@ -991,30 +1126,16 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
       drawPoints.current.push({ x, y });
 
       const ctx = canvasRef.current.getContext('2d')!;
-      ctx.save();
-      // Set stroke color with opacity & flow
-      ctx.globalAlpha = brushOpacity * brushFlow;
+      const settings: BrushSettings = {
+        color: drawColor,
+        lineWidth: drawLineWidth,
+        opacity: brushOpacity,
+        flow: brushFlow,
+        type: brushType,
+      };
 
-      // For soft brushes, use shadow blur
-      if (brushType === 'soft') {
-        ctx.shadowColor = drawColor;
-        ctx.shadowBlur = drawLineWidth * 0.5;
-        ctx.lineWidth = drawLineWidth * 0.5;
-      } else {
-        ctx.shadowBlur = 0;
-        ctx.lineWidth = drawLineWidth;
-      }
-
-      ctx.strokeStyle = drawColor;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      ctx.beginPath();
       const points = drawPoints.current;
-      ctx.moveTo(points[points.length - 2].x, points[points.length - 2].y);
-      ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
-      ctx.stroke();
-      ctx.restore();
+      drawBrushStroke(ctx, points.slice(-2), settings);
       drawOverlay();
     } else {
       // overlay rotation handling
@@ -1617,6 +1738,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
             onAddTextLayer={onAddTextLayer}
             isAddingText={isAddingText}
             setIsAddingText={setIsAddingText}
+            onOpenMaskTool={handleOpenMaskTool}
           />
         </div>
 
@@ -1673,6 +1795,17 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
         }}
         selectedColor={selectedColorForRemoval}
         canvasRef={canvasRef}
+      />
+
+      <LayerMaskModal
+        open={showLayerMaskModal}
+        onCancel={() => {
+          setShowLayerMaskModal(false);
+          setMaskEditingLayerId(null);
+        }}
+        onApply={handleApplyMask}
+        sourceCanvas={getMaskSourceCanvas()}
+        existingMask={getMaskEditingLayer()?.mask}
       />
     </div>
   );
