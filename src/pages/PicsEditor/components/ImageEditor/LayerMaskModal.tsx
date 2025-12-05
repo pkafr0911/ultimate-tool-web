@@ -373,6 +373,32 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
     if (!open) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Undo / Redo
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Brush Size
+      if (e.key === '[') {
+        setBrushSize((prev) => Math.max(1, prev - 5));
+        return;
+      }
+      if (e.key === ']') {
+        setBrushSize((prev) => Math.min(500, prev + 5));
+        return;
+      }
+
       if (e.key === 'x' || e.key === 'X') {
         setBrushMode((prev) => (prev === 'remove' ? 'keep' : 'remove'));
       }
@@ -393,7 +419,7 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [open]);
+  }, [open, historyIndex, history]); // Added history dependencies for undo/redo closure
 
   // Update overlay when cursor or brush settings change
   useEffect(() => {
