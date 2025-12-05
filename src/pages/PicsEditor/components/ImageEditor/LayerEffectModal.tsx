@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Modal, Space, Collapse, Button, Row, Col } from 'antd';
+import { Modal, Space, Collapse, Button, Row, Col, Tour, type TourProps } from 'antd';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import { applyEffects } from '../../utils/helpers';
 import { CustomSlider } from './CustomSlider';
 
@@ -33,6 +34,24 @@ const LayerEffectModal: React.FC<LayerEffectModalProps> = ({ open, onCancel, onA
   const [dehaze, setDehaze] = useState(0);
   const [bgThreshold, setBgThreshold] = useState(0);
   const [bgThresholdBlack, setBgThresholdBlack] = useState(0);
+
+  // Tour state
+  const [openTour, setOpenTour] = useState(false);
+  const controlsRef = useRef(null);
+  const previewRef = useRef(null);
+
+  const tourSteps: TourProps['steps'] = [
+    {
+      title: 'Effect Controls',
+      description: 'Adjust various image properties like Brightness, Contrast, Blur, etc.',
+      target: () => controlsRef.current,
+    },
+    {
+      title: 'Preview',
+      description: 'See the changes in real-time.',
+      target: () => previewRef.current,
+    },
+  ];
 
   // Initialize canvases
   useEffect(() => {
@@ -146,7 +165,17 @@ const LayerEffectModal: React.FC<LayerEffectModalProps> = ({ open, onCancel, onA
 
   return (
     <Modal
-      title="Layer Effects"
+      title={
+        <Space>
+          Layer Effects
+          <Button
+            type="text"
+            icon={<QuestionCircleOutlined />}
+            size="small"
+            onClick={() => setOpenTour(true)}
+          />
+        </Space>
+      }
       open={open}
       onCancel={onCancel}
       onOk={handleApply}
@@ -157,7 +186,7 @@ const LayerEffectModal: React.FC<LayerEffectModalProps> = ({ open, onCancel, onA
     >
       <div style={{ display: 'flex', gap: 24, height: '60vh' }}>
         {/* Controls */}
-        <div style={{ width: 300, overflowY: 'auto', paddingRight: 8 }}>
+        <div ref={controlsRef} style={{ width: 300, overflowY: 'auto', paddingRight: 8 }}>
           <Collapse defaultActiveKey={['1', '2']} ghost size="small">
             <Panel header="Light & Color" key="1">
               <SliderRow label="Brightness" value={brightness} onChange={setBrightness} />
@@ -206,6 +235,7 @@ const LayerEffectModal: React.FC<LayerEffectModalProps> = ({ open, onCancel, onA
 
         {/* Preview */}
         <div
+          ref={previewRef}
           style={{
             flex: 1,
             background: '#f0f0f0',
@@ -235,6 +265,8 @@ const LayerEffectModal: React.FC<LayerEffectModalProps> = ({ open, onCancel, onA
           <canvas ref={baseCanvasRef} style={{ display: 'none' }} />
         </div>
       </div>
+
+      <Tour open={openTour} onClose={() => setOpenTour(false)} steps={tourSteps} />
     </Modal>
   );
 };

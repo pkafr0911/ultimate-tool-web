@@ -9,8 +9,16 @@ import {
   InputNumber,
   ColorPicker,
   Tooltip,
+  Tour,
+  type TourProps,
 } from 'antd';
-import { BgColorsOutlined, HighlightOutlined, UndoOutlined, RedoOutlined } from '@ant-design/icons';
+import {
+  BgColorsOutlined,
+  HighlightOutlined,
+  UndoOutlined,
+  RedoOutlined,
+  QuestionCircleOutlined,
+} from '@ant-design/icons';
 import {
   BrushSettings,
   drawBrushStroke,
@@ -78,6 +86,44 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
 
   // Ctrl key state for color picker mode
   const [isCtrlDown, setIsCtrlDown] = useState(false);
+
+  // Tour state
+  const [openTour, setOpenTour] = useState(false);
+  const toolSelectRef = useRef(null);
+  const previewModeRef = useRef(null);
+  const historyRef = useRef(null);
+  const brushControlsRef = useRef(null);
+  const colorControlsRef = useRef(null);
+  const tourCanvasRef = useRef(null);
+
+  const tourSteps: TourProps['steps'] = [
+    {
+      title: 'Tool Selection',
+      description:
+        'Choose between the Brush Tool for manual masking or Color Removal for auto-masking.',
+      target: () => toolSelectRef.current,
+    },
+    {
+      title: 'Preview Mode',
+      description: 'Switch between Normal view (result) and Mask view (black & white mask).',
+      target: () => previewModeRef.current,
+    },
+    {
+      title: 'History',
+      description: 'Undo or Redo your changes.',
+      target: () => historyRef.current,
+    },
+    {
+      title: 'Tool Controls',
+      description: 'Adjust settings for the selected tool (Brush Size, Opacity, Tolerance, etc.).',
+      target: () => (showColorTool ? colorControlsRef.current : brushControlsRef.current),
+    },
+    {
+      title: 'Canvas',
+      description: 'Draw on the canvas to mask areas. Use Alt + Drag to resize brush.',
+      target: () => tourCanvasRef.current,
+    },
+  ];
 
   // #region 🖱️ Disable Right-Click Context Menu
   useEffect(() => {
@@ -465,7 +511,17 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
 
   return (
     <Modal
-      title="Layer Mask Editor"
+      title={
+        <Space>
+          Layer Mask Editor
+          <Button
+            type="text"
+            icon={<QuestionCircleOutlined />}
+            size="small"
+            onClick={() => setOpenTour(true)}
+          />
+        </Space>
+      }
       open={open}
       onCancel={onCancel}
       onOk={handleApply}
@@ -480,7 +536,7 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
     >
       <Space direction="vertical" style={{ width: '100%' }} size="middle">
         {/* Tool Selection */}
-        <Space wrap>
+        <Space wrap ref={toolSelectRef}>
           <Select
             value={showColorTool ? 'color' : 'brush'}
             onChange={(v) => setShowColorTool(v === 'color')}
@@ -521,7 +577,7 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
 
         {/* Brush Tool Controls */}
         {!showColorTool && (
-          <Space direction="vertical" style={{ width: '100%' }}>
+          <Space direction="vertical" style={{ width: '100%' }} ref={brushControlsRef}>
             <Space wrap>
               <Radio.Group
                 value={brushMode}
@@ -573,7 +629,7 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
 
         {/* Color Removal Controls */}
         {showColorTool && (
-          <Space direction="vertical" style={{ width: '100%' }}>
+          <Space direction="vertical" style={{ width: '100%' }} ref={colorControlsRef}>
             <div>
               <strong>Selected Color:</strong>
               {selectedColor ? (
@@ -634,6 +690,7 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
 
         {/* Canvas Container */}
         <div
+          ref={tourCanvasRef}
           style={{
             maxHeight: '60vh',
             overflow: 'auto',
@@ -702,6 +759,7 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
             <li>Color removal combines with existing mask</li>
           </ul>
         </div>
+        <Tour open={openTour} onClose={() => setOpenTour(false)} steps={tourSteps} />
       </Space>
     </Modal>
   );

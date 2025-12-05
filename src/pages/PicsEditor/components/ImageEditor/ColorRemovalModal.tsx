@@ -1,6 +1,17 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Modal, Slider, Radio, Space, Button, Select, InputNumber, Tooltip } from 'antd';
-import { UndoOutlined, RedoOutlined } from '@ant-design/icons';
+import {
+  Modal,
+  Slider,
+  Radio,
+  Space,
+  Button,
+  Select,
+  InputNumber,
+  Tooltip,
+  Tour,
+  type TourProps,
+} from 'antd';
+import { UndoOutlined, RedoOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import {
   BrushSettings,
   drawBrushStroke,
@@ -52,6 +63,37 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
   // History state
   const [history, setHistory] = useState<ImageData[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+
+  // Tour state
+  const [openTour, setOpenTour] = useState(false);
+  const controlsRef = useRef(null);
+  const brushRef = useRef(null);
+  const historyRef = useRef(null);
+  const tourCanvasRef = useRef(null);
+
+  const tourSteps: TourProps['steps'] = [
+    {
+      title: 'Color Removal Settings',
+      description: 'Adjust Tolerance and Feather to automatically remove the selected color.',
+      target: () => controlsRef.current,
+    },
+    {
+      title: 'History',
+      description: 'Undo or Redo your changes.',
+      target: () => historyRef.current,
+    },
+    {
+      title: 'Manual Adjustments',
+      description:
+        'Use the brush to manually remove or keep areas. Note: Changing auto-settings resets manual edits.',
+      target: () => brushRef.current,
+    },
+    {
+      title: 'Canvas',
+      description: 'Draw on the canvas to refine the mask. Use Alt + Drag to resize brush.',
+      target: () => tourCanvasRef.current,
+    },
+  ];
 
   // #region 🖱️ Disable Right-Click Context Menu
   useEffect(() => {
@@ -359,7 +401,17 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
 
   return (
     <Modal
-      title="Remove Color"
+      title={
+        <Space>
+          Remove Color
+          <Button
+            type="text"
+            icon={<QuestionCircleOutlined />}
+            size="small"
+            onClick={() => setOpenTour(true)}
+          />
+        </Space>
+      }
       open={open}
       onCancel={onCancel}
       onOk={handleApply}
@@ -374,7 +426,7 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
     >
       <Space direction="vertical" style={{ width: '100%' }} size="large">
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: 300 }}>
+          <div style={{ flex: 1, minWidth: 300 }} ref={controlsRef}>
             <div style={{ marginBottom: 16 }}>
               <div style={{ marginBottom: 8 }}>
                 <strong>Selected Color:</strong>{' '}
@@ -451,7 +503,7 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
                 <div style={{ marginBottom: 8 }}>
                   <strong>History:</strong>
                 </div>
-                <Space>
+                <Space ref={historyRef}>
                   <Tooltip title="Undo">
                     <Button icon={<UndoOutlined />} onClick={undo} disabled={historyIndex <= 0} />
                   </Tooltip>
@@ -467,7 +519,10 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
             </Space>
           </div>
 
-          <div style={{ flex: 1, minWidth: 300, borderLeft: '1px solid #eee', paddingLeft: 24 }}>
+          <div
+            style={{ flex: 1, minWidth: 300, borderLeft: '1px solid #eee', paddingLeft: 24 }}
+            ref={brushRef}
+          >
             <div style={{ marginBottom: 16, fontWeight: 'bold' }}>Manual Adjustments (Brush)</div>
 
             <Space direction="vertical" style={{ width: '100%' }}>
@@ -522,6 +577,7 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
         </div>
 
         <div
+          ref={tourCanvasRef}
           style={{
             maxHeight: '60vh',
             overflow: 'auto',
@@ -576,6 +632,8 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
             />
           </div>
         </div>
+
+        <Tour open={openTour} onClose={() => setOpenTour(false)} steps={tourSteps} />
       </Space>
     </Modal>
   );
