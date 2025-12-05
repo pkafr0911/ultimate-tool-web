@@ -18,6 +18,7 @@ import {
   getCanvasCoords,
   samplePixelColor,
 } from '../../utils/brushHelpers';
+import { calculateColorRemovalAlphaMap } from '../../utils/helpers';
 
 const { Option } = Select;
 
@@ -170,47 +171,16 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
     const sourceData = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
     const maskData = ctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
 
-    // Parse selected color
-    const hex = selectedColor.replace('#', '');
-    const targetR = parseInt(hex.substring(0, 2), 16);
-    const targetG = parseInt(hex.substring(2, 4), 16);
-    const targetB = parseInt(hex.substring(4, 6), 16);
+    const alphaMap = calculateColorRemovalAlphaMap(
+      sourceData.data,
+      selectedColor,
+      tolerance,
+      invert,
+      feather,
+    );
 
     for (let i = 0; i < sourceData.data.length; i += 4) {
-      const r = sourceData.data[i];
-      const g = sourceData.data[i + 1];
-      const b = sourceData.data[i + 2];
-
-      // Calculate color distance
-      const distance = Math.sqrt(
-        Math.pow(r - targetR, 2) + Math.pow(g - targetG, 2) + Math.pow(b - targetB, 2),
-      );
-
-      const maxDistance = Math.sqrt(255 * 255 * 3);
-      const normalizedDistance = distance / maxDistance;
-      const threshold = tolerance / 100;
-
-      // Calculate alpha value
-      let alpha;
-
-      if (feather === 0) {
-        alpha = normalizedDistance <= threshold ? 0 : 255;
-      } else {
-        const featherRange = feather / 100;
-        const distanceFromThreshold = normalizedDistance - threshold;
-
-        if (distanceFromThreshold < -featherRange) {
-          alpha = 0;
-        } else if (distanceFromThreshold > featherRange) {
-          alpha = 255;
-        } else {
-          alpha = Math.round(((distanceFromThreshold + featherRange) / (featherRange * 2)) * 255);
-        }
-      }
-
-      if (invert) {
-        alpha = 255 - alpha;
-      }
+      const alpha = alphaMap[i / 4];
 
       // Combine with existing mask (multiply operation)
       const existingAlpha = maskData.data[i];

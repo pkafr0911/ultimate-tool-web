@@ -318,6 +318,67 @@ export const applyInvertColors = (
   history.push(canvas.toDataURL(), 'Invert colors', false);
 };
 
+export const calculateColorRemovalAlphaMap = (
+  data: Uint8ClampedArray,
+  targetColor: string,
+  tolerance: number,
+  invert: boolean = false,
+  feather: number = 0,
+): Uint8Array => {
+  // Parse target color
+  const hex = targetColor.replace('#', '');
+  const targetR = parseInt(hex.substring(0, 2), 16);
+  const targetG = parseInt(hex.substring(2, 4), 16);
+  const targetB = parseInt(hex.substring(4, 6), 16);
+
+  const alphaMap = new Uint8Array(data.length / 4);
+  const maxDistance = Math.sqrt(255 * 255 * 3);
+  const threshold = tolerance / 100;
+  const featherRange = feather / 100;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+
+    // Calculate color distance
+    const distance = Math.sqrt(
+      Math.pow(r - targetR, 2) + Math.pow(g - targetG, 2) + Math.pow(b - targetB, 2),
+    );
+
+    const normalizedDistance = distance / maxDistance;
+
+    // Calculate base alpha (0 = remove, 1 = keep)
+    let baseAlpha;
+
+    if (feather === 0) {
+      // No feathering - hard edge
+      baseAlpha = normalizedDistance <= threshold ? 0 : 1;
+    } else {
+      const distanceFromThreshold = normalizedDistance - threshold;
+
+      if (distanceFromThreshold < -featherRange) {
+        // Far inside selection - fully removed
+        baseAlpha = 0;
+      } else if (distanceFromThreshold > featherRange) {
+        // Far outside selection - fully kept
+        baseAlpha = 1;
+      } else {
+        // In feather zone - smooth gradient from 0 to 1
+        baseAlpha = (distanceFromThreshold + featherRange) / (featherRange * 2);
+      }
+    }
+
+    // Apply invert
+    if (invert) {
+      baseAlpha = 1 - baseAlpha;
+    }
+
+    alphaMap[i / 4] = Math.round(baseAlpha * 255);
+  }
+  return alphaMap;
+};
+
 export const applyColorRemoval = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
   targetColor: string,
@@ -333,59 +394,7 @@ export const applyColorRemoval = (
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imageData.data;
 
-  // Parse target color
-  const hex = targetColor.replace('#', '');
-  const targetR = parseInt(hex.substring(0, 2), 16);
-  const targetG = parseInt(hex.substring(2, 4), 16);
-  const targetB = parseInt(hex.substring(4, 6), 16);
-
-  // First pass: calculate alpha values based on color distance
-  const alphaMap = new Uint8Array(data.length / 4);
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-
-    // Calculate color distance
-    const distance = Math.sqrt(
-      Math.pow(r - targetR, 2) + Math.pow(g - targetG, 2) + Math.pow(b - targetB, 2),
-    );
-
-    const maxDistance = Math.sqrt(255 * 255 * 3);
-    const normalizedDistance = distance / maxDistance;
-    const threshold = tolerance / 100;
-
-    // Calculate base alpha (0 = remove, 1 = keep)
-    let baseAlpha;
-
-    if (feather === 0) {
-      // No feathering - hard edge
-      baseAlpha = normalizedDistance <= threshold ? 0 : 1;
-    } else {
-      // Apply feathering - create gradient around the threshold boundary
-      // Higher feather = wider gradient range around the edge
-      const featherRange = feather / 100;
-      const distanceFromThreshold = normalizedDistance - threshold;
-
-      if (distanceFromThreshold < -featherRange) {
-        // Far inside selection - fully removed (black in mask)
-        baseAlpha = 0;
-      } else if (distanceFromThreshold > featherRange) {
-        // Far outside selection - fully kept (white in mask)
-        baseAlpha = 1;
-      } else {
-        // In feather zone - smooth gradient from 0 to 1
-        baseAlpha = (distanceFromThreshold + featherRange) / (featherRange * 2);
-      }
-    }
-
-    // Apply invert
-    if (invert) {
-      baseAlpha = 1 - baseAlpha;
-    }
-
-    alphaMap[i / 4] = Math.round(baseAlpha * 255);
-  }
+  const alphaMap = calculateColorRemovalAlphaMap(data, targetColor, tolerance, invert, feather);
 
   // Second pass: apply alpha values
   for (let i = 0; i < data.length; i += 4) {
@@ -396,5 +405,32 @@ export const applyColorRemoval = (
   const label = invert
     ? `Keep color ${targetColor} (tolerance: ${tolerance}%, feather: ${feather}%)`
     : `Remove color ${targetColor} (tolerance: ${tolerance}%, feather: ${feather}%)`;
+  history.push(canvas.toDataURL(), label, false);
+};
+
+export const applyMaskToCanvas = (
+  canvasRef: React.RefObject<HTMLCanvasElement>,
+  maskCanvas: HTMLCanvasElement,
+  history: { push: (img: string, label: string, isSetBase: boolean) => void },
+  label: string = 'Apply Mask',
+) => {
+  if (!canvasRef.current) return;
+
+  const canvas = canvasRef.current;
+  const ctx = canvas.getContext('2d')!;
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+
+  const maskCtx = maskCanvas.getContext('2d')!;
+  const maskData = maskCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+
+  for (let i = 0; i < data.length; i += 4) {
+    // Mask is stored in RGB channels (grayscale)
+    // We use Red channel as alpha value
+    const maskAlpha = maskData.data[i];
+    data[i + 3] = maskAlpha;
+  }
+
+  ctx.putImageData(imageData, 0, 0);
   history.push(canvas.toDataURL(), label, false);
 };

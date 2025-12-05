@@ -34,11 +34,13 @@ import {
   applyUpscale,
   applyInvertColors,
   applyColorRemoval,
+  applyMaskToCanvas,
 } from '../../utils/helpers';
 import { drawBrushStroke, BrushSettings } from '../../utils/brushHelpers';
 import ImageCanvas from './ImageCanvas';
 import ColorRemovalModal from './ColorRemovalModal';
 import LayerMaskModal from './LayerMaskModal';
+import LayerEffectModal from './LayerEffectModal';
 import SideEditorToolbar from './SideEditorToolbar';
 import TopEditorToolbar from './TopEditorToolbar';
 //#endregion
@@ -165,6 +167,11 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
   const [maskEditingLayerId, setMaskEditingLayerId] = useState<string | null>(null);
   //#endregion
 
+  //#region Layer Effects Tool
+  const [showLayerEffectModal, setShowLayerEffectModal] = useState(false);
+  const [effectEditingLayerId, setEffectEditingLayerId] = useState<string | null>(null);
+  //#endregion
+
   //#region Ruler Tool
   const rulerPoints = useRef<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const [dpiMeasured, setDpiMeasured] = useState<number | null>(null);
@@ -230,7 +237,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
   const inlineEditorRef = useRef<HTMLTextAreaElement | null>(null);
   const overlayResize = useRef<null | {
     layerId: string;
-    handle: 'tl' | 'tr' | 'bl' | 'br' | 't' | 'b' | 'l' | 'r';
+    handle: 'tl' | 'tr' | 'bl' | 'br' | 't' | 'b' | 'l' | 'r' | 'move';
     startX: number;
     startY: number;
     orig: { x: number; y: number; w: number; h: number };
@@ -409,6 +416,44 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
   const handleOpenMaskTool = (layerId: string) => {
     setMaskEditingLayerId(layerId);
     setShowLayerMaskModal(true);
+  };
+
+  const handleOpenLayerEffects = () => {
+    if (!activeLayerId) {
+      message.warning('Please select a layer first');
+      return;
+    }
+    const layer = layers.find((l) => l.id === activeLayerId);
+    if (!layer || layer.type !== 'image') {
+      message.warning('Effects can only be applied to image layers');
+      return;
+    }
+    setEffectEditingLayerId(activeLayerId);
+    setShowLayerEffectModal(true);
+  };
+
+  const handleApplyLayerEffects = (newImage: HTMLImageElement) => {
+    if (!effectEditingLayerId) return;
+
+    setLayers((prev) => {
+      return prev.map((l) => {
+        if (l.id === effectEditingLayerId) {
+          return {
+            ...l,
+            img: newImage,
+          };
+        }
+        return l;
+      });
+    });
+
+    // Update overlay immediately
+    setTimeout(() => {
+      drawOverlay();
+    }, 0);
+
+    setShowLayerEffectModal(false);
+    setEffectEditingLayerId(null);
   };
 
   const handleApplyMask = (maskCanvas: HTMLCanvasElement) => {
@@ -1739,6 +1784,7 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
             isAddingText={isAddingText}
             setIsAddingText={setIsAddingText}
             onOpenMaskTool={handleOpenMaskTool}
+            onOpenLayerEffects={handleOpenLayerEffects}
           />
         </div>
 
@@ -1779,19 +1825,10 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
           setShowColorRemovalModal(false);
           setSelectedColorForRemoval(null);
         }}
-        onApply={(tolerance, invert, feather) => {
-          if (selectedColorForRemoval) {
-            applyColorRemoval(
-              canvasRef,
-              selectedColorForRemoval,
-              tolerance,
-              history,
-              invert,
-              feather,
-            );
-            setShowColorRemovalModal(false);
-            setSelectedColorForRemoval(null);
-          }
+        onApply={(maskCanvas) => {
+          applyMaskToCanvas(canvasRef, maskCanvas, history, 'Color Removal');
+          setShowColorRemovalModal(false);
+          setSelectedColorForRemoval(null);
         }}
         selectedColor={selectedColorForRemoval}
         canvasRef={canvasRef}
@@ -1806,6 +1843,16 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
         onApply={handleApplyMask}
         sourceCanvas={getMaskSourceCanvas()}
         existingMask={getMaskEditingLayer()?.mask}
+      />
+
+      <LayerEffectModal
+        open={showLayerEffectModal}
+        onCancel={() => {
+          setShowLayerEffectModal(false);
+          setEffectEditingLayerId(null);
+        }}
+        onApply={handleApplyLayerEffects}
+        layer={layers.find((l) => l.id === effectEditingLayerId)}
       />
     </div>
   );

@@ -82,6 +82,7 @@ type TopEditorToolbarProps = {
   setIsAddingText?: (v: boolean) => void;
   // mask tool controls
   onOpenMaskTool?: (layerId: string) => void;
+  onOpenLayerEffects?: (layerId: string) => void;
 };
 
 const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
@@ -128,6 +129,7 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
   isAddingText,
   setIsAddingText,
   onOpenMaskTool,
+  onOpenLayerEffects,
 }) => {
   // Drag-to-adjust opacity refs
   const draggingOpacity = useRef(false);
@@ -502,6 +504,13 @@ const TopEditorToolbar: React.FC<TopEditorToolbarProps> = ({
                             onClick={() => onOpenMaskTool && onOpenMaskTool(active.id)}
                           >
                             Mask
+                          </Button>
+                          <Button
+                            size="small"
+                            icon={<FontColorsOutlined />}
+                            onClick={() => onOpenLayerEffects && onOpenLayerEffects(active.id)}
+                          >
+                            Effects
                           </Button>
                           <Button
                             size="small"
