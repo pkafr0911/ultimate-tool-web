@@ -40,6 +40,7 @@ const UpscaleModal: React.FC<Props> = ({
       onOk={onOk}
       okText="Upscale"
       width={500}
+      maskClosable={false}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>

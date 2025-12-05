@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Modal, Slider, Radio, Space, Button, Select, InputNumber, Tooltip } from 'antd';
+import { UndoOutlined, RedoOutlined } from '@ant-design/icons';
 import {
   BrushSettings,
   drawBrushStroke,
@@ -48,6 +49,20 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
   const resizeStartX = useRef<number | null>(null);
   const initialBrushSize = useRef(brushSize);
 
+  // History state
+  const [history, setHistory] = useState<ImageData[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+
+  // #region 🖱️ Disable Right-Click Context Menu
+  useEffect(() => {
+    const canvas = previewCanvasRef.current;
+    if (!canvas) return;
+    const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+    canvas.addEventListener('contextmenu', handleContextMenu);
+    return () => canvas.removeEventListener('contextmenu', handleContextMenu);
+  }, []);
+  //#endregion
+
   // Initialize mask when params change
   useEffect(() => {
     if (!open || !canvasRef.current || !selectedColor || !maskCanvasRef.current) return;
@@ -85,6 +100,12 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
     }
 
     maskCtx.putImageData(maskData, 0, 0);
+
+    // Initialize history
+    const initialData = maskCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+    setHistory([initialData]);
+    setHistoryIndex(0);
+
     updatePreview();
   }, [open, tolerance, invert, feather, selectedColor, canvasRef]);
 
@@ -160,9 +181,27 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
     // Check for brush resize (Alt + Click)
     if (e.altKey) {
       e.preventDefault();
+      e.stopPropagation();
       resizingBrush.current = true;
       resizeStartX.current = e.clientX;
       initialBrushSize.current = brushSize;
+
+      const onWindowMouseMove = (ev: MouseEvent) => {
+        if (!resizingBrush.current || resizeStartX.current === null) return;
+        const delta = ev.clientX - resizeStartX.current;
+        const newSize = Math.max(1, Math.min(500, initialBrushSize.current + delta * 0.5));
+        setBrushSize(Math.round(newSize));
+      };
+
+      const onWindowMouseUp = () => {
+        resizingBrush.current = false;
+        resizeStartX.current = null;
+        window.removeEventListener('mousemove', onWindowMouseMove);
+        window.removeEventListener('mouseup', onWindowMouseUp);
+      };
+
+      window.addEventListener('mousemove', onWindowMouseMove);
+      window.addEventListener('mouseup', onWindowMouseUp);
       return;
     }
 
@@ -195,15 +234,6 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
 
     setCursorPos(coords);
 
-    // Handle brush resize
-    if (resizingBrush.current && resizeStartX.current !== null) {
-      const delta = e.clientX - resizeStartX.current;
-      const newSize = Math.max(1, Math.min(500, initialBrushSize.current + delta * 0.5));
-      setBrushSize(Math.round(newSize));
-      updateOverlay();
-      return;
-    }
-
     if (!isDrawing) {
       updateOverlay();
       return;
@@ -230,16 +260,17 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
   };
 
   const handleMouseUp = () => {
+    if (isDrawing) {
+      saveHistory();
+    }
     setIsDrawing(false);
-    resizingBrush.current = false;
-    resizeStartX.current = null;
     drawPoints.current = [];
   };
 
   const handleMouseLeave = () => {
+    if (resizingBrush.current) return;
     setCursorPos(null);
     setIsDrawing(false);
-    resizingBrush.current = false;
     updateOverlay();
   };
 
@@ -261,6 +292,45 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
     }
   };
 
+  // History helpers
+  const saveHistory = () => {
+    if (!maskCanvasRef.current) return;
+    const ctx = maskCanvasRef.current.getContext('2d')!;
+    const imageData = ctx.getImageData(
+      0,
+      0,
+      maskCanvasRef.current.width,
+      maskCanvasRef.current.height,
+    );
+
+    setHistory((prev) => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      if (newHistory.length >= 20) newHistory.shift(); // Limit history size
+      return [...newHistory, imageData];
+    });
+    setHistoryIndex((prev) => Math.min(prev + 1, 19));
+  };
+
+  const undo = () => {
+    if (historyIndex <= 0 || !maskCanvasRef.current) return;
+    const newIndex = historyIndex - 1;
+    const imageData = history[newIndex];
+    const ctx = maskCanvasRef.current.getContext('2d')!;
+    ctx.putImageData(imageData, 0, 0);
+    setHistoryIndex(newIndex);
+    updatePreview();
+  };
+
+  const redo = () => {
+    if (historyIndex >= history.length - 1 || !maskCanvasRef.current) return;
+    const newIndex = historyIndex + 1;
+    const imageData = history[newIndex];
+    const ctx = maskCanvasRef.current.getContext('2d')!;
+    ctx.putImageData(imageData, 0, 0);
+    setHistoryIndex(newIndex);
+    updatePreview();
+  };
+
   return (
     <Modal
       title="Remove Color"
@@ -274,6 +344,7 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
       okText="Apply"
       cancelText="Cancel"
       style={{ top: 20 }}
+      maskClosable={false}
     >
       <Space direction="vertical" style={{ width: '100%' }} size="large">
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
@@ -348,6 +419,24 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
                   <Radio.Button value="normal">Normal</Radio.Button>
                   <Radio.Button value="mask">Mask</Radio.Button>
                 </Radio.Group>
+              </div>
+
+              <div>
+                <div style={{ marginBottom: 8 }}>
+                  <strong>History:</strong>
+                </div>
+                <Space>
+                  <Tooltip title="Undo">
+                    <Button icon={<UndoOutlined />} onClick={undo} disabled={historyIndex <= 0} />
+                  </Tooltip>
+                  <Tooltip title="Redo">
+                    <Button
+                      icon={<RedoOutlined />}
+                      onClick={redo}
+                      disabled={historyIndex >= history.length - 1}
+                    />
+                  </Tooltip>
+                </Space>
               </div>
             </Space>
           </div>

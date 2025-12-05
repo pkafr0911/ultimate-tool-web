@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Modal, Slider, Space, Collapse, Button, Row, Col } from 'antd';
+import { Modal, Space, Collapse, Button, Row, Col } from 'antd';
 import { applyEffects } from '../../utils/helpers';
+import { CustomSlider } from './CustomSlider';
 
 const { Panel } = Collapse;
 
@@ -139,11 +140,7 @@ const LayerEffectModal: React.FC<LayerEffectModalProps> = ({ open, onCancel, onA
 
   const SliderRow = ({ label, value, onChange, min = -100, max = 100 }: any) => (
     <div style={{ marginBottom: 8 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-        <span>{label}</span>
-        <span>{value}</span>
-      </div>
-      <Slider min={min} max={max} value={value} onChange={onChange} style={{ margin: '4px 0' }} />
+      <CustomSlider label={label} value={value} min={min} max={max} onChange={onChange} />
     </div>
   );
 
@@ -156,6 +153,7 @@ const LayerEffectModal: React.FC<LayerEffectModalProps> = ({ open, onCancel, onA
       width={900}
       okText="Apply Effects"
       style={{ top: 20 }}
+      maskClosable={false}
     >
       <div style={{ display: 'flex', gap: 24, height: '60vh' }}>
         {/* Controls */}

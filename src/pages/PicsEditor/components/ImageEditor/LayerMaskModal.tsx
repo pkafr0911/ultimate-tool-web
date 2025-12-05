@@ -10,7 +10,7 @@ import {
   ColorPicker,
   Tooltip,
 } from 'antd';
-import { BgColorsOutlined, HighlightOutlined } from '@ant-design/icons';
+import { BgColorsOutlined, HighlightOutlined, UndoOutlined, RedoOutlined } from '@ant-design/icons';
 import {
   BrushSettings,
   drawBrushStroke,
@@ -41,6 +41,10 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
   const maskCanvasRef = useRef<HTMLCanvasElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  // History state
+  const [history, setHistory] = useState<ImageData[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
   // Brush mode: 'remove' (paint black/0 alpha) or 'keep' (paint white/255 alpha)
   const [brushMode, setBrushMode] = useState<'remove' | 'keep'>('remove');
@@ -75,7 +79,56 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
   // Ctrl key state for color picker mode
   const [isCtrlDown, setIsCtrlDown] = useState(false);
 
-  // Initialize mask canvas when modal opens
+  // #region 🖱️ Disable Right-Click Context Menu
+  useEffect(() => {
+    const canvas = previewCanvasRef.current;
+    if (!canvas) return;
+    const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+    canvas.addEventListener('contextmenu', handleContextMenu);
+    return () => canvas.removeEventListener('contextmenu', handleContextMenu);
+  }, []);
+  //#endregion
+
+  // History helpers
+  const saveHistory = () => {
+    if (!maskCanvasRef.current) return;
+    const ctx = maskCanvasRef.current.getContext('2d')!;
+    const imageData = ctx.getImageData(
+      0,
+      0,
+      maskCanvasRef.current.width,
+      maskCanvasRef.current.height,
+    );
+
+    setHistory((prev) => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      if (newHistory.length >= 20) newHistory.shift(); // Limit history size
+      return [...newHistory, imageData];
+    });
+    setHistoryIndex((prev) => Math.min(prev + 1, 19));
+  };
+
+  const undo = () => {
+    if (historyIndex <= 0 || !maskCanvasRef.current) return;
+    const newIndex = historyIndex - 1;
+    const imageData = history[newIndex];
+    const ctx = maskCanvasRef.current.getContext('2d')!;
+    ctx.putImageData(imageData, 0, 0);
+    setHistoryIndex(newIndex);
+    updatePreview();
+  };
+
+  const redo = () => {
+    if (historyIndex >= history.length - 1 || !maskCanvasRef.current) return;
+    const newIndex = historyIndex + 1;
+    const imageData = history[newIndex];
+    const ctx = maskCanvasRef.current.getContext('2d')!;
+    ctx.putImageData(imageData, 0, 0);
+    setHistoryIndex(newIndex);
+    updatePreview();
+  };
+
+  // Initialize mask when modal opens
   useEffect(() => {
     if (!open || !sourceCanvas || !maskCanvasRef.current) return;
 
@@ -93,6 +146,11 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
     }
+
+    // Initialize history
+    const initialData = ctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+    setHistory([initialData]);
+    setHistoryIndex(0);
 
     updatePreview();
   }, [open, sourceCanvas, existingMask]);
@@ -195,6 +253,7 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
     ctx.putImageData(maskData, 0, 0);
     updatePreview();
     setShowColorTool(false);
+    saveHistory();
   };
 
   // Mouse handlers
@@ -210,6 +269,23 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
       resizingBrush.current = true;
       resizeStartX.current = e.clientX;
       initialBrushSize.current = brushSize;
+
+      const onWindowMouseMove = (ev: MouseEvent) => {
+        if (!resizingBrush.current || resizeStartX.current === null) return;
+        const delta = ev.clientX - resizeStartX.current;
+        const newSize = Math.max(1, Math.min(500, initialBrushSize.current + delta * 0.5));
+        setBrushSize(Math.round(newSize));
+      };
+
+      const onWindowMouseUp = () => {
+        resizingBrush.current = false;
+        resizeStartX.current = null;
+        window.removeEventListener('mousemove', onWindowMouseMove);
+        window.removeEventListener('mouseup', onWindowMouseUp);
+      };
+
+      window.addEventListener('mousemove', onWindowMouseMove);
+      window.addEventListener('mouseup', onWindowMouseUp);
       return;
     }
 
@@ -252,15 +328,6 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
 
     setCursorPos(coords);
 
-    // Handle brush resize
-    if (resizingBrush.current && resizeStartX.current !== null) {
-      const delta = e.clientX - resizeStartX.current;
-      const newSize = Math.max(1, Math.min(500, initialBrushSize.current + delta * 0.5));
-      setBrushSize(Math.round(newSize));
-      updateOverlay();
-      return;
-    }
-
     if (!isDrawing) {
       updateOverlay();
       return;
@@ -287,16 +354,17 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
   };
 
   const handleMouseUp = () => {
+    if (isDrawing) {
+      saveHistory();
+    }
     setIsDrawing(false);
-    resizingBrush.current = false;
-    resizeStartX.current = null;
     drawPoints.current = [];
   };
 
   const handleMouseLeave = () => {
+    if (resizingBrush.current) return;
     setCursorPos(null);
     setIsDrawing(false);
-    resizingBrush.current = false;
     updateOverlay();
   };
 
@@ -344,6 +412,7 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, maskCanvasRef.current.width, maskCanvasRef.current.height);
     updatePreview();
+    saveHistory();
   };
 
   const handleInvertMask = () => {
@@ -365,6 +434,7 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
 
     ctx.putImageData(imageData, 0, 0);
     updatePreview();
+    saveHistory();
   };
 
   return (
@@ -380,6 +450,7 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
       style={{ top: 20 }}
       okText="Apply Mask"
       cancelText="Cancel"
+      maskClosable={false}
     >
       <Space direction="vertical" style={{ width: '100%' }} size="middle">
         {/* Tool Selection */}
@@ -410,6 +481,16 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
 
           <Button onClick={handleClearMask}>Clear Mask</Button>
           <Button onClick={handleInvertMask}>Invert Mask</Button>
+          <Tooltip title="Undo">
+            <Button icon={<UndoOutlined />} onClick={undo} disabled={historyIndex <= 0} />
+          </Tooltip>
+          <Tooltip title="Redo">
+            <Button
+              icon={<RedoOutlined />}
+              onClick={redo}
+              disabled={historyIndex >= history.length - 1}
+            />
+          </Tooltip>
         </Space>
 
         {/* Brush Tool Controls */}
