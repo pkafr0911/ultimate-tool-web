@@ -15,12 +15,14 @@ interface VideoPlayerProps {
   videoRef: React.RefObject<HTMLVideoElement>;
   thumbnails: { src: string; time: string; timestamp: number }[];
   thumbnailsContainerRef: React.RefObject<HTMLDivElement>;
+  enableCustomControls?: boolean;
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({
   videoRef,
   thumbnails,
   thumbnailsContainerRef,
+  enableCustomControls = true,
 }) => {
   const { token } = theme.useToken();
   const [playing, setPlaying] = useState(false);
@@ -222,126 +224,129 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           crossOrigin="anonymous"
           style={{ width: '100%', height: '100%', display: 'block' }}
           onClick={togglePlay}
+          controls={!enableCustomControls}
         />
 
         {/* Custom Controls Overlay */}
-        <div
-          className="custom-controls"
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
-            padding: '10px 20px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '5px',
-            opacity: showControls ? 1 : 0,
-            pointerEvents: showControls ? 'auto' : 'none',
-            transition: 'opacity 0.3s',
-          }}
-        >
-          {/* Progress Bar */}
-          <div style={{ position: 'relative' }}>
-            {duration > 0 &&
-              buffered.map((range, i) => {
-                const left = (range.start / duration) * 100;
-                const width = ((range.end - range.start) / duration) * 100;
-                return (
-                  <div
-                    key={i}
-                    style={{
-                      position: 'absolute',
-                      left: `${left}%`,
-                      width: `${width}%`,
-                      height: '4px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.4)',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      pointerEvents: 'none',
-                    }}
-                  />
-                );
-              })}
-            <Slider
-              min={0}
-              max={duration || 100}
-              value={currentTime}
-              onChange={handleSeek}
-              tooltip={{ formatter: (value) => formatTime(value || 0) }}
-              trackStyle={{ backgroundColor: token.colorPrimary }}
-              handleStyle={{ borderColor: token.colorPrimary }}
-              railStyle={{ backgroundColor: 'rgba(255,255,255,0.3)' }}
-              style={{ margin: '5px 0' }}
-            />
-          </div>
-
+        {enableCustomControls && (
           <div
+            className="custom-controls"
             style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+              padding: '10px 20px',
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              color: '#fff',
+              flexDirection: 'column',
+              gap: '5px',
+              opacity: showControls ? 1 : 0,
+              pointerEvents: showControls ? 'auto' : 'none',
+              transition: 'opacity 0.3s',
             }}
           >
-            <Space>
-              <Button
-                type="text"
-                icon={
-                  playing ? (
-                    <PauseCircleOutlined style={{ fontSize: '24px', color: '#fff' }} />
-                  ) : (
-                    <PlayCircleOutlined style={{ fontSize: '24px', color: '#fff' }} />
-                  )
-                }
-                onClick={togglePlay}
+            {/* Progress Bar */}
+            <div style={{ position: 'relative' }}>
+              {duration > 0 &&
+                buffered.map((range, i) => {
+                  const left = (range.start / duration) * 100;
+                  const width = ((range.end - range.start) / duration) * 100;
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        position: 'absolute',
+                        left: `${left}%`,
+                        width: `${width}%`,
+                        height: '4px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.4)',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        pointerEvents: 'none',
+                      }}
+                    />
+                  );
+                })}
+              <Slider
+                min={0}
+                max={duration || 100}
+                value={currentTime}
+                onChange={handleSeek}
+                tooltip={{ formatter: (value) => formatTime(value || 0) }}
+                trackStyle={{ backgroundColor: token.colorPrimary }}
+                handleStyle={{ borderColor: token.colorPrimary }}
+                railStyle={{ backgroundColor: 'rgba(255,255,255,0.3)' }}
+                style={{ margin: '5px 0' }}
               />
+            </div>
 
-              <Space size={4}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                color: '#fff',
+              }}
+            >
+              <Space>
                 <Button
                   type="text"
                   icon={
-                    isMuted || volume === 0 ? (
-                      <MutedOutlined style={{ color: '#fff' }} />
+                    playing ? (
+                      <PauseCircleOutlined style={{ fontSize: '24px', color: '#fff' }} />
                     ) : (
-                      <SoundOutlined style={{ color: '#fff' }} />
+                      <PlayCircleOutlined style={{ fontSize: '24px', color: '#fff' }} />
                     )
                   }
-                  onClick={toggleMute}
+                  onClick={togglePlay}
                 />
-                <div style={{ width: 80 }}>
-                  <Slider
-                    min={0}
-                    max={1}
-                    step={0.1}
-                    value={isMuted ? 0 : volume}
-                    onChange={handleVolumeChange}
-                    trackStyle={{ backgroundColor: '#fff' }}
-                    handleStyle={{ borderColor: '#fff' }}
-                    railStyle={{ backgroundColor: 'rgba(255,255,255,0.3)' }}
+
+                <Space size={4}>
+                  <Button
+                    type="text"
+                    icon={
+                      isMuted || volume === 0 ? (
+                        <MutedOutlined style={{ color: '#fff' }} />
+                      ) : (
+                        <SoundOutlined style={{ color: '#fff' }} />
+                      )
+                    }
+                    onClick={toggleMute}
                   />
-                </div>
+                  <div style={{ width: 80 }}>
+                    <Slider
+                      min={0}
+                      max={1}
+                      step={0.1}
+                      value={isMuted ? 0 : volume}
+                      onChange={handleVolumeChange}
+                      trackStyle={{ backgroundColor: '#fff' }}
+                      handleStyle={{ borderColor: '#fff' }}
+                      railStyle={{ backgroundColor: 'rgba(255,255,255,0.3)' }}
+                    />
+                  </div>
+                </Space>
+
+                <Text style={{ color: '#fff', marginLeft: 10 }}>
+                  {formatTime(currentTime)} / {formatTime(duration)}
+                </Text>
               </Space>
 
-              <Text style={{ color: '#fff', marginLeft: 10 }}>
-                {formatTime(currentTime)} / {formatTime(duration)}
-              </Text>
-            </Space>
-
-            <Button
-              type="text"
-              icon={
-                isFullscreen ? (
-                  <FullscreenExitOutlined style={{ fontSize: '20px', color: '#fff' }} />
-                ) : (
-                  <FullscreenOutlined style={{ fontSize: '20px', color: '#fff' }} />
-                )
-              }
-              onClick={toggleFullscreen}
-            />
+              <Button
+                type="text"
+                icon={
+                  isFullscreen ? (
+                    <FullscreenExitOutlined style={{ fontSize: '20px', color: '#fff' }} />
+                  ) : (
+                    <FullscreenOutlined style={{ fontSize: '20px', color: '#fff' }} />
+                  )
+                }
+                onClick={toggleFullscreen}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Thumbnails Strip */}

@@ -43,6 +43,7 @@ const VideoAnalyzer: React.FC = () => {
   const [bufferLength, setBufferLength] = useState(0);
   const [droppedFrames, setDroppedFrames] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [enableCustomControls, setEnableCustomControls] = useState(true);
   const [bitrateHistory, setBitrateHistory] = useState<{ timestamp: number; bitrate: number }[]>(
     [],
   );
@@ -328,7 +329,14 @@ const VideoAnalyzer: React.FC = () => {
       <Row gutter={[24, 24]}>
         {/* Header & Controls */}
         <Col span={24}>
-          <ControlBar url={url} setUrl={setUrl} onLoad={() => setUrl(url)} onReset={handleClear} />
+          <ControlBar
+            url={url}
+            setUrl={setUrl}
+            onLoad={() => setUrl(url)}
+            onReset={handleClear}
+            enableCustomControls={enableCustomControls}
+            setEnableCustomControls={setEnableCustomControls}
+          />
         </Col>
 
         {/* Main Video Player */}
@@ -337,6 +345,7 @@ const VideoAnalyzer: React.FC = () => {
             videoRef={videoRef}
             thumbnails={thumbnails}
             thumbnailsContainerRef={thumbnailsContainerRef}
+            enableCustomControls={enableCustomControls}
           />
         </Col>
 
