@@ -16,6 +16,8 @@ import {
   SignatureOutlined,
   RetweetOutlined,
   BgColorsOutlined,
+  SaveOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons';
 import ImageTracer from 'imagetracerjs';
 import {
@@ -94,6 +96,7 @@ type Props = {
   onColorRemovalToolClick?: () => void;
   showExportModal: boolean;
   setShowExportModal: (v: boolean) => void;
+  onSave?: () => void;
 };
 
 const SideEditorToolbar: React.FC<Props> = ({
@@ -146,6 +149,7 @@ const SideEditorToolbar: React.FC<Props> = ({
   onColorRemovalToolClick,
   showExportModal,
   setShowExportModal,
+  onSave,
 }) => {
   const [activeColor, setActiveColor] = useState('red');
   const [showUpscaleModal, setShowUpscaleModal] = useState(false);
@@ -595,6 +599,15 @@ const SideEditorToolbar: React.FC<Props> = ({
         {/* 📤 Export */}
         <Panel header="📤 Export" key="export">
           <Space direction="vertical" style={{ width: '100%' }}>
+            <Button
+              type="primary"
+              icon={<SaveOutlined />}
+              onClick={onSave}
+              block
+              style={{ marginBottom: 8 }}
+            >
+              Save Project (Ctrl+S)
+            </Button>
             <Button icon={<ExportOutlined />} onClick={handleExportClick} type="primary" block>
               Export Image / SVG
             </Button>

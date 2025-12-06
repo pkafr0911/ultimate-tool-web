@@ -46,6 +46,8 @@ import TopEditorToolbar from './TopEditorToolbar';
 //#endregion
 
 //#region Types
+import { SavedProject, EditorState, Layer } from '../../types';
+
 export type Tool =
   | 'pan'
   | 'crop'
@@ -64,10 +66,19 @@ type Props = {
   addOnFile?: File | null;
   setAddOnFile: React.Dispatch<React.SetStateAction<File | null>>;
   onExport?: (blob: Blob) => void;
+  onSave?: (state: EditorState) => void;
+  initialState?: EditorState | null;
 };
 //#endregion
 
-const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExport }) => {
+const ImageEditor: React.FC<Props> = ({
+  imageUrl,
+  addOnFile,
+  setAddOnFile,
+  onExport,
+  onSave,
+  initialState,
+}) => {
   //#region Canvas Setup
   const containerRef = useRef<HTMLDivElement | null>(null);
   const onLoad = (dataUrl: string) => history.push(dataUrl, 'Initial load');
@@ -192,39 +203,6 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
   //#endregion
 
   //#region Overlay Image & Text (added)
-  type Layer = {
-    id: string;
-    type: 'image' | 'text'; // distinguish between image and text layers
-    img?: HTMLImageElement; // for image layers
-    rect: { x: number; y: number; w: number; h: number };
-    opacity: number;
-    blend: GlobalCompositeOperation;
-    rotation?: number; // rotation angle in degrees
-    // Text layer properties
-    text?: string;
-    font?: string; // e.g., 'Arial', 'Helvetica'
-    fontSize?: number; // in pixels
-    fontWeight?:
-      | 'normal'
-      | 'bold'
-      | 'lighter'
-      | '100'
-      | '200'
-      | '300'
-      | '400'
-      | '500'
-      | '600'
-      | '700'
-      | '800'
-      | '900';
-    fontItalic?: boolean;
-    textDecoration?: 'none' | 'underline' | 'line-through';
-    textColor?: string; // hex or rgb color
-    textAlign?: 'left' | 'center' | 'right';
-    locked?: boolean;
-    mask?: HTMLCanvasElement; // layer mask (grayscale canvas where white=keep, black=remove)
-  };
-
   const [layers, setLayers] = useState<Layer[]>([]);
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
   const [overlaySelected, setOverlaySelected] = useState(false);
@@ -658,6 +636,124 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
     }));
   };
 
+  //#endregion
+
+  //#region Save & Restore
+  useEffect(() => {
+    if (initialState) {
+      setBrightness(initialState.brightness);
+      setContrast(initialState.contrast);
+      setHighlights(initialState.highlights);
+      setShadows(initialState.shadows);
+      setWhites(initialState.whites);
+      setBlacks(initialState.blacks);
+      setVibrance(initialState.vibrance);
+      setSaturation(initialState.saturation);
+      setDehaze(initialState.dehaze);
+      setBlur(initialState.blur);
+      setGaussian(initialState.gaussian);
+      setSharpen(initialState.sharpen);
+      setTexture(initialState.texture);
+      setClarity(initialState.clarity);
+      setBgThreshold(initialState.bgThreshold);
+      setBgThresholdBlack(initialState.bgThresholdBlack);
+      setHslAdjustmentsState(initialState.hslAdjustments);
+
+      // Hydrate layers
+      const hydratedLayers = initialState.layers.map((l: any) => {
+        const layer = { ...l };
+        if (l.type === 'image' && l.imgSrc) {
+          const img = new Image();
+          img.src = l.imgSrc;
+          layer.img = img;
+        }
+        if (l.maskSrc) {
+          const maskCanvas = document.createElement('canvas');
+          const maskImg = new Image();
+          maskImg.onload = () => {
+            maskCanvas.width = maskImg.width;
+            maskCanvas.height = maskImg.height;
+            const ctx = maskCanvas.getContext('2d');
+            ctx?.drawImage(maskImg, 0, 0);
+          };
+          maskImg.src = l.maskSrc;
+          layer.mask = maskCanvas;
+        }
+        return layer;
+      });
+      setLayers(hydratedLayers);
+    }
+  }, [initialState]);
+
+  const handleSave = () => {
+    if (!onSave) return;
+
+    // Serialize layers
+    const serializedLayers = layers.map((l) => {
+      const serialized: any = { ...l };
+      if (l.img) {
+        serialized.imgSrc = l.img.src;
+        delete serialized.img;
+      }
+      if (l.mask) {
+        serialized.maskSrc = l.mask.toDataURL();
+        delete serialized.mask;
+      }
+      return serialized;
+    });
+
+    const state: EditorState = {
+      layers: serializedLayers,
+      brightness,
+      contrast,
+      highlights,
+      shadows,
+      whites,
+      blacks,
+      vibrance,
+      saturation,
+      dehaze,
+      blur,
+      gaussian,
+      sharpen,
+      texture,
+      clarity,
+      bgThreshold,
+      bgThresholdBlack,
+      hslAdjustments,
+    };
+    onSave(state);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    layers,
+    brightness,
+    contrast,
+    highlights,
+    shadows,
+    whites,
+    blacks,
+    vibrance,
+    saturation,
+    dehaze,
+    blur,
+    gaussian,
+    sharpen,
+    texture,
+    clarity,
+    bgThreshold,
+    bgThresholdBlack,
+    hslAdjustments,
+  ]);
   //#endregion
 
   //#region Event Effects & Handlers
