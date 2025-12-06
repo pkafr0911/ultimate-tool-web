@@ -109,6 +109,20 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
     null,
   );
   const cropStart = useRef<{ x: number; y: number } | null>(null);
+  const [showCropModal, setShowCropModal] = useState(false);
+
+  const handleConfirmCrop = () => {
+    if (cropRect) {
+      cropStart.current = null;
+      applyCrop(canvasRef, overlayRef, cropRect, setCropRect, history);
+      setShowCropModal(false);
+    }
+  };
+
+  const handleCancelCrop = () => {
+    setCropRect(null);
+    setShowCropModal(false);
+  };
   //#endregion
 
   //#region Perspective Tool
@@ -1319,8 +1333,13 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
 
     setIsPanning(false);
     panStart.current = null;
-    if (tool === 'crop' && cropRect)
-      applyCrop(canvasRef, overlayRef, cropRect, setCropRect, history);
+    if (tool === 'crop' && cropRect) {
+      if (cropRect.w > 5 && cropRect.h > 5) {
+        setShowCropModal(true);
+      } else {
+        setCropRect(null);
+      }
+    }
     if (tool === 'draw' && isDrawing) {
       setIsDrawing(false);
       history.push(canvasRef.current!.toDataURL(), 'Draw');
@@ -1344,6 +1363,11 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
       activeLayerId,
     });
   };
+
+  useEffect(() => {
+    drawOverlay();
+  }, [cropRect]);
+
   //#region 🎯 Color Picker & Hover Preview
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1400,6 +1424,13 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
     const handler = (e: KeyboardEvent) => {
       // disable global shortcuts while inline editor is focused
       if (inlineEditorRef.current && document.activeElement === inlineEditorRef.current) return;
+
+      if (e.key === 'Escape') {
+        if (tool === 'crop') {
+          handleCancelCrop();
+        }
+      }
+
       if (e.ctrlKey && e.key === 'z') history.undo();
       if (e.ctrlKey && e.shiftKey && e.key === 'Z') history.redo();
       if (e.key === 'c') setTool('crop');
@@ -1805,6 +1836,17 @@ const ImageEditor: React.FC<Props> = ({ imageUrl, addOnFile, setAddOnFile, onExp
           />
         </div>
       </div>
+
+      <Modal
+        title="Confirm Crop"
+        open={showCropModal}
+        onOk={handleConfirmCrop}
+        onCancel={handleCancelCrop}
+        okText="Crop"
+        cancelText="Cancel"
+      >
+        <p>Are you sure you want to crop the image?</p>
+      </Modal>
 
       <Modal
         title="Perspective correction"
