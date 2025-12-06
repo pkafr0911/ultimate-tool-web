@@ -39,8 +39,8 @@ export const pages = [
     desc: 'Create QR codes easily from text or links.',
   },
   {
-    name: 'Video Watch',
-    path: '/utility/videowatch',
+    name: 'Video Analyzer',
+    path: '/utility/video-analyzer',
     icon: '📺',
     desc: 'Watch and stream videos in a simple player.',
   },

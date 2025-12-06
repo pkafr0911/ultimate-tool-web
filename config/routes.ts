@@ -19,10 +19,10 @@
     routes: [
       { path: '/utility/qr', name: 'qr', icon: 'qrcode', component: './QR' },
       {
-        path: '/utility/videowatch',
-        name: 'videowatch',
+        path: '/utility/video-analyzer',
+        name: 'video-analyzer',
         icon: 'playCircle',
-        component: './VideoWatch',
+        component: './VideoAnalyzer',
       },
       { path: '/utility/epoch', name: 'epoch', icon: 'clockCircle', component: './Epoch' },
       { path: '/utility/regex', name: 'regex', icon: 'code', component: './Regex' },

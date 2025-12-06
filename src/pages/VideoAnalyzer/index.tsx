@@ -24,7 +24,7 @@ type SegmentInfo = {
 
 const MAX_SEGMENTS = 100;
 
-const VideoWatch: React.FC = () => {
+const VideoAnalyzer: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const thumbnailsContainerRef = useRef<HTMLDivElement>(null);
 
@@ -396,4 +396,4 @@ const VideoWatch: React.FC = () => {
   );
 };
 
-export default VideoWatch;
+export default VideoAnalyzer;

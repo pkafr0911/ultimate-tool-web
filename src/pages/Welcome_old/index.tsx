@@ -24,7 +24,7 @@ const categories = [
       'Regex Tester',
       'JWT Encrypt/Decrypt',
       'Epoch Converter',
-      'Video Watch',
+      'Video Analyzer',
     ],
     desc: 'From quick conversions to encryption — everything you need for everyday dev work.',
   },

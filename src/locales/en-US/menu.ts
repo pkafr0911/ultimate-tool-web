@@ -4,7 +4,7 @@ export default {
   // Utility Tools
   'menu.utility': 'Utility Tools',
   'menu.utility.qr': 'QR Generator',
-  'menu.utility.videowatch': 'Video Watch',
+  'menu.utility.video-analyzer': 'Video Analyzer',
   'menu.utility.epoch': 'Epoch Converter',
   'menu.utility.regex': 'Regex Tester',
   'menu.utility.uuid': 'UUID Generator',
