@@ -26,7 +26,7 @@ import {
   getCanvasCoords,
   samplePixelColor,
 } from '../../utils/brushHelpers';
-import { calculateColorRemovalAlphaMap } from '../../utils/helpers';
+import ColorRemovalModal from './ColorRemovalModal';
 
 const { Option } = Select;
 
@@ -73,11 +73,9 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
 
   // Color removal tool state
-  const [showColorTool, setShowColorTool] = useState(false);
-  const [tolerance, setTolerance] = useState(30);
-  const [feather, setFeather] = useState(5);
-  const [invert, setInvert] = useState(false);
+  const [showColorRemovalModal, setShowColorRemovalModal] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const tempMaskCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Brush resize with mouse
   const resizingBrush = useRef(false);
@@ -115,8 +113,8 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
     },
     {
       title: 'Tool Controls',
-      description: 'Adjust settings for the selected tool (Brush Size, Opacity, Tolerance, etc.).',
-      target: () => (showColorTool ? colorControlsRef.current : brushControlsRef.current),
+      description: 'Adjust settings for the Brush (Size, Opacity, Type).',
+      target: () => brushControlsRef.current,
     },
     {
       title: 'Canvas',
@@ -264,41 +262,36 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
     }
   };
 
-  // Apply color removal to mask
-  const applyColorRemoval = () => {
-    if (!selectedColor || !sourceCanvas || !maskCanvasRef.current) return;
+  // Handle color removal result
+  const handleColorRemovalApply = (resultMaskCanvas: HTMLCanvasElement) => {
+    if (!maskCanvasRef.current) return;
 
     const maskCanvas = maskCanvasRef.current;
     const ctx = maskCanvas.getContext('2d')!;
-    const sourceCtx = sourceCanvas.getContext('2d')!;
-
-    const sourceData = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
     const maskData = ctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
-
-    const alphaMap = calculateColorRemovalAlphaMap(
-      sourceData.data,
-      selectedColor,
-      tolerance,
-      invert,
-      feather,
+    const resultCtx = resultMaskCanvas.getContext('2d')!;
+    const resultData = resultCtx.getImageData(
+      0,
+      0,
+      resultMaskCanvas.width,
+      resultMaskCanvas.height,
     );
 
-    for (let i = 0; i < sourceData.data.length; i += 4) {
-      const alpha = alphaMap[i / 4];
-
-      // Combine with existing mask (multiply operation)
+    // Combine with existing mask (multiply operation)
+    for (let i = 0; i < maskData.data.length; i += 4) {
       const existingAlpha = maskData.data[i];
-      const newAlpha = Math.round((existingAlpha / 255) * (alpha / 255) * 255);
+      const newAlpha = resultData.data[i];
+      const combinedAlpha = Math.round((existingAlpha / 255) * (newAlpha / 255) * 255);
 
-      maskData.data[i] = newAlpha; // R
-      maskData.data[i + 1] = newAlpha; // G
-      maskData.data[i + 2] = newAlpha; // B
+      maskData.data[i] = combinedAlpha; // R
+      maskData.data[i + 1] = combinedAlpha; // G
+      maskData.data[i + 2] = combinedAlpha; // B
       maskData.data[i + 3] = 255; // A
     }
 
     ctx.putImageData(maskData, 0, 0);
     updatePreview();
-    setShowColorTool(false);
+    setShowColorRemovalModal(false);
     saveHistory();
   };
 
@@ -340,9 +333,7 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
       const color = samplePixelColor(sourceCanvas!, coords.x, coords.y);
       if (color) {
         setSelectedColor(color);
-        if (!showColorTool) {
-          setShowColorTool(true);
-        }
+        setShowColorRemovalModal(true);
       }
       return;
     }
@@ -470,7 +461,7 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
   // Update overlay when cursor or brush settings change
   useEffect(() => {
     updateOverlay();
-  }, [cursorPos, brushSize, brushMode, isCtrlDown, showColorTool]);
+  }, [cursorPos, brushSize, brushMode, isCtrlDown]);
 
   const handleApply = () => {
     if (maskCanvasRef.current) {
@@ -510,73 +501,64 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
   };
 
   return (
-    <Modal
-      title={
-        <Space>
-          Layer Mask Editor
-          <Button
-            type="text"
-            icon={<QuestionCircleOutlined />}
-            size="small"
-            onClick={() => setOpenTour(true)}
-          />
-        </Space>
-      }
-      open={open}
-      onCancel={onCancel}
-      onOk={handleApply}
-      width={Math.min(
-        sourceCanvas?.width ? sourceCanvas.width + 400 : 900,
-        window.innerWidth * 0.95,
-      )}
-      style={{ top: 20 }}
-      okText="Apply Mask"
-      cancelText="Cancel"
-      maskClosable={false}
-    >
-      <Space direction="vertical" style={{ width: '100%' }} size="middle">
-        {/* Tool Selection */}
-        <Space wrap ref={toolSelectRef}>
-          <Select
-            value={showColorTool ? 'color' : 'brush'}
-            onChange={(v) => setShowColorTool(v === 'color')}
-            style={{ width: 140 }}
-          >
-            <Option value="brush">
-              <HighlightOutlined /> Brush Tool
-            </Option>
-            <Option value="color">
-              <BgColorsOutlined /> Color Removal
-            </Option>
-          </Select>
-
-          <Radio.Group
-            value={previewMode}
-            onChange={(e) => {
-              setPreviewMode(e.target.value);
-              updatePreview();
-            }}
-          >
-            <Radio.Button value="normal">Normal</Radio.Button>
-            <Radio.Button value="mask">Mask View</Radio.Button>
-          </Radio.Group>
-
-          <Button onClick={handleClearMask}>Clear Mask</Button>
-          <Button onClick={handleInvertMask}>Invert Mask</Button>
-          <Tooltip title="Undo">
-            <Button icon={<UndoOutlined />} onClick={undo} disabled={historyIndex <= 0} />
-          </Tooltip>
-          <Tooltip title="Redo">
+    <>
+      <Modal
+        title={
+          <Space>
+            Layer Mask Editor
             <Button
-              icon={<RedoOutlined />}
-              onClick={redo}
-              disabled={historyIndex >= history.length - 1}
+              type="text"
+              icon={<QuestionCircleOutlined />}
+              size="small"
+              onClick={() => setOpenTour(true)}
             />
-          </Tooltip>
-        </Space>
+          </Space>
+        }
+        open={open}
+        onCancel={onCancel}
+        onOk={handleApply}
+        width={Math.min(
+          sourceCanvas?.width ? sourceCanvas.width + 400 : 900,
+          window.innerWidth * 0.95,
+        )}
+        style={{ top: 20 }}
+        okText="Apply Mask"
+        cancelText="Cancel"
+        maskClosable={false}
+      >
+        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          {/* Tool Selection */}
+          <Space wrap ref={toolSelectRef}>
+            <Button icon={<BgColorsOutlined />} onClick={() => setShowColorRemovalModal(true)}>
+              Color Removal
+            </Button>
 
-        {/* Brush Tool Controls */}
-        {!showColorTool && (
+            <Radio.Group
+              value={previewMode}
+              onChange={(e) => {
+                setPreviewMode(e.target.value);
+                updatePreview();
+              }}
+            >
+              <Radio.Button value="normal">Normal</Radio.Button>
+              <Radio.Button value="mask">Mask View</Radio.Button>
+            </Radio.Group>
+
+            <Button onClick={handleClearMask}>Clear Mask</Button>
+            <Button onClick={handleInvertMask}>Invert Mask</Button>
+            <Tooltip title="Undo">
+              <Button icon={<UndoOutlined />} onClick={undo} disabled={historyIndex <= 0} />
+            </Tooltip>
+            <Tooltip title="Redo">
+              <Button
+                icon={<RedoOutlined />}
+                onClick={redo}
+                disabled={historyIndex >= history.length - 1}
+              />
+            </Tooltip>
+          </Space>
+
+          {/* Brush Tool Controls */}
           <Space direction="vertical" style={{ width: '100%' }} ref={brushControlsRef}>
             <Space wrap>
               <Radio.Group
@@ -625,143 +607,96 @@ const LayerMaskModal: React.FC<LayerMaskModalProps> = ({
               <span>{Math.round(brushOpacity * 100)}%</span>
             </Space>
           </Space>
-        )}
 
-        {/* Color Removal Controls */}
-        {showColorTool && (
-          <Space direction="vertical" style={{ width: '100%' }} ref={colorControlsRef}>
-            <div>
-              <strong>Selected Color:</strong>
-              {selectedColor ? (
-                <>
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      width: 24,
-                      height: 24,
-                      background: selectedColor,
-                      border: '1px solid #ccc',
-                      verticalAlign: 'middle',
-                      marginLeft: 8,
-                      marginRight: 8,
-                    }}
-                  />
-                  <span>{selectedColor}</span>
-                  <Button
-                    size="small"
-                    style={{ marginLeft: 8 }}
-                    onClick={applyColorRemoval}
-                    type="primary"
-                  >
-                    Apply Color Removal
-                  </Button>
-                </>
-              ) : (
-                <span style={{ marginLeft: 8, color: '#999' }}>
-                  Click on image to pick color (or Ctrl+Click)
-                </span>
-              )}
-            </div>
-
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <div>
-                <strong>Tolerance:</strong> {tolerance}%
-                <Slider
-                  min={0}
-                  max={100}
-                  value={tolerance}
-                  onChange={setTolerance}
-                  style={{ marginTop: 4 }}
-                />
-              </div>
-
-              <div>
-                <strong>Feather:</strong> {feather}%
-                <Slider min={0} max={50} value={feather} onChange={setFeather} />
-              </div>
-
-              <Radio.Group value={invert} onChange={(e) => setInvert(e.target.value)}>
-                <Radio.Button value={false}>Remove Color</Radio.Button>
-                <Radio.Button value={true}>Keep Only Color</Radio.Button>
-              </Radio.Group>
-            </Space>
-          </Space>
-        )}
-
-        {/* Canvas Container */}
-        <div
-          ref={tourCanvasRef}
-          style={{
-            maxHeight: '60vh',
-            overflow: 'auto',
-            border: '1px solid #d9d9d9',
-            borderRadius: 4,
-            padding: 8,
-            position: 'relative',
-            backgroundImage:
-              previewMode === 'normal'
-                ? `linear-gradient(45deg, #ccc 25%, transparent 25%),
+          {/* Canvas Container */}
+          <div
+            ref={tourCanvasRef}
+            style={{
+              maxHeight: '60vh',
+              overflow: 'auto',
+              border: '1px solid #d9d9d9',
+              borderRadius: 4,
+              padding: 8,
+              position: 'relative',
+              backgroundImage:
+                previewMode === 'normal'
+                  ? `linear-gradient(45deg, #ccc 25%, transparent 25%),
                    linear-gradient(-45deg, #ccc 25%, transparent 25%),
                    linear-gradient(45deg, transparent 75%, #ccc 75%),
                    linear-gradient(-45deg, transparent 75%, #ccc 75%)`
-                : 'none',
-            backgroundSize: previewMode === 'normal' ? '20px 20px' : 'auto',
-            backgroundPosition:
-              previewMode === 'normal' ? '0 0, 0 10px, 10px -10px, -10px 0px' : 'auto',
-            backgroundColor: previewMode === 'mask' ? '#808080' : '#fff',
-          }}
-        >
-          <div style={{ position: 'relative', display: 'inline-block' }}>
-            {/* Hidden mask canvas */}
-            <canvas ref={maskCanvasRef} style={{ display: 'none' }} />
+                  : 'none',
+              backgroundSize: previewMode === 'normal' ? '20px 20px' : 'auto',
+              backgroundPosition:
+                previewMode === 'normal' ? '0 0, 0 10px, 10px -10px, -10px 0px' : 'auto',
+              backgroundColor: previewMode === 'mask' ? '#808080' : '#fff',
+            }}
+          >
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              {/* Hidden mask canvas */}
+              <canvas ref={maskCanvasRef} style={{ display: 'none' }} />
 
-            {/* Preview canvas */}
-            <canvas
-              ref={previewCanvasRef}
-              style={{
-                maxWidth: '100%',
-                height: 'auto',
-                display: 'block',
-                imageRendering: 'pixelated',
-              }}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseLeave}
-            />
+              {/* Preview canvas */}
+              <canvas
+                ref={previewCanvasRef}
+                style={{
+                  maxWidth: '100%',
+                  height: 'auto',
+                  display: 'block',
+                  imageRendering: 'pixelated',
+                }}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseLeave}
+              />
 
-            {/* Overlay canvas for cursor */}
-            <canvas
-              ref={overlayCanvasRef}
-              width={sourceCanvas?.width || 0}
-              height={sourceCanvas?.height || 0}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                pointerEvents: 'none',
-                imageRendering: 'pixelated',
-              }}
-            />
+              {/* Overlay canvas for cursor */}
+              <canvas
+                ref={overlayCanvasRef}
+                width={sourceCanvas?.width || 0}
+                height={sourceCanvas?.height || 0}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  pointerEvents: 'none',
+                  imageRendering: 'pixelated',
+                }}
+              />
+            </div>
           </div>
-        </div>
 
-        {/* Instructions */}
-        <div style={{ fontSize: 12, color: '#666', marginTop: 8 }}>
-          <strong>Instructions:</strong>
-          <ul style={{ margin: '4px 0', paddingLeft: 20 }}>
-            <li>Paint to remove or keep areas (toggle with 'X' key)</li>
-            <li>Black areas = removed, White areas = kept</li>
-            <li>Alt + Drag to resize brush</li>
-            {showColorTool && <li>Ctrl/Cmd + Click to pick color from image</li>}
-            <li>Color removal combines with existing mask</li>
-          </ul>
-        </div>
-        <Tour open={openTour} onClose={() => setOpenTour(false)} steps={tourSteps} />
-      </Space>
-    </Modal>
+          {/* Instructions */}
+          <div style={{ fontSize: 12, color: '#666', marginTop: 8 }}>
+            <strong>Instructions:</strong>
+            <ul style={{ margin: '4px 0', paddingLeft: 20 }}>
+              <li>Paint to remove or keep areas (toggle with 'X' key)</li>
+              <li>Black areas = removed, White areas = kept</li>
+              <li>Alt + Drag to resize brush</li>
+              <li>Ctrl/Cmd + Click to pick color and open Color Removal tool</li>
+              <li>Use Color Removal button to open advanced color removal options</li>
+            </ul>
+          </div>
+          <Tour open={openTour} onClose={() => setOpenTour(false)} steps={tourSteps} />
+        </Space>
+      </Modal>
+
+      {/* Color Removal Modal */}
+      {sourceCanvas && (
+        <ColorRemovalModal
+          open={showColorRemovalModal}
+          onCancel={() => {
+            setShowColorRemovalModal(false);
+            setSelectedColor(null);
+          }}
+          onApply={handleColorRemovalApply}
+          selectedColor={selectedColor}
+          canvasRef={{ current: sourceCanvas }}
+        />
+      )}
+    </>
   );
 };
 
