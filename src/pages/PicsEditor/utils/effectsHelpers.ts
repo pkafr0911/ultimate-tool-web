@@ -11,7 +11,12 @@ import {
   Kernels,
 } from './ImageEditorEngine';
 
-// Store previous effects to detect changes
+//#region State Management
+
+/**
+ * Store previous effects to detect changes for history optimization.
+ * Tracks values of all adjustable parameters.
+ */
 let previousEffects = {
   // Convolution / blur effects
   blur: 0,
@@ -41,9 +46,27 @@ let previousEffects = {
   hslAdjustments: {} as Record<string, { h?: number; s?: number; l?: number }>,
 };
 
-//cache the base image once
+/**
+ * Cache the base image data once to avoid repeated canvas reads.
+ * This improves performance when reapplying effects from the original state.
+ */
 let cachedBaseImageData: ImageData | null = null;
 
+//#endregion
+
+//#region Main Effects Pipeline
+
+/**
+ * Applies a comprehensive set of image effects to the canvas.
+ * Handles convolution, threshold, tone adjustments, and HSL.
+ * Updates history only if parameters have changed.
+ *
+ * @param canvasRef - Reference to the target canvas
+ * @param baseCanvas - The original source canvas (for reading base data)
+ * @param params - Object containing all effect parameters
+ * @param history - History management object
+ * @param setHistogramData - Callback to update histogram UI
+ */
 export const applyEffects = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
   baseCanvas: HTMLCanvasElement | null | undefined,
@@ -237,6 +260,17 @@ export const applyEffects = (
   }
 };
 
+//#endregion
+
+//#region Reset & History
+
+/**
+ * Resets the canvas to the original base image and clears effect history state.
+ *
+ * @param canvasRef - Reference to the target canvas
+ * @param baseCanvas - The original source canvas
+ * @param history - History management object
+ */
 export const resetEffectsToBase = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
   baseCanvas: HTMLCanvasElement | null | undefined,
@@ -272,6 +306,16 @@ export const resetEffectsToBase = (
   history.push(canvasRef.current.toDataURL(), 'Reset to base image');
 };
 
+//#endregion
+
+//#region Analysis Tools
+
+/**
+ * Calculates the RGB histogram data for the current canvas content.
+ *
+ * @param canvas - The canvas to analyze
+ * @returns Object containing red, green, and blue frequency arrays (0-255)
+ */
 export const extractRGBHistogram = (canvas: HTMLCanvasElement | null) => {
   if (!canvas)
     return { red: Array(256).fill(0), green: Array(256).fill(0), blue: Array(256).fill(0) };
@@ -295,6 +339,16 @@ export const extractRGBHistogram = (canvas: HTMLCanvasElement | null) => {
   return { red, green, blue };
 };
 
+//#endregion
+
+//#region Simple Filters
+
+/**
+ * Inverts the RGB colors of the canvas image.
+ *
+ * @param canvasRef - Reference to the target canvas
+ * @param history - History management object
+ */
 export const applyInvertColors = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
   history: { push: (img: string, label: string, isSetBase: boolean) => void },
@@ -318,6 +372,20 @@ export const applyInvertColors = (
   history.push(canvas.toDataURL(), 'Invert colors', false);
 };
 
+//#endregion
+
+//#region Color Removal
+
+/**
+ * Calculates an alpha map for removing a specific color with tolerance and feathering.
+ *
+ * @param data - Image data array
+ * @param targetColor - Hex color string to remove
+ * @param tolerance - Tolerance percentage (0-100)
+ * @param invert - Whether to invert the selection (keep color instead of remove)
+ * @param feather - Feathering percentage (0-100)
+ * @returns Uint8Array of alpha values
+ */
 export const calculateColorRemovalAlphaMap = (
   data: Uint8ClampedArray,
   targetColor: string,
@@ -379,6 +447,16 @@ export const calculateColorRemovalAlphaMap = (
   return alphaMap;
 };
 
+/**
+ * Removes a specific color from the canvas image based on tolerance and feathering.
+ *
+ * @param canvasRef - Reference to the target canvas
+ * @param targetColor - Hex color string to remove
+ * @param tolerance - Tolerance percentage
+ * @param history - History management object
+ * @param invert - Whether to invert the selection
+ * @param feather - Feathering percentage
+ */
 export const applyColorRemoval = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
   targetColor: string,
@@ -408,6 +486,19 @@ export const applyColorRemoval = (
   history.push(canvas.toDataURL(), label, false);
 };
 
+//#endregion
+
+//#region Masking
+
+/**
+ * Applies a grayscale mask to the alpha channel of the canvas image.
+ * Uses the mask's red channel as the alpha value.
+ *
+ * @param canvasRef - Reference to the target canvas
+ * @param maskCanvas - The mask canvas (grayscale)
+ * @param history - History management object
+ * @param label - History label
+ */
 export const applyMaskToCanvas = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
   maskCanvas: HTMLCanvasElement,
@@ -434,3 +525,5 @@ export const applyMaskToCanvas = (
   ctx.putImageData(imageData, 0, 0);
   history.push(canvas.toDataURL(), label, false);
 };
+
+//#endregion

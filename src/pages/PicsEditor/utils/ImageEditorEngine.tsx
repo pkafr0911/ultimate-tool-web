@@ -1,5 +1,13 @@
 export type ImageDataLike = ImageData;
 
+//#region Canvas Utilities
+
+/**
+ * Creates a new HTMLCanvasElement with the specified dimensions.
+ * @param w Width of the canvas
+ * @param h Height of the canvas
+ * @returns The created canvas element
+ */
 export function createCanvas(w: number, h: number) {
   const c = document.createElement('canvas');
   c.width = w;
@@ -7,6 +15,12 @@ export function createCanvas(w: number, h: number) {
   return c;
 }
 
+/**
+ * Loads an image from a URL and draws it onto a new canvas.
+ * Handles cross-origin loading.
+ * @param url The URL of the image to load
+ * @returns Promise resolving to the canvas element containing the image
+ */
 export function drawImageToCanvasFromUrl(url: string): Promise<HTMLCanvasElement> {
   return new Promise((res, rej) => {
     const img = new Image();
@@ -22,25 +36,44 @@ export function drawImageToCanvasFromUrl(url: string): Promise<HTMLCanvasElement
   });
 }
 
+/**
+ * Creates a deep copy of ImageData.
+ * @param src The source ImageData
+ * @returns A new ImageData object with copied data
+ */
 export function cloneImageData(src: ImageDataLike): ImageData {
   const out = new ImageData(src.width, src.height);
   out.data.set(new Uint8ClampedArray(src.data));
   return out;
 }
 
-export function applyBrightnessContrast(data: ImageData, brightness = 0, contrast = 0) {
-  // brightness in [-255,255], contrast in [-100,100]
-  const d = data.data;
-  const c = contrast / 100 + 1;
-  const intercept = 128 * (1 - c);
-  for (let i = 0; i < d.length; i += 4) {
-    d[i] = Math.min(255, Math.max(0, d[i] * c + intercept + brightness));
-    d[i + 1] = Math.min(255, Math.max(0, d[i + 1] * c + intercept + brightness));
-    d[i + 2] = Math.min(255, Math.max(0, d[i + 2] * c + intercept + brightness));
-  }
-  return data;
+/**
+ * Exports a canvas to a Blob object.
+ * @param canvas The canvas to export
+ * @param type The MIME type (default: image/png)
+ * @param quality The image quality (0-1) for lossy formats
+ * @returns Promise resolving to the Blob
+ */
+export function exportCanvasToBlob(
+  canvas: HTMLCanvasElement,
+  type = 'image/png',
+  quality = 0.92,
+): Promise<Blob> {
+  return new Promise((res) => canvas.toBlob((b) => res(b as Blob), type, quality));
 }
 
+//#endregion
+
+//#region Image Processing Core
+
+/**
+ * Applies a convolution kernel to the image data.
+ * Used for blurring, sharpening, edge detection, etc.
+ * @param data The image data to process
+ * @param kernel The convolution kernel (flat array)
+ * @param kernelSize The width/height of the kernel (must be odd)
+ * @returns The processed image data
+ */
 export function applyConvolution(data: ImageData, kernel: number[], kernelSize: number) {
   const w = data.width;
   const h = data.height;
@@ -79,6 +112,9 @@ export function applyConvolution(data: ImageData, kernel: number[], kernelSize: 
   return data;
 }
 
+/**
+ * Collection of common convolution kernels and generators.
+ */
 export const Kernels = {
   sharpen: [0, -1, 0, -1, 5, -1, 0, -1, 0],
   blur3: [1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9],
@@ -138,6 +174,36 @@ export const Kernels = {
   },
 };
 
+//#endregion
+
+//#region Color & Tone Adjustments
+
+/**
+ * Adjusts brightness and contrast of the image.
+ * @param data Image data to modify
+ * @param brightness Brightness offset (-255 to 255)
+ * @param contrast Contrast percentage (-100 to 100)
+ * @returns Modified image data
+ */
+export function applyBrightnessContrast(data: ImageData, brightness = 0, contrast = 0) {
+  // brightness in [-255,255], contrast in [-100,100]
+  const d = data.data;
+  const c = contrast / 100 + 1;
+  const intercept = 128 * (1 - c);
+  for (let i = 0; i < d.length; i += 4) {
+    d[i] = Math.min(255, Math.max(0, d[i] * c + intercept + brightness));
+    d[i + 1] = Math.min(255, Math.max(0, d[i + 1] * c + intercept + brightness));
+    d[i + 2] = Math.min(255, Math.max(0, d[i + 2] * c + intercept + brightness));
+  }
+  return data;
+}
+
+/**
+ * Sets alpha to 0 for pixels brighter than the threshold (white removal).
+ * @param data Image data to modify
+ * @param threshold Threshold value (0-255)
+ * @returns Modified image data
+ */
 export function applyThresholdAlpha(data: ImageData, threshold = 0) {
   threshold = 255 - threshold;
   // If pixel is near-white (all channels > threshold), set alpha = 0
@@ -150,6 +216,12 @@ export function applyThresholdAlpha(data: ImageData, threshold = 0) {
   return data;
 }
 
+/**
+ * Sets alpha to 0 for pixels darker than the threshold (black removal).
+ * @param data Image data to modify
+ * @param threshold Threshold value (0-255)
+ * @returns Modified image data
+ */
 export function applyThresholdAlphaBlack(data: ImageData, threshold = 0) {
   // If pixel is near-black (all RGB channels < threshold), set alpha = 0
   const d = data.data;
@@ -161,252 +233,12 @@ export function applyThresholdAlphaBlack(data: ImageData, threshold = 0) {
   return data;
 }
 
-export function flipHorizontal(canvas: HTMLCanvasElement) {
-  const ctx = canvas.getContext('2d')!;
-  ctx.save();
-  ctx.translate(canvas.width, 0);
-  ctx.scale(-1, 1);
-  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.putImageData(img, 0, 0);
-  ctx.restore();
-}
-
-export function flipVertical(canvas: HTMLCanvasElement) {
-  const ctx = canvas.getContext('2d')!;
-  ctx.save();
-  ctx.translate(0, canvas.height);
-  ctx.scale(1, -1);
-  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.putImageData(img, 0, 0);
-  ctx.restore();
-}
-
-export function rotateCanvas(canvas: HTMLCanvasElement, degrees: number) {
-  const radians = (degrees * Math.PI) / 180;
-  const w = canvas.width;
-  const h = canvas.height;
-  const c2 = createCanvas(h, w); // Swap dims if 90/270
-  const ctx2 = c2.getContext('2d')!;
-  ctx2.translate(c2.width / 2, c2.height / 2);
-  ctx2.rotate(radians);
-  ctx2.drawImage(canvas, -w / 2, -h / 2);
-  // resize original
-  canvas.width = c2.width;
-  canvas.height = c2.height;
-  const ctx = canvas.getContext('2d')!;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(c2, 0, 0);
-}
-
-export function exportCanvasToBlob(
-  canvas: HTMLCanvasElement,
-  type = 'image/png',
-  quality = 0.92,
-): Promise<Blob> {
-  return new Promise((res) => canvas.toBlob((b) => res(b as Blob), type, quality));
-}
-
-// Compute 3x3 homography H such that dst = H * src
-export function computeHomography(src: [number, number][], dst: [number, number][]): number[][] {
-  if (src.length !== 4 || dst.length !== 4) {
-    throw new Error('computeHomography requires exactly 4 points for src and dst');
-  }
-
-  const A: number[][] = [];
-
-  for (let i = 0; i < 4; i++) {
-    const [x, y] = src[i];
-    const [u, v] = dst[i];
-
-    A.push([-x, -y, -1, 0, 0, 0, x * u, y * u, u]);
-    A.push([0, 0, 0, -x, -y, -1, x * v, y * v, v]);
-  }
-
-  // Solve Ah = 0 using Gaussian elimination for 8x8
-  const M: number[][] = [];
-  const b: number[] = [];
-  for (let i = 0; i < 8; i++) {
-    M.push(A[i].slice(0, 8));
-    b.push(-A[i][8]);
-  }
-
-  const h8 = solveLinearSystem(M, b); // returns 8 elements
-  const h = [...h8, 1]; // last element = 1
-
-  return [
-    [h[0], h[1], h[2]],
-    [h[3], h[4], h[5]],
-    [h[6], h[7], h[8]],
-  ];
-}
-
-// Simple Gaussian elimination solver for 8x8
-function solveLinearSystem(A: number[][], b: number[]): number[] {
-  const n = b.length;
-  const M = A.map((row, i) => [...row, b[i]]); // augmented matrix
-
-  for (let i = 0; i < n; i++) {
-    // find pivot
-    let maxRow = i;
-    for (let k = i + 1; k < n; k++) {
-      if (Math.abs(M[k][i]) > Math.abs(M[maxRow][i])) maxRow = k;
-    }
-    [M[i], M[maxRow]] = [M[maxRow], M[i]];
-
-    // eliminate column
-    for (let k = i + 1; k < n; k++) {
-      const factor = M[k][i] / M[i][i];
-      for (let j = i; j <= n; j++) M[k][j] -= factor * M[i][j];
-    }
-  }
-
-  // back substitution
-  const x = new Array(n).fill(0);
-  for (let i = n - 1; i >= 0; i--) {
-    let sum = M[i][n];
-    for (let j = i + 1; j < n; j++) sum -= M[i][j] * x[j];
-    x[i] = sum / M[i][i];
-  }
-  return x;
-}
-
-// Map a destination point (x, y) back to source coordinates using inverse of H
-function applyHomographyInverse(H: number[][], x: number, y: number): [number, number] {
-  const [[h00, h01, h02], [h10, h11, h12], [h20, h21, h22]] = H;
-
-  const det =
-    h00 * (h11 * h22 - h12 * h21) - h01 * (h10 * h22 - h12 * h20) + h02 * (h10 * h21 - h11 * h20);
-  if (Math.abs(det) < 1e-10) return [0, 0];
-
-  const inv = [
-    [(h11 * h22 - h12 * h21) / det, (h02 * h21 - h01 * h22) / det, (h01 * h12 - h02 * h11) / det],
-    [(h12 * h20 - h10 * h22) / det, (h00 * h22 - h02 * h20) / det, (h02 * h10 - h00 * h12) / det],
-    [(h10 * h21 - h11 * h20) / det, (h01 * h20 - h00 * h21) / det, (h00 * h11 - h01 * h10) / det],
-  ];
-
-  const sx = inv[0][0] * x + inv[0][1] * y + inv[0][2];
-  const sy = inv[1][0] * x + inv[1][1] * y + inv[1][2];
-  const w = inv[2][0] * x + inv[2][1] * y + inv[2][2];
-
-  return [sx / w, sy / w];
-}
-
-// Perspective transform using homography
-export function perspectiveTransform(
-  srcCanvas: HTMLCanvasElement,
-  srcQuad: [number, number, number, number, number, number, number, number],
-  destW: number,
-  destH: number,
-): HTMLCanvasElement {
-  const dest = createCanvas(destW, destH);
-  const dctx = dest.getContext('2d')!;
-  const src = srcCanvas.getContext('2d')!.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
-  const destData = dctx.createImageData(destW, destH);
-
-  const srcPts: [number, number][] = [
-    [srcQuad[0], srcQuad[1]],
-    [srcQuad[2], srcQuad[3]],
-    [srcQuad[4], srcQuad[5]],
-    [srcQuad[6], srcQuad[7]],
-  ];
-  const dstPts: [number, number][] = [
-    [0, 0],
-    [destW, 0],
-    [destW, destH],
-    [0, destH],
-  ];
-
-  const H = computeHomography(srcPts, dstPts);
-
-  for (let y = 0; y < destH; y++) {
-    for (let x = 0; x < destW; x++) {
-      const [sx, sy] = applyHomographyInverse(H, x, y);
-      if (sx >= 0 && sx < srcCanvas.width && sy >= 0 && sy < srcCanvas.height) {
-        const ix = Math.floor(sx);
-        const iy = Math.floor(sy);
-        const srcIndex = (iy * srcCanvas.width + ix) * 4;
-        const dstIndex = (y * destW + x) * 4;
-        destData.data[dstIndex] = src.data[srcIndex];
-        destData.data[dstIndex + 1] = src.data[srcIndex + 1];
-        destData.data[dstIndex + 2] = src.data[srcIndex + 2];
-        destData.data[dstIndex + 3] = src.data[srcIndex + 3];
-      }
-    }
-  }
-
-  dctx.putImageData(destData, 0, 0);
-  return dest;
-}
-
-const clamp = (value: number, min = 0, max = 255) => {
-  return Math.min(max, Math.max(min, value));
-};
-
-// For 0..1 ranges
-const clamp01 = (value: number) => {
-  return Math.min(1, Math.max(0, value));
-};
-
-const rgbToHsl = (r: number, g: number, b: number): [number, number, number] => {
-  r /= 255;
-  g /= 255;
-  b /= 255;
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0,
-    s = 0,
-    l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
-    switch (max) {
-      case r:
-        h = (g - b) / d + (g < b ? 6 : 0);
-        break;
-      case g:
-        h = (b - r) / d + 2;
-        break;
-      case b:
-        h = (r - g) / d + 4;
-        break;
-    }
-    h /= 6;
-  }
-
-  return [h, s, l];
-};
-
-const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
-  let r: number, g: number, b: number;
-
-  if (s === 0) {
-    r = g = b = l; // achromatic
-  } else {
-    const hue2rgb = (p: number, q: number, t: number) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1 / 6) return p + (q - p) * 6 * t;
-      if (t < 1 / 2) return q;
-      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-      return p;
-    };
-
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    const p = 2 * l - q;
-
-    r = hue2rgb(p, q, h + 1 / 3);
-    g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1 / 3);
-  }
-
-  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-};
-
+/**
+ * Applies comprehensive tone adjustments including highlights, shadows, and clarity.
+ * @param data Image data to modify
+ * @param params Adjustment parameters
+ * @returns Modified image data
+ */
 export const applyToneAdjustments = (
   data: ImageData,
   {
@@ -499,6 +331,12 @@ export const applyToneAdjustments = (
   return data;
 };
 
+/**
+ * Applies dehaze effect to a single pixel.
+ * @param p Pixel data array
+ * @param i Index of the red channel
+ * @param dehaze Dehaze strength
+ */
 export const applyDehaze = (p: Uint8ClampedArray | number[], i: number, dehaze: number) => {
   // Lightroom-style dehaze: increases contrast and clarity, removes atmospheric haze
   // Positive values: remove haze (increase contrast, saturation)
@@ -543,6 +381,12 @@ export const applyDehaze = (p: Uint8ClampedArray | number[], i: number, dehaze: 
   p[i + 2] = b;
 };
 
+/**
+ * Applies vibrance and saturation to a single pixel.
+ * @param p Pixel data array
+ * @param i Index of the red channel
+ * @param params Vibrance and saturation values
+ */
 export const applyVibranceSaturation = (
   p: Uint8ClampedArray | number[],
   i: number,
@@ -568,6 +412,282 @@ export const applyVibranceSaturation = (
   p[i + 2] = b;
 };
 
+//#endregion
+
+//#region Basic Transforms
+
+/**
+ * Flips the canvas horizontally.
+ * @param canvas The canvas to flip
+ */
+export function flipHorizontal(canvas: HTMLCanvasElement) {
+  const ctx = canvas.getContext('2d')!;
+  ctx.save();
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.putImageData(img, 0, 0);
+  ctx.restore();
+}
+
+/**
+ * Flips the canvas vertically.
+ * @param canvas The canvas to flip
+ */
+export function flipVertical(canvas: HTMLCanvasElement) {
+  const ctx = canvas.getContext('2d')!;
+  ctx.save();
+  ctx.translate(0, canvas.height);
+  ctx.scale(1, -1);
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.putImageData(img, 0, 0);
+  ctx.restore();
+}
+
+/**
+ * Rotates the canvas by the specified degrees.
+ * Resizes the canvas to fit the rotated image.
+ * @param canvas The canvas to rotate
+ * @param degrees Degrees to rotate
+ */
+export function rotateCanvas(canvas: HTMLCanvasElement, degrees: number) {
+  const radians = (degrees * Math.PI) / 180;
+  const w = canvas.width;
+  const h = canvas.height;
+  const c2 = createCanvas(h, w); // Swap dims if 90/270
+  const ctx2 = c2.getContext('2d')!;
+  ctx2.translate(c2.width / 2, c2.height / 2);
+  ctx2.rotate(radians);
+  ctx2.drawImage(canvas, -w / 2, -h / 2);
+  // resize original
+  canvas.width = c2.width;
+  canvas.height = c2.height;
+  const ctx = canvas.getContext('2d')!;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(c2, 0, 0);
+}
+
+//#endregion
+
+//#region Perspective Transform
+
+/**
+ * Computes the homography matrix for perspective transformation.
+ * @param src Source points (4 points)
+ * @param dst Destination points (4 points)
+ * @returns 3x3 Homography matrix
+ */
+export function computeHomography(src: [number, number][], dst: [number, number][]): number[][] {
+  if (src.length !== 4 || dst.length !== 4) {
+    throw new Error('computeHomography requires exactly 4 points for src and dst');
+  }
+
+  const A: number[][] = [];
+
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = src[i];
+    const [u, v] = dst[i];
+
+    A.push([-x, -y, -1, 0, 0, 0, x * u, y * u, u]);
+    A.push([0, 0, 0, -x, -y, -1, x * v, y * v, v]);
+  }
+
+  // Solve Ah = 0 using Gaussian elimination for 8x8
+  const M: number[][] = [];
+  const b: number[] = [];
+  for (let i = 0; i < 8; i++) {
+    M.push(A[i].slice(0, 8));
+    b.push(-A[i][8]);
+  }
+
+  const h8 = solveLinearSystem(M, b); // returns 8 elements
+  const h = [...h8, 1]; // last element = 1
+
+  return [
+    [h[0], h[1], h[2]],
+    [h[3], h[4], h[5]],
+    [h[6], h[7], h[8]],
+  ];
+}
+
+// Simple Gaussian elimination solver for 8x8
+function solveLinearSystem(A: number[][], b: number[]): number[] {
+  const n = b.length;
+  const M = A.map((row, i) => [...row, b[i]]); // augmented matrix
+
+  for (let i = 0; i < n; i++) {
+    // find pivot
+    let maxRow = i;
+    for (let k = i + 1; k < n; k++) {
+      if (Math.abs(M[k][i]) > Math.abs(M[maxRow][i])) maxRow = k;
+    }
+    [M[i], M[maxRow]] = [M[maxRow], M[i]];
+
+    // eliminate column
+    for (let k = i + 1; k < n; k++) {
+      const factor = M[k][i] / M[i][i];
+      for (let j = i; j <= n; j++) M[k][j] -= factor * M[i][j];
+    }
+  }
+
+  // back substitution
+  const x = new Array(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) {
+    let sum = M[i][n];
+    for (let j = i + 1; j < n; j++) sum -= M[i][j] * x[j];
+    x[i] = sum / M[i][i];
+  }
+  return x;
+}
+
+// Map a destination point (x, y) back to source coordinates using inverse of H
+function applyHomographyInverse(H: number[][], x: number, y: number): [number, number] {
+  const [[h00, h01, h02], [h10, h11, h12], [h20, h21, h22]] = H;
+
+  const det =
+    h00 * (h11 * h22 - h12 * h21) - h01 * (h10 * h22 - h12 * h20) + h02 * (h10 * h21 - h11 * h20);
+  if (Math.abs(det) < 1e-10) return [0, 0];
+
+  const inv = [
+    [(h11 * h22 - h12 * h21) / det, (h02 * h21 - h01 * h22) / det, (h01 * h12 - h02 * h11) / det],
+    [(h12 * h20 - h10 * h22) / det, (h00 * h22 - h02 * h20) / det, (h02 * h10 - h00 * h12) / det],
+    [(h10 * h21 - h11 * h20) / det, (h01 * h20 - h00 * h21) / det, (h00 * h11 - h01 * h10) / det],
+  ];
+
+  const sx = inv[0][0] * x + inv[0][1] * y + inv[0][2];
+  const sy = inv[1][0] * x + inv[1][1] * y + inv[1][2];
+  const w = inv[2][0] * x + inv[2][1] * y + inv[2][2];
+
+  return [sx / w, sy / w];
+}
+
+/**
+ * Applies a perspective transform to the canvas.
+ * @param srcCanvas Source canvas
+ * @param srcQuad Source quadrilateral points [x1,y1, x2,y2, x3,y3, x4,y4]
+ * @param destW Destination width
+ * @param destH Destination height
+ * @returns New canvas with transformed image
+ */
+export function perspectiveTransform(
+  srcCanvas: HTMLCanvasElement,
+  srcQuad: [number, number, number, number, number, number, number, number],
+  destW: number,
+  destH: number,
+): HTMLCanvasElement {
+  const dest = createCanvas(destW, destH);
+  const dctx = dest.getContext('2d')!;
+  const src = srcCanvas.getContext('2d')!.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
+  const destData = dctx.createImageData(destW, destH);
+
+  const srcPts: [number, number][] = [
+    [srcQuad[0], srcQuad[1]],
+    [srcQuad[2], srcQuad[3]],
+    [srcQuad[4], srcQuad[5]],
+    [srcQuad[6], srcQuad[7]],
+  ];
+  const dstPts: [number, number][] = [
+    [0, 0],
+    [destW, 0],
+    [destW, destH],
+    [0, destH],
+  ];
+
+  const H = computeHomography(srcPts, dstPts);
+
+  for (let y = 0; y < destH; y++) {
+    for (let x = 0; x < destW; x++) {
+      const [sx, sy] = applyHomographyInverse(H, x, y);
+      if (sx >= 0 && sx < srcCanvas.width && sy >= 0 && sy < srcCanvas.height) {
+        const ix = Math.floor(sx);
+        const iy = Math.floor(sy);
+        const srcIndex = (iy * srcCanvas.width + ix) * 4;
+        const dstIndex = (y * destW + x) * 4;
+        destData.data[dstIndex] = src.data[srcIndex];
+        destData.data[dstIndex + 1] = src.data[srcIndex + 1];
+        destData.data[dstIndex + 2] = src.data[srcIndex + 2];
+        destData.data[dstIndex + 3] = src.data[srcIndex + 3];
+      }
+    }
+  }
+
+  dctx.putImageData(destData, 0, 0);
+  return dest;
+}
+
+//#endregion
+
+//#region HSL Adjustments
+
+const clamp = (value: number, min = 0, max = 255) => {
+  return Math.min(max, Math.max(min, value));
+};
+
+// For 0..1 ranges
+const clamp01 = (value: number) => {
+  return Math.min(1, Math.max(0, value));
+};
+
+const rgbToHsl = (r: number, g: number, b: number): [number, number, number] => {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0,
+    s = 0,
+    l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
+    }
+    h /= 6;
+  }
+
+  return [h, s, l];
+};
+
+const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
+  let r: number, g: number, b: number;
+
+  if (s === 0) {
+    r = g = b = l; // achromatic
+  } else {
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+};
+
 export const colorRanges = [
   { name: 'red', range: [345, 15] },
   { name: 'orange', range: [15, 45] },
@@ -579,6 +699,12 @@ export const colorRanges = [
   { name: 'magenta', range: [285, 345] },
 ];
 
+/**
+ * Applies HSL adjustments to specific color ranges.
+ * @param data Image data to modify
+ * @param adjustments Map of color names to HSL adjustments
+ * @returns Modified image data
+ */
 export const applyHslAdjustments = (
   data: ImageData,
   adjustments: Record<string, { h?: number; s?: number; l?: number }>, // h: degrees, s/l: percent or fractional
@@ -654,3 +780,5 @@ export const applyHslAdjustments = (
 
   return data;
 };
+
+//#endregion
