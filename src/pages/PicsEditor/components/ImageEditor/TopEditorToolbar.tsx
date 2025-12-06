@@ -15,7 +15,7 @@ import {
   HighlightOutlined,
 } from '@ant-design/icons';
 import { HistoryController } from '../../hooks/useHistory';
-import { Tool } from '.';
+import { Tool } from './types';
 
 const { Option } = Select;
 
