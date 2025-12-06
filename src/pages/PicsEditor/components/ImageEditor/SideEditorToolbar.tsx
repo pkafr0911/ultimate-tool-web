@@ -32,9 +32,9 @@ import {
 import { CustomSlider } from './CustomSlider';
 import { HistoryController } from '../../hooks/useHistory';
 import RGBHistogram from './RGBHistogram';
-import { Tool } from '.';
 import UpscaleModal from './UpscaleModal';
 import ExportModal from './ExportModal';
+import { Tool } from './types';
 
 const { Panel } = Collapse;
 

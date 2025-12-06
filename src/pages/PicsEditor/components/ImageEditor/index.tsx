@@ -1,7 +1,6 @@
 //#region Imports
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Modal, message, Button, Tour } from 'antd';
-import type { TourProps } from 'antd';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import useCanvas from '../../hooks/useCanvas';
@@ -33,7 +32,6 @@ import {
   createTextEditorOverlay,
   applyUpscale,
   applyInvertColors,
-  applyColorRemoval,
   applyMaskToCanvas,
 } from '../../utils/helpers';
 import { drawBrushStroke, BrushSettings } from '../../utils/brushHelpers';
@@ -43,36 +41,22 @@ import LayerMaskModal from './LayerMaskModal';
 import LayerEffectModal from './LayerEffectModal';
 import SideEditorToolbar from './SideEditorToolbar';
 import TopEditorToolbar from './TopEditorToolbar';
+
+import { ImageEditorProps, Tool } from './types';
+import { useViewer } from './hooks/useViewer';
+import { useTools } from './hooks/useTools';
+import { useAdjustments } from './hooks/useAdjustments';
+import { useLayers } from './hooks/useLayers';
+import { useCrop } from './hooks/useCrop';
+import { usePerspective } from './hooks/usePerspective';
+import { useDrawing } from './hooks/useDrawing';
+import { useTextTool } from './hooks/useTextTool';
+import { useEditorState } from './hooks/useEditorState';
+import { getTourSteps } from './tourSteps';
+import { EditorState, Layer } from '../../types';
 //#endregion
 
-//#region Types
-import { SavedProject, EditorState, Layer, EditorSettings } from '../../types';
-
-export type Tool =
-  | 'pan'
-  | 'crop'
-  | 'color'
-  | 'ruler'
-  | 'perspective'
-  | 'select'
-  | 'draw'
-  | 'layer'
-  | 'upscale'
-  | 'text'
-  | 'removeColor';
-
-type Props = {
-  imageUrl: string;
-  addOnFile?: File | null;
-  setAddOnFile: React.Dispatch<React.SetStateAction<File | null>>;
-  onExport?: (blob: Blob) => void;
-  onSave?: (state: EditorState) => void;
-  initialState?: EditorState | null;
-  settings: EditorSettings;
-};
-//#endregion
-
-const ImageEditor: React.FC<Props> = ({
+const ImageEditor: React.FC<ImageEditorProps> = ({
   imageUrl,
   addOnFile,
   setAddOnFile,
@@ -92,173 +76,144 @@ const ImageEditor: React.FC<Props> = ({
   const isDirtyRef = useRef(false);
   //#endregion
 
-  //#region Viewer State (pan/zoom)
-  const [zoom, setZoom] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [isPanning, setIsPanning] = useState(false);
-  const panStart = useRef<{ x: number; y: number } | null>(null);
+  //#region Hooks
+  const tools = useTools();
+  const viewer = useViewer(containerRef, canvasRef, tools.tool);
+  const adjustments = useAdjustments();
+  const layersState = useLayers();
+  const cropState = useCrop();
+  const perspectiveState = usePerspective();
+  const drawingState = useDrawing();
+  const textToolState = useTextTool();
+  const editorState = useEditorState();
   //#endregion
 
-  //#region Active Tool
-  const [tool, setTool] = useState<Tool>('pan');
-  //#endregion
-
-  //#region Image Adjustments
-  const [brightness, setBrightness] = useState(0);
-  const [contrast, setContrast] = useState(0);
-
-  const [highlights, setHighlights] = useState(0);
-  const [shadows, setShadows] = useState(0);
-  const [whites, setWhites] = useState(0);
-  const [blacks, setBlacks] = useState(0);
-
-  const [vibrance, setVibrance] = useState(0);
-  const [saturation, setSaturation] = useState(0);
-
-  const [dehaze, setDehaze] = useState(0);
-  //#endregion
-
-  //#region Crop Tool
-  const [cropRect, setCropRect] = useState<{ x: number; y: number; w: number; h: number } | null>(
-    null,
-  );
-  const cropStart = useRef<{ x: number; y: number } | null>(null);
-  const [showCropModal, setShowCropModal] = useState(false);
-
-  const handleConfirmCrop = () => {
-    if (cropRect) {
-      cropStart.current = null;
-      applyCrop(canvasRef, overlayRef, cropRect, setCropRect, history);
-      setShowCropModal(false);
-    }
-  };
-
-  const handleCancelCrop = () => {
-    setCropRect(null);
-    setShowCropModal(false);
-  };
-  //#endregion
-
-  //#region Perspective Tool
-  const [showPerspectiveModal, setShowPerspectiveModal] = useState(false);
-
-  // initialize to NaN pairs so we can detect "empty" slots
-  const perspectivePoints = useRef<
-    [number, number, number, number, number, number, number, number] | null
-  >(null);
-
-  // helper: ensure we have an array of 8 numbers (NaNs if empty)
-  const ensurePerspectiveInit = () => {
-    if (!perspectivePoints.current) {
-      perspectivePoints.current = [NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN];
-    }
-  };
-
-  // helper: find index of a "near" point (within tolerance), else -1
-  const findNearPointIndex = (x: number, y: number, tol = 12) => {
-    if (!perspectivePoints.current) return -1;
-    const p = perspectivePoints.current;
-    for (let i = 0; i < 8; i += 2) {
-      const px = p[i];
-      const py = p[i + 1];
-      if (!isNaN(px) && !isNaN(py)) {
-        const dx = px - x;
-        const dy = py - y;
-        if (Math.sqrt(dx * dx + dy * dy) <= tol) return i;
-      }
-    }
-    return -1;
-  };
-  //#endregion
-
-  //#region Hotkey States
-  const [toolBefore, setToolBefore] = useState<Tool | null>(null);
-  const [isSpaceDown, setIsSpaceDown] = useState(false);
-  const [isAltDown, setIsAltDown] = useState(false);
-  const [isShiftDown, setIsShiftDown] = useState(false);
-  //#endregion
-
-  //#region Color Picker
-  const [hoverColor, setHoverColor] = useState<{ x: number; y: number; color: string } | null>(
-    null,
-  );
-  const [pickedColor, setPickedColor] = useState<string | null>(null);
-  //#endregion
-
-  //#region Color Removal Tool
-  const [showColorRemovalModal, setShowColorRemovalModal] = useState(false);
-  const [selectedColorForRemoval, setSelectedColorForRemoval] = useState<string | null>(null);
-  //#endregion
-
-  //#region Layer Mask Tool
-  const [showLayerMaskModal, setShowLayerMaskModal] = useState(false);
-  const [maskEditingLayerId, setMaskEditingLayerId] = useState<string | null>(null);
-  //#endregion
-
-  //#region Layer Effects Tool
-  const [showLayerEffectModal, setShowLayerEffectModal] = useState(false);
-  const [effectEditingLayerId, setEffectEditingLayerId] = useState<string | null>(null);
-  //#endregion
-
-  //#region Ruler Tool
-  const rulerPoints = useRef<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
-  const [dpiMeasured, setDpiMeasured] = useState<number | null>(null);
-  //#endregion
-
-  //#region Overlay Image & Text (added)
-  const [layers, setLayers] = useState<Layer[]>([]);
-  const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
-  const [overlaySelected, setOverlaySelected] = useState(false);
-
-  // Text tool controls
-  const [textContent, setTextContent] = useState('');
-  const [textFont, setTextFont] = useState('Arial');
-  const [textFontSize, setTextFontSize] = useState(32);
-  const [textColor, setTextColor] = useState('#000000');
-  const [textWeight, setTextWeight] = useState<Layer['fontWeight']>('normal');
-  const [textItalic, setTextItalic] = useState(false);
-  const [textDecoration, setTextDecoration] = useState<'none' | 'underline' | 'line-through'>(
-    'none',
-  );
-  const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('left');
-  const [isAddingText, setIsAddingText] = useState(false); // track if user clicked to place text
-  const overlayDrag = useRef<null | {
-    layerId: string;
-    startX: number;
-    startY: number;
-    origX: number;
-    origY: number;
-  }>(null);
-  const inlineEditorRef = useRef<HTMLTextAreaElement | null>(null);
-  const overlayResize = useRef<null | {
-    layerId: string;
-    handle: 'tl' | 'tr' | 'bl' | 'br' | 't' | 'b' | 'l' | 'r' | 'move';
-    startX: number;
-    startY: number;
-    orig: { x: number; y: number; w: number; h: number };
-  }>(null);
-  const overlayRotate = useRef<null | {
-    layerId: string;
-    startX: number;
-    startY: number;
-    centerX: number;
-    centerY: number;
-    startAngle: number;
-    originalRotation: number;
-  }>(null);
-  //#endregion
-
-  //#region Export State
-  const [showExportModal, setShowExportModal] = useState(false);
-  //#endregion
-
-  //#region Tour (Help) State
-  const [openTour, setOpenTour] = useState(false);
-  const toolbarRef = useRef<HTMLDivElement>(null);
-  const sidebarRef = useRef<HTMLDivElement>(null);
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
-  //#endregion
-  //#endregion
+  // Destructure for easier access
+  const { zoom, setZoom, offset, setOffset, isPanning, setIsPanning, panStart } = viewer;
+  const { tool, setTool, setToolBefore, setIsSpaceDown, setIsAltDown, setIsShiftDown } = tools;
+  const {
+    brightness,
+    setBrightness,
+    contrast,
+    setContrast,
+    highlights,
+    setHighlights,
+    shadows,
+    setShadows,
+    whites,
+    setWhites,
+    blacks,
+    setBlacks,
+    vibrance,
+    setVibrance,
+    saturation,
+    setSaturation,
+    dehaze,
+    setDehaze,
+    blur,
+    setBlur,
+    gaussian,
+    setGaussian,
+    sharpen,
+    setSharpen,
+    texture,
+    setTexture,
+    clarity,
+    setClarity,
+    bgThreshold,
+    setBgThreshold,
+    bgThresholdBlack,
+    setBgThresholdBlack,
+    hslAdjustments,
+    setHslAdjustmentsState,
+    setHslAdjustments,
+  } = adjustments;
+  const {
+    layers,
+    setLayers,
+    activeLayerId,
+    setActiveLayerId,
+    overlaySelected,
+    setOverlaySelected,
+    overlayDrag,
+    overlayResize,
+    overlayRotate,
+  } = layersState;
+  const { cropRect, setCropRect, cropStart, showCropModal, setShowCropModal } = cropState;
+  const {
+    showPerspectiveModal,
+    setShowPerspectiveModal,
+    perspectivePoints,
+    ensurePerspectiveInit,
+    findNearPointIndex,
+  } = perspectiveState;
+  const {
+    drawColor,
+    setDrawColor,
+    drawLineWidth,
+    setDrawLineWidth,
+    brushType,
+    setBrushType,
+    brushOpacity,
+    setBrushOpacity,
+    brushFlow,
+    setBrushFlow,
+    isDrawing,
+    setIsDrawing,
+    drawPoints,
+    resizingBrush,
+    resizeStartX,
+    initialLineWidth,
+  } = drawingState;
+  const {
+    textContent,
+    setTextContent,
+    textFont,
+    setTextFont,
+    textFontSize,
+    setTextFontSize,
+    textColor,
+    setTextColor,
+    textWeight,
+    setTextWeight,
+    textItalic,
+    setTextItalic,
+    textDecoration,
+    setTextDecoration,
+    textAlign,
+    setTextAlign,
+    isAddingText,
+    setIsAddingText,
+    inlineEditorRef,
+  } = textToolState;
+  const {
+    hoverColor,
+    setHoverColor,
+    pickedColor,
+    setPickedColor,
+    showColorRemovalModal,
+    setShowColorRemovalModal,
+    selectedColorForRemoval,
+    setSelectedColorForRemoval,
+    showLayerMaskModal,
+    setShowLayerMaskModal,
+    maskEditingLayerId,
+    setMaskEditingLayerId,
+    showLayerEffectModal,
+    setShowLayerEffectModal,
+    effectEditingLayerId,
+    setEffectEditingLayerId,
+    rulerPoints,
+    dpiMeasured,
+    setDpiMeasured,
+    showExportModal,
+    setShowExportModal,
+    openTour,
+    setOpenTour,
+    toolbarRef,
+    sidebarRef,
+    canvasContainerRef,
+  } = editorState;
 
   // --- overlay image handlers (delegated to helpers) ---
   useEffect(() => {
@@ -344,7 +299,6 @@ const ImageEditor: React.FC<Props> = ({
   };
 
   // Text tool callbacks
-  // Start placement mode; actual layer will be created when user clicks canvas
   const onAddTextLayer = () => {
     setIsAddingText(true);
     message.info('Click on the image to place the text');
@@ -365,7 +319,7 @@ const ImageEditor: React.FC<Props> = ({
   const updateTextAlign = (id: string, align: 'left' | 'center' | 'right') =>
     helperSetLayerTextAlign(setLayers, id, align);
 
-  // wrapper setters: if an active layer (text) exists, update that layer; otherwise modify global defaults
+  // wrapper setters
   const handleSetTextContent = (v: string) => {
     const active = layers.find((l) => l.id === activeLayerId);
     if (active && active.type === 'text') updateTextContent(active.id, v);
@@ -602,45 +556,6 @@ const ImageEditor: React.FC<Props> = ({
   }, [history.index]);
   //#endregion
 
-  //#region Drawing Tool
-  const [drawColor, setDrawColor] = useState('#ff0000');
-  const [drawLineWidth, setDrawLineWidth] = useState(2);
-  const [brushType, setBrushType] = useState<'hard' | 'soft'>('hard');
-  const [brushOpacity, setBrushOpacity] = useState(1); // 0 - 1
-  const [brushFlow, setBrushFlow] = useState(1); // 0 - 1
-  const [isDrawing, setIsDrawing] = useState(false);
-  const drawPoints = useRef<{ x: number; y: number }[]>([]);
-  const resizingBrush = useRef(false);
-  const resizeStartX = useRef<number | null>(null);
-  const initialLineWidth = useRef(drawLineWidth);
-
-  //#endregion
-
-  //#region Filters
-  const [blur, setBlur] = useState(0);
-  const [gaussian, setGaussian] = useState(0);
-  const [sharpen, setSharpen] = useState(0);
-  const [texture, setTexture] = useState(0);
-  const [clarity, setClarity] = useState(0);
-
-  const [bgThreshold, setBgThreshold] = useState(0);
-  const [bgThresholdBlack, setBgThresholdBlack] = useState(0);
-
-  const [hslAdjustments, setHslAdjustmentsState] = useState<
-    Record<string, { h?: number; s?: number; l?: number }>
-  >({});
-  const setHslAdjustments = (
-    name: string,
-    values: Partial<{ h: number; s: number; l: number }>,
-  ) => {
-    setHslAdjustmentsState((prev) => ({
-      ...prev,
-      [name]: { ...(prev[name] || {}), ...values },
-    }));
-  };
-
-  //#endregion
-
   //#region Save & Restore
   useEffect(() => {
     if (initialState) {
@@ -839,38 +754,7 @@ const ImageEditor: React.FC<Props> = ({
   }, []);
   //#endregion
 
-  // #region 🔍 Ctrl + Wheel Zoom Handler
-  useEffect(() => {
-    const container = containerRef.current;
-    const canvas = canvasRef.current;
-    if (!container || !canvas) return;
-
-    const handleWheel = (e: WheelEvent) => {
-      if (!e.ctrlKey) return;
-      e.preventDefault();
-
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-
-      setZoom((prev) => {
-        const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-        const newZoom = Math.min(Math.max(prev * zoomFactor, 0.1), 12);
-
-        const scaleChange = newZoom / prev;
-        setOffset((prevOffset) => ({
-          x: mouseX - (mouseX - prevOffset.x) * scaleChange,
-          y: mouseY - (mouseY - prevOffset.y) * scaleChange,
-        }));
-
-        return newZoom;
-      });
-    };
-
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    return () => container.removeEventListener('wheel', handleWheel);
-  }, []);
-  //#endregion
+  // Note: Ctrl+Wheel Zoom is now handled in useViewer hook
 
   //#region 🖲️ Mouse Events (Down/Move/Up for Tools)
   const handleMouseDownViewer = (e: React.MouseEvent) => {
@@ -1064,6 +948,7 @@ const ImageEditor: React.FC<Props> = ({
       setOverlaySelected(false);
     }
 
+    if (tool === 'color' && e.altKey && e.button === 2) setTool('draw');
     // ALT + right button for brush resize
     if ((tool === 'draw' || tool === 'color') && e.altKey && e.button === 2) {
       e.preventDefault();
@@ -1732,138 +1617,20 @@ const ImageEditor: React.FC<Props> = ({
     return null;
   }, [canvasRef.current, baseCanvas]);
 
-  //#region Tour steps
-  const tourSteps: TourProps['steps'] = [
-    {
-      title: '🎨 Welcome to Pics Editor',
-      description:
-        'This is a powerful image editing tool with many features. Let me show you around!',
-      target: null,
-    },
-    {
-      title: '🛠️ Side Panel',
-      description:
-        'Access all editing tools here: adjustments, effects, color grading, and export options. Apply changes to see them on the canvas.',
-      target: () => sidebarRef.current!,
-    },
-    {
-      title: '🖼️ Canvas Area',
-      description:
-        'Your main workspace. Use Space + drag to pan, scroll to zoom, or Alt + scroll for fine zoom control. The resolution is shown in the top right.',
-      target: () => canvasContainerRef.current!,
-    },
-    {
-      title: '⌨️ Top Toolbar',
-      description:
-        'Quick access to undo/redo, zoom controls, and tool-specific options. Draw settings, layer management, and text formatting appear when those tools are active.',
-      target: () => toolbarRef.current!,
-    },
-    {
-      title: '🎭 Hand Tool (Hold "Space" or press "H")',
-      description:
-        'Navigate around your canvas. Hold Space key anywhere to temporarily activate pan mode, making it easy to move around large images.',
-    },
-    {
-      title: '✂️ Crop Tool (C)',
-      description:
-        'Click and drag to select a crop area. Press Enter to apply the crop or Escape to cancel. Perfect for trimming images to the exact size you need.',
-    },
-    {
-      title: '🎨 Color Picker (I)',
-      description:
-        'Click on any pixel to pick its color. Hold Shift while clicking to pick from the original unedited image instead of the current edited version.',
-    },
-    {
-      title: '🗑️ Color Removal (K)',
-      description:
-        'Remove specific colors from your image. First use the Color Picker (I) to select a color, then activate this tool to remove it with adjustable tolerance and feathering for smooth edges.',
-    },
-    {
-      title: '📏 Ruler Tool (R)',
-      description:
-        'Measure distances on your image. Click two points to measure in pixels, then optionally enter a real-world measurement to calculate and display the image DPI.',
-    },
-    {
-      title: '🔲 Perspective Tool (P)',
-      description:
-        "Correct perspective distortion in photos. Click to place 4 corner points clockwise, adjust them to match the object's corners, then apply to straighten the perspective.",
-    },
-    {
-      title: '✏️ Brush Tool (B)',
-      description:
-        'Freehand drawing with customizable options: brush size, color, opacity, flow rate, and choose between hard-edge and soft-edge brushes for different effects.',
-    },
-    {
-      title: '🖼️ Layer Tool (V)',
-      description:
-        'Add and manage image layers. Drag and drop images onto the canvas, adjust opacity and blend modes, resize, rotate, and position layers with full control.',
-    },
-    {
-      title: '🔤 Text Tool (T)',
-      description:
-        'Add text overlays with complete formatting control: font family, size, weight (bold/normal), color, alignment (left/center/right), italic, and text decorations (underline/strikethrough).',
-    },
-    {
-      title: '🔍 Upscale',
-      description:
-        'Enlarge your image intelligently. Choose from quality presets (low/medium/high) and apply enhancement options like sharpen, edge enhancement, and noise reduction for best results.',
-    },
-    {
-      title: '💾 Export (Ctrl + Shift + S)',
-      description:
-        'Export your edited image as PNG or JPG with optional overlay layers, or convert to scalable SVG format with customizable tracing parameters for vector graphics.',
-    },
-    {
-      title: '⌨️ Keyboard Shortcuts',
-      description: (
-        <div style={{ lineHeight: 1.8 }}>
-          <div>
-            <strong>Space</strong>: Pan tool (hold anywhere)
-          </div>
-          <div>
-            <strong>C</strong>: Crop tool
-          </div>
-          <div>
-            <strong>I</strong>: Color picker
-          </div>
-          <div>
-            <strong>K</strong>: Color removal
-          </div>
-          <div>
-            <strong>R</strong>: Ruler tool
-          </div>
-          <div>
-            <strong>P</strong>: Perspective tool
-          </div>
-          <div>
-            <strong>D</strong>: Draw tool
-          </div>
-          <div>
-            <strong>L</strong>: Layer tool
-          </div>
-          <div>
-            <strong>T</strong>: Text tool
-          </div>
-          <div>
-            <strong>Ctrl+Z</strong>: Undo
-          </div>
-          <div>
-            <strong>Ctrl+Y</strong>: Redo
-          </div>
-          <div>
-            <strong>Scroll</strong>: Zoom in/out
-          </div>
-          <div>
-            <strong>Alt+Scroll</strong>: Fine zoom control
-          </div>
-          <div>
-            <strong>Shift+Click</strong>: Pick from original image
-          </div>
-        </div>
-      ),
-    },
-  ];
-  //#endregion
+  const handleConfirmCrop = () => {
+    if (cropRect) {
+      cropStart.current = null;
+      applyCrop(canvasRef, overlayRef, cropRect, setCropRect, history);
+      setShowCropModal(false);
+    }
+  };
+
+  const handleCancelCrop = () => {
+    setCropRect(null);
+    setShowCropModal(false);
+  };
+
+  const tourSteps = getTourSteps(sidebarRef, canvasContainerRef, toolbarRef);
 
   return (
     <div style={{ display: 'flex', gap: 12, position: 'relative' }}>
