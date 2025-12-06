@@ -19,6 +19,7 @@ export type HistoryController = {
 export default function useHistory(
   canvasRef: MutableRefObject<HTMLCanvasElement | null>,
   overlayRef: MutableRefObject<HTMLCanvasElement | null>,
+  maxHistory: number = 20,
 ) {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [index, setIndex] = useState(-1);
@@ -28,8 +29,17 @@ export default function useHistory(
   //
   /** History management */
   const push = (url: string, label = '', isSetBase = true) => {
-    const next = history.slice(0, index + 1);
+    let next = history.slice(0, index + 1);
     next.push({ url, label, isSetBase });
+
+    // Enforce max history limit, but always keep the first item (initial image)
+    if (next.length > maxHistory) {
+      // Keep the first item (index 0) and the last (maxHistory - 1) items
+      const first = next[0];
+      const rest = next.slice(next.length - (maxHistory - 1));
+      next = [first, ...rest];
+    }
+
     setHistory(next);
     setIndex(next.length - 1);
   };

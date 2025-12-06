@@ -51,6 +51,11 @@ export interface EditorState {
   hslAdjustments: Record<string, { h?: number; s?: number; l?: number }>;
 }
 
+export interface EditorSettings {
+  autoSaveInterval: number; // in minutes
+  maxHistory: number;
+}
+
 export interface SavedProject {
   id: string;
   name: string;

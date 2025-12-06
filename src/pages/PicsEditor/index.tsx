@@ -5,6 +5,7 @@ import {
   EditOutlined,
   InboxOutlined,
   PlusOutlined,
+  SettingOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
 import {
@@ -25,10 +26,17 @@ import {
 import ImageTracer from 'imagetracerjs';
 import React, { useEffect, useRef, useState } from 'react';
 import ImageEditor from './components/ImageEditor';
+import SettingsModal from './components/SettingsModal';
 import './styles.less';
-import { EditorState, SavedProject } from './types';
+import { EditorSettings, EditorState, SavedProject } from './types';
+import { deleteProjectFromDB, getAllProjectsFromDB, saveProjectToDB } from './utils/storage';
 
 const { Title, Text } = Typography;
+
+const DEFAULT_SETTINGS: EditorSettings = {
+  autoSaveInterval: 5,
+  maxHistory: 20,
+};
 
 const PicsEditor: React.FC = () => {
   const [preview, setPreview] = useState<string | null>(null);
@@ -39,19 +47,31 @@ const PicsEditor: React.FC = () => {
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [currentProject, setCurrentProject] = useState<SavedProject | null>(null);
   const [initialState, setInitialState] = useState<EditorState | null>(null);
+  const [settings, setSettings] = useState<EditorSettings>(DEFAULT_SETTINGS);
+  const [showSettings, setShowSettings] = useState(false);
 
   const dragCounter = useRef(0);
 
   useEffect(() => {
-    const saved = localStorage.getItem('pics_editor_projects');
-    if (saved) {
+    getAllProjectsFromDB()
+      .then(setSavedProjects)
+      .catch((err) => console.error('Failed to load projects from DB', err));
+
+    const savedSettings = localStorage.getItem('pics_editor_settings');
+    if (savedSettings) {
       try {
-        setSavedProjects(JSON.parse(saved));
+        setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(savedSettings) });
       } catch (e) {
-        console.error('Failed to load projects', e);
+        console.error('Failed to load settings', e);
       }
     }
   }, []);
+
+  const handleSaveSettings = (newSettings: EditorSettings) => {
+    setSettings(newSettings);
+    localStorage.setItem('pics_editor_settings', JSON.stringify(newSettings));
+    message.success('Settings saved');
+  };
 
   // --- Clipboard paste support ---
   useEffect(() => {
@@ -123,14 +143,24 @@ const PicsEditor: React.FC = () => {
       updatedAt: Date.now(),
     };
 
-    const newProjects = currentProject
-      ? savedProjects.map((p) => (p.id === currentProject.id ? newProject : p))
-      : [newProject, ...savedProjects];
+    saveProjectToDB(newProject)
+      .then(() => {
+        // Update local state
+        const newProjects = currentProject
+          ? savedProjects.map((p) => (p.id === currentProject.id ? newProject : p))
+          : [newProject, ...savedProjects];
 
-    setSavedProjects(newProjects);
-    setCurrentProject(newProject);
-    localStorage.setItem('pics_editor_projects', JSON.stringify(newProjects));
-    message.success('Project saved successfully!');
+        // Sort by updatedAt desc
+        newProjects.sort((a, b) => b.updatedAt - a.updatedAt);
+
+        setSavedProjects(newProjects);
+        setCurrentProject(newProject);
+        message.success('Project saved successfully!');
+      })
+      .catch((err) => {
+        console.error(err);
+        message.error('Failed to save project');
+      });
   };
 
   const loadProject = (project: SavedProject) => {
@@ -141,10 +171,16 @@ const PicsEditor: React.FC = () => {
 
   const deleteProject = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    const newProjects = savedProjects.filter((p) => p.id !== id);
-    setSavedProjects(newProjects);
-    localStorage.setItem('pics_editor_projects', JSON.stringify(newProjects));
-    message.success('Project deleted');
+    deleteProjectFromDB(id)
+      .then(() => {
+        const newProjects = savedProjects.filter((p) => p.id !== id);
+        setSavedProjects(newProjects);
+        message.success('Project deleted');
+      })
+      .catch((err) => {
+        console.error(err);
+        message.error('Failed to delete project');
+      });
   };
 
   return (
@@ -155,9 +191,14 @@ const PicsEditor: React.FC = () => {
     >
       <Card
         title={
-          <>
-            🖼️ Pics Editor <Tag color="cyan">Beta</Tag>
-          </>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>
+              🖼️ Pics Editor <Tag color="cyan">Beta</Tag>
+            </span>
+            <Button icon={<SettingOutlined />} onClick={() => setShowSettings(true)}>
+              Settings
+            </Button>
+          </div>
         }
         variant={'borderless'}
       >
@@ -265,6 +306,7 @@ const PicsEditor: React.FC = () => {
                 imageUrl={preview}
                 initialState={initialState}
                 onSave={handleSaveProject}
+                settings={settings}
                 onExport={(blob) => {
                   console.log('exported blob', blob);
                 }}
@@ -273,6 +315,13 @@ const PicsEditor: React.FC = () => {
           )}
         </Space>
       </Card>
+
+      <SettingsModal
+        open={showSettings}
+        onCancel={() => setShowSettings(false)}
+        onSave={handleSaveSettings}
+        initialSettings={settings}
+      />
     </DragDropWrapper>
   );
 };

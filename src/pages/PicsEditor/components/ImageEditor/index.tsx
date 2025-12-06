@@ -46,7 +46,7 @@ import TopEditorToolbar from './TopEditorToolbar';
 //#endregion
 
 //#region Types
-import { SavedProject, EditorState, Layer } from '../../types';
+import { SavedProject, EditorState, Layer, EditorSettings } from '../../types';
 
 export type Tool =
   | 'pan'
@@ -68,6 +68,7 @@ type Props = {
   onExport?: (blob: Blob) => void;
   onSave?: (state: EditorState) => void;
   initialState?: EditorState | null;
+  settings: EditorSettings;
 };
 //#endregion
 
@@ -78,6 +79,7 @@ const ImageEditor: React.FC<Props> = ({
   onExport,
   onSave,
   initialState,
+  settings,
 }) => {
   //#region Canvas Setup
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -86,7 +88,8 @@ const ImageEditor: React.FC<Props> = ({
     imageUrl,
     onLoad,
   );
-  const history = useHistory(canvasRef, overlayRef);
+  const history = useHistory(canvasRef, overlayRef, settings.maxHistory);
+  const isDirtyRef = useRef(false);
   //#endregion
 
   //#region Viewer State (pan/zoom)
@@ -682,8 +685,37 @@ const ImageEditor: React.FC<Props> = ({
         return layer;
       });
       setLayers(hydratedLayers);
+
+      // Reset dirty flag after hydration
+      setTimeout(() => {
+        isDirtyRef.current = false;
+      }, 0);
     }
   }, [initialState]);
+
+  // Track changes for auto-save
+  useEffect(() => {
+    isDirtyRef.current = true;
+  }, [
+    layers,
+    brightness,
+    contrast,
+    highlights,
+    shadows,
+    whites,
+    blacks,
+    vibrance,
+    saturation,
+    dehaze,
+    blur,
+    gaussian,
+    sharpen,
+    texture,
+    clarity,
+    bgThreshold,
+    bgThresholdBlack,
+    hslAdjustments,
+  ]);
 
   const handleSave = () => {
     if (!onSave) return;
@@ -723,7 +755,47 @@ const ImageEditor: React.FC<Props> = ({
       hslAdjustments,
     };
     onSave(state);
+    isDirtyRef.current = false;
   };
+
+  // Auto-save effect
+  useEffect(() => {
+    if (settings.autoSaveInterval > 0 && onSave) {
+      const intervalId = setInterval(
+        () => {
+          if (isDirtyRef.current) {
+            handleSave();
+            message.success('Auto-saved project');
+          }
+        },
+        settings.autoSaveInterval * 60 * 1000,
+      );
+
+      return () => clearInterval(intervalId);
+    }
+  }, [
+    settings.autoSaveInterval,
+    onSave,
+    // Dependencies for handleSave (recreated on every render due to closure)
+    layers,
+    brightness,
+    contrast,
+    highlights,
+    shadows,
+    whites,
+    blacks,
+    vibrance,
+    saturation,
+    dehaze,
+    blur,
+    gaussian,
+    sharpen,
+    texture,
+    clarity,
+    bgThreshold,
+    bgThresholdBlack,
+    hslAdjustments,
+  ]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
