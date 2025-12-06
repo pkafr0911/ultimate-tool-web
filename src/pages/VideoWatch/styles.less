@@ -1,52 +1,126 @@
-.custom-video-container {
-  position: relative;
-  width: 100%;
-  max-height: 480px;
-  overflow: hidden;
-  background: #000;
-  border-radius: 8px;
+.video-watch-container {
+  padding: 24px;
+
+  .video-wrapper {
+    position: relative;
+    width: 100%;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    margin-bottom: 24px;
+
+    video {
+      width: 100%;
+      display: block;
+      max-height: 60vh;
+      outline: none;
+    }
+  }
+
+  .control-bar {
+    margin-bottom: 24px;
+  }
+
+  .stats-card {
+    height: 100%;
+    border-radius: 8px;
+    transition: all 0.3s;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .ant-statistic-title {
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .ant-statistic-content {
+      font-size: 20px;
+      font-weight: 600;
+    }
+  }
+
+  .log-container {
+    background: #1e1e1e;
+    color: #4af626;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    padding: 12px;
+    border-radius: 8px;
+    height: 250px;
+    overflow-y: auto;
+    font-size: 12px;
+    line-height: 1.5;
+    border: 1px solid #333;
+    white-space: pre-wrap;
+    word-break: break-all;
+
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+    &::-webkit-scrollbar-track {
+      background: #2a2a2a;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #555;
+      border-radius: 4px;
+    }
+  }
+
+  .thumbnail-strip {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;
+    padding: 12px 4px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 8px;
+    margin-bottom: 24px;
+
+    &::-webkit-scrollbar {
+      height: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 3px;
+    }
+
+    .thumbnail-item {
+      flex: 0 0 auto;
+      width: 160px;
+      height: 90px;
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+      position: relative;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      }
+
+      &.active {
+        border-color: #1890ff;
+        box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+      }
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .thumb-time {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        font-size: 10px;
+        padding: 2px 4px;
+        border-radius: 2px;
+      }
+    }
+  }
 }
-
-.custom-video-container video {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: 8px;
-  outline: none;
-  opacity: 0.95; // slightly transparent
-}
-
-/* Overlay gradient (bottom area for controls) */
-.custom-video-container::after {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: 80px;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-  content: '';
-  pointer-events: none;
-}
-
-/* Change progress bar color in WebKit browsers */
-video::-webkit-media-controls-timeline {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-video::-webkit-media-controls-current-time-display,
-video::-webkit-media-controls-time-remaining-display {
-  color: #ff718b; // custom text color
-}
-
-video::-webkit-media-controls-play-button,
-video::-webkit-media-controls-pause-button {
-  background-color: rgba(255, 82, 82, 0.2);
-  border-radius: 50%;
-}
-
-// video::-webkit-media-controls-volume-slider {
-//   background-color: rgba(255, 82, 82, 0.3);
-// }
-
-// video::-webkit-media-controls-mute-button {
-//   background-color: rgba(255, 82, 82, 0.2);
-// }
