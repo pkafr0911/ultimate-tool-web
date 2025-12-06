@@ -104,7 +104,7 @@ export const pages = [
     name: 'Pics Editor',
     path: '/image-converter/pics-editor',
     icon: '🖌️',
-    desc: 'Convert images between PNG and JPEG.',
+    desc: 'Just photoshop but faster.',
   },
   {
     name: 'Image Base64 Converter',

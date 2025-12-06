@@ -29,6 +29,18 @@ It centralizes commonly used tools — from converters and formatters to editors
 
 Experiment, code, and create directly in your browser — no setup required.
 
+### 🎨 Advanced Image Editor
+
+A powerful, layer-based image editor with masking, filters, crop, perspective transform, and upscaling capabilities.
+
+### 👁️ OCR & Image Tools
+
+Extract text from images using Tesseract.js, convert images to SVG, or generate ASCII art.
+
+### 🎬 Video Player
+
+Support for HLS (.m3u8) and DASH (.mpd) streaming playback.
+
 ### 🛠 Utility Tools
 
 Quick conversions, encryption, randomization, and much more.
@@ -64,8 +76,9 @@ Quick access to useful command references, emojis, and kaomoji sets.
 | Styling | LESS + CSS Animations |
 | Charts | [Highcharts](https://www.highcharts.com/) |
 | Code Editor | [Monaco Editor](https://microsoft.github.io/monaco-editor/) |
-| Utilities | `dayjs`, `query-string`, `jszip`, `uuid`, `prettier` |
-| Build Tools | `@umijs/max`, `cross-env`, `gh-pages` |
+| Media & OCR | `tesseract.js`, `hls.js`, `dashjs`, `imagetracerjs` |
+| Utilities | `dayjs`, `query-string`, `jszip`, `uuid`, `prettier`, `jose` |
+| Build Tools | `@umijs/max`, `cross-env`, `gh-pages`, `Docker` |
 
 ---
 
@@ -105,6 +118,22 @@ npm install
 
 ```bash
 yarn install
+```
+
+---
+
+## 🐳 Docker Support
+
+### Build Image
+
+```bash
+docker build -t ultimate-tool-web .
+```
+
+### Run Container
+
+```bash
+docker run -p 8000:80 ultimate-tool-web
 ```
 
 ---
