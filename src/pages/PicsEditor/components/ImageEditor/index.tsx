@@ -1064,7 +1064,6 @@ const ImageEditor: React.FC<Props> = ({
       setOverlaySelected(false);
     }
 
-    if (tool === 'color' && e.altKey && e.button === 2) setTool('draw');
     // ALT + right button for brush resize
     if ((tool === 'draw' || tool === 'color') && e.altKey && e.button === 2) {
       e.preventDefault();
@@ -1523,7 +1522,7 @@ const ImageEditor: React.FC<Props> = ({
       rulerPoints: rulerPoints.current,
       perspectivePoints: perspectivePoints.current,
       hoverColor,
-      tool,
+      tool: resizingBrush.current ? 'draw' : tool,
       drawColor,
       drawLineWidth,
       layers,
