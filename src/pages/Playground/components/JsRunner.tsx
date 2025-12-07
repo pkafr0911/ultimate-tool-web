@@ -2,10 +2,16 @@ import React, { useState } from 'react';
 import { Button, Card, Segmented, Select, Space, Splitter, Typography } from 'antd';
 import Editor from '@monaco-editor/react';
 import { prettifyJS } from '../utils/formatters';
-import { FormatPainterOutlined, PlayCircleOutlined, SettingOutlined } from '@ant-design/icons';
+import {
+  FormatPainterOutlined,
+  PlayCircleOutlined,
+  SettingOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
 import { DEFAULT_CODE } from '../constants';
 import { useMonacoOption } from '../hooks/useMonacoOption';
 import { useDarkMode } from '@/hooks/useDarkMode';
+import { usePlaygroundState } from '../hooks/usePlaygroundState';
 
 // Define prop types for this component
 type Props = {
@@ -15,16 +21,19 @@ type Props = {
 // Extract `Title` component from Ant Design Typography for headings
 const { Title } = Typography;
 
-// Main component: ReactPlayground
-const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
+// Main component: JsRunner
+const JsRunner: React.FC<Props> = ({ onOpenSettings }) => {
   // Detect whether the app is in dark mode (for Monaco theme)
   const { darkMode } = useDarkMode();
 
   // Selected language for the editor — either JavaScript or TypeScript
-  const [language, setLanguage] = useState<'javascript' | 'typescript'>('javascript');
+  const [language, setLanguage] = usePlaygroundState<'javascript' | 'typescript'>(
+    'playground_js_lang',
+    'javascript',
+  );
 
   // The actual code written by the user
-  const [code, setCode] = useState(DEFAULT_CODE);
+  const [code, setCode] = usePlaygroundState('playground_js_code', DEFAULT_CODE);
 
   // Output text displayed after code execution (logs, results, or errors)
   const [output, setOutput] = useState<string>('');
@@ -124,6 +133,19 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
           <Button type="primary" icon={<PlayCircleOutlined />} onClick={runCode}>
             Run
           </Button>
+
+          <Button
+            icon={<ReloadOutlined />}
+            danger
+            onClick={() => {
+              if (confirm('Reset code to default?')) {
+                setCode(DEFAULT_CODE);
+                setLanguage('javascript');
+              }
+            }}
+          >
+            Reset
+          </Button>
         </Space>
 
         <Space align="center" style={{ marginLeft: 'auto' }}>
@@ -218,4 +240,4 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
 };
 
 // Export the component so it can be imported elsewhere
-export default ReactPlayground;
+export default JsRunner;

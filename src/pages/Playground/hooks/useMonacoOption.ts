@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { usePlaygroundState } from './usePlaygroundState';
 
 export const useMonacoOption = () => {
-  const [editorOptions, setEditorOptions] = useState({
+  const [editorOptions, setEditorOptions] = usePlaygroundState('playground_editor_options', {
     minimap: true,
     wordWrap: true,
     fontSize: 14,

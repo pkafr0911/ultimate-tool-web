@@ -9,10 +9,12 @@ import {
   EditOutlined,
   SettingOutlined,
   DownloadOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import { DEFAULT_CSS, DEFAULT_HTML, DEFAULT_SCRIPT } from '../constants';
 import ReactQuill from 'react-quill';
 import { useMonacoOption } from '../hooks/useMonacoOption';
+import { usePlaygroundState } from '../hooks/usePlaygroundState';
 import { handleCopy } from '@/helpers';
 import { handleDownload } from '../utils/helpers';
 import { useDarkMode } from '@/hooks/useDarkMode';
@@ -42,9 +44,9 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
   const { monacoOptions } = useMonacoOption();
 
   // Code content states for HTML, CSS, and JS
-  const [htmlContent, setHtmlContent] = useState(DEFAULT_HTML);
-  const [cssContent, setCssContent] = useState(DEFAULT_CSS);
-  const [jsContent, setJsContent] = useState(DEFAULT_SCRIPT);
+  const [htmlContent, setHtmlContent] = usePlaygroundState('playground_html_html', DEFAULT_HTML);
+  const [cssContent, setCssContent] = usePlaygroundState('playground_html_css', DEFAULT_CSS);
+  const [jsContent, setJsContent] = usePlaygroundState('playground_html_js', DEFAULT_SCRIPT);
 
   // Mode & layout states
   const [viewMode, setViewMode] = useState<'rich' | 'html'>('html'); // Current view mode for the HTML tab: either 'html' or 'rich' (WYSIWYG)
@@ -113,6 +115,20 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
 
           <Button icon={<DownloadOutlined />} onClick={() => handleDownload('index.html', preview)}>
             Download
+          </Button>
+
+          <Button
+            icon={<ReloadOutlined />}
+            danger
+            onClick={() => {
+              if (confirm('Reset all code to default?')) {
+                setHtmlContent(DEFAULT_HTML);
+                setCssContent(DEFAULT_CSS);
+                setJsContent(DEFAULT_SCRIPT);
+              }
+            }}
+          >
+            Reset
           </Button>
         </Space>
 

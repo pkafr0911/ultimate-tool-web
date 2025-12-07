@@ -1,12 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button, Card, Space, Tabs, Typography, Segmented, Splitter } from 'antd';
 import Editor, { useMonaco } from '@monaco-editor/react';
-import { SettingOutlined, FormatPainterOutlined, FileAddOutlined } from '@ant-design/icons';
+import {
+  SettingOutlined,
+  FormatPainterOutlined,
+  FileAddOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
 import { prettifyCSS, prettifyJS } from '../utils/formatters';
 import { DEFAULT_REACT_TS, REACT_EXTRA_LIB, DEFAULT_CSS, DEFAULT_REACT_JS } from '../constants';
 import { useMonacoOption } from '../hooks/useMonacoOption';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { transpileCode } from '../utils/transpileReact';
+import { usePlaygroundState } from '../hooks/usePlaygroundState';
 
 type Props = { onOpenSettings: () => void };
 
@@ -23,7 +29,7 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
   const monaco = useMonaco();
   const { monacoOptions } = useMonacoOption();
 
-  const [tabs, setTabs] = useState<FileTab[]>([
+  const [tabs, setTabs] = usePlaygroundState<FileTab[]>('playground_react_tabs', [
     { name: 'App.tsx', language: 'typescript', content: DEFAULT_REACT_TS },
   ]);
   const [activeTab, setActiveTab] = useState('App.tsx');
@@ -183,6 +189,19 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
 
           <Button icon={<FileAddOutlined />} type="primary" onClick={addCssFile}>
             Add CSS
+          </Button>
+
+          <Button
+            icon={<ReloadOutlined />}
+            danger
+            onClick={() => {
+              if (confirm('Reset all code to default?')) {
+                setTabs([{ name: 'App.tsx', language: 'typescript', content: DEFAULT_REACT_TS }]);
+                setActiveTab('App.tsx');
+              }
+            }}
+          >
+            Reset
           </Button>
         </Space>
 
