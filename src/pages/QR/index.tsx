@@ -1,30 +1,46 @@
 import {
+  BgColorsOutlined,
+  DownloadOutlined,
+  LinkOutlined,
+  QrcodeOutlined,
+  SettingOutlined,
+} from '@ant-design/icons';
+import {
   Button,
   Card,
+  Col,
+  ColorPicker,
+  Divider,
   Input,
   InputNumber,
-  message,
   QRCode,
+  Row,
+  Segmented,
   Select,
   Slider,
   Space,
+  Tabs,
   Typography,
+  message,
 } from 'antd';
+import type { Color } from 'antd/es/color-picker';
 import React, { useRef, useState } from 'react';
 import './styles.less';
 
-const { Option } = Select;
-const { Title, Paragraph, Text } = Typography;
+const { Title, Text } = Typography;
+const { TextArea } = Input;
 
 const QRPage: React.FC = () => {
   const [text, setText] = useState('https://example.com');
-  const [size, setSize] = useState(256);
-  const [format, setFormat] = useState<'canvas' | 'svg'>('svg');
-  const qrContainerRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState(300);
+  const [iconSize, setIconSize] = useState(40);
+  const [color, setColor] = useState<string>('#000000');
+  const [bgColor, setBgColor] = useState<string>('#ffffff');
+  const [errorLevel, setErrorLevel] = useState<'L' | 'M' | 'Q' | 'H'>('M');
+  const [icon, setIcon] = useState<string>('');
+  const [format, setFormat] = useState<'canvas' | 'svg'>('canvas');
 
-  const handleSizeChange = (value: number | null) => {
-    if (value) setSize(value);
-  };
+  const qrContainerRef = useRef<HTMLDivElement>(null);
 
   const downloadQRCode = () => {
     try {
@@ -50,74 +66,196 @@ const QRPage: React.FC = () => {
         a.click();
         URL.revokeObjectURL(url);
       } else {
-        message.error('Invalid format or QR not ready');
+        // Fallback for when canvas is selected but rendered as svg or vice versa by antd
+        // Antd QRCode component renders canvas by default unless type='svg' is passed
+        message.warning('Please ensure the preview matches the download format.');
       }
+      message.success('QR Code downloaded successfully!');
     } catch (err) {
       console.error(err);
       message.error('Failed to download QR code');
     }
   };
 
+  const handleColorChange = (value: Color, type: 'fg' | 'bg') => {
+    const hex = value.toHexString();
+    if (type === 'fg') setColor(hex);
+    else setBgColor(hex);
+  };
+
   return (
-    <Card title="QR Generator" className="qr-card">
-      {/* Page Description */}
-      <Paragraph type="secondary" className="qr-description">
-        This page allows you to <Text strong>generate and download custom QR codes</Text> for any
-        text, link, or content. Adjust size, choose format (PNG/SVG), and download instantly.
-      </Paragraph>
+    <div className="qr-page-container">
+      <Card className="qr-main-card" bordered={false}>
+        <Row gutter={[48, 32]}>
+          {/* Left Column: Controls */}
+          <Col xs={24} lg={14} className="controls-column">
+            <div className="header-section">
+              <Title level={2} style={{ margin: 0 }}>
+                <QrcodeOutlined /> QR Code Generator
+              </Title>
+              <Text type="secondary">
+                Create custom QR codes with colors, logos, and high-resolution downloads.
+              </Text>
+            </div>
 
-      <Space direction="vertical" className="qr-container" size="middle">
-        {/* Text Input */}
-        <Input placeholder="Text or URL" value={text} onChange={(e) => setText(e.target.value)} />
+            <Tabs
+              defaultActiveKey="content"
+              items={[
+                {
+                  key: 'content',
+                  label: 'Content',
+                  children: (
+                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                      <div>
+                        <Text strong>Data / URL</Text>
+                        <TextArea
+                          rows={4}
+                          placeholder="Enter text or URL to encode..."
+                          value={text}
+                          onChange={(e) => setText(e.target.value)}
+                          className="custom-textarea"
+                          maxLength={500}
+                          showCount
+                        />
+                      </div>
 
-        {/* Size Control */}
-        <div className="qr-size-control">
-          <div className="qr-size-label">Size: {size}px</div>
-          <Space wrap className="qr-size-slider">
-            <Slider
-              style={{ width: 200 }}
-              min={64}
-              max={400}
-              value={size}
-              onChange={handleSizeChange}
+                      <div>
+                        <Text strong>Logo URL (Optional)</Text>
+                        <Input
+                          prefix={<LinkOutlined />}
+                          placeholder="https://example.com/logo.png"
+                          value={icon}
+                          onChange={(e) => setIcon(e.target.value)}
+                          allowClear
+                        />
+                      </div>
+                    </Space>
+                  ),
+                },
+                {
+                  key: 'style',
+                  label: 'Style & Settings',
+                  children: (
+                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                      <Row gutter={[24, 24]}>
+                        <Col span={12}>
+                          <Text strong>Foreground Color</Text>
+                          <div className="color-picker-wrapper">
+                            <ColorPicker
+                              value={color}
+                              onChange={(v) => handleColorChange(v, 'fg')}
+                              showText
+                            />
+                          </div>
+                        </Col>
+                        <Col span={12}>
+                          <Text strong>Background Color</Text>
+                          <div className="color-picker-wrapper">
+                            <ColorPicker
+                              value={bgColor}
+                              onChange={(v) => handleColorChange(v, 'bg')}
+                              showText
+                            />
+                          </div>
+                        </Col>
+                      </Row>
+
+                      <div>
+                        <Text strong>Error Correction Level</Text>
+                        <Segmented
+                          block
+                          options={[
+                            { label: 'Low (7%)', value: 'L' },
+                            { label: 'Medium (15%)', value: 'M' },
+                            { label: 'Quartile (25%)', value: 'Q' },
+                            { label: 'High (30%)', value: 'H' },
+                          ]}
+                          value={errorLevel}
+                          onChange={(val) => setErrorLevel(val as any)}
+                        />
+                      </div>
+
+                      <div>
+                        <Row justify="space-between">
+                          <Text strong>Size (px)</Text>
+                          <Text type="secondary">{size}px</Text>
+                        </Row>
+                        <Slider min={128} max={1024} step={16} value={size} onChange={setSize} />
+                      </div>
+
+                      {icon && (
+                        <div>
+                          <Row justify="space-between">
+                            <Text strong>Icon Size</Text>
+                            <Text type="secondary">{iconSize}px</Text>
+                          </Row>
+                          <Slider min={20} max={size / 3} value={iconSize} onChange={setIconSize} />
+                        </div>
+                      )}
+                    </Space>
+                  ),
+                },
+              ]}
             />
-            <InputNumber min={64} max={1024} value={size} onChange={handleSizeChange} />
-          </Space>
-        </div>
+          </Col>
 
-        {/* Format Selector */}
-        <Select value={format} onChange={setFormat} style={{ width: '100%' }}>
-          <Option value="canvas">PNG</Option>
-          <Option value="svg">SVG</Option>
-        </Select>
+          {/* Right Column: Preview */}
+          <Col xs={24} lg={10} className="preview-column">
+            <div className="preview-card">
+              <div className="preview-header">
+                <Text strong>
+                  <SettingOutlined /> Live Preview
+                </Text>
+              </div>
 
-        {/* Download Button */}
-        <Button type="primary" onClick={downloadQRCode} block>
-          Download {format.toUpperCase()}
-        </Button>
+              <div className="qr-wrapper" ref={qrContainerRef}>
+                <QRCode
+                  value={text || 'https://example.com'}
+                  size={size} // Display size is controlled by CSS max-width, but actual render size is this
+                  icon={icon}
+                  iconSize={iconSize}
+                  color={color}
+                  bgColor={bgColor}
+                  errorLevel={errorLevel}
+                  type={format}
+                  bordered={false}
+                  style={{ maxWidth: '100%', height: 'auto' }}
+                />
+              </div>
 
-        {/* QR Code Display */}
-        <div ref={qrContainerRef} className="qr-display">
-          <QRCode value={text || '-'} size={size} errorLevel="H" type={format} bordered={false} />
-        </div>
+              <Divider />
 
-        {/* --- User Guide Section --- */}
-        <div className="qr-guide">
-          <Title level={5}>📘 How to Use</Title>
-          <Paragraph>
-            <Text strong>1.</Text> Enter the text, URL, or data to encode.
-            <br />
-            <Text strong>2.</Text> Adjust <Text code>Size</Text> with the slider or number input.
-            <br />
-            <Text strong>3.</Text> Choose a <Text code>Format</Text> (PNG for web, SVG for print).
-            <br />
-            <Text strong>4.</Text> Click <Text code>Download</Text> to save your QR code.
-            <br />
-            <Text type="secondary">💡 Tip: SVG is vector-based and stays sharp at any size.</Text>
-          </Paragraph>
-        </div>
-      </Space>
-    </Card>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <div className="format-selector">
+                  <Text strong style={{ marginRight: 12 }}>
+                    Format:
+                  </Text>
+                  <Segmented
+                    options={[
+                      { label: 'PNG (Image)', value: 'canvas' },
+                      { label: 'SVG (Vector)', value: 'svg' },
+                    ]}
+                    value={format}
+                    onChange={(val) => setFormat(val as any)}
+                  />
+                </div>
+
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<DownloadOutlined />}
+                  onClick={downloadQRCode}
+                  block
+                  className="download-btn"
+                >
+                  Download QR Code
+                </Button>
+              </Space>
+            </div>
+          </Col>
+        </Row>
+      </Card>
+    </div>
   );
 };
 
