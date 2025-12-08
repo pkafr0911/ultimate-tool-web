@@ -1,89 +1,135 @@
-.wheel-light-container {
+.wheel-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  padding: 16px;
-  background: radial-gradient(circle at 10% 20%, #e9e3ff, #b5fffc);
-}
-
-.ant-pro-layout .ant-pro-layout-content {
-  padding-inline: 0px;
-  padding-block: 0px;
-}
-
-.wheel-light-card {
-  width: 100%;
-  max-width: 900px;
+  min-height: calc(100vh - 60px);
   padding: 24px;
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
 
-  @media (max-width: 600px) {
-    padding: 16px;
+.wheel-card {
+  width: 100%;
+  max-width: 1200px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+
+  .ant-card-body {
+    padding: 40px;
+
+    @media (max-width: 768px) {
+      padding: 20px;
+    }
   }
 }
 
-.wheel-light-title {
-  margin-bottom: 24px;
-  color: #1f1f1f;
-  text-align: center;
-}
-
-.wheel-light-content {
-  display: flex;
-  gap: 32px;
-  align-items: flex-start;
-  justify-content: space-between;
-
-  @media (max-width: 900px) {
-    flex-direction: column;
-    align-items: center;
-  }
-}
-
-.wheel-light-canvas {
-  position: relative;
+.wheel-column {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.wheel-light-pointer {
+.wheel-wrapper {
+  position: relative;
+  display: inline-block;
+  padding: 10px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.wheel-pointer {
   position: absolute;
   top: 50%;
-  left: 100%;
-  width: 25px;
-  height: 35px;
-  background: red;
-  transform: translateX(-50%) rotate(-90deg); /* Rotates it to point towards the wheel */
-  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  right: -15px;
+  z-index: 10;
+  width: 50px;
+  height: 50px;
+  background: #333;
+  border: 4px solid #fff;
+  border-radius: 4px;
+  box-shadow: -2px 2px 5px rgba(0, 0, 0, 0.2);
+  transform: translateY(-50%);
+  clip-path: polygon(100% 20%, 100% 80%, 0 50%);
+}
 
-  @media (max-width: 600px) {
-    width: 18px;
-    height: 26px;
+.controls-column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.header-section {
+  margin-bottom: 16px;
+  text-align: left;
+
+  @media (max-width: 992px) {
+    text-align: center;
   }
 }
 
-.wheel-light-controls {
+.controls-toolbar {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  width: 100%;
-  max-width: 320px;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+
+  @media (max-width: 992px) {
+    justify-content: center;
+  }
 }
 
-.spin-btn-light {
-  color: #fff;
-  font-weight: 600;
-  background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+.names-input {
+  font-size: 16px;
+  line-height: 1.6;
+  border-radius: 12px;
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  }
+}
+
+.spin-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.spin-button {
+  height: 56px !important;
+  font-weight: 700;
+  font-size: 20px !important;
+  letter-spacing: 1px;
+  background: linear-gradient(90deg, #1890ff, #096dd9);
   border: none;
-  border-radius: 10px;
-  transition: 0.3s;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(24, 144, 255, 0.3);
+  transition: all 0.3s ease;
 
   &:hover {
-    box-shadow: 0 6px 18px rgba(37, 117, 252, 0.3);
-    transform: scale(1.05);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(24, 144, 255, 0.4);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &[disabled] {
+    background: #d9d9d9;
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+.winner-modal {
+  .ant-modal-content {
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .ant-modal-body {
+    padding: 30px;
   }
 }
