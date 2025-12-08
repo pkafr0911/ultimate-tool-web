@@ -35,7 +35,8 @@ export const handleOCR = async (
   setStepImages: (steps: string[]) => void,
 ) => {
   if (!imageFile) {
-    return message.warning('Please upload an image first.');
+    message.warning('Please upload an image first.');
+    return null;
   }
 
   setLoading(true);
@@ -66,10 +67,11 @@ export const handleOCR = async (
     });
 
     setExtractedText(result.data.text);
-    message.success('Text extracted successfully!');
+    return result.data;
   } catch (error) {
     console.error(error);
     message.error('Failed to extract text');
+    throw error;
   } finally {
     setLoading(false);
   }
