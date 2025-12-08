@@ -1,8 +1,14 @@
 import { pages } from '@/consants';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { Button, Typography } from 'antd';
-import { TargetAndTransition, Transition, VariantLabels, motion } from 'framer-motion';
-import React from 'react';
+import {
+  AnimatePresence,
+  TargetAndTransition,
+  Transition,
+  VariantLabels,
+  motion,
+} from 'framer-motion';
+import React, { useState } from 'react';
 import { history } from 'umi';
 import './styles.less';
 
@@ -160,6 +166,7 @@ const categories = [
 
 const WelcomePage: React.FC = () => {
   const isMobile = useIsMobile();
+  const [activeFeatureIndex, setActiveFeatureIndex] = useState(0);
 
   return (
     <motion.div
@@ -259,124 +266,28 @@ const WelcomePage: React.FC = () => {
         </motion.div>
       </motion.div>
 
-      {/* 💡 Feature / Category Sections */}
-      <div className="story-sections">
-        {categories.map((category, i) => {
-          const items = pages.filter((p) => category.keys.includes(p.name));
-          const isReverse = i % 2 !== 0; // Alternate layout
+      {/* 💡 Feature / Category Sections - Sticky Scroll */}
+      <div className="sticky-scroll-container">
+        <div className="scroll-content">
+          {categories.map((category, i) => {
+            const items = pages.filter((p) => category.keys.includes(p.name));
 
-          // Special design for Playground
-          if (category.title === 'Playground') {
             return (
               <motion.div
-                key="playground-section"
-                className="feature-section feature-hero"
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-100px' }}
-                transition={{ duration: 0.8 }}
+                key={category.title}
+                className="scroll-section"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ margin: '-20% 0px -20% 0px' }}
+                onViewportEnter={() => setActiveFeatureIndex(i)}
               >
-                <div className="feature-content">
-                  <motion.div
-                    className="feature-text-block"
-                    initial={{ opacity: 0, x: -30 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.8, delay: 0.2 }}
-                  >
-                    <Text className="feature-eyebrow">{category.tagline}</Text>
-                    <Title level={2} className="feature-title">
-                      {category.title}
-                    </Title>
-                    <Paragraph className="feature-description">{category.desc}</Paragraph>
-                    <ul className="feature-list">
-                      <li>Write and execute code instantly in multiple languages</li>
-                      <li>Real-time preview and output display</li>
-                      <li>No setup required — start coding immediately</li>
-                    </ul>
-                    {category.testimonial && (
-                      <div className="inline-testimonial">
-                        <blockquote>"{category.testimonial.quote}"</blockquote>
-                        <div className="testimonial-author">
-                          <strong>{category.testimonial.author}</strong>
-                          <span>{category.testimonial.role}</span>
-                        </div>
-                      </div>
-                    )}
-                    <Button
-                      type="primary"
-                      size="large"
-                      onClick={() => history.push(items[0]?.path)}
-                    >
-                      Try Playground
-                    </Button>
-                  </motion.div>
-
-                  <motion.div
-                    className="feature-visual"
-                    initial={{ opacity: 0, x: 30 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true, amount: 0.3 }}
-                    transition={{ duration: 0.8, delay: 0.4 }}
-                  >
-                    <div className="visual-showcase stacked">
-                      {items.map((item, idx) => (
-                        <motion.div
-                          key={item.name}
-                          className="showcase-card"
-                          initial={{ opacity: 0, y: 30, scale: 0.95 }}
-                          whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                          viewport={{ once: true, amount: 0.4 }}
-                          transition={{
-                            delay: 0.5 + idx * 0.12,
-                            duration: 0.6,
-                            ease: [0.215, 0.61, 0.355, 1],
-                          }}
-                          whileHover={{
-                            scale: 1.08,
-                            y: -10,
-                            zIndex: 10,
-                            transition: { duration: 0.3 },
-                          }}
-                          onClick={() => history.push(item.path)}
-                          role="button"
-                          tabIndex={0}
-                          style={{
-                            zIndex: items.length - idx,
-                          }}
-                        >
-                          <div className="showcase-icon">{item.icon}</div>
-                          <Text className="showcase-name">{item.name}</Text>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </motion.div>
-                </div>
-              </motion.div>
-            );
-          }
-          return (
-            <motion.section
-              key={category.title}
-              className={`feature-section ${isReverse ? 'reverse' : ''}`}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-100px' }}
-              transition={{ duration: 0.8 }}
-            >
-              <div className="feature-content">
-                <motion.div
-                  className="feature-text-block"
-                  initial={{ opacity: 0, x: isReverse ? 30 : -30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.8, delay: 0.2 }}
-                >
+                <div className="feature-text-block">
                   {category.tagline && <Text className="feature-eyebrow">{category.tagline}</Text>}
                   <Title level={2} className="feature-title">
                     {category.title}
                   </Title>
                   <Paragraph className="feature-description">{category.desc}</Paragraph>
+
                   {category.features && (
                     <ul className="feature-list">
                       {category.features.map((feature, idx) => (
@@ -384,6 +295,7 @@ const WelcomePage: React.FC = () => {
                       ))}
                     </ul>
                   )}
+
                   {category.testimonial && (
                     <div className="inline-testimonial">
                       <blockquote>"{category.testimonial.quote}"</blockquote>
@@ -393,89 +305,85 @@ const WelcomePage: React.FC = () => {
                       </div>
                     </div>
                   )}
-                  <Button type="primary" size="large" onClick={() => history.push(items[0]?.path)}>
+
+                  <Button
+                    type="primary"
+                    size="large"
+                    onClick={() => history.push(items[0]?.path)}
+                    className="explore-btn"
+                  >
                     Explore {category.title}
                   </Button>
-                </motion.div>
+                </div>
 
-                <motion.div
-                  className="feature-visual"
-                  initial={{ opacity: 0, x: isReverse ? -30 : 30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.8, delay: 0.4 }}
-                >
-                  <div className="visual-grid-section">
-                    {items.length > 4 ? (
-                      <div className="tool-grid-stacked">
-                        {items.slice(0, 6).map((item, idx) => (
-                          <motion.div
-                            key={item.name}
-                            className="tool-card"
-                            initial={{ opacity: 0, y: 40, scale: 0.92 }}
-                            whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                            viewport={{ once: true, amount: 0.4 }}
-                            transition={{
-                              delay: idx * 0.1,
-                              duration: 0.6,
-                              ease: [0.215, 0.61, 0.355, 1],
-                            }}
-                            whileHover={{
-                              scale: 1.06,
-                              y: -12,
-                              zIndex: 20,
-                              transition: { duration: 0.3 },
-                            }}
-                            onClick={() => history.push(item.path)}
-                            role="button"
-                            tabIndex={0}
-                          >
-                            <div className="tool-icon">{item.icon}</div>
-                            <Title level={5} className="tool-name">
-                              {item.name}
-                            </Title>
-                            {!isMobile && <Paragraph className="tool-desc">{item.desc}</Paragraph>}
-                          </motion.div>
-                        ))}
-                      </div>
-                    ) : (
+                {/* Mobile-only visual */}
+                {isMobile && (
+                  <div className="mobile-visual">
+                    <div className="visual-grid-section">
                       <div className="tool-grid">
-                        {items.map((item, idx) => (
-                          <motion.div
-                            key={item.name}
-                            className="tool-card"
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true, amount: 0.5 }}
-                            transition={{
-                              delay: idx * 0.1,
-                              duration: 0.6,
-                              ease: [0.215, 0.61, 0.355, 1],
-                            }}
-                            whileHover={{
-                              scale: 1.06,
-                              y: -10,
-                              transition: { duration: 0.3 },
-                            }}
-                            onClick={() => history.push(item.path)}
-                            role="button"
-                            tabIndex={0}
-                          >
+                        {items.slice(0, 4).map((item) => (
+                          <div key={item.name} className="tool-card-mini">
                             <div className="tool-icon">{item.icon}</div>
-                            <Title level={5} className="tool-name">
-                              {item.name}
-                            </Title>
-                            {!isMobile && <Paragraph className="tool-desc">{item.desc}</Paragraph>}
-                          </motion.div>
+                            <div className="tool-name">{item.name}</div>
+                          </div>
                         ))}
                       </div>
-                    )}
+                    </div>
                   </div>
-                </motion.div>
-              </div>
-            </motion.section>
-          );
-        })}
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {!isMobile && (
+          <div className="sticky-visual-wrapper">
+            <div className="sticky-visual">
+              <AnimatePresence mode="wait">
+                {(() => {
+                  const category = categories[activeFeatureIndex];
+                  if (!category) return null;
+                  const items = pages.filter((p) => category.keys.includes(p.name));
+
+                  return (
+                    <motion.div
+                      key={category.title}
+                      className="visual-content-card"
+                      initial={{ opacity: 0, x: 50, scale: 0.9 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      exit={{ opacity: 0, x: -50, scale: 0.9 }}
+                      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <div className="visual-header">
+                        <div className="visual-icon-large">{items[0]?.icon}</div>
+                        <div className="visual-title-large">{category.title}</div>
+                      </div>
+
+                      <div className="visual-grid-section">
+                        <div className="tool-grid">
+                          {items.slice(0, 6).map((item, idx) => (
+                            <motion.div
+                              key={item.name}
+                              className="tool-card-mini"
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.1 + idx * 0.05 }}
+                            >
+                              <div className="tool-icon">{item.icon}</div>
+                              <div className="tool-name">{item.name}</div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className={`visual-bg visual-bg-${activeFeatureIndex % 4}`} />
+                    </motion.div>
+                  );
+                })()}
+              </AnimatePresence>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 🎯 Final CTA Section */}
