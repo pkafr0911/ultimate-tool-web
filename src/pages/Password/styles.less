@@ -1,103 +1,136 @@
+.password-container {
+  min-height: calc(100vh - 56px);
+  padding: 24px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
 .password-card {
-  margin: 40px auto;
-  padding: 16px;
   border-radius: 16px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
 
-  .ant-card-head {
-    text-align: center;
+  &.main-card {
+    .ant-card-head {
+      border-bottom: 1px solid #f0f0f0;
+      padding: 0 24px;
+      min-height: 64px;
 
-    .ant-card-head-title {
-      font-weight: 600;
-      font-size: 20px;
+      .ant-card-head-title {
+        font-size: 18px;
+        font-weight: 600;
+      }
+    }
+
+    .ant-card-body {
+      padding: 32px;
     }
   }
 
-  .ant-space {
+  &.history-card {
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+
+    .ant-list-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.2s;
+
+      &:hover {
+        background: #fafafa;
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+}
+
+.password-display-section {
+  margin-bottom: 32px;
+
+  .password-box {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
+    align-items: center;
+    background: #f9f9f9;
+    border: 2px solid #e8e8e8;
+    border-radius: 12px;
+    padding: 8px 16px;
+    margin-bottom: 16px;
+    transition: all 0.3s;
+
+    &:hover,
+    &:focus-within {
+      border-color: #1890ff;
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(24, 144, 255, 0.1);
+    }
+
+    .password-input {
+      font-family: 'Fira Code', monospace;
+      font-size: 24px;
+      font-weight: 600;
+      color: #333;
+      letter-spacing: 1px;
+      text-align: center;
+
+      @media (max-width: 576px) {
+        font-size: 18px;
+      }
+    }
   }
 
-  .ant-input-number,
-  .ant-input {
-    width: 100%;
-  }
+  .strength-meter {
+    .strength-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
 
-  .ant-checkbox-wrapper {
-    font-size: 15px;
+    .ant-progress-inner {
+      background-color: #f0f0f0;
+    }
   }
+}
 
-  .ant-btn-primary {
-    height: 38px;
-    margin-top: 8px;
-    font-weight: 500;
+.config-section {
+  .length-slider {
+    margin-bottom: 24px;
+    background: #fafafa;
+    padding: 16px;
     border-radius: 8px;
-  }
 
-  .ant-typography-copy {
-    margin-top: 8px;
-    color: #1890ff;
-    font-weight: 500;
-    text-align: center;
-  }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
 
-  // Description text
-  .ant-typography-secondary {
-    font-size: 14px;
-    text-align: center;
-  }
-}
-.password-output {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 16px;
-  padding: 12px;
-  background-color: #fafafa;
-  border: 1px solid #f0f0f0;
-  border-radius: 8px;
-
-  .password-label {
-    color: #555;
-    font-size: 15px;
-  }
-
-  .password-display {
-    padding: 8px 12px;
-    font-size: 15px;
-    font-family: 'Fira Code', monospace;
-    letter-spacing: 0.5px;
-    background-color: #fff;
-    border-radius: 6px;
-    transition: border-color 0.2s ease;
-
-    &:hover {
-      border-color: #40a9ff;
+      .length-value {
+        color: #1890ff;
+        font-size: 16px;
+      }
     }
   }
 
-  .password-copy {
-    color: #1677ff;
-    font-size: 14px;
-    font-family: 'Fira Code', monospace;
-    text-align: center;
-    cursor: pointer;
-  }
-}
-
-// --- Responsive ---
-@media (max-width: 576px) {
-  .password-card {
-    margin: 20px;
-    padding: 12px;
-
-    .ant-card-head-title {
-      font-size: 18px;
-    }
-
+  .options-grid {
     .ant-checkbox-wrapper {
-      font-size: 14px;
+      font-size: 15px;
+      user-select: none;
+      padding: 8px;
+      border-radius: 6px;
+      width: 100%;
+      transition: background 0.2s;
+
+      &:hover {
+        background: #f5f5f5;
+      }
     }
+  }
+}
+
+@media (max-width: 992px) {
+  .password-container {
+    padding: 16px;
   }
 }

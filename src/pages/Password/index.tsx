@@ -1,120 +1,353 @@
-import { Button, Card, Checkbox, Input, InputNumber, Space, Typography } from 'antd';
-import React, { useState } from 'react';
+import {
+  CopyOutlined,
+  DeleteOutlined,
+  HistoryOutlined,
+  ReloadOutlined,
+  SafetyCertificateOutlined,
+  SettingOutlined,
+  ThunderboltOutlined,
+} from '@ant-design/icons';
+import {
+  Button,
+  Card,
+  Checkbox,
+  Col,
+  Divider,
+  Input,
+  List,
+  Progress,
+  Row,
+  Slider,
+  Space,
+  Switch,
+  Tooltip,
+  Typography,
+  message,
+} from 'antd';
+import React, { useEffect, useState } from 'react';
 import './styles.less';
 
-const { Text, Paragraph } = Typography;
+const { Title, Text, Paragraph } = Typography;
 
-// --- Password generation helper ---
-function generatePassword(
-  length: number,
-  opts: { lower: boolean; upper: boolean; number: boolean; special: boolean; hex: boolean },
-) {
-  const lower = 'abcdefghijklmnopqrstuvwxyz';
-  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const numbers = '0123456789';
-  const special = '!@#$%^&*()_+-=[]{}|;:,./<>?';
-  const hex = 'ABCDEFabcdef0123456789';
-
-  let pool = '';
-  if (opts.lower) pool += lower;
-  if (opts.upper) pool += upper;
-  if (opts.number) pool += numbers;
-  if (opts.special) pool += special;
-  if (opts.hex) pool += hex;
-
-  if (!pool) return '';
-  let pw = '';
-  for (let i = 0; i < length; i++) pw += pool[Math.floor(Math.random() * pool.length)];
-  return pw;
+interface PasswordOptions {
+  lower: boolean;
+  upper: boolean;
+  number: boolean;
+  special: boolean;
+  hex: boolean;
+  excludeAmbiguous: boolean;
 }
 
-// --- Main Component ---
 const PasswordPage: React.FC = () => {
-  const [length, setLength] = useState(12);
-  const [opts, setOpts] = useState({
+  const [length, setLength] = useState(16);
+  const [opts, setOpts] = useState<PasswordOptions>({
     lower: true,
     upper: true,
     number: true,
     special: true,
     hex: false,
+    excludeAmbiguous: false,
   });
-  const [value, setValue] = useState('');
+  const [password, setPassword] = useState('');
+  const [strength, setStrength] = useState(0);
+  const [history, setHistory] = useState<string[]>([]);
 
-  const regenerate = () => {
-    setValue(generatePassword(length, opts));
+  // --- Logic ---
+
+  const calculateStrength = (pwd: string) => {
+    if (!pwd) return 0;
+    let score = 0;
+    if (pwd.length > 8) score += 20;
+    if (pwd.length > 12) score += 20;
+    if (/[A-Z]/.test(pwd)) score += 15;
+    if (/[a-z]/.test(pwd)) score += 15;
+    if (/[0-9]/.test(pwd)) score += 15;
+    if (/[^A-Za-z0-9]/.test(pwd)) score += 15;
+    return Math.min(100, score);
+  };
+
+  const generatePassword = () => {
+    const lower = 'abcdefghijklmnopqrstuvwxyz';
+    const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    const special = '!@#$%^&*()_+-=[]{}|;:,./<>?';
+    const hex = 'ABCDEFabcdef0123456789';
+    const ambiguous = 'l1IO0';
+
+    let pool = '';
+    if (opts.hex) {
+      pool = hex;
+    } else {
+      if (opts.lower) pool += lower;
+      if (opts.upper) pool += upper;
+      if (opts.number) pool += numbers;
+      if (opts.special) pool += special;
+    }
+
+    if (opts.excludeAmbiguous) {
+      pool = pool
+        .split('')
+        .filter((c) => !ambiguous.includes(c))
+        .join('');
+    }
+
+    if (!pool) {
+      setPassword('');
+      setStrength(0);
+      return;
+    }
+
+    let newPassword = '';
+    const array = new Uint32Array(length);
+    window.crypto.getRandomValues(array);
+
+    for (let i = 0; i < length; i++) {
+      newPassword += pool[array[i] % pool.length];
+    }
+
+    setPassword(newPassword);
+    setStrength(calculateStrength(newPassword));
+    addToHistory(newPassword);
+  };
+
+  const addToHistory = (pwd: string) => {
+    setHistory((prev) => {
+      const newHistory = [pwd, ...prev.filter((p) => p !== pwd)].slice(0, 10);
+      return newHistory;
+    });
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    message.success('Password copied to clipboard!');
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    message.success('History cleared');
+  };
+
+  // Auto-generate on mount
+  useEffect(() => {
+    generatePassword();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Get strength color
+  const getStrengthColor = () => {
+    if (strength < 40) return '#ff4d4f';
+    if (strength < 70) return '#faad14';
+    return '#52c41a';
+  };
+
+  const getStrengthLabel = () => {
+    if (strength < 40) return 'Weak';
+    if (strength < 70) return 'Medium';
+    return 'Strong';
   };
 
   return (
-    <Card title="🔐 Password Generator" className="password-card">
-      <Space direction="vertical" style={{ width: '100%' }}>
-        {/* --- Page Description --- */}
-        <Paragraph type="secondary" style={{ marginBottom: 8 }}>
-          This page helps you quickly generate secure passwords with custom settings such as length,
-          character types, and an optional hex mode.
-        </Paragraph>
+    <div className="password-container">
+      <Row gutter={[24, 24]} justify="center">
+        <Col xs={24} lg={14}>
+          <Card
+            className="password-card main-card"
+            bordered={false}
+            title={
+              <Space>
+                <SafetyCertificateOutlined style={{ color: '#1890ff' }} />
+                <span>Secure Password Generator</span>
+              </Space>
+            }
+          >
+            {/* Display Section */}
+            <div className="password-display-section">
+              <div className="password-box">
+                <Input value={password} readOnly className="password-input" bordered={false} />
+                <Space>
+                  <Tooltip title="Regenerate">
+                    <Button
+                      type="text"
+                      icon={<ReloadOutlined />}
+                      onClick={generatePassword}
+                      size="large"
+                    />
+                  </Tooltip>
+                  <Tooltip title="Copy">
+                    <Button
+                      type="primary"
+                      icon={<CopyOutlined />}
+                      onClick={() => copyToClipboard(password)}
+                      size="large"
+                      shape="circle"
+                    />
+                  </Tooltip>
+                </Space>
+              </div>
 
-        {/* --- Options --- */}
-        <InputNumber
-          min={4}
-          max={64}
-          value={length}
-          onChange={(v) => setLength(Number(v))}
-          addonBefore="Length"
-        />
-        <Checkbox
-          checked={opts.lower}
-          onChange={(e) => setOpts({ ...opts, lower: e.target.checked })}
-        >
-          Lowercase
-        </Checkbox>
-        <Checkbox
-          checked={opts.upper}
-          onChange={(e) => setOpts({ ...opts, upper: e.target.checked })}
-        >
-          Uppercase
-        </Checkbox>
-        <Checkbox
-          checked={opts.number}
-          onChange={(e) => setOpts({ ...opts, number: e.target.checked })}
-        >
-          Numbers
-        </Checkbox>
-        <Checkbox
-          checked={opts.special}
-          onChange={(e) => setOpts({ ...opts, special: e.target.checked })}
-        >
-          Special Characters
-        </Checkbox>
-        <Checkbox checked={opts.hex} onChange={(e) => setOpts({ ...opts, hex: e.target.checked })}>
-          Hex Letters (A–F, 0–9)
-        </Checkbox>
+              <div className="strength-meter">
+                <div className="strength-label">
+                  <Text type="secondary">Strength: </Text>
+                  <Text strong style={{ color: getStrengthColor() }}>
+                    {getStrengthLabel()}
+                  </Text>
+                </div>
+                <Progress
+                  percent={strength}
+                  showInfo={false}
+                  strokeColor={getStrengthColor()}
+                  trailColor="rgba(0,0,0,0.05)"
+                  size="small"
+                />
+              </div>
+            </div>
 
-        {/* --- Generate Button --- */}
-        <Button type="primary" onClick={regenerate}>
-          Generate Password
-        </Button>
+            <Divider />
 
-        {/* --- Output --- */}
-        <div className="password-output">
-          <Typography.Text strong className="password-label">
-            Generated Password:
-          </Typography.Text>
+            {/* Configuration Section */}
+            <div className="config-section">
+              <Title level={5}>
+                <SettingOutlined /> Configuration
+              </Title>
 
-          <Input
-            value={value}
-            readOnly
-            placeholder="Click Generate to create a password"
-            className="password-display"
-          />
+              <div className="length-slider">
+                <div className="slider-header">
+                  <Text>Password Length</Text>
+                  <Text strong className="length-value">
+                    {length}
+                  </Text>
+                </div>
+                <Slider
+                  min={4}
+                  max={64}
+                  value={length}
+                  onChange={setLength}
+                  tooltip={{ formatter: (value) => `${value} chars` }}
+                />
+              </div>
 
-          {value && (
-            <Typography.Text copyable className="password-copy">
-              {value}
-            </Typography.Text>
-          )}
-        </div>
-      </Space>
-    </Card>
+              <Row gutter={[16, 16]} className="options-grid">
+                <Col span={12}>
+                  <Checkbox
+                    checked={opts.upper}
+                    onChange={(e) => setOpts({ ...opts, upper: e.target.checked })}
+                    disabled={opts.hex}
+                  >
+                    Uppercase (A-Z)
+                  </Checkbox>
+                </Col>
+                <Col span={12}>
+                  <Checkbox
+                    checked={opts.lower}
+                    onChange={(e) => setOpts({ ...opts, lower: e.target.checked })}
+                    disabled={opts.hex}
+                  >
+                    Lowercase (a-z)
+                  </Checkbox>
+                </Col>
+                <Col span={12}>
+                  <Checkbox
+                    checked={opts.number}
+                    onChange={(e) => setOpts({ ...opts, number: e.target.checked })}
+                  >
+                    Numbers (0-9)
+                  </Checkbox>
+                </Col>
+                <Col span={12}>
+                  <Checkbox
+                    checked={opts.special}
+                    onChange={(e) => setOpts({ ...opts, special: e.target.checked })}
+                    disabled={opts.hex}
+                  >
+                    Special (!@#$)
+                  </Checkbox>
+                </Col>
+                <Col span={12}>
+                  <Checkbox
+                    checked={opts.excludeAmbiguous}
+                    onChange={(e) => setOpts({ ...opts, excludeAmbiguous: e.target.checked })}
+                  >
+                    Exclude Ambiguous (l, 1, O, 0)
+                  </Checkbox>
+                </Col>
+                <Col span={12}>
+                  <Space>
+                    <Text>Hex Mode</Text>
+                    <Switch
+                      checked={opts.hex}
+                      onChange={(checked) => setOpts({ ...opts, hex: checked })}
+                      size="small"
+                    />
+                  </Space>
+                </Col>
+              </Row>
+
+              <Button
+                type="primary"
+                block
+                size="large"
+                icon={<ThunderboltOutlined />}
+                onClick={generatePassword}
+                style={{ marginTop: 24 }}
+              >
+                Generate New Password
+              </Button>
+            </div>
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={8}>
+          <Card
+            className="password-card history-card"
+            bordered={false}
+            title={
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <Space>
+                  <HistoryOutlined />
+                  <span>History</span>
+                </Space>
+                {history.length > 0 && (
+                  <Button
+                    type="text"
+                    danger
+                    size="small"
+                    icon={<DeleteOutlined />}
+                    onClick={clearHistory}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+            }
+          >
+            <List
+              dataSource={history}
+              renderItem={(item) => (
+                <List.Item
+                  className="history-item"
+                  actions={[
+                    <Tooltip title="Copy">
+                      <Button
+                        type="text"
+                        icon={<CopyOutlined />}
+                        onClick={() => copyToClipboard(item)}
+                      />
+                    </Tooltip>,
+                  ]}
+                >
+                  <Text code ellipsis style={{ width: '100%' }}>
+                    {item}
+                  </Text>
+                </List.Item>
+              )}
+              locale={{ emptyText: 'No history yet' }}
+            />
+          </Card>
+        </Col>
+      </Row>
+    </div>
   );
 };
 
