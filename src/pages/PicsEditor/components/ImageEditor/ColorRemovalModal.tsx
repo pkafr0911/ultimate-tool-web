@@ -9,6 +9,7 @@ import {
   InputNumber,
   Tooltip,
   Tour,
+  ColorPicker,
   type TourProps,
 } from 'antd';
 import { UndoOutlined, RedoOutlined, QuestionCircleOutlined } from '@ant-design/icons';
@@ -41,6 +42,11 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
   const [previewMode, setPreviewMode] = useState<'normal' | 'mask'>('normal');
   const [invert, setInvert] = useState(false);
   const [feather, setFeather] = useState(0);
+  const [activeColor, setActiveColor] = useState(selectedColor || '#000000');
+
+  useEffect(() => {
+    if (selectedColor) setActiveColor(selectedColor);
+  }, [selectedColor]);
 
   // Brush state
   const [brushMode, setBrushMode] = useState<'remove' | 'keep'>('remove');
@@ -107,7 +113,7 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
 
   // Initialize mask when params change
   useEffect(() => {
-    if (!open || !canvasRef.current || !selectedColor || !maskCanvasRef.current) return;
+    if (!open || !canvasRef.current || !activeColor || !maskCanvasRef.current) return;
 
     const sourceCanvas = canvasRef.current;
     const maskCanvas = maskCanvasRef.current;
@@ -123,7 +129,7 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
 
     const alphaMap = calculateColorRemovalAlphaMap(
       imageData.data,
-      selectedColor,
+      activeColor,
       tolerance,
       invert,
       feather,
@@ -149,7 +155,7 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
     setHistoryIndex(0);
 
     updatePreview();
-  }, [open, tolerance, invert, feather, selectedColor, canvasRef]);
+  }, [open, tolerance, invert, feather, activeColor, canvasRef]);
 
   const updatePreview = () => {
     if (!canvasRef.current || !previewCanvasRef.current || !maskCanvasRef.current) return;
@@ -430,18 +436,11 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
             <div style={{ marginBottom: 16 }}>
               <div style={{ marginBottom: 8 }}>
                 <strong>Selected Color:</strong>{' '}
-                <span
-                  style={{
-                    display: 'inline-block',
-                    width: 24,
-                    height: 24,
-                    background: selectedColor || '#000',
-                    border: '1px solid #ccc',
-                    verticalAlign: 'middle',
-                    marginLeft: 8,
-                  }}
+                <ColorPicker
+                  value={activeColor}
+                  onChange={(c) => setActiveColor(c.toHexString())}
+                  showText
                 />
-                <span style={{ marginLeft: 8 }}>{selectedColor}</span>
               </div>
             </div>
 
