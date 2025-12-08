@@ -7,17 +7,16 @@
     hideInMenu: true,
   },
   {
-    path: '/welcome2',
-    name: 'welcome',
-    icon: 'smile',
-    component: './Welcome2',
-    hideInMenu: true,
-  },
-  {
     path: '/playground',
     name: 'playground',
     icon: 'appstore',
     component: './Playground',
+  },
+  {
+    path: '/webflow-scroll',
+    name: 'Webflow Scroll',
+    icon: 'verticalAlignMiddle',
+    component: './WebflowScroll',
   },
   {
     key: 'utility',
