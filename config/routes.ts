@@ -7,6 +7,13 @@
     hideInMenu: true,
   },
   {
+    path: '/welcome2',
+    name: 'welcome',
+    icon: 'smile',
+    component: './Welcome2',
+    hideInMenu: true,
+  },
+  {
     path: '/playground',
     name: 'playground',
     icon: 'appstore',
