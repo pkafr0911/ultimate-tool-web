@@ -1,76 +1,72 @@
 import { handleCopy } from '@/helpers';
-import { Alert, Card, Input, Space, Tabs, Tag, Tooltip, Typography } from 'antd';
+import { QuestionCircleOutlined } from '@ant-design/icons';
+import {
+  Alert,
+  Button,
+  Card,
+  Col,
+  Collapse,
+  Input,
+  List,
+  Row,
+  Space,
+  Switch,
+  Table,
+  Tabs,
+  Tag,
+  Tour,
+  type TourProps,
+  Typography,
+} from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import { commonPatterns } from './constants';
 import './styles.less';
 
 const { TextArea, Search } = Input;
 const { Paragraph, Text, Title } = Typography;
+const { Panel } = Collapse;
 
-const explainRegex = (pattern: string): string[] => {
-  const explanations: string[] = [];
+interface MatchGroup {
+  key: string;
+  index: number;
+  content: string;
+  groups: string[];
+}
 
-  if (!pattern) return ['No regex pattern entered.'];
+const explainRegex = (pattern: string): { title: string; desc: string }[] => {
+  const explanations: { title: string; desc: string }[] = [];
+
+  if (!pattern) return [{ title: 'Empty', desc: 'No regex pattern entered.' }];
 
   try {
-    const tokens = pattern.match(/\\.|(\[\^?.*?\])|(\(\?:?.*?\))|([*+?^$|(){}])/g) || [];
+    // Simple tokenizer for explanation
+    const tokens = pattern.match(/\\.|(\[\^?.*?\])|(\(\?:?.*?\))|([*+?^$|(){}])|./g) || [];
 
     for (const token of tokens) {
-      switch (token) {
-        case '^':
-          explanations.push('^ → Matches the start of a line or string.');
-          break;
-        case '$':
-          explanations.push('$ → Matches the end of a line or string.');
-          break;
-        case '.':
-          explanations.push('. → Matches any character except newline.');
-          break;
-        case '*':
-          explanations.push('* → Matches 0 or more repetitions.');
-          break;
-        case '+':
-          explanations.push('+ → Matches 1 or more repetitions.');
-          break;
-        case '?':
-          explanations.push('? → Makes the previous token optional (0 or 1 times).');
-          break;
-        case '|':
-          explanations.push('| → Acts as OR between patterns.');
-          break;
-        case '\\d':
-          explanations.push('\\d → Matches any digit (0–9).');
-          break;
-        case '\\D':
-          explanations.push('\\D → Matches any non-digit.');
-          break;
-        case '\\w':
-          explanations.push('\\w → Matches any word character (letters, digits, underscore).');
-          break;
-        case '\\W':
-          explanations.push('\\W → Matches any non-word character.');
-          break;
-        case '\\s':
-          explanations.push('\\s → Matches whitespace (space, tab, newline).');
-          break;
-        case '\\S':
-          explanations.push('\\S → Matches any non-whitespace character.');
-          break;
-        default:
-          if (token.startsWith('[')) explanations.push(`${token} → Character set or range.`);
-          else if (token.startsWith('('))
-            explanations.push(`${token} → Capturing or non-capturing group.`);
-          else if (token.startsWith('\\'))
-            explanations.push(`${token} → Escaped character or special sequence.`);
-          else explanations.push(`${token} → Literal character.`);
-          break;
-      }
+      if (token === '^') explanations.push({ title: '^', desc: 'Start of line/string' });
+      else if (token === '$') explanations.push({ title: '$', desc: 'End of line/string' });
+      else if (token === '.')
+        explanations.push({ title: '.', desc: 'Any character (except newline)' });
+      else if (token === '*') explanations.push({ title: '*', desc: '0 or more repetitions' });
+      else if (token === '+') explanations.push({ title: '+', desc: '1 or more repetitions' });
+      else if (token === '?') explanations.push({ title: '?', desc: 'Optional (0 or 1)' });
+      else if (token === '|') explanations.push({ title: '|', desc: 'OR operator' });
+      else if (token === '\\d') explanations.push({ title: '\\d', desc: 'Digit (0-9)' });
+      else if (token === '\\D') explanations.push({ title: '\\D', desc: 'Non-digit' });
+      else if (token === '\\w')
+        explanations.push({ title: '\\w', desc: 'Word char (a-z, A-Z, 0-9, _)' });
+      else if (token === '\\W') explanations.push({ title: '\\W', desc: 'Non-word char' });
+      else if (token === '\\s') explanations.push({ title: '\\s', desc: 'Whitespace' });
+      else if (token === '\\S') explanations.push({ title: '\\S', desc: 'Non-whitespace' });
+      else if (token.startsWith('['))
+        explanations.push({ title: token, desc: 'Character set/range' });
+      else if (token.startsWith('(')) explanations.push({ title: token, desc: 'Group' });
+      else if (token.startsWith('\\'))
+        explanations.push({ title: token, desc: 'Escaped character' });
+      else explanations.push({ title: token, desc: 'Literal character' });
     }
-
-    if (explanations.length === 0)
-      explanations.push('No special tokens found. Probably a literal string.');
   } catch (e: any) {
-    explanations.push(`Error parsing regex: ${e.message}`);
+    explanations.push({ title: 'Error', desc: e.message });
   }
 
   return explanations;
@@ -80,48 +76,139 @@ const RegexTester: React.FC = () => {
   const [pattern, setPattern] = useState('^\\w+$');
   const [flags, setFlags] = useState('gm');
   const [text, setText] = useState('asdasd\n1234\n@hello');
+  const [replaceText, setReplaceText] = useState('');
+  const [isReplaceMode, setIsReplaceMode] = useState(false);
+  const [openTour, setOpenTour] = useState(false);
+
   const [error, setError] = useState('');
   const [highlightedHTML, setHighlightedHTML] = useState('');
-  const [explanation, setExplanation] = useState<string[]>([]);
+  const [explanation, setExplanation] = useState<{ title: string; desc: string }[]>([]);
+  const [matches, setMatches] = useState<MatchGroup[]>([]);
+  const [replacedResult, setReplacedResult] = useState('');
+
   const [searchTerm, setSearchTerm] = useState('');
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
 
-  const updateHighlight = (p = pattern, f = flags, t = text) => {
+  const patternInputRef = useRef(null);
+  const flagsInputRef = useRef(null);
+  const replaceToggleRef = useRef(null);
+  const editorRef = useRef(null);
+  const infoTabsRef = useRef(null);
+  const cheatsheetRef = useRef(null);
+
+  const steps: TourProps['steps'] = [
+    {
+      title: 'Regex Pattern',
+      description: 'Enter your regular expression here. No need for surrounding slashes.',
+      target: () => patternInputRef.current,
+    },
+    {
+      title: 'Flags',
+      description: 'Set regex flags like "g" (global), "i" (case insensitive), or "m" (multiline).',
+      target: () => flagsInputRef.current,
+    },
+    {
+      title: 'Replace Mode',
+      description:
+        'Toggle this to test substitution. You can use capture groups like $1 in the replacement string.',
+      target: () => replaceToggleRef.current,
+    },
+    {
+      title: 'Test String',
+      description: 'Type or paste your text here. Matches will be highlighted in real-time.',
+      target: () => editorRef.current,
+    },
+    {
+      title: 'Analysis & Tools',
+      description: 'View detailed match info, token explanations, or pick from common patterns.',
+      target: () => infoTabsRef.current,
+    },
+    {
+      title: 'Cheatsheet',
+      description: 'Quick reference for common regex syntax.',
+      target: () => cheatsheetRef.current,
+    },
+  ];
+
+  const processRegex = (p = pattern, f = flags, t = text, r = replaceText) => {
     try {
-      const re = new RegExp(p, f);
       setError('');
       setExplanation(explainRegex(p));
 
+      if (!p) {
+        setHighlightedHTML(t.replace(/\n/g, '<br/>'));
+        setMatches([]);
+        setReplacedResult(t);
+        return;
+      }
+
+      const re = new RegExp(p, f);
+
+      // 1. Highlighting & Matches
       let highlighted = '';
       let lastIndex = 0;
       let match: RegExpExecArray | null;
+      const foundMatches: MatchGroup[] = [];
+      let matchCount = 0;
 
-      while ((match = re.exec(t)) !== null) {
+      // We need to clone the regex for iteration if it's global, otherwise loop once
+      const iterRegex = new RegExp(p, f.includes('g') ? f : f + 'g');
+
+      // Prevent infinite loops with empty matches
+      let loopSafety = 0;
+
+      while ((match = iterRegex.exec(t)) !== null) {
+        if (loopSafety++ > 10000) break; // Safety break
+
         const start = match.index;
         const end = start + match[0].length;
-        highlighted += t.slice(lastIndex, start);
-        highlighted += `<mark>${match[0]}</mark>`;
+        const content = match[0];
+
+        // Highlight
+        highlighted += t.slice(lastIndex, start).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        highlighted += `<mark title="Match ${matchCount + 1}">${content
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')}</mark>`;
         lastIndex = end;
-        if (re.lastIndex === match.index) re.lastIndex++;
+
+        // Store match info
+        foundMatches.push({
+          key: `${start}-${end}`,
+          index: start,
+          content: content,
+          groups: match.slice(1),
+        });
+
+        matchCount++;
+
+        if (!f.includes('g')) break;
+        if (match[0].length === 0) iterRegex.lastIndex++; // Avoid infinite loop on zero-length matches
       }
 
-      highlighted += t.slice(lastIndex);
+      highlighted += t.slice(lastIndex).replace(/</g, '&lt;').replace(/>/g, '&gt;');
       setHighlightedHTML(highlighted.replace(/\n/g, '<br/>'));
+      setMatches(foundMatches);
+
+      // 2. Replacement
+      if (isReplaceMode) {
+        setReplacedResult(t.replace(re, r));
+      }
     } catch (e: any) {
       setError(e.message);
-      setHighlightedHTML(t.replace(/\n/g, '<br/>'));
-      setExplanation([`Error: ${e.message}`]);
+      setHighlightedHTML(t.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br/>'));
+      setMatches([]);
+      setReplacedResult(t);
     }
   };
 
   useEffect(() => {
-    updateHighlight(pattern, flags, text);
-  }, [pattern, flags, text]);
+    processRegex(pattern, flags, text, replaceText);
+  }, [pattern, flags, text, replaceText, isReplaceMode]);
 
-  const syncScroll = () => {
-    if (!textAreaRef.current || !highlightRef.current) return;
-    highlightRef.current.scrollTop = textAreaRef.current.scrollTop;
+  const syncScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+    if (!highlightRef.current) return;
+    highlightRef.current.scrollTop = e.currentTarget.scrollTop;
+    highlightRef.current.scrollLeft = e.currentTarget.scrollLeft;
   };
 
   const handlePatternClick = (newPattern: string, examples: string[]) => {
@@ -138,124 +225,322 @@ const RegexTester: React.FC = () => {
       item.pattern.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  const columns = [
+    {
+      title: '#',
+      dataIndex: 'index',
+      key: 'index',
+      width: 60,
+      render: (_: any, __: any, index: number) => index + 1,
+    },
+    {
+      title: 'Match',
+      dataIndex: 'content',
+      key: 'content',
+      ellipsis: true,
+    },
+    {
+      title: 'Groups',
+      dataIndex: 'groups',
+      key: 'groups',
+      render: (groups: string[]) => (
+        <Space wrap>
+          {groups.map((g, i) => (
+            <Tag key={i} color="blue">
+              ${i + 1}: {g}
+            </Tag>
+          ))}
+        </Space>
+      ),
+    },
+  ];
+
   return (
-    <Card className="regex-card-light" title="🧩 Regex Tester" variant={'borderless'}>
-      {/* Page Description */}
-      <Paragraph type="secondary" className="regex-description">
-        This tool helps you{' '}
-        <Text strong>test, debug, and understand Regular Expressions (Regex)</Text> in real time.
-        Enter a regex pattern and text — matches will be highlighted instantly.
-      </Paragraph>
-      <div className="regex-header">
-        <Input
-          className="regex-input-light"
-          placeholder="Enter regex pattern (without / /)"
-          value={pattern}
-          onChange={(e) => setPattern(e.target.value)}
-        />
-        <Input
-          className="regex-flags-light"
-          placeholder="Flags (e.g. gim)"
-          value={flags}
-          onChange={(e) => setFlags(e.target.value)}
-        />
-      </div>
+    <div className="regex-container">
+      <Row gutter={[16, 16]}>
+        {/* LEFT COLUMN: Inputs & Editor */}
 
-      <Tabs
-        defaultActiveKey="1"
-        items={[
-          {
-            key: '1',
-            label: 'Text',
-            children: (
-              <div className="regex-textarea-wrapper">
-                <div
-                  ref={highlightRef}
-                  className="regex-highlights"
-                  dangerouslySetInnerHTML={{ __html: highlightedHTML }}
+        <Col xs={24} lg={14} xl={15}>
+          <Card
+            title={
+              <>
+                {'🧪 Regex Editor'}
+                <Button
+                  type="text"
+                  ghost
+                  icon={<QuestionCircleOutlined />}
+                  onClick={() => setOpenTour(true)}
                 />
-                <TextArea
-                  ref={textAreaRef}
-                  value={text}
-                  onScroll={syncScroll}
-                  onChange={(e) => setText(e.target.value)}
-                  rows={8}
-                  className="regex-textarea-overlay"
-                />
+              </>
+            }
+            className="regex-card"
+            bordered={false}
+          >
+            <Space direction="vertical" style={{ width: '100%' }} size="middle">
+              {/* Regex Input */}
+              <div className="regex-input-group">
+                <div ref={patternInputRef} style={{ flex: 1 }}>
+                  <Input
+                    addonBefore={<span className="regex-slash">/</span>}
+                    addonAfter={<span className="regex-slash">/</span>}
+                    placeholder="Expression"
+                    value={pattern}
+                    onChange={(e) => setPattern(e.target.value)}
+                    className="regex-pattern-input"
+                    size="large"
+                  />
+                </div>
+                <div ref={flagsInputRef}>
+                  <Input
+                    placeholder="Flags"
+                    value={flags}
+                    onChange={(e) => setFlags(e.target.value)}
+                    className="regex-flags-input"
+                    size="large"
+                    style={{ width: 100 }}
+                  />
+                </div>
               </div>
-            ),
-          },
-          {
-            key: '2',
-            label: 'Explanation',
-            children: (
-              <div className="regex-explanation">
-                {explanation.map((line, i) => (
-                  <Paragraph key={i} className="regex-explain-line">
-                    {line}
-                  </Paragraph>
-                ))}
+
+              {/* Replace Toggle & Input */}
+              <div className="regex-controls" ref={replaceToggleRef}>
+                <Space>
+                  <Switch
+                    checked={isReplaceMode}
+                    onChange={setIsReplaceMode}
+                    checkedChildren="Replace"
+                    unCheckedChildren="Match"
+                  />
+                  {isReplaceMode && (
+                    <Input
+                      placeholder="Replacement string (e.g. $1)"
+                      value={replaceText}
+                      onChange={(e) => setReplaceText(e.target.value)}
+                      style={{ width: 300 }}
+                    />
+                  )}
+                </Space>
               </div>
-            ),
-          },
-        ]}
-      />
 
-      {error && <Alert message={`Error: ${error}`} type="error" showIcon />}
+              {error && <Alert message={error} type="error" showIcon />}
 
-      {/* 🔹 Common Patterns Section */}
-      <div className="regex-common-section">
-        <h4>Common Regex Patterns</h4>
+              {/* Text Editor Area */}
+              <div className="regex-editor-container" ref={editorRef}>
+                <div className="regex-label">Test String</div>
+                <div className="regex-textarea-wrapper">
+                  <div
+                    ref={highlightRef}
+                    className="regex-highlights"
+                    dangerouslySetInnerHTML={{ __html: highlightedHTML }}
+                  />
+                  <TextArea
+                    value={text}
+                    onScroll={syncScroll}
+                    onChange={(e) => setText(e.target.value)}
+                    rows={10}
+                    className="regex-textarea-overlay"
+                    spellCheck={false}
+                  />
+                </div>
+              </div>
 
-        {/* Search bar */}
-        <Search
-          placeholder="Search regex patterns..."
-          allowClear
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ maxWidth: 400, marginBottom: 12 }}
-        />
+              {/* Replacement Result */}
+              {isReplaceMode && (
+                <div className="regex-result-container">
+                  <div className="regex-label">Replacement Result</div>
+                  <TextArea
+                    value={replacedResult}
+                    readOnly
+                    rows={6}
+                    className="regex-result-textarea"
+                  />
+                </div>
+              )}
+            </Space>
+          </Card>
+        </Col>
 
-        {/* Filtered results */}
-        <div>
-          <Space wrap>
-            {filteredPatterns.map((item) => (
-              <Tooltip key={item.name} title={item.pattern}>
-                <Tag
-                  color="cyan"
-                  onClick={() => handlePatternClick(item.pattern, item.examples || [])}
-                  style={{ cursor: 'pointer', fontSize: 13, padding: '4px 8px' }}
-                >
-                  {item.name}
-                </Tag>
-              </Tooltip>
-            ))}
-            {filteredPatterns.length === 0 && <Paragraph>No matching patterns found.</Paragraph>}
-          </Space>
-        </div>
-        {/* --- User Guide Section --- */}
-        <div className="regex-guide">
-          <Title level={5}>📘 How to Use</Title>
-          <Paragraph>
-            <Text strong>1.</Text> Enter your <Text code>Regex Pattern</Text> and optional{' '}
-            <Text code>Flags</Text>.<br />
-            <Text strong>2.</Text> Type your sample text in the <Text code>Text</Text> tab.
-            <br />
-            <Text strong>3.</Text> Matches will be <mark>highlighted</mark> instantly.
-            <br />
-            <Text strong>4.</Text> Switch to the <Text code>Explanation</Text> tab to see a
-            breakdown of each token.
-            <br />
-            <Text strong>5.</Text> Explore and copy from <Text code>Common Patterns</Text> for quick
-            use.
-            <br />
-            <Text type="secondary">
-              💡 Tip: Use flags like <Text code>g</Text> (global) or <Text code>i</Text> (ignore
-              case) to modify behavior.
-            </Text>
-          </Paragraph>
-        </div>
-      </div>
-    </Card>
+        {/* RIGHT COLUMN: Info & Tools */}
+        <Col xs={24} lg={10} xl={9}>
+          <div ref={infoTabsRef} style={{ height: '100%' }}>
+            <Card className="regex-card full-height" bordered={false} bodyStyle={{ padding: 0 }}>
+              <Tabs
+                defaultActiveKey="1"
+                tabBarStyle={{ padding: '0 16px' }}
+                items={[
+                  {
+                    key: '1',
+                    label: 'Match Info',
+                    children: (
+                      <div className="regex-tab-content">
+                        <div style={{ marginBottom: 12 }}>
+                          <Text strong>{matches.length} matches found</Text>
+                        </div>
+                        <Table
+                          dataSource={matches}
+                          columns={columns}
+                          size="small"
+                          pagination={{ pageSize: 5 }}
+                          scroll={{ x: 'max-content' }}
+                        />
+                      </div>
+                    ),
+                  },
+                  {
+                    key: '2',
+                    label: 'Explanation',
+                    children: (
+                      <div className="regex-tab-content">
+                        <List
+                          itemLayout="horizontal"
+                          dataSource={explanation}
+                          renderItem={(item) => (
+                            <List.Item>
+                              <List.Item.Meta
+                                avatar={<Tag color="geekblue">{item.title}</Tag>}
+                                title={item.desc}
+                              />
+                            </List.Item>
+                          )}
+                        />
+                      </div>
+                    ),
+                  },
+                  {
+                    key: '3',
+                    label: 'Quick Ref',
+                    children: (
+                      <div className="regex-tab-content">
+                        <Search
+                          placeholder="Search patterns..."
+                          allowClear
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          style={{ marginBottom: 12 }}
+                        />
+                        <div className="regex-patterns-list">
+                          {filteredPatterns.length > 0 ? (
+                            filteredPatterns.map((item) => (
+                              <div
+                                key={item.name}
+                                className="regex-pattern-item"
+                                onClick={() =>
+                                  handlePatternClick(item.pattern, item.examples || [])
+                                }
+                              >
+                                <div className="pattern-header">
+                                  <Text strong>{item.name}</Text>
+                                </div>
+                                <Text type="secondary" code className="pattern-code">
+                                  {item.pattern}
+                                </Text>
+                              </div>
+                            ))
+                          ) : (
+                            <div style={{ textAlign: 'center', padding: 20 }}>
+                              No patterns found
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ),
+                  },
+                ]}
+              />
+            </Card>
+          </div>
+        </Col>
+      </Row>
+
+      {/* Cheatsheet / Guide Section */}
+      <Row style={{ marginTop: 16 }}>
+        <Col span={24}>
+          <div ref={cheatsheetRef}>
+            <Collapse
+              ghost
+              items={[
+                {
+                  key: '1',
+                  label: '📘 Regex Cheatsheet & Guide',
+                  children: (
+                    <div className="regex-cheatsheet">
+                      <Row gutter={[16, 16]}>
+                        <Col span={8}>
+                          <Title level={5}>Character Classes</Title>
+                          <ul className="cheatsheet-list">
+                            <li>
+                              <code>.</code> Any character except newline
+                            </li>
+                            <li>
+                              <code>\w</code> Word (a-z, A-Z, 0-9, _)
+                            </li>
+                            <li>
+                              <code>\d</code> Digit (0-9)
+                            </li>
+                            <li>
+                              <code>\s</code> Whitespace (space, tab, newline)
+                            </li>
+                            <li>
+                              <code>[abc]</code> Any of a, b, or c
+                            </li>
+                            <li>
+                              <code>[^abc]</code> Not a, b, or c
+                            </li>
+                          </ul>
+                        </Col>
+                        <Col span={8}>
+                          <Title level={5}>Quantifiers</Title>
+                          <ul className="cheatsheet-list">
+                            <li>
+                              <code>*</code> 0 or more
+                            </li>
+                            <li>
+                              <code>+</code> 1 or more
+                            </li>
+                            <li>
+                              <code>?</code> 0 or 1
+                            </li>
+                            <li>
+                              <code>{'{3}'}</code> Exactly 3
+                            </li>
+                            <li>
+                              <code>{'{3,}'}</code> 3 or more
+                            </li>
+                            <li>
+                              <code>{'{3,5}'}</code> 3 to 5
+                            </li>
+                          </ul>
+                        </Col>
+                        <Col span={8}>
+                          <Title level={5}>Anchors & Groups</Title>
+                          <ul className="cheatsheet-list">
+                            <li>
+                              <code>^</code> Start of string/line
+                            </li>
+                            <li>
+                              <code>$</code> End of string/line
+                            </li>
+                            <li>
+                              <code>(...)</code> Capturing group
+                            </li>
+                            <li>
+                              <code>(?:...)</code> Non-capturing group
+                            </li>
+                            <li>
+                              <code>|</code> OR operator
+                            </li>
+                          </ul>
+                        </Col>
+                      </Row>
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          </div>
+        </Col>
+      </Row>
+      <Tour open={openTour} onClose={() => setOpenTour(false)} steps={steps} />
+    </div>
   );
 };
 
