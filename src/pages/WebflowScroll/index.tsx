@@ -1,65 +1,152 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import styles from './styles.less';
+import { cards, cartVariants, marqueeRows, productFeatures, resources } from './constants';
 
-const cards = [
-  {
-    id: 1,
-    title: 'Customize your store',
-    description: 'Design your store exactly how you want.',
-    color: '#4353ff',
-  },
-  {
-    id: 2,
-    title: 'Manage your products',
-    description: 'Add, edit, and organize your inventory with ease.',
-    color: '#2d2d2d',
-  },
-  {
-    id: 3,
-    title: 'Secure payments',
-    description: 'Accept payments from all major providers.',
-    color: '#ff4081',
-  },
-  {
-    id: 4,
-    title: 'Ship everywhere',
-    description: 'Reach customers around the globe.',
-    color: '#00c853',
-  },
-];
+const MarqueeCard = ({ item }: { item: any }) => {
+  return (
+    <div className={`${styles.marqueeCard} ${styles[item.className] || ''}`}>
+      {item.type === 'image' && <img src={item.src} alt={item.title || 'Image'} />}
+      {(item.type === 'text' || item.type === 'gradient') && (
+        <div className={styles.cardContent}>
+          <div>
+            <h3>{item.title}</h3>
+            {item.desc && <p>{item.desc}</p>}
+          </div>
+          {item.button && <button className={styles.btn}>{item.button}</button>}
+        </div>
+      )}
+    </div>
+  );
+};
 
-const cartVariants = [
-  { id: 1, title: 'Minimal Cart', color: '#FF5733' },
-  { id: 2, title: 'Dark Mode Cart', color: '#33FF57' },
-  { id: 3, title: 'Sidebar Cart', color: '#3357FF' },
-  { id: 4, title: 'Modal Cart', color: '#F333FF' },
-  { id: 5, title: 'Full Page Cart', color: '#FF33A8' },
-];
+const MarqueeRow = ({
+  items,
+  direction = 'left',
+  speed = 20,
+}: {
+  items: any[];
+  direction?: 'left' | 'right';
+  speed?: number;
+}) => {
+  return (
+    <div className={styles.marqueeRow}>
+      <motion.div
+        className={styles.marqueeTrack}
+        animate={{ x: direction === 'left' ? ['0%', '-50%'] : ['-50%', '0%'] }}
+        transition={{
+          duration: speed,
+          ease: 'linear',
+          repeat: Infinity,
+        }}
+      >
+        {[...items, ...items, ...items, ...items].map((item, index) => (
+          <MarqueeCard key={`${index}-${item.title}`} item={item} />
+        ))}
+      </motion.div>
+    </div>
+  );
+};
 
-const productFeatures = [
-  {
-    id: 1,
-    title: 'Physical Products',
-    desc: 'Sell apparel, goods, and more with automatic shipping calculations. Manage inventory and variants with ease.',
-    image:
-      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: 2,
-    title: 'Digital Goods',
-    desc: 'Deliver files securely immediately after purchase. Perfect for ebooks, software, music, and digital art.',
-    image:
-      'https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: 3,
-    title: 'Services',
-    desc: 'Book appointments and sell services directly from your site. Integrate with your calendar and manage bookings.',
-    image:
-      'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=800&q=80',
-  },
-];
+const CatButton = () => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div
+      className={styles.catButtonWrapper}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <motion.div
+        className={styles.catPaw}
+        initial={{ y: 35, rotate: 0 }}
+        animate={{
+          y: isHovered ? [-5, 10, -5] : 35,
+          rotate: isHovered ? [0, -5, 5, 0] : 0,
+          x: isHovered ? [0, 2, -2, 0] : 0,
+        }}
+        transition={{
+          y: isHovered
+            ? {
+                duration: 0.8,
+                repeat: Infinity,
+                repeatType: 'reverse',
+                ease: 'easeInOut',
+              }
+            : { duration: 0.3 },
+          rotate: isHovered
+            ? {
+                duration: 0.6,
+                repeat: Infinity,
+                repeatType: 'reverse',
+                ease: 'easeInOut',
+              }
+            : { duration: 0.3 },
+          x: isHovered
+            ? {
+                duration: 0.4,
+                repeat: Infinity,
+                repeatType: 'reverse',
+                ease: 'easeInOut',
+              }
+            : { duration: 0.3 },
+        }}
+      >
+        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M268.3 397.9c-48.6 28-112.2 11.7-140.2-36.9-28-48.6-11.7-112.2 36.9-140.2 48.6-28 112.2-11.7 140.2 36.9 28 48.6 11.7 112.2-36.9 140.2z"
+            fill="#333"
+          />
+          <path
+            d="M165.5 260.8c-11.6 6.7-26.6 2.8-33.3-8.8-6.7-11.6-2.8-26.6 8.8-33.3 11.6-6.7 26.6-2.8 33.3 8.8 6.7 11.6 2.8 26.6-8.8 33.3zM224.6 226.7c-11.6 6.7-26.6 2.8-33.3-8.8-6.7-11.6-2.8-26.6 8.8-33.3 11.6-6.7 26.6-2.8 33.3 8.8 6.7 11.6 2.8 26.6-8.8 33.3zM283.7 260.8c-11.6 6.7-26.6 2.8-33.3-8.8-6.7-11.6-2.8-26.6 8.8-33.3 11.6-6.7 26.6-2.8 33.3 8.8 6.7 11.6 2.8 26.6-8.8 33.3zM283.7 329c-11.6 6.7-26.6 2.8-33.3-8.8-6.7-11.6-2.8-26.6 8.8-33.3 11.6-6.7 26.6-2.8 33.3 8.8 6.7 11.6 2.8 26.6-8.8 33.3z"
+            fill="#fff"
+          />
+        </svg>
+      </motion.div>
+      <button className={styles.catBtn}>Get Started</button>
+    </div>
+  );
+};
+
+const FramerMarqueeSection = () => {
+  return (
+    <div className={styles.framerMarqueeSection}>
+      <h2>Launch faster with community resources</h2>
+      <MarqueeRow items={marqueeRows[0]} direction="left" speed={40} />
+      <MarqueeRow items={marqueeRows[1]} direction="right" speed={50} />
+      <MarqueeRow items={marqueeRows[2]} direction="left" speed={45} />
+    </div>
+  );
+};
+
+const CommunityResourcesSection = () => {
+  return (
+    <div className={styles.marqueeSection}>
+      <h2>Launch faster with community resources</h2>
+      <div style={{ overflow: 'hidden', width: '100%' }}>
+        <motion.div
+          className={styles.marqueeTrack}
+          animate={{ x: ['0%', '-50%'] }}
+          transition={{
+            duration: 20,
+            ease: 'linear',
+            repeat: Infinity,
+          }}
+        >
+          {[...resources, ...resources].map((item, index) => (
+            <div key={`${item.id}-${index}`} className={styles.resourceCard}>
+              <img src={item.image} alt={item.title} />
+              <div className={styles.resourceInfo}>
+                <h4>{item.title}</h4>
+                <span>by {item.author}</span>
+              </div>
+            </div>
+          ))}
+        </motion.div>
+      </div>
+    </div>
+  );
+};
 
 const CustomizeCartSection: React.FC = () => {
   const targetRef = useRef(null);
@@ -167,9 +254,12 @@ const WebflowScroll: React.FC = () => {
 
       <CustomizeCartSection />
       <SellProductsSection />
+      <CommunityResourcesSection />
+      <FramerMarqueeSection />
 
       <div className={styles.footer}>
         <h2>Ready to get started?</h2>
+        <CatButton />
       </div>
     </div>
   );

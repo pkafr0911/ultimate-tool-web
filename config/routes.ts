@@ -13,12 +13,6 @@
     component: './Playground',
   },
   {
-    path: '/webflow-scroll',
-    name: 'Webflow Scroll',
-    icon: 'verticalAlignMiddle',
-    component: './WebflowScroll',
-  },
-  {
     key: 'utility',
     name: 'utility',
     icon: 'tool',
@@ -165,6 +159,11 @@
       { path: '/docs/emojis', name: 'emojis', icon: 'smile', component: './Emojis' },
     ],
   },
-
+  {
+    path: '/webflow-scroll',
+    name: 'Webflow Scroll',
+    icon: 'verticalAlignMiddle',
+    component: './WebflowScroll',
+  },
   { path: '*', component: './404', icon: 'frown' },
 ];
