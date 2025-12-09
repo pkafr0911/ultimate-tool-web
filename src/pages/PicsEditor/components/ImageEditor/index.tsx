@@ -1483,16 +1483,16 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         }
       }
 
-      if (e.ctrlKey && e.key === 'z') history.undo();
+      if (e.ctrlKey && (e.key === 'z' || e.key === 'Z')) history.undo();
       if (e.ctrlKey && e.shiftKey && e.key === 'Z') history.redo();
-      if (e.key === 'c') setTool('crop');
-      if (e.key === 'h') setTool('pan');
-      if (e.key === 'v') setTool('layer');
-      if (e.key === 't') setTool('text');
-      if (e.key === 'r') rotate(90, canvasRef, overlayRef, history.history);
-      if (e.key === 'i') setTool('color');
-      if (e.key === 'p') setTool('perspective');
-      if (e.key === 'b') setTool('draw');
+      if (e.key === 'c' || e.key === 'C') setTool('crop');
+      if (e.key === 'h' || e.key === 'H') setTool('pan');
+      if (e.key === 'v' || e.key === 'V') setTool('layer');
+      if (e.key === 't' || e.key === 'T') setTool('text');
+      if (e.key === 'r' || e.key === 'R') rotate(90, canvasRef, overlayRef, history.history);
+      if (e.key === 'i' || e.key === 'I') setTool('color');
+      if (e.key === 'p' || e.key === 'P') setTool('perspective');
+      if (e.key === 'b' || e.key === 'B') setTool('draw');
 
       // action
       if (e.key === 'Delete' && (tool === 'layer' || tool === 'text') && activeLayerId)
