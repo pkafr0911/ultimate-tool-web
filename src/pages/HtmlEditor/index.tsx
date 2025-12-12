@@ -1,19 +1,38 @@
 import { useDarkMode } from '@/hooks/useDarkMode';
 import {
   CodeOutlined,
+  CompressOutlined,
   CopyOutlined,
+  DeleteOutlined,
+  DesktopOutlined,
   DownloadOutlined,
   EditOutlined,
+  FileAddOutlined,
   FormatPainterOutlined,
+  MobileOutlined,
+  TabletOutlined,
+  ExportOutlined,
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
-import { Button, Card, message, Segmented, Space, Typography } from 'antd';
+import {
+  Button,
+  Card,
+  Dropdown,
+  MenuProps,
+  message,
+  Radio,
+  Segmented,
+  Space,
+  Tooltip,
+  Typography,
+  Divider,
+} from 'antd';
 import React, { useEffect, useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import './styles.less';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const HtmlEditorPage: React.FC = () => {
   const { darkMode } = useDarkMode();
@@ -22,15 +41,14 @@ const HtmlEditorPage: React.FC = () => {
     '<h2>Welcome to HTML Editor</h2><p>Edit your content here...</p>',
   );
   const [previewHtml, setPreviewHtml] = useState<string>(htmlContent);
+  const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
 
   // --- Helper function to format HTML properly ---
   const formatHTML = (html: string) => {
     try {
-      // Parse HTML into a DOM
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
 
-      // Recursive formatter
       const formatNode = (node: Node, level = 0): string => {
         const indent = '  '.repeat(level);
         let formatted = '';
@@ -45,7 +63,6 @@ const HtmlEditorPage: React.FC = () => {
           const el = node as HTMLElement;
           const tagName = el.tagName.toLowerCase();
 
-          // Open tag with attributes
           formatted += `${indent}<${tagName}`;
           for (const attr of Array.from(el.attributes)) {
             formatted += ` ${attr.name}="${attr.value}"`;
@@ -59,7 +76,6 @@ const HtmlEditorPage: React.FC = () => {
 
           if (hasChildren) formatted += '\n';
 
-          // Recurse into children
           for (const child of childNodes) {
             formatted += formatNode(child, level + 1);
           }
@@ -71,7 +87,6 @@ const HtmlEditorPage: React.FC = () => {
         return formatted;
       };
 
-      // Format <html> content inside <body>
       const bodyNodes = Array.from(doc.body.childNodes);
       return bodyNodes
         .map((node) => formatNode(node))
@@ -79,31 +94,56 @@ const HtmlEditorPage: React.FC = () => {
         .trim();
     } catch (err) {
       console.error('Failed to format HTML:', err);
-      return html; // fallback
+      return html;
     }
   };
 
-  // --- Prettify HTML code ---
+  // --- Actions ---
   const prettifyHTML = () => {
-    if (!htmlContent.trim()) {
-      message.warning('No HTML content to prettify.');
-      return;
-    }
+    if (!htmlContent.trim()) return;
     try {
       const pretty = formatHTML(htmlContent);
       setHtmlContent(pretty);
-      setPreviewHtml(pretty);
       message.success('HTML prettified!');
     } catch (err) {
-      console.error(err);
       message.error('Failed to prettify HTML.');
     }
   };
 
-  // Sync preview whenever content changes
-  useEffect(() => {
-    setPreviewHtml(htmlContent);
-  }, [htmlContent, mode]);
+  const minifyHTML = () => {
+    if (!htmlContent.trim()) return;
+    const minified = htmlContent
+      .replace(/\>[\r\n ]+\</g, '><')
+      .replace(/(<.*?>)|\s+/g, (m, $1) => ($1 ? $1 : ' '))
+      .trim();
+    setHtmlContent(minified);
+    message.success('HTML minified!');
+  };
+
+  const insertBoilerplate = () => {
+    const boilerplate = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Hello World</h1>
+  <p>Start editing...</p>
+</body>
+</html>`;
+    setHtmlContent(boilerplate);
+    message.success('Boilerplate inserted!');
+  };
+
+  const handleClear = () => {
+    setHtmlContent('');
+    message.info('Editor cleared');
+  };
 
   const handleCopy = async () => {
     try {
@@ -122,69 +162,197 @@ const HtmlEditorPage: React.FC = () => {
     link.click();
   };
 
+  const openInNewTab = () => {
+    const newWindow = window.open();
+    if (newWindow) {
+      newWindow.document.write(htmlContent);
+      newWindow.document.close();
+    }
+  };
+
+  // Sync preview
+  useEffect(() => {
+    setPreviewHtml(htmlContent);
+  }, [htmlContent]);
+
+  const templateItems: MenuProps['items'] = [
+    {
+      key: 'table',
+      label: 'Table',
+      onClick: () =>
+        setHtmlContent(
+          htmlContent +
+            `\n<table border="1">
+  <tr><th>Header 1</th><th>Header 2</th></tr>
+  <tr><td>Data 1</td><td>Data 2</td></tr>
+</table>`,
+        ),
+    },
+    {
+      key: 'form',
+      label: 'Form',
+      onClick: () =>
+        setHtmlContent(
+          htmlContent +
+            `\n<form>
+  <label>Name: <input type="text" /></label>
+  <button type="submit">Submit</button>
+</form>`,
+        ),
+    },
+    {
+      key: 'card',
+      label: 'Card',
+      onClick: () =>
+        setHtmlContent(
+          htmlContent +
+            `\n<div style="border:1px solid #ccc; padding:16px; border-radius:8px; max-width:300px;">
+  <h3>Card Title</h3>
+  <p>Some content here...</p>
+</div>`,
+        ),
+    },
+  ];
+
   return (
-    <Card
-      title={
-        <Space>
-          <Title level={4} style={{ margin: 0 }}>
-            HTML Editor
-          </Title>
+    <div className="html-editor-page">
+      <Card
+        bordered={false}
+        className="main-card"
+        title={
+          <div className="header-container">
+            <Title level={3} style={{ margin: 0 }}>
+              HTML Editor
+            </Title>
+            <Text type="secondary">Edit, preview, and format HTML code in real-time</Text>
+          </div>
+        }
+        extra={
           <Segmented
             options={[
-              { label: 'HTML Mode', value: 'html', icon: <CodeOutlined /> },
-              { label: 'Rich Mode', value: 'rich', icon: <EditOutlined /> },
+              { label: 'Code', value: 'html', icon: <CodeOutlined /> },
+              { label: 'Rich Text', value: 'rich', icon: <EditOutlined /> },
             ]}
             value={mode}
             onChange={(val) => setMode(val as 'rich' | 'html')}
           />
-        </Space>
-      }
-      className="html-card"
-    >
-      <div className="html-container">
-        {/* --- Left side: Editor --- */}
-        <div className="editor-pane">
-          <Title level={5}>{mode === 'rich' ? 'Edit (Rich Text)' : 'Edit (HTML Code)'}</Title>
-
-          {mode === 'rich' ? (
-            <ReactQuill value={htmlContent} onChange={setHtmlContent} className="quill-editor" />
-          ) : (
-            <Editor
-              height="600px"
-              language="html"
-              value={htmlContent}
-              onChange={(val) => setHtmlContent(val || '')}
-              theme={darkMode ? 'vs-dark' : 'light'}
-              options={{
-                minimap: { enabled: false },
-                automaticLayout: true,
-              }}
-            />
-          )}
-
-          {/* Action buttons */}
-          {mode === 'html' && (
-            <Space style={{ marginTop: 16 }}>
-              <Button icon={<FormatPainterOutlined />} onClick={prettifyHTML}>
-                Prettify
+        }
+      >
+        <div className="toolbar">
+          <Space wrap>
+            <Tooltip title="Insert HTML5 Boilerplate">
+              <Button icon={<FileAddOutlined />} onClick={insertBoilerplate}>
+                Boilerplate
               </Button>
-              <Button icon={<CopyOutlined />} onClick={handleCopy}>
-                Copy
-              </Button>
-              <Button icon={<DownloadOutlined />} onClick={handleDownload}>
-                Download
-              </Button>
-            </Space>
-          )}
+            </Tooltip>
+            <Dropdown menu={{ items: templateItems }}>
+              <Button icon={<ExportOutlined />}>Insert Template</Button>
+            </Dropdown>
+            <Divider type="vertical" />
+            <Tooltip title="Format Code">
+              <Button
+                icon={<FormatPainterOutlined />}
+                onClick={prettifyHTML}
+                disabled={mode === 'rich'}
+              />
+            </Tooltip>
+            <Tooltip title="Minify Code">
+              <Button icon={<CompressOutlined />} onClick={minifyHTML} disabled={mode === 'rich'} />
+            </Tooltip>
+            <Tooltip title="Clear Editor">
+              <Button icon={<DeleteOutlined />} danger onClick={handleClear} />
+            </Tooltip>
+          </Space>
+          <Space wrap>
+            <Button icon={<CopyOutlined />} onClick={handleCopy}>
+              Copy
+            </Button>
+            <Button icon={<DownloadOutlined />} onClick={handleDownload}>
+              Download
+            </Button>
+          </Space>
         </div>
 
-        {/* --- Right side: Live Preview --- */}
-        <div className="preview-pane">
-          <Title level={5}>Live Preview</Title>
-          <div className="html-preview" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+        <div className="editor-container">
+          {/* --- Left side: Editor --- */}
+          <div className="editor-pane">
+            {mode === 'rich' ? (
+              <ReactQuill
+                value={htmlContent}
+                onChange={setHtmlContent}
+                className="quill-editor"
+                theme="snow"
+              />
+            ) : (
+              <div className="monaco-wrapper">
+                <Editor
+                  height="100%"
+                  language="html"
+                  value={htmlContent}
+                  onChange={(val) => setHtmlContent(val || '')}
+                  theme={darkMode ? 'vs-dark' : 'light'}
+                  options={{
+                    minimap: { enabled: false },
+                    automaticLayout: true,
+                    fontSize: 14,
+                    padding: { top: 16 },
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* --- Right side: Live Preview --- */}
+          <div className="preview-pane-wrapper">
+            <div className="preview-toolbar">
+              <Text strong>Live Preview</Text>
+              <Space size="small">
+                <Radio.Group
+                  value={deviceMode}
+                  onChange={(e) => setDeviceMode(e.target.value)}
+                  size="small"
+                  buttonStyle="solid"
+                >
+                  <Radio.Button value="desktop">
+                    <Tooltip title="Desktop">
+                      <DesktopOutlined />
+                    </Tooltip>
+                  </Radio.Button>
+                  <Radio.Button value="tablet">
+                    <Tooltip title="Tablet">
+                      <TabletOutlined />
+                    </Tooltip>
+                  </Radio.Button>
+                  <Radio.Button value="mobile">
+                    <Tooltip title="Mobile">
+                      <MobileOutlined />
+                    </Tooltip>
+                  </Radio.Button>
+                </Radio.Group>
+                <Tooltip title="Open in New Window">
+                  <Button
+                    type="text"
+                    icon={<ExportOutlined />}
+                    size="small"
+                    onClick={openInNewTab}
+                  />
+                </Tooltip>
+              </Space>
+            </div>
+            <div className="preview-area">
+              <div className={`preview-frame-container ${deviceMode}`}>
+                <iframe
+                  title="preview"
+                  srcDoc={previewHtml}
+                  className="preview-iframe"
+                  sandbox="allow-scripts"
+                />
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </div>
   );
 };
 
