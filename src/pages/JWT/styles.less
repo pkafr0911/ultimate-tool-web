@@ -1,79 +1,101 @@
-.jwt-card {
-  max-width: 720px;
-  margin: 40px auto;
-  padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+.jwt-container {
+  padding: 24px;
+  background-color: #f0f2f5;
+  min-height: 100vh;
 
-  .ant-card-head {
-    text-align: center;
-    border-bottom: none;
-
-    .ant-card-head-title {
-      font-weight: 600;
-      font-size: 20px;
-    }
+  .jwt-main-card {
+    max-width: 1400px;
+    margin: 0 auto;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   }
 
-  .jwt-output {
-    margin-top: 16px;
-    padding: 12px;
-    background: #fafafa;
+  .section-card {
+    height: 100%;
     border: 1px solid #f0f0f0;
-    border-radius: 8px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 
-    .jwt-pre {
-      padding: 12px;
-      overflow-x: auto;
-      font-size: 14px;
-      font-family: 'Fira Code', monospace;
-      white-space: pre-wrap;
-      word-break: break-word;
-      background: #f7f7f7;
-      border-radius: 6px;
+    .ant-card-head {
+      border-bottom: 1px solid #f0f0f0;
+      background-color: #fafafa;
+      border-radius: 12px 12px 0 0;
     }
   }
 
-  .jwt-guide {
-    margin-top: 32px;
+  .code-font {
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    background-color: #fafafa;
+    border-color: #d9d9d9;
+
+    &:focus {
+      background-color: #fff;
+    }
+  }
+
+  .token-input {
+    color: #333;
+    font-weight: 500;
+  }
+
+  .visualizer-container {
+    margin-top: 16px;
     padding: 16px;
-    background: #f9f9ff;
-    border: 1px solid #e6f0ff;
-    border-radius: 12px;
+    background-color: #fff;
+    border: 1px solid #e6e6e6;
+    border-radius: 8px;
+    min-height: 100px;
+    word-break: break-all;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 16px;
+    line-height: 1.6;
+  }
 
-    h4 {
-      margin-bottom: 8px;
+  .token-part-header {
+    color: #fb015b; // Redish
+    font-weight: 500;
+  }
+
+  .token-part-payload {
+    color: #d63aff; // Purpleish
+    font-weight: 500;
+  }
+
+  .token-part-signature {
+    color: #00b9f1; // Blueish
+    font-weight: 500;
+  }
+
+  .token-dot {
+    color: #333;
+    font-weight: bold;
+    margin: 0 2px;
+  }
+
+  .legend {
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
     }
-
-    ul {
-      margin: 8px 0 0 20px;
-      padding: 0;
-      li {
-        margin-bottom: 4px;
-        font-size: 14px;
-      }
+    .header-dot {
+      background-color: #fb015b;
     }
-
-    code {
-      padding: 2px 6px;
-      font-family: 'Fira Code', monospace;
-      background: #f0f0f0;
-      border-radius: 4px;
+    .payload-dot {
+      background-color: #d63aff;
+    }
+    .signature-dot {
+      background-color: #00b9f1;
     }
   }
 }
 
-@media (max-width: 576px) {
-  .jwt-card {
-    margin: 20px;
+@media (max-width: 992px) {
+  .jwt-container {
     padding: 12px;
-
-    .ant-card-head-title {
-      font-size: 18px;
-    }
-
-    .jwt-guide {
-      font-size: 14px;
-    }
   }
 }

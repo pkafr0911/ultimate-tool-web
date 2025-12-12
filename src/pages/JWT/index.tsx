@@ -1,140 +1,309 @@
-import { Button, Card, Input, Space, Typography, message } from 'antd';
-import { SignJWT, jwtVerify } from 'jose';
+import {
+  Button,
+  Card,
+  Col,
+  Divider,
+  Input,
+  Row,
+  Select,
+  Space,
+  Tabs,
+  Typography,
+  message,
+  Tooltip,
+} from 'antd';
+import { SignJWT, decodeJwt, decodeProtectedHeader, jwtVerify } from 'jose';
 import React, { useState } from 'react';
+import {
+  ArrowRightOutlined,
+  ArrowLeftOutlined,
+  EyeOutlined,
+  CopyOutlined,
+  LockOutlined,
+  UnlockOutlined,
+} from '@ant-design/icons';
 import './styles.less';
 
 const { TextArea } = Input;
-const { Title, Paragraph, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
+const { Option } = Select;
 
 const JWTTool: React.FC = () => {
-  const [secret, setSecret] = useState('');
-  const [payload, setPayload] = useState('');
+  // --- State ---
+  const [algorithm, setAlgorithm] = useState('HS256');
+  const [headerStr, setHeaderStr] = useState('{\n  "alg": "HS256",\n  "typ": "JWT"\n}');
+  const [payloadStr, setPayloadStr] = useState(
+    '{\n  "sub": "1234567890",\n  "name": "John Doe",\n  "iat": 1516239022\n}',
+  );
+  const [secret, setSecret] = useState('secret');
   const [token, setToken] = useState('');
-  const [decoded, setDecoded] = useState('');
+  const [expiration, setExpiration] = useState('2h');
+
   const encoder = new TextEncoder();
 
-  const parsePayload = (text: string) => {
-    const trimmed = text.trim();
+  // --- Helpers ---
+  const parseJSON = (text: string, label: string) => {
     try {
-      return JSON.parse(trimmed);
-    } catch {
-      try {
-        const fixed = trimmed.replace(/'/g, '"').replace(/([a-zA-Z0-9_]+):/g, '"$1":');
-        return JSON.parse(fixed);
-      } catch {
-        throw new Error('Invalid JSON payload format.');
-      }
+      return JSON.parse(text);
+    } catch (e) {
+      throw new Error(`Invalid JSON in ${label}`);
     }
   };
+
+  const formatJSON = (obj: any) => JSON.stringify(obj, null, 2);
+
+  // --- Actions ---
 
   const handleEncrypt = async () => {
     try {
-      const obj = parsePayload(payload);
+      const header = parseJSON(headerStr, 'Header');
+      const payload = parseJSON(payloadStr, 'Payload');
+
+      // Ensure algorithm in header matches selected algorithm
+      header.alg = algorithm;
+      setHeaderStr(formatJSON(header));
+
       const secretKey = encoder.encode(secret);
 
-      const jwt = await new SignJWT(obj)
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setExpirationTime('2h')
-        .sign(secretKey);
+      let jwtBuilder = new SignJWT(payload).setProtectedHeader(header).setIssuedAt();
+
+      if (expiration) {
+        jwtBuilder = jwtBuilder.setExpirationTime(expiration);
+      }
+
+      const jwt = await jwtBuilder.sign(secretKey);
 
       setToken(jwt);
-      message.success('JWT token created successfully!');
+      message.success('Token generated successfully!');
     } catch (err: any) {
-      message.error(err.message || 'Error creating JWT.');
+      message.error(err.message || 'Error generating token');
     }
   };
 
-  const handleDecrypt = async () => {
+  const handleVerify = async () => {
+    if (!token) return;
     try {
       const secretKey = encoder.encode(secret);
-      const { payload: verified } = await jwtVerify(token, secretKey);
-      setDecoded(JSON.stringify(verified, null, 2));
+      const { payload, protectedHeader } = await jwtVerify(token, secretKey, {
+        algorithms: [algorithm],
+      });
+
+      setHeaderStr(formatJSON(protectedHeader));
+      setPayloadStr(formatJSON(payload));
       message.success('Token verified successfully!');
     } catch (err: any) {
-      message.error(`Invalid token: ${err.message}`);
+      message.error(`Verification failed: ${err.message}`);
     }
   };
 
-  const handlePrettify = () => {
+  const handleDecodeOnly = () => {
+    if (!token) return;
     try {
-      const obj = parsePayload(payload);
-      setPayload(JSON.stringify(obj, null, 2));
-      message.success('Payload formatted successfully!');
-    } catch {
-      message.error('Cannot format: invalid JSON.');
+      const header = decodeProtectedHeader(token);
+      const payload = decodeJwt(token);
+
+      setHeaderStr(formatJSON(header));
+      setPayloadStr(formatJSON(payload));
+
+      if (header.alg) {
+        setAlgorithm(header.alg);
+      }
+
+      message.info('Token decoded (signature not verified)');
+    } catch (err: any) {
+      message.error(`Decoding failed: ${err.message}`);
     }
+  };
+
+  // --- Render Helpers ---
+
+  // Color-coded token visualizer
+  const renderTokenVisualizer = () => {
+    if (!token) return null;
+    const parts = token.split('.');
+    if (parts.length !== 3) return <Text type="secondary">Invalid token format</Text>;
+
+    return (
+      <div className="token-visualizer">
+        <span className="token-part-header">{parts[0]}</span>
+        <span className="token-dot">.</span>
+        <span className="token-part-payload">{parts[1]}</span>
+        <span className="token-dot">.</span>
+        <span className="token-part-signature">{parts[2]}</span>
+      </div>
+    );
   };
 
   return (
-    <Card title="🔐 JWT Encrypt / Decrypt Tool" className="jwt-card" variant="borderless">
-      <Space direction="vertical" style={{ width: '100%' }} size="large">
-        {/* --- Secret Key Input --- */}
-        <Input.Password
-          placeholder="Enter Secret Key"
-          value={secret}
-          onChange={(e) => setSecret(e.target.value)}
-        />
+    <div className="jwt-container">
+      <Card bordered={false} className="jwt-main-card">
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <Title level={2}>🔐 JWT Debugger</Title>
+          <Paragraph type="secondary">
+            Encode and Decode JSON Web Tokens. Verify signatures with secrets.
+          </Paragraph>
+        </div>
 
-        {/* --- Payload Input --- */}
-        <TextArea
-          rows={4}
-          placeholder="Enter Payload JSON (e.g. { 'user': 'admin' })"
-          value={payload}
-          onChange={(e) => setPayload(e.target.value)}
-        />
+        <Row gutter={[32, 32]}>
+          {/* --- Left Column: Decoded --- */}
+          <Col xs={24} lg={12}>
+            <Card title="Decoded" className="section-card" bordered={false}>
+              {/* Algorithm & Secret */}
+              <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Text strong>Algorithm</Text>
+                    <Select
+                      value={algorithm}
+                      onChange={(val) => {
+                        setAlgorithm(val);
+                        // Update header JSON automatically
+                        try {
+                          const h = JSON.parse(headerStr);
+                          h.alg = val;
+                          setHeaderStr(formatJSON(h));
+                        } catch {}
+                      }}
+                      style={{ width: '100%' }}
+                    >
+                      <Option value="HS256">HS256</Option>
+                      <Option value="HS384">HS384</Option>
+                      <Option value="HS512">HS512</Option>
+                    </Select>
+                  </Col>
+                  <Col span={12}>
+                    <Text strong>Expiration</Text>
+                    <Input
+                      value={expiration}
+                      onChange={(e) => setExpiration(e.target.value)}
+                      placeholder="e.g. 2h, 10m, 7d"
+                    />
+                  </Col>
+                </Row>
+              </Space>
 
-        {/* --- Action Buttons --- */}
-        <Space wrap>
-          <Button type="primary" onClick={handleEncrypt}>
-            Encrypt (Sign JWT)
-          </Button>
-          <Button onClick={handlePrettify}>Prettify JSON</Button>
-        </Space>
+              {/* Header & Payload Tabs */}
+              <Tabs
+                defaultActiveKey="payload"
+                items={[
+                  {
+                    key: 'header',
+                    label: 'Header',
+                    children: (
+                      <div className="json-editor-container header-editor">
+                        <TextArea
+                          value={headerStr}
+                          onChange={(e) => setHeaderStr(e.target.value)}
+                          autoSize={{ minRows: 4, maxRows: 8 }}
+                          className="code-font"
+                        />
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'payload',
+                    label: 'Payload',
+                    children: (
+                      <div className="json-editor-container payload-editor">
+                        <TextArea
+                          value={payloadStr}
+                          onChange={(e) => setPayloadStr(e.target.value)}
+                          autoSize={{ minRows: 8, maxRows: 16 }}
+                          className="code-font"
+                        />
+                      </div>
+                    ),
+                  },
+                ]}
+              />
 
-        {/* --- Token Field --- */}
-        <TextArea
-          rows={4}
-          placeholder="Generated or Existing JWT Token"
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
-        />
+              {/* Secret Key */}
+              <div style={{ marginTop: 16 }}>
+                <Text strong>Secret Key</Text>
+                <Input.Password
+                  value={secret}
+                  onChange={(e) => setSecret(e.target.value)}
+                  placeholder="your-256-bit-secret"
+                  iconRender={(visible) => (visible ? <UnlockOutlined /> : <LockOutlined />)}
+                />
+              </div>
 
-        <Button onClick={handleDecrypt}>Decrypt (Verify JWT)</Button>
+              {/* Action: Encode */}
+              <div style={{ marginTop: 24, textAlign: 'right' }}>
+                <Button
+                  type="primary"
+                  icon={<ArrowRightOutlined />}
+                  onClick={handleEncrypt}
+                  size="large"
+                >
+                  Sign / Encode
+                </Button>
+              </div>
+            </Card>
+          </Col>
 
-        {/* --- Output Section --- */}
-        {decoded && (
-          <div className="jwt-output">
-            <Title level={5}>Decoded Payload:</Title>
-            <pre className="jwt-pre">{decoded}</pre>
-          </div>
-        )}
-      </Space>
+          {/* --- Right Column: Encoded --- */}
+          <Col xs={24} lg={12}>
+            <Card title="Encoded" className="section-card" bordered={false}>
+              <div className="encoded-container">
+                <TextArea
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  placeholder="Paste a JWT here..."
+                  autoSize={{ minRows: 8, maxRows: 12 }}
+                  className="code-font token-input"
+                />
 
-      {/* --- Guide Section --- */}
-      <div className="jwt-guide">
-        <Title level={4}>📘 How to Use This Tool</Title>
-        <Paragraph>
-          This page helps you <Text strong>create</Text> and <Text strong>verify</Text> JSON Web
-          Tokens (JWTs) using a secret key.
-        </Paragraph>
-        <ul>
-          <li>Enter a secret key for signing and verifying tokens.</li>
-          <li>
-            Provide your payload data in JSON format (e.g. <code>{`{ "user": "admin" }`}</code>).
-          </li>
-          <li>
-            Click <Text strong>Encrypt</Text> to generate a JWT.
-          </li>
-          <li>
-            Paste any JWT token and click <Text strong>Decrypt</Text> to verify and decode it.
-          </li>
-        </ul>
-        <Paragraph type="secondary">
-          ⚠️ Always keep your secret key private — anyone with it can generate valid tokens.
-        </Paragraph>
-      </div>
-    </Card>
+                <Space style={{ marginTop: 16, width: '100%', justifyContent: 'space-between' }}>
+                  <Space>
+                    <Button icon={<EyeOutlined />} onClick={handleDecodeOnly}>
+                      Decode Only
+                    </Button>
+                    <Tooltip title="Copy Token">
+                      <Button
+                        icon={<CopyOutlined />}
+                        onClick={() => {
+                          navigator.clipboard.writeText(token);
+                          message.success('Copied!');
+                        }}
+                      />
+                    </Tooltip>
+                  </Space>
+                  <Button
+                    type="primary"
+                    icon={<ArrowLeftOutlined />}
+                    onClick={handleVerify}
+                    size="large"
+                  >
+                    Verify / Decode
+                  </Button>
+                </Space>
+              </div>
+
+              <Divider orientation="left">Visualizer</Divider>
+              <div className="visualizer-container">{renderTokenVisualizer()}</div>
+
+              <div className="legend" style={{ marginTop: 16 }}>
+                <Space size="large">
+                  <Space>
+                    <div className="dot header-dot" />
+                    <Text type="secondary">Header</Text>
+                  </Space>
+                  <Space>
+                    <div className="dot payload-dot" />
+                    <Text type="secondary">Payload</Text>
+                  </Space>
+                  <Space>
+                    <div className="dot signature-dot" />
+                    <Text type="secondary">Signature</Text>
+                  </Space>
+                </Space>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+      </Card>
+    </div>
   );
 };
 
