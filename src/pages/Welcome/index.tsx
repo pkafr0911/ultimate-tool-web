@@ -417,6 +417,11 @@ const SellProductsSection: React.FC = () => {
 const HeroSection = () => {
   return (
     <div className={`${styles.hero} welcome-container`}>
+      <div className={styles.blobContainer}>
+        <div className="blob blob1" />
+        <div className="blob blob2" />
+        <div className="blob blob3" />
+      </div>
       <div className={`${styles.heroContent} hero-section`}>
         <h1 className={styles.heroTitle}>Ultimate Developer Tools</h1>
         <p className={styles.heroSubtitle}>
@@ -493,6 +498,34 @@ const ToolsGridSection = () => {
   );
 };
 
+const FooterSection = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start end', 'end end'],
+  });
+
+  const scale = useTransform(scrollYProgress, [0, 1], [0.92, 1]);
+  const opacity = useTransform(scrollYProgress, [0, 0.4], [0.8, 1]);
+
+  return (
+    <div ref={containerRef} style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+      <motion.div
+        className={styles.footer}
+        style={{
+          scale,
+          opacity,
+          width: '100%',
+          transformOrigin: 'bottom center',
+        }}
+      >
+        <h2>Ready to get started?</h2>
+        <CatButton />
+      </motion.div>
+    </div>
+  );
+};
+
 const WelcomeNew: React.FC = () => {
   return (
     <div className={styles.container}>
@@ -522,10 +555,7 @@ const WelcomeNew: React.FC = () => {
 
       <FramerMarqueeSection />
 
-      <div className={styles.footer}>
-        <h2>Ready to get started?</h2>
-        <CatButton />
-      </div>
+      <FooterSection />
     </div>
   );
 };
