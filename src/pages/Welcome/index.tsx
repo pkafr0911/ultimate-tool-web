@@ -517,9 +517,9 @@ const WelcomeNew: React.FC = () => {
           </div>
         ))}
       </div>
-
-      <FeatureCategorySection />
       <SellProductsSection />
+      <FeatureCategorySection />
+
       <FramerMarqueeSection />
 
       <div className={styles.footer}>
