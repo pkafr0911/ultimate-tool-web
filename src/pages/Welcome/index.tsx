@@ -10,7 +10,7 @@ import {
   heroVisuals,
   categories,
 } from './constants';
-import { pages } from '@/consants';
+import { pages } from '@/constants';
 import '../Welcome/styles.less'; // Import original styles for hero visuals
 import { Typography, Button } from 'antd';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -552,9 +552,7 @@ const WelcomeNew: React.FC = () => {
       </div>
       <SellProductsSection />
       <FeatureCategorySection />
-
       <FramerMarqueeSection />
-
       <FooterSection />
     </div>
   );

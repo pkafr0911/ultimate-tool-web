@@ -1,4 +1,4 @@
-import { pages } from '@/consants';
+import { pages } from '@/constants';
 import { SearchOutlined } from '@ant-design/icons';
 import { useNavigate } from '@umijs/max';
 import { AutoComplete, Input } from 'antd';

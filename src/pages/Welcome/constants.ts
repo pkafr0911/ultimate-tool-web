@@ -1,4 +1,4 @@
-import { pages } from '@/consants';
+import { pages } from '@/constants';
 
 // --- Data Transformation for WelcomeNew ---
 
@@ -131,7 +131,10 @@ const mixArrays = (arr1: any[], arr2: any[]) => {
 };
 
 const row1Tools = allTools.slice(0, Math.ceil(allTools.length / 3));
-const row2Tools = allTools.slice(Math.ceil(allTools.length / 3), Math.ceil((allTools.length * 2) / 3));
+const row2Tools = allTools.slice(
+  Math.ceil(allTools.length / 3),
+  Math.ceil((allTools.length * 2) / 3),
+);
 const row3Tools = allTools.slice(Math.ceil((allTools.length * 2) / 3));
 
 export const marqueeRows = [

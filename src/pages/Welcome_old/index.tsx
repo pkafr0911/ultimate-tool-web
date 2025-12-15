@@ -1,4 +1,4 @@
-import { pages } from '@/consants';
+import { pages } from '@/constants';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { Button, Card, Carousel, Col, Row, Typography } from 'antd';
 import { AnimatePresence, motion } from 'framer-motion';
