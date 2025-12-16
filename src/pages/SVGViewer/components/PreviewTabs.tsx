@@ -103,7 +103,7 @@ const PreviewTabs: React.FC<Props> = ({
       const scale = Math.min(
         containerRect.width / bbox.width, // ➗ How much we can scale horizontally to fit
         containerRect.height / bbox.height, // ➗ How much we can scale vertically to fit
-        1, // 🚫 Don’t upscale beyond 100% (keep at most its original size)
+        3, // 🚫 Don’t upscale beyond 300% (keep at most its original size)
       );
 
       setFitScale(scale); // 💾 Store this as the "fit to screen" scale baseline

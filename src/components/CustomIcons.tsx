@@ -335,7 +335,6 @@ export const PicsEditorIcon: React.FC<IconProps> = ({ color = '#13C2C2', ...prop
     <path d="M10 14L12 16" stroke={color} strokeWidth="2" strokeLinecap="round" />
     <circle cx="6" cy="18" r="1" fill={color} />
     <circle cx="18" cy="18" r="1" fill={color} />
-    <path d="M2 2L22 22" stroke={color} strokeWidth="1" strokeOpacity="0.1" />
   </BaseIcon>
 );
 
