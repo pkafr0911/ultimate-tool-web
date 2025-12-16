@@ -164,6 +164,7 @@
     name: 'Webflow Scroll',
     icon: 'verticalAlignMiddle',
     component: './WebflowScroll',
+    hideInMenu: true,
   },
   { path: '*', component: './404', icon: 'frown' },
 ];
