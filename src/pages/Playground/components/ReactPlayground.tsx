@@ -1,22 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Card, Space, Tabs, Typography, Segmented, Splitter } from 'antd';
-import Editor, { useMonaco } from '@monaco-editor/react';
-import {
-  SettingOutlined,
-  FormatPainterOutlined,
-  FileAddOutlined,
-  ReloadOutlined,
-} from '@ant-design/icons';
+import { Card, Space, Tabs, Typography, Segmented, Splitter, Button, Modal } from 'antd';
+import { useMonaco } from '@monaco-editor/react';
+import { FileAddOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { prettifyCSS, prettifyJS } from '../utils/formatters';
-import { DEFAULT_REACT_TS, REACT_EXTRA_LIB, DEFAULT_CSS, DEFAULT_REACT_JS } from '../constants';
-import { useMonacoOption } from '../hooks/useMonacoOption';
+import { DEFAULT_REACT_TS, REACT_EXTRA_LIB, DEFAULT_REACT_CSS } from '../constants';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { transpileCode } from '../utils/transpileReact';
 import { usePlaygroundState } from '../hooks/usePlaygroundState';
+import PlaygroundToolbar from './common/PlaygroundToolbar';
+import PreviewFrame from './common/PreviewFrame';
+import CodeEditor from './common/CodeEditor';
+import TemplateModal from './common/TemplateModal';
 
 type Props = { onOpenSettings: () => void };
 
-const { Title } = Typography;
+const { Text } = Typography;
 
 type FileTab = {
   name: string;
@@ -27,15 +25,13 @@ type FileTab = {
 const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
   const { darkMode } = useDarkMode();
   const monaco = useMonaco();
-  const { monacoOptions } = useMonacoOption();
 
   const [tabs, setTabs] = usePlaygroundState<FileTab[]>('playground_react_tabs', [
     { name: 'App.tsx', language: 'typescript', content: DEFAULT_REACT_TS },
   ]);
   const [activeTab, setActiveTab] = useState('App.tsx');
   const [splitDirection, setSplitDirection] = useState<'vertical' | 'horizontal'>('horizontal');
-
-  const activeFile = tabs.find((t) => t.name === activeTab)!;
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
   useEffect(() => {
     if (monaco) {
@@ -48,7 +44,6 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
         allowSyntheticDefaultImports: true,
         esModuleInterop: true,
         strict: true,
-        skipLibCheck: true,
       });
 
       monaco.languages.typescript.typescriptDefaults.addExtraLib(
@@ -58,86 +53,143 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
     }
   }, [monaco]);
 
-  const preview = useMemo(() => {
-    const scriptFile = tabs.find((t) => ['typescript', 'javascript'].includes(t.language))!;
-    const cssFiles = tabs.filter((t) => t.language === 'css');
+  const [previewCode, setPreviewCode] = useState('');
 
-    const jsCode = transpileCode(
-      scriptFile.content,
-      scriptFile.language as 'javascript' | 'typescript',
-    );
-    const cssCode = cssFiles.map((f) => `<style>${f.content}</style>`).join('\n');
+  useEffect(() => {
+    const compile = async () => {
+      try {
+        const appFile = tabs.find((t) => t.name === 'App.tsx' || t.name === 'App.jsx');
+        if (!appFile) return;
+        const code = await transpileCode(
+          appFile.content,
+          appFile.language === 'typescript' ? 'typescript' : 'javascript',
+        );
+        setPreviewCode(code);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    const timeout = setTimeout(compile, 800);
+    return () => clearTimeout(timeout);
+  }, [tabs]);
 
+  const cssCode = useMemo(() => {
+    return tabs
+      .filter((t) => t.language === 'css')
+      .map((t) => t.content)
+      .join('\n');
+  }, [tabs]);
+
+  const srcDoc = useMemo(() => {
     return `
       <!DOCTYPE html>
-      <html lang="en">
+      <html>
         <head>
-          <meta charset="UTF-8" />
-          <title>Live React Preview</title>
-          ${cssCode}
-          <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-          <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+          <style>body { font-family: sans-serif; padding: 1rem; }</style>
+          <style>${cssCode}</style>
+          <script type="importmap">
+            {
+              "imports": {
+                "react": "https://esm.sh/react@18.2.0",
+                "react-dom/client": "https://esm.sh/react-dom@18.2.0/client"
+              }
+            }
+          </script>
         </head>
-        <body style="margin:0;">
+        <body>
           <div id="root"></div>
           <script type="module">
-            window.addEventListener('DOMContentLoaded', () => {
-              try {
-                ${jsCode}
-              } catch (err) {
-                document.body.innerHTML = '<pre style="color:red;">' + err + '</pre>';
-                console.error(err);
+            import React from 'react';
+            import { createRoot } from 'react-dom/client';
+            try {
+              ${previewCode}
+              const root = createRoot(document.getElementById('root'));
+              if (typeof App !== 'undefined') {
+                root.render(React.createElement(App));
+              } else {
+                document.body.innerHTML = '<pre style="color:red">Error: App component not found. Please export a component named App.</pre>';
               }
-            });
-          <\/script>
+            } catch (err) {
+              document.body.innerHTML = '<pre style="color:red">' + err.message + '</pre>';
+            }
+          </script>
         </body>
       </html>
     `;
-  }, [tabs]);
+  }, [previewCode, cssCode]);
 
-  const addCssFile = () => {
-    const newFile: FileTab = {
-      name: `style${tabs.filter((f) => f.language === 'css').length + 1}.css`,
-      language: 'css',
-      content: DEFAULT_CSS,
-    };
-    setTabs([...tabs, newFile]);
-    setActiveTab(newFile.name);
+  const handleFormat = () => {
+    const newTabs = tabs.map((t) => {
+      if (t.name === activeTab) {
+        let formatted = t.content;
+        if (t.language === 'css') prettifyCSS(t.content, (v) => (formatted = v));
+        else prettifyJS(t.content, (v) => (formatted = v));
+        return { ...t, content: formatted };
+      }
+      return t;
+    });
+    setTabs(newTabs);
   };
 
-  const switchAppFile = () => {
-    if (activeTab === 'App.tsx') {
-      setTabs(
-        tabs.map((t) =>
-          t.name === 'App.tsx'
-            ? { name: 'App.jsx', language: 'javascript', content: DEFAULT_REACT_JS }
-            : t,
-        ),
-      );
-      setActiveTab('App.jsx');
-    } else if (activeTab === 'App.jsx') {
-      setTabs(
-        tabs.map((t) =>
-          t.name === 'App.jsx'
-            ? { name: 'App.tsx', language: 'typescript', content: DEFAULT_REACT_TS }
-            : t,
-        ),
-      );
+  const handleReset = () => {
+    if (confirm('Reset to default template?')) {
+      setTabs([{ name: 'App.tsx', language: 'typescript', content: DEFAULT_REACT_TS }]);
       setActiveTab('App.tsx');
     }
+  };
+
+  const updateFileContent = (val: string) => {
+    const newTabs = tabs.map((t) => (t.name === activeTab ? { ...t, content: val } : t));
+    setTabs(newTabs);
+  };
+
+  const showHelp = () => {
+    Modal.info({
+      title: 'How to use React Playground',
+      width: 600,
+      content: (
+        <div>
+          <p>Welcome to the React Playground! Here's how to get started:</p>
+          <ul>
+            <li>
+              <strong>Main Entry:</strong> The entry point is always <code>App.tsx</code> (or{' '}
+              <code>App.jsx</code>). You must define a component named <code>App</code>.
+            </li>
+            <li>
+              <strong>Adding Files:</strong> Click "New File" to add components or styles.
+              <ul>
+                <li>
+                  For React components, use <code>.tsx</code> or <code>.jsx</code> extension.
+                </li>
+                <li>
+                  For styles, use <code>.css</code> extension.
+                </li>
+              </ul>
+            </li>
+            <li>
+              <strong>Imports:</strong> Currently, this playground supports single-file compilation.
+              You cannot import other local files yet. All code must be in <code>App.tsx</code> for
+              now, or you can define multiple components in one file.
+            </li>
+            <li>
+              <strong>External Libraries:</strong> React and ReactDOM are pre-loaded. You can import
+              them as usual.
+            </li>
+          </ul>
+          <p>
+            <em>Note: Multi-file import support is coming soon!</em>
+          </p>
+        </div>
+      ),
+    });
   };
 
   return (
     <Card
       className="react-card"
       variant="borderless"
-      style={{
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
+      style={{ width: '100%', display: 'flex', flexDirection: 'column' }}
     >
-      {/* Toolbar */}
       <div
         style={{
           display: 'flex',
@@ -152,64 +204,51 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
           borderRadius: 8,
         }}
       >
-        {/* Left section: action buttons */}
-        <Space wrap>
-          <Button
-            icon={<SettingOutlined />}
-            onClick={onOpenSettings}
-            type="text"
-            title="Settings"
-          />
+        <PlaygroundToolbar
+          onSettings={onOpenSettings}
+          onTemplates={() => setIsTemplateModalOpen(true)}
+          onFormat={handleFormat}
+          onReset={handleReset}
+          extraActions={
+            <Space>
+              <Button
+                icon={<FileAddOutlined />}
+                onClick={() => {
+                  const name = prompt('File name (e.g. Component.tsx, utils.ts, style.css):');
+                  if (name) {
+                    let lang: FileTab['language'] = 'javascript';
+                    let content = '';
+                    if (name.endsWith('.tsx') || name.endsWith('.ts')) lang = 'typescript';
+                    if (name.endsWith('.css')) {
+                      lang = 'css';
+                      content = DEFAULT_REACT_CSS;
+                    }
 
-          {(activeTab === 'App.tsx' || activeTab === 'App.jsx') && (
-            <Button onClick={switchAppFile} icon={<FileAddOutlined />} type="default">
-              {activeTab === 'App.tsx' ? 'Switch to JSX' : 'Switch to TSX'}
-            </Button>
-          )}
+                    setTabs([
+                      ...tabs,
+                      {
+                        name,
+                        language: lang,
+                        content,
+                      },
+                    ]);
+                    setActiveTab(name);
+                  }
+                }}
+              >
+                New File
+              </Button>
+              <Button icon={<QuestionCircleOutlined />} onClick={showHelp}>
+                Help
+              </Button>
+            </Space>
+          }
+        />
 
-          <Button
-            icon={<FormatPainterOutlined />}
-            onClick={() => {
-              if (activeFile.language === 'css') {
-                prettifyCSS(activeFile.content, (val) =>
-                  setTabs(tabs.map((t) => (t.name === activeTab ? { ...t, content: val } : t))),
-                );
-              } else {
-                prettifyJS(
-                  activeFile.content,
-                  (val) =>
-                    setTabs(tabs.map((t) => (t.name === activeTab ? { ...t, content: val } : t))),
-                  activeFile.language,
-                );
-              }
-            }}
-          >
-            Prettify
-          </Button>
-
-          <Button icon={<FileAddOutlined />} type="primary" onClick={addCssFile}>
-            Add CSS
-          </Button>
-
-          <Button
-            icon={<ReloadOutlined />}
-            danger
-            onClick={() => {
-              if (confirm('Reset all code to default?')) {
-                setTabs([{ name: 'App.tsx', language: 'typescript', content: DEFAULT_REACT_TS }]);
-                setActiveTab('App.tsx');
-              }
-            }}
-          >
-            Reset
-          </Button>
-        </Space>
-
-        {/* Right section: layout switch */}
         <Space align="center" style={{ marginLeft: 'auto' }}>
-          <Typography.Text type="secondary" style={{ marginRight: 4, whiteSpace: 'nowrap' }}>
+          <Text type="secondary" style={{ marginRight: 4 }}>
             Layout:
-          </Typography.Text>
+          </Text>
           <Segmented
             options={[
               { label: 'Horizontal', value: 'horizontal' },
@@ -217,105 +256,64 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
             ]}
             value={splitDirection}
             onChange={(val) => setSplitDirection(val as 'vertical' | 'horizontal')}
-            block
             size="middle"
             style={{ minWidth: 180 }}
           />
         </Space>
       </div>
 
-      {/* Splitter fills the rest */}
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: 'flex',
+      <TemplateModal
+        open={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
+        type="react"
+        onSelect={(data) => {
+          setTabs(data);
+          setActiveTab(data[0].name);
         }}
-      >
+      />
+
+      <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
         <Splitter
-          key={splitDirection} // 👈 forces re-render when layout changes
           layout={splitDirection}
           style={{
             flex: 1,
-            minHeight: 'calc(100vh - 120px)',
-            width: '100%',
-            height: splitDirection === 'vertical' ? 'calc(100vh - 120px)' : undefined,
             display: 'flex',
+            height: splitDirection === 'vertical' ? 'calc(100vh - 120px)' : undefined,
+            width: '100%',
           }}
         >
-          {/* Left/Top Panel: Code Editor */}
           <Splitter.Panel defaultSize="50%" min="25%" max="75%">
             <Tabs
-              activeKey={activeTab}
-              onChange={(key) => setActiveTab(key)}
               type="editable-card"
-              hideAdd
-              style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+              activeKey={activeTab}
+              onChange={setActiveTab}
               onEdit={(targetKey, action) => {
-                if (action === 'remove') {
+                if (action === 'remove' && typeof targetKey === 'string') {
                   const newTabs = tabs.filter((t) => t.name !== targetKey);
                   setTabs(newTabs);
-                  if (activeTab === targetKey && newTabs.length) setActiveTab(newTabs[0].name);
+                  if (activeTab === targetKey) setActiveTab(newTabs[0]?.name || '');
                 }
               }}
-            >
-              {tabs.map((file) => (
-                <Tabs.TabPane
-                  tab={file.name}
-                  key={file.name}
-                  closable={file.name !== 'App.tsx' && file.name !== 'App.jsx'}
-                  style={{ height: '100%', flex: 1, minHeight: 0 }}
-                >
-                  <div style={{ height: '100%', flex: 1, minHeight: 0 }}>
-                    <Editor
-                      height="calc(100vh - 120px)"
-                      language={file.language}
-                      value={file.content}
-                      onChange={(val) => {
-                        setTabs(
-                          tabs.map((t) =>
-                            t.name === file.name ? { ...t, content: val || '' } : t,
-                          ),
-                        );
-                      }}
-                      theme={darkMode ? 'vs-dark' : 'light'}
-                      options={monacoOptions}
-                      path={`file:///${file.name}`}
-                    />
-                  </div>
-                </Tabs.TabPane>
-              ))}
-            </Tabs>
+              items={tabs.map((file) => ({
+                label: file.name,
+                key: file.name,
+                closable: file.name !== 'App.tsx' && file.name !== 'App.jsx',
+                children: (
+                  <CodeEditor
+                    height="calc(100vh - 160px)"
+                    language={file.language}
+                    value={file.content}
+                    onChange={(val) => updateFileContent(val || '')}
+                    path={file.name}
+                  />
+                ),
+              }))}
+              style={{ height: '100%' }}
+            />
           </Splitter.Panel>
 
-          {/* Right/Bottom Panel: Preview */}
           <Splitter.Panel>
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                background: '#fff',
-                flex: 1,
-                minHeight: 0,
-              }}
-            >
-              <Title level={5} style={{ padding: '8px 12px', margin: 0 }}>
-                Live React Preview
-              </Title>
-              <iframe
-                title="react-preview"
-                srcDoc={preview}
-                sandbox="allow-scripts allow-same-origin"
-                style={{
-                  flex: 1,
-                  borderTop: splitDirection === 'horizontal' ? '1px solid #ddd' : undefined,
-                  borderRadius: 8,
-                  minHeight: 0,
-                }}
-              />
-            </div>
+            <PreviewFrame srcDoc={srcDoc} title="React Live Preview" />
           </Splitter.Panel>
         </Splitter>
       </div>

@@ -21,6 +21,8 @@ export const transpileCode = (code: string, language: 'typescript' | 'javascript
 
     return output || '';
   } catch (e: any) {
-    return `document.body.innerHTML = '<pre style="color:red;white-space:pre-wrap;">${e.message}</pre>';`;
+    console.error('Transpilation error:', e);
+    // Return code that throws the error in the browser so it's visible
+    return `throw new Error(${JSON.stringify(e.message)});`;
   }
 };

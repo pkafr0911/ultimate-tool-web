@@ -1,106 +1,105 @@
 import React, { useState } from 'react';
-import { Button, Card, Segmented, Select, Space, Splitter, Typography } from 'antd';
-import Editor from '@monaco-editor/react';
+import { Card, Space, Typography, Segmented, Splitter, Button } from 'antd';
+import { PlayCircleOutlined } from '@ant-design/icons';
 import { prettifyJS } from '../utils/formatters';
-import {
-  FormatPainterOutlined,
-  PlayCircleOutlined,
-  SettingOutlined,
-  ReloadOutlined,
-} from '@ant-design/icons';
 import { DEFAULT_CODE } from '../constants';
-import { useMonacoOption } from '../hooks/useMonacoOption';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { usePlaygroundState } from '../hooks/usePlaygroundState';
+import PlaygroundToolbar from './common/PlaygroundToolbar';
+import CodeEditor from './common/CodeEditor';
+import TemplateModal from './common/TemplateModal';
+import Console, { LogEntry } from './common/Console';
 
-// Define prop types for this component
 type Props = {
-  onOpenSettings: () => void; // Function to open the settings modal
+  onOpenSettings: () => void;
 };
 
-// Extract `Title` component from Ant Design Typography for headings
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
-// Main component: JsRunner
 const JsRunner: React.FC<Props> = ({ onOpenSettings }) => {
-  // Detect whether the app is in dark mode (for Monaco theme)
   const { darkMode } = useDarkMode();
 
-  // Selected language for the editor — either JavaScript or TypeScript
   const [language, setLanguage] = usePlaygroundState<'javascript' | 'typescript'>(
     'playground_js_lang',
     'javascript',
   );
 
-  // The actual code written by the user
   const [code, setCode] = usePlaygroundState('playground_js_code', DEFAULT_CODE);
-
-  // Output text displayed after code execution (logs, results, or errors)
-  const [output, setOutput] = useState<string>('');
-
-  // Get Monaco editor configuration from custom hook
-  const { monacoOptions } = useMonacoOption();
-
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [splitDirection, setSplitDirection] = useState<'vertical' | 'horizontal'>('horizontal');
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
-  /**
-   * runCode()
-   * ----------
-   * This function executes the user's code safely in an isolated scope using `new Function()`
-   * It also temporarily captures console.log and console.error outputs to show them on screen.
-   */
   const runCode = () => {
-    // Store captured console outputs
-    let captured: string[] = [];
-
-    // Keep references to the original console functions
+    const newLogs: LogEntry[] = [];
     const origLog = console.log;
     const origErr = console.error;
+    const origWarn = console.warn;
+    const origInfo = console.info;
+    const origAlert = window.alert;
 
-    // Override console.log to capture logs in an array
-    console.log = (...args: any[]) => {
-      captured.push(args.join(' ')); // Combine args into a string
-      origLog(...args); // Still print to the browser console
+    const addLog = (type: LogEntry['type'], args: any[]) => {
+      newLogs.push({ type, args, timestamp: Date.now() });
     };
 
-    // Override console.error to capture errors with a ❌ prefix
+    console.log = (...args: any[]) => {
+      addLog('log', args);
+      origLog(...args);
+    };
+
     console.error = (...args: any[]) => {
-      captured.push('❌ ' + args.join(' '));
+      addLog('error', args);
       origErr(...args);
     };
 
-    try {
-      // Execute the user's code dynamically
-      // new Function(code) creates a function from the provided code string
-      const result = new Function(code)();
+    console.warn = (...args: any[]) => {
+      addLog('warn', args);
+      origWarn(...args);
+    };
 
-      // If the function returns a value, append it to the output
-      if (result !== undefined) captured.push(`➡️ ${String(result)}`);
+    console.info = (...args: any[]) => {
+      addLog('info', args);
+      origInfo(...args);
+    };
+
+    window.alert = (msg: any) => {
+      addLog('info', [`[Alert]: ${msg}`]);
+    };
+
+    try {
+      const result = new Function(code)();
+      if (result !== undefined) {
+        addLog('log', ['Result:', result]);
+      }
     } catch (err: any) {
-      // Catch any runtime errors and show them in the output
-      captured.push(`❌ Error: ${err.message}`);
+      addLog('error', [err.message]);
     }
 
-    // Restore original console functions to avoid side effects
     console.log = origLog;
     console.error = origErr;
+    console.warn = origWarn;
+    console.info = origInfo;
+    window.alert = origAlert;
 
-    // Combine captured logs and set them to the output state
-    setOutput(captured.join('\n'));
+    setLogs(newLogs);
+  };
+
+  const handleFormat = () => {
+    prettifyJS(code, setCode, language);
+  };
+
+  const handleReset = () => {
+    if (confirm('Reset code to default?')) {
+      setCode(DEFAULT_CODE);
+      setLanguage('javascript');
+    }
   };
 
   return (
-    // Ant Design card wrapper for the entire playground interface
     <Card
       className="playground-card"
       variant="borderless"
-      style={{
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
+      style={{ width: '100%', display: 'flex', flexDirection: 'column' }}
     >
-      {/* Toolbar */}
       <div
         style={{
           display: 'flex',
@@ -115,43 +114,22 @@ const JsRunner: React.FC<Props> = ({ onOpenSettings }) => {
           borderRadius: 8,
         }}
       >
-        <Space wrap>
-          <Button
-            icon={<SettingOutlined />}
-            onClick={onOpenSettings}
-            type="text"
-            title="Settings"
-          />
-
-          <Button
-            icon={<FormatPainterOutlined />}
-            onClick={() => prettifyJS(code, setCode, language)}
-          >
-            Prettify
-          </Button>
-
-          <Button type="primary" icon={<PlayCircleOutlined />} onClick={runCode}>
-            Run
-          </Button>
-
-          <Button
-            icon={<ReloadOutlined />}
-            danger
-            onClick={() => {
-              if (confirm('Reset code to default?')) {
-                setCode(DEFAULT_CODE);
-                setLanguage('javascript');
-              }
-            }}
-          >
-            Reset
-          </Button>
-        </Space>
+        <PlaygroundToolbar
+          onSettings={onOpenSettings}
+          onTemplates={() => setIsTemplateModalOpen(true)}
+          onFormat={handleFormat}
+          onReset={handleReset}
+          extraActions={
+            <Button type="primary" icon={<PlayCircleOutlined />} onClick={runCode}>
+              Run
+            </Button>
+          }
+        />
 
         <Space align="center" style={{ marginLeft: 'auto' }}>
-          <Typography.Text type="secondary" style={{ marginRight: 4, whiteSpace: 'nowrap' }}>
+          <Text type="secondary" style={{ marginRight: 4 }}>
             Layout:
-          </Typography.Text>
+          </Text>
           <Segmented
             options={[
               { label: 'Horizontal', value: 'horizontal' },
@@ -165,43 +143,39 @@ const JsRunner: React.FC<Props> = ({ onOpenSettings }) => {
         </Space>
       </div>
 
-      {/* Splitter Layout */}
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: 'flex',
+      <TemplateModal
+        open={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
+        type="javascript"
+        onSelect={(data) => {
+          setCode(data);
         }}
-      >
+      />
+
+      <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
         <Splitter
           layout={splitDirection}
           style={{
             flex: 1,
-            minHeight: 'calc(100vh - 120px)',
-            width: '100%',
-            height: splitDirection === 'vertical' ? 'calc(100vh - 120px)' : undefined,
             display: 'flex',
+            height: splitDirection === 'vertical' ? 'calc(100vh - 120px)' : undefined,
+            width: '100%',
           }}
         >
-          {/* Editor Panel */}
           <Splitter.Panel defaultSize="60%" min="25%" max="75%">
-            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Title level={5} style={{ padding: '8px 12px', margin: 0 }}>
                 {language === 'typescript' ? 'TypeScript Editor' : 'JavaScript Editor'}
               </Title>
-              <div style={{ flex: 1, minHeight: 0 }}>
-                <Editor
-                  language={language}
-                  value={code}
-                  onChange={(val) => setCode(val || '')}
-                  theme={darkMode ? 'vs-dark' : 'light'}
-                  options={monacoOptions}
-                />
-              </div>
+              <CodeEditor
+                height="100%"
+                language={language}
+                value={code}
+                onChange={(val) => setCode(val || '')}
+              />
             </div>
           </Splitter.Panel>
 
-          {/* Output Panel */}
           <Splitter.Panel>
             <div
               style={{
@@ -210,27 +184,21 @@ const JsRunner: React.FC<Props> = ({ onOpenSettings }) => {
                 display: 'flex',
                 flexDirection: 'column',
                 background: darkMode ? '#1e1e1e' : '#fff',
-                flex: 1,
-                minHeight: 0,
-                overflow: 'auto',
+                color: darkMode ? '#d4d4d4' : '#000',
               }}
             >
               <Title level={5} style={{ padding: '8px 12px', margin: 0 }}>
-                Output
+                Console Output
               </Title>
-              <pre
+              <div
                 style={{
                   flex: 1,
-                  padding: '12px',
-                  margin: 0,
-                  color: darkMode ? '#d4d4d4' : '#333',
-                  background: darkMode ? '#1e1e1e' : '#fafafa',
-                  fontSize: 13,
-                  overflow: 'auto',
+                  overflow: 'hidden',
+                  borderTop: splitDirection === 'horizontal' ? '1px solid #ddd' : undefined,
                 }}
               >
-                {output || '// Your output will appear here'}
-              </pre>
+                <Console logs={logs} />
+              </div>
             </div>
           </Splitter.Panel>
         </Splitter>
@@ -239,5 +207,4 @@ const JsRunner: React.FC<Props> = ({ onOpenSettings }) => {
   );
 };
 
-// Export the component so it can be imported elsewhere
 export default JsRunner;

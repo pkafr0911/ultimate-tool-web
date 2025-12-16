@@ -1,75 +1,53 @@
-import React, { useMemo, useState } from 'react';
-import { Button, Card, Segmented, Space, Splitter, Tabs, Typography } from 'antd';
-import Editor from '@monaco-editor/react';
-import { prettifyCSS, prettifyHTML, prettifyJS } from '../utils/formatters';
-import {
-  CopyOutlined,
-  FormatPainterOutlined,
-  CodeOutlined,
-  EditOutlined,
-  SettingOutlined,
-  DownloadOutlined,
-  ReloadOutlined,
-} from '@ant-design/icons';
-import { DEFAULT_CSS, DEFAULT_HTML, DEFAULT_SCRIPT } from '../constants';
+import React, { useState } from 'react';
+import { Card, Segmented, Space, Splitter, Tabs, Typography, Button } from 'antd';
+import { CodeOutlined, EditOutlined, FormatPainterOutlined } from '@ant-design/icons';
 import ReactQuill from 'react-quill';
-import { useMonacoOption } from '../hooks/useMonacoOption';
+import { prettifyCSS, prettifyHTML, prettifyJS } from '../utils/formatters';
+import { DEFAULT_CSS, DEFAULT_HTML, DEFAULT_SCRIPT } from '../constants';
 import { usePlaygroundState } from '../hooks/usePlaygroundState';
 import { handleCopy } from '@/helpers';
 import { handleDownload } from '../utils/helpers';
 import { useDarkMode } from '@/hooks/useDarkMode';
+import PlaygroundToolbar from './common/PlaygroundToolbar';
+import PreviewFrame from './common/PreviewFrame';
+import CodeEditor from './common/CodeEditor';
+import { usePreviewGenerator } from '../hooks/usePreviewGenerator';
+import TemplateModal from './common/TemplateModal';
 
-// Define props accepted by this component (only one: onOpenSettings)
 type Props = {
   onOpenSettings: () => void;
 };
 
-// Extract `Title` from Ant Design Typography for section headings
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
-/**
- * HtmlPlayground Component
- * ------------------------
- * This component allows users to:
- * - Edit HTML, CSS, and JavaScript live
- * - See instant preview of the combined output
- * - Switch between "code" and "rich text" modes for HTML
- * - Prettify, copy, or download the full code
- */
 const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
-  // Dark mode state (used for Monaco theme)
   const { darkMode } = useDarkMode();
 
-  // Get editor configuration options from custom hook
-  const { monacoOptions } = useMonacoOption();
-
-  // Code content states for HTML, CSS, and JS
   const [htmlContent, setHtmlContent] = usePlaygroundState('playground_html_html', DEFAULT_HTML);
   const [cssContent, setCssContent] = usePlaygroundState('playground_html_css', DEFAULT_CSS);
   const [jsContent, setJsContent] = usePlaygroundState('playground_html_js', DEFAULT_SCRIPT);
 
-  // Mode & layout states
-  const [viewMode, setViewMode] = useState<'rich' | 'html'>('html'); // Current view mode for the HTML tab: either 'html' or 'rich' (WYSIWYG)
+  const [viewMode, setViewMode] = useState<'rich' | 'html'>('html');
   const [splitDirection, setSplitDirection] = useState<'vertical' | 'horizontal'>('horizontal');
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
-  // Preview HTML (combined and injected into iframe)
-  const preview = useMemo(
-    () => `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <style>${cssContent}</style>
-        </head>
-        <body>
-          ${htmlContent}
-          <script>${jsContent}<\/script>
-        </body>
-        </html>`,
-    [cssContent, htmlContent, jsContent],
-  ); // Re-run whenever any part of the code changes
+  const preview = usePreviewGenerator(htmlContent, cssContent, jsContent);
+
+  const handleFormatAll = () => {
+    if (viewMode === 'html') prettifyHTML(htmlContent, setHtmlContent);
+    prettifyCSS(cssContent, setCssContent);
+    prettifyJS(jsContent, setJsContent);
+  };
+
+  const handleReset = () => {
+    if (confirm('Reset all code to default?')) {
+      setHtmlContent(DEFAULT_HTML);
+      setCssContent(DEFAULT_CSS);
+      setJsContent(DEFAULT_SCRIPT);
+    }
+  };
 
   return (
-    // Ant Design card wrapper for the entire playground
     <Card
       className="html-card"
       variant="borderless"
@@ -79,7 +57,6 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
         flexDirection: 'column',
       }}
     >
-      {/* Toolbar */}
       <div
         style={{
           display: 'flex',
@@ -94,45 +71,15 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
           borderRadius: 8,
         }}
       >
-        {/* Left: actions */}
-        <Space wrap>
-          <Button icon={<SettingOutlined />} onClick={onOpenSettings} type="text" />
+        <PlaygroundToolbar
+          onSettings={onOpenSettings}
+          onTemplates={() => setIsTemplateModalOpen(true)}
+          onFormat={handleFormatAll}
+          onCopy={() => handleCopy(preview, 'Copied full HTML!')}
+          onDownload={() => handleDownload('index.html', preview)}
+          onReset={handleReset}
+        />
 
-          <Button
-            icon={<FormatPainterOutlined />}
-            onClick={() => {
-              if (viewMode === 'html') prettifyHTML(htmlContent, setHtmlContent);
-              prettifyCSS(cssContent, setCssContent);
-              prettifyJS(jsContent, setJsContent);
-            }}
-          >
-            Prettify All
-          </Button>
-
-          <Button icon={<CopyOutlined />} onClick={() => handleCopy(preview, 'Copied full HTML!')}>
-            Copy All
-          </Button>
-
-          <Button icon={<DownloadOutlined />} onClick={() => handleDownload('index.html', preview)}>
-            Download
-          </Button>
-
-          <Button
-            icon={<ReloadOutlined />}
-            danger
-            onClick={() => {
-              if (confirm('Reset all code to default?')) {
-                setHtmlContent(DEFAULT_HTML);
-                setCssContent(DEFAULT_CSS);
-                setJsContent(DEFAULT_SCRIPT);
-              }
-            }}
-          >
-            Reset
-          </Button>
-        </Space>
-
-        {/* Right: layout controls */}
         <Space align="center" style={{ marginLeft: 'auto' }}>
           <Text type="secondary" style={{ marginRight: 4 }}>
             Layout:
@@ -150,7 +97,17 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
         </Space>
       </div>
 
-      {/* Splitter Area */}
+      <TemplateModal
+        open={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
+        type="html"
+        onSelect={(data) => {
+          setHtmlContent(data.html);
+          setCssContent(data.css);
+          setJsContent(data.javascript);
+        }}
+      />
+
       <div
         style={{
           flex: 1,
@@ -168,7 +125,6 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
             width: '100%',
           }}
         >
-          {/* Left / Top: Editors */}
           <Splitter.Panel defaultSize="50%" min="25%" max="75%">
             <Tabs
               defaultActiveKey="html"
@@ -201,13 +157,11 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
                       {viewMode === 'rich' ? (
                         <ReactQuill value={htmlContent} onChange={setHtmlContent} />
                       ) : (
-                        <Editor
+                        <CodeEditor
                           height="calc(100vh - 120px)"
                           language="html"
                           value={htmlContent}
                           onChange={(val) => setHtmlContent(val || '')}
-                          theme={darkMode ? 'vs-dark' : 'light'}
-                          options={monacoOptions}
                         />
                       )}
                     </>
@@ -225,13 +179,11 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
                       >
                         Prettify
                       </Button>
-                      <Editor
+                      <CodeEditor
                         height="calc(100vh - 120px)"
                         language="css"
                         value={cssContent}
                         onChange={(val) => setCssContent(val || '')}
-                        theme={darkMode ? 'vs-dark' : 'light'}
-                        options={monacoOptions}
                       />
                     </>
                   ),
@@ -248,13 +200,11 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
                       >
                         Prettify
                       </Button>
-                      <Editor
+                      <CodeEditor
                         height="calc(100vh - 120px)"
                         language="javascript"
                         value={jsContent}
                         onChange={(val) => setJsContent(val || '')}
-                        theme={darkMode ? 'vs-dark' : 'light'}
-                        options={monacoOptions}
                       />
                     </>
                   ),
@@ -263,34 +213,8 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
             />
           </Splitter.Panel>
 
-          {/* Right / Bottom: Live Preview */}
           <Splitter.Panel>
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                background: '#fff',
-                flex: 1,
-                minHeight: 0,
-              }}
-            >
-              <Title level={5} style={{ padding: '8px 12px', margin: 0 }}>
-                Live HTML Preview
-              </Title>
-              <iframe
-                title="html-preview"
-                srcDoc={preview}
-                // sandbox="allow-scripts allow-same-origin allow-modals"
-                style={{
-                  flex: 1,
-                  borderTop: splitDirection === 'horizontal' ? '1px solid #ddd' : undefined,
-                  borderRadius: 8,
-                  minHeight: 0,
-                }}
-              />
-            </div>
+            <PreviewFrame srcDoc={preview} title="Live HTML Preview" />
           </Splitter.Panel>
         </Splitter>
       </div>
@@ -298,5 +222,4 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
   );
 };
 
-// Export the component as default for use in other parts of the app
 export default HtmlPlayground;
