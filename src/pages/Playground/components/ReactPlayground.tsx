@@ -53,70 +53,115 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
     }
   }, [monaco]);
 
-  const [previewCode, setPreviewCode] = useState('');
+  const [srcDoc, setSrcDoc] = useState('');
+  const blobUrlsRef = React.useRef<string[]>([]);
 
   useEffect(() => {
     const compile = async () => {
       try {
-        const appFile = tabs.find((t) => t.name === 'App.tsx' || t.name === 'App.jsx');
-        if (!appFile) return;
-        const code = await transpileCode(
-          appFile.content,
-          appFile.language === 'typescript' ? 'typescript' : 'javascript',
-        );
-        setPreviewCode(code);
-      } catch (err) {
+        // Cleanup old blobs
+        blobUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+        blobUrlsRef.current = [];
+
+        const imports: Record<string, string> = {
+          react: 'https://esm.sh/react@18.2.0',
+          'react-dom/client': 'https://esm.sh/react-dom@18.2.0/client',
+        };
+
+        let appFileFound = false;
+
+        // Process files
+        for (const file of tabs) {
+          let code = '';
+          if (file.language === 'css') {
+            const safeCss = JSON.stringify(file.content);
+            code = `
+              const style = document.createElement('style');
+              style.textContent = ${safeCss};
+              document.head.appendChild(style);
+            `;
+          } else {
+            code = transpileCode(
+              file.content,
+              file.language === 'typescript' ? 'typescript' : 'javascript',
+            );
+          }
+
+          const blob = new Blob([code], { type: 'application/javascript' });
+          const url = URL.createObjectURL(blob);
+          blobUrlsRef.current.push(url);
+
+          // Map for entry point (relative to document)
+          imports[`./${file.name}`] = url;
+
+          // Map for internal imports (rewritten by Babel to playground-src/...)
+          imports[`playground-src/${file.name}`] = url;
+
+          const nameWithoutExt = file.name.replace(/\.(tsx|jsx|ts|js|css)$/, '');
+          if (nameWithoutExt !== file.name) {
+            imports[`./${nameWithoutExt}`] = url;
+            imports[`playground-src/${nameWithoutExt}`] = url;
+          }
+
+          if (file.name === 'App.tsx' || file.name === 'App.jsx') {
+            appFileFound = true;
+          }
+        }
+
+        if (!appFileFound) {
+          setSrcDoc(
+            '<html><body><pre style="color:red">Entry file App.tsx or App.jsx not found.</pre></body></html>',
+          );
+          return;
+        }
+
+        const importMapJson = JSON.stringify({ imports });
+
+        const html = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <style>body { font-family: sans-serif; padding: 1rem; }</style>
+              <script type="importmap">
+                ${importMapJson}
+              </script>
+            </head>
+            <body>
+              <div id="root"></div>
+              <script type="module">
+                import React from 'react';
+                import { createRoot } from 'react-dom/client';
+                import AppComp from './App';
+
+                const root = createRoot(document.getElementById('root'));
+                try {
+                  const Component = AppComp && (AppComp.default || AppComp.App || AppComp);
+                  if (Component) {
+                    root.render(React.createElement(Component));
+                  } else {
+                    document.body.innerHTML = '<pre style="color:red">Could not find default export in App.tsx/jsx</pre>';
+                  }
+                } catch (err) {
+                  document.body.innerHTML = '<pre style="color:red">' + err.message + '</pre>';
+                }
+                
+                window.addEventListener('error', (event) => {
+                   document.body.innerHTML = '<pre style="color:red">' + event.message + '</pre>';
+                });
+              </script>
+            </body>
+          </html>
+        `;
+        setSrcDoc(html);
+      } catch (err: any) {
         console.error(err);
+        setSrcDoc(`<html><body><pre style="color:red">${err.message}</pre></body></html>`);
       }
     };
-    const timeout = setTimeout(compile, 800);
+
+    const timeout = setTimeout(compile, 1000);
     return () => clearTimeout(timeout);
   }, [tabs]);
-
-  const cssCode = useMemo(() => {
-    return tabs
-      .filter((t) => t.language === 'css')
-      .map((t) => t.content)
-      .join('\n');
-  }, [tabs]);
-
-  const srcDoc = useMemo(() => {
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>body { font-family: sans-serif; padding: 1rem; }</style>
-          <style>${cssCode}</style>
-          <script type="importmap">
-            {
-              "imports": {
-                "react": "https://esm.sh/react@18.2.0",
-                "react-dom/client": "https://esm.sh/react-dom@18.2.0/client"
-              }
-            }
-          </script>
-        </head>
-        <body>
-          <div id="root"></div>
-          <script type="module">
-            import React from 'react';
-            import { createRoot } from 'react-dom/client';
-            try {
-              ${previewCode}
-              const root = createRoot(document.getElementById('root'));
-              if (typeof App !== 'undefined') {
-                root.render(React.createElement(App));
-              } else {
-                document.body.innerHTML = '<pre style="color:red">Error: App component not found. Please export a component named App.</pre>';
-              }
-            } catch (err) {
-              document.body.innerHTML = '<pre style="color:red">' + err.message + '</pre>';
-            }
-          </script>
-        </body>
-      </html>
-    `;
-  }, [previewCode, cssCode]);
 
   const handleFormat = () => {
     const newTabs = tabs.map((t) => {
@@ -167,18 +212,15 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
               </ul>
             </li>
             <li>
-              <strong>Imports:</strong> Currently, this playground supports single-file compilation.
-              You cannot import other local files yet. All code must be in <code>App.tsx</code> for
-              now, or you can define multiple components in one file.
+              <strong>Imports:</strong> You can import other files you create using relative paths.
+              For example: <code>import Header from './Header';</code> or{' '}
+              <code>import './styles.css';</code>.
             </li>
             <li>
               <strong>External Libraries:</strong> React and ReactDOM are pre-loaded. You can import
               them as usual.
             </li>
           </ul>
-          <p>
-            <em>Note: Multi-file import support is coming soon!</em>
-          </p>
         </div>
       ),
     });

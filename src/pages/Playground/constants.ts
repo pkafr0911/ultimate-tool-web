@@ -33,7 +33,8 @@ export const DEFAULT_SCRIPT = `
 export const DEFAULT_CODE = `// Try something!\nconsole.log("Hello, playground!");`;
 
 // Default React code shown in the editor initially
-export const DEFAULT_REACT_TS = `type Props = { name: string };
+export const DEFAULT_REACT_TS = `import React, { useState } from 'react';
+type Props = { name: string };
 
 const App: React.FC<Props> = ({ name = "TAIN" }) => {
   const [count, setCount] = React.useState(0);
@@ -45,7 +46,8 @@ const App: React.FC<Props> = ({ name = "TAIN" }) => {
       <button onClick={() => setCount(count + 1)}>Click me</button>
     </div>
   );
-};`;
+};
+export default App;`;
 
 export const DEFAULT_REACT_JS = `function App() {
   const [count, setCount] = React.useState(0);
