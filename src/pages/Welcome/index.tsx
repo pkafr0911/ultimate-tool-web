@@ -522,6 +522,7 @@ const FooterSection = () => {
         <FramerMarqueeSection />
         <h2>Ready to get started?</h2>
         <CatButton />
+        <div style={{ marginBottom: 100 }}></div>
       </motion.div>
     </div>
   );
