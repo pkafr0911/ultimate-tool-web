@@ -540,7 +540,7 @@
 
 // --- Feature Sections (Glassmorphism) ---
 
-.storySections {
+.categoryShowcaseSection {
   background: transparent;
 }
 
@@ -599,7 +599,7 @@
 
 // --- Sticky Scroll Section Overrides ---
 
-.cardsSection {
+.quickAccessSection {
   padding: 0 20px;
   max-width: 800px;
   margin: 0 auto;
@@ -646,18 +646,23 @@
 
 // --- Other Components ---
 
-.framerMarqueeSection {
+.toolsMarqueeSection {
   width: 100%;
-  padding: 100px 0;
+  padding: 80px 0;
   background: transparent;
   overflow: hidden;
-  text-align: center;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
 
   h2 {
+    text-align: center;
     font-size: 2.5rem;
-    margin-bottom: 60px;
-    font-weight: 800;
-    background: linear-gradient(90deg, #ff718b, #41b3ff);
+    margin-bottom: 40px;
+    background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
@@ -666,7 +671,7 @@
 .marqueeRow {
   display: flex;
   width: 100%;
-  margin-bottom: 32px;
+  margin-bottom: 48px;
   overflow: hidden;
   position: relative;
   -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
@@ -675,8 +680,8 @@
 
 .marqueeTrack {
   display: flex;
-  gap: 24px;
-  padding: 0 12px;
+  gap: 48px;
+  padding: 0 24px;
   width: max-content;
 }
 
@@ -802,7 +807,7 @@
   }
 }
 
-.stickyFeatureSection {
+.featureHighlightSection {
   position: relative;
   min-height: 300vh;
   background: rgba(255, 255, 255, 0.3);

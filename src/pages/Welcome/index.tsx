@@ -128,10 +128,10 @@ const CatButton = () => {
   );
 };
 
-const FramerMarqueeSection = () => {
+const ToolsMarqueeSection = () => {
   return (
-    <div className={styles.framerMarqueeSection}>
-      <h2>Launch faster with community resources</h2>
+    <div className={styles.toolsMarqueeSection}>
+      <h2>Explore All Tools</h2>
       <MarqueeRow items={marqueeRows[0]} direction="left" speed={40} />
       <MarqueeRow items={marqueeRows[1]} direction="right" speed={50} />
       <MarqueeRow items={marqueeRows[2]} direction="left" speed={45} />
@@ -139,11 +139,11 @@ const FramerMarqueeSection = () => {
   );
 };
 
-const FeatureCategorySection: React.FC = () => {
+const CategoryShowcaseSection: React.FC = () => {
   const isMobile = useIsMobile();
 
   return (
-    <div className={styles.storySections}>
+    <div className={styles.categoryShowcaseSection}>
       {categories.map((category, i) => {
         const items = pages.filter((p) => category.keys.includes(p.name));
         const isReverse = i % 2 !== 0; // Alternate layout
@@ -375,11 +375,11 @@ const FeatureTextBlock = ({ feature, index, setActive, isActive }: any) => {
   );
 };
 
-const SellProductsSection: React.FC = () => {
+const FeatureHighlightSection: React.FC = () => {
   const [activeFeature, setActiveFeature] = useState(0);
 
   return (
-    <div className={styles.stickyFeatureSection}>
+    <div className={styles.featureHighlightSection}>
       <div className={styles.featureContent}>
         {featureSections.map((feature, index) => (
           <FeatureTextBlock
@@ -478,7 +478,7 @@ const HeroSection = () => {
 
 const ToolsGridSection = () => {
   return (
-    <div className={styles.cardsSection}>
+    <div className={styles.quickAccessSection}>
       <div className={styles.sectionHeader}>
         <h2>Explore Our Tools</h2>
         <p>Everything you need to boost your productivity</p>
@@ -519,11 +519,34 @@ const FooterSection = () => {
           transformOrigin: 'bottom center',
         }}
       >
-        <FramerMarqueeSection />
+        <ToolsMarqueeSection />
         <h2>Ready to get started?</h2>
         <CatButton />
         <div style={{ marginBottom: 100 }}></div>
       </motion.div>
+    </div>
+  );
+};
+
+const QuickAccessSection = () => {
+  return (
+    <div className={styles.quickAccessSection}>
+      {stickyCards.map((card, index) => (
+        <div
+          key={card.id}
+          className={styles.cardContainer}
+          style={{ top: `${100 + index * 40}px` }} // Staggered sticky top
+        >
+          <div
+            className={styles.card}
+            style={{ backgroundColor: card.color, cursor: 'pointer' }}
+            onClick={() => history.push(card.path)}
+          >
+            <h2>{card.title}</h2>
+            <p>{card.description}</p>
+          </div>
+        </div>
+      ))}
     </div>
   );
 };
@@ -533,27 +556,9 @@ const WelcomeNew: React.FC = () => {
     <div className={styles.container}>
       <HeroSection />
 
-      <SellProductsSection />
-      <FeatureCategorySection />
-      {/* Sticky Cards Effect from WebflowScroll */}
-      <div className={styles.cardsSection}>
-        {stickyCards.map((card, index) => (
-          <div
-            key={card.id}
-            className={styles.cardContainer}
-            style={{ top: `${100 + index * 40}px` }} // Staggered sticky top
-          >
-            <div
-              className={styles.card}
-              style={{ backgroundColor: card.color, cursor: 'pointer' }}
-              onClick={() => history.push(card.path)}
-            >
-              <h2>{card.title}</h2>
-              <p>{card.description}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      <FeatureHighlightSection />
+      <CategoryShowcaseSection />
+      <QuickAccessSection />
       <FooterSection />
     </div>
   );
