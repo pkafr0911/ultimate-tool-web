@@ -647,6 +647,7 @@
 // --- Other Components ---
 
 .framerMarqueeSection {
+  width: 100%;
   padding: 100px 0;
   background: transparent;
   overflow: hidden;
@@ -664,9 +665,11 @@
 
 .marqueeRow {
   display: flex;
+  width: 100%;
   margin-bottom: 32px;
   overflow: hidden;
   position: relative;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
   mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
 }
 
@@ -781,7 +784,7 @@
 }
 
 .footer {
-  height: 80vh;
+  height: 130vh;
   background: #000;
   color: #fff;
   display: flex;

@@ -505,8 +505,8 @@ const FooterSection = () => {
     offset: ['start end', 'end end'],
   });
 
-  const scale = useTransform(scrollYProgress, [0, 1], [0.92, 1]);
-  const opacity = useTransform(scrollYProgress, [0, 0.4], [0.8, 1]);
+  const scale = useTransform(scrollYProgress, [0, 0.5], [0.85, 1]);
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [0.75, 1]);
 
   return (
     <div ref={containerRef} style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
@@ -519,6 +519,7 @@ const FooterSection = () => {
           transformOrigin: 'bottom center',
         }}
       >
+        <FramerMarqueeSection />
         <h2>Ready to get started?</h2>
         <CatButton />
       </motion.div>
@@ -531,6 +532,8 @@ const WelcomeNew: React.FC = () => {
     <div className={styles.container}>
       <HeroSection />
 
+      <SellProductsSection />
+      <FeatureCategorySection />
       {/* Sticky Cards Effect from WebflowScroll */}
       <div className={styles.cardsSection}>
         {stickyCards.map((card, index) => (
@@ -550,9 +553,6 @@ const WelcomeNew: React.FC = () => {
           </div>
         ))}
       </div>
-      <SellProductsSection />
-      <FeatureCategorySection />
-      <FramerMarqueeSection />
       <FooterSection />
     </div>
   );
