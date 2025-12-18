@@ -13,12 +13,16 @@ import {
   ZoomInOutlined,
   ZoomOutOutlined,
   ExpandOutlined,
+  EditOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { Rect, Circle, IText } from 'fabric';
 import { useVectorEditor } from '../context';
+import SettingsModal from './SettingsModal';
 
 const Toolbar: React.FC = () => {
   const { canvas, activeTool, setActiveTool, history } = useVectorEditor();
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
 
   const addRectangle = () => {
     if (!canvas) return;
@@ -71,7 +75,59 @@ const Toolbar: React.FC = () => {
 
   const exportSVG = () => {
     if (!canvas) return;
-    const svg = canvas.toSVG();
+
+    // Save current background color
+    const originalBg = canvas.backgroundColor;
+
+    // Set background to transparent for export
+    canvas.backgroundColor = 'transparent';
+
+    // Calculate bounding box of all objects
+    const objects = canvas.getObjects();
+    let svg;
+
+    if (objects.length > 0) {
+      let minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity;
+
+      objects.forEach((obj) => {
+        const br = obj.getBoundingRect();
+        if (br.left < minX) minX = br.left;
+        if (br.top < minY) minY = br.top;
+        if (br.left + br.width > maxX) maxX = br.left + br.width;
+        if (br.top + br.height > maxY) maxY = br.top + br.height;
+      });
+
+      // Add some padding
+      const padding = 10;
+      minX -= padding;
+      minY -= padding;
+      maxX += padding;
+      maxY += padding;
+
+      const width = maxX - minX;
+      const height = maxY - minY;
+
+      svg = canvas.toSVG({
+        viewBox: {
+          x: minX,
+          y: minY,
+          width: width,
+          height: height,
+        },
+        width: width.toString(),
+        height: height.toString(),
+      });
+    } else {
+      svg = canvas.toSVG();
+    }
+
+    // Restore background
+    canvas.backgroundColor = originalBg;
+    canvas.requestRenderAll();
+
     const blob = new Blob([svg], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -114,11 +170,11 @@ const Toolbar: React.FC = () => {
         <Button icon={<FontSizeOutlined />} onClick={addText} />
       </Tooltip>
 
-      <Tooltip title="Draw (B)">
+      <Tooltip title="Pen (P)">
         <Button
-          type={activeTool === 'draw' ? 'primary' : 'default'}
-          icon={<HighlightOutlined />}
-          onClick={() => setActiveTool('draw')}
+          type={activeTool === 'pen' ? 'primary' : 'default'}
+          icon={<EditOutlined />}
+          onClick={() => setActiveTool('pen')}
         />
       </Tooltip>
 
@@ -141,6 +197,12 @@ const Toolbar: React.FC = () => {
       <Tooltip title="Export SVG">
         <Button icon={<DownloadOutlined />} onClick={exportSVG} />
       </Tooltip>
+
+      <Tooltip title="Settings">
+        <Button icon={<SettingOutlined />} onClick={() => setSettingsOpen(true)} />
+      </Tooltip>
+
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </Space>
   );
 };

@@ -1,13 +1,16 @@
 import React, { useEffect, useRef } from 'react';
-import { Canvas, TEvent, Rect, Circle, IText } from 'fabric';
+import { Canvas, TEvent, Rect, Circle, IText, Point } from 'fabric';
 import { useVectorEditor } from '../context';
 import { useShortcuts } from '../hooks/useShortcuts';
+import { usePenTool } from '../hooks/usePenTool';
 
 const CanvasArea: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { setCanvas, setSelectedObject, activeTool, setActiveTool, history, canvas } =
     useVectorEditor();
+
+  const penTool = usePenTool(canvas, history.saveState);
 
   // Initialize Canvas
   useEffect(() => {
@@ -37,9 +40,27 @@ const CanvasArea: React.FC = () => {
     fabricCanvas.on('selection:cleared', () => setSelectedObject(null));
 
     // Save state on modification
-    fabricCanvas.on('object:modified', () => history.saveState());
-    fabricCanvas.on('object:added', () => history.saveState());
-    fabricCanvas.on('object:removed', () => history.saveState());
+    const saveHistory = (e: any) => {
+      // specific check for temp objects from pen tool
+      if (e.target && e.target.isTemp) return;
+      history.saveState();
+    };
+
+    fabricCanvas.on('object:modified', saveHistory);
+    fabricCanvas.on('object:added', saveHistory);
+    fabricCanvas.on('object:removed', saveHistory);
+
+    // Zoom
+    fabricCanvas.on('mouse:wheel', (opt) => {
+      const delta = opt.e.deltaY;
+      let zoom = fabricCanvas.getZoom();
+      zoom *= 0.999 ** delta;
+      if (zoom > 20) zoom = 20;
+      if (zoom < 0.01) zoom = 0.01;
+      fabricCanvas.zoomToPoint(new Point(opt.e.offsetX, opt.e.offsetY), zoom);
+      opt.e.preventDefault();
+      opt.e.stopPropagation();
+    });
 
     const handleResize = () => {
       if (containerRef.current) {
@@ -62,10 +83,17 @@ const CanvasArea: React.FC = () => {
   useEffect(() => {
     if (!canvas) return;
 
-    canvas.isDrawingMode = activeTool === 'draw';
+    canvas.isDrawingMode = false;
 
     if (activeTool === 'pan') {
       canvas.defaultCursor = 'grab';
+      canvas.selection = false;
+      canvas.forEachObject((obj) => {
+        obj.selectable = false;
+        obj.evented = false;
+      });
+    } else if (activeTool === 'pen') {
+      canvas.defaultCursor = 'crosshair';
       canvas.selection = false;
       canvas.forEachObject((obj) => {
         obj.selectable = false;
@@ -82,6 +110,28 @@ const CanvasArea: React.FC = () => {
 
     canvas.requestRenderAll();
   }, [activeTool, canvas]);
+
+  // Bind Pen Events
+  useEffect(() => {
+    if (!canvas || activeTool !== 'pen') return;
+
+    const onMouseDown = (opt: any) => penTool.onMouseDown(opt);
+    const onMouseMove = (opt: any) => penTool.onMouseMove(opt);
+    const onMouseUp = (opt: any) => penTool.onMouseUp(opt);
+    const onDoubleClick = (opt: any) => penTool.onDoubleClick(opt);
+
+    canvas.on('mouse:down', onMouseDown);
+    canvas.on('mouse:move', onMouseMove);
+    canvas.on('mouse:up', onMouseUp);
+    canvas.on('mouse:dblclick', onDoubleClick);
+
+    return () => {
+      canvas.off('mouse:down', onMouseDown);
+      canvas.off('mouse:move', onMouseMove);
+      canvas.off('mouse:up', onMouseUp);
+      canvas.off('mouse:dblclick', onDoubleClick);
+    };
+  }, [canvas, activeTool, penTool]);
 
   // Shortcuts
   useShortcuts({
@@ -126,7 +176,7 @@ const CanvasArea: React.FC = () => {
       canvas.setActiveObject(text);
       setActiveTool('select');
     },
-    b: () => setActiveTool('draw'),
+    p: () => setActiveTool('pen'),
     delete: () => {
       if (!canvas) return;
       const activeObjects = canvas.getActiveObjects();
