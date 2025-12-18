@@ -5,6 +5,8 @@ import { VectorEditorProvider } from './context';
 import Toolbar from './components/Toolbar';
 import CanvasArea from './components/CanvasArea';
 import PropertiesPanel from './components/PropertiesPanel';
+import LayersPanel from './components/LayersPanel';
+import AlignmentPanel from './components/AlignmentPanel';
 import styles from './styles.less';
 
 const { Sider, Content } = Layout;
@@ -22,7 +24,9 @@ const VectorEditor: React.FC = () => {
               <CanvasArea />
             </Content>
             <Sider theme="light" width={300} className={styles.propertiesSider}>
+              <AlignmentPanel />
               <PropertiesPanel />
+              <LayersPanel />
             </Sider>
           </Layout>
         </Card>

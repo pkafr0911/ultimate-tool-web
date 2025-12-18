@@ -1,18 +1,24 @@
 import React from 'react';
-import { Button, Tooltip, Space } from 'antd';
+import { Button, Tooltip, Space, Divider } from 'antd';
 import {
   DragOutlined,
   BorderOutlined,
-  StopOutlined, // Using as Circle placeholder if CircleOutlined is not filled enough, but let's use standard icons
+  StopOutlined,
   FontSizeOutlined,
   DeleteOutlined,
   DownloadOutlined,
+  HighlightOutlined,
+  UndoOutlined,
+  RedoOutlined,
+  ZoomInOutlined,
+  ZoomOutOutlined,
+  ExpandOutlined,
 } from '@ant-design/icons';
 import { Rect, Circle, IText } from 'fabric';
 import { useVectorEditor } from '../context';
 
 const Toolbar: React.FC = () => {
-  const { canvas, activeTool, setActiveTool } = useVectorEditor();
+  const { canvas, activeTool, setActiveTool, history } = useVectorEditor();
 
   const addRectangle = () => {
     if (!canvas) return;
@@ -25,6 +31,7 @@ const Toolbar: React.FC = () => {
     });
     canvas.add(rect);
     canvas.setActiveObject(rect);
+    setActiveTool('select');
   };
 
   const addCircle = () => {
@@ -37,6 +44,7 @@ const Toolbar: React.FC = () => {
     });
     canvas.add(circle);
     canvas.setActiveObject(circle);
+    setActiveTool('select');
   };
 
   const addText = () => {
@@ -50,6 +58,7 @@ const Toolbar: React.FC = () => {
     });
     canvas.add(text);
     canvas.setActiveObject(text);
+    setActiveTool('select');
   };
 
   const clearCanvas = () => {
@@ -57,6 +66,7 @@ const Toolbar: React.FC = () => {
     canvas.clear();
     canvas.backgroundColor = '#ffffff';
     canvas.renderAll();
+    history.saveState();
   };
 
   const exportSVG = () => {
@@ -73,8 +83,8 @@ const Toolbar: React.FC = () => {
   };
 
   return (
-    <Space direction="vertical" size="middle">
-      <Tooltip title="Select">
+    <Space direction="vertical" size="small">
+      <Tooltip title="Select (V)">
         <Button
           type={activeTool === 'select' ? 'primary' : 'default'}
           icon={<DragOutlined />}
@@ -82,17 +92,47 @@ const Toolbar: React.FC = () => {
         />
       </Tooltip>
 
-      <Tooltip title="Add Rectangle">
+      <Tooltip title="Pan (H / Space)">
+        <Button
+          type={activeTool === 'pan' ? 'primary' : 'default'}
+          icon={<DragOutlined />}
+          onClick={() => setActiveTool('pan')}
+        />
+      </Tooltip>
+
+      <Divider style={{ margin: '4px 0' }} />
+
+      <Tooltip title="Rectangle (R)">
         <Button icon={<BorderOutlined />} onClick={addRectangle} />
       </Tooltip>
 
-      <Tooltip title="Add Circle">
+      <Tooltip title="Circle (C)">
         <Button icon={<StopOutlined rotate={45} />} onClick={addCircle} />
       </Tooltip>
 
-      <Tooltip title="Add Text">
+      <Tooltip title="Text (T)">
         <Button icon={<FontSizeOutlined />} onClick={addText} />
       </Tooltip>
+
+      <Tooltip title="Draw (B)">
+        <Button
+          type={activeTool === 'draw' ? 'primary' : 'default'}
+          icon={<HighlightOutlined />}
+          onClick={() => setActiveTool('draw')}
+        />
+      </Tooltip>
+
+      <Divider style={{ margin: '4px 0' }} />
+
+      <Tooltip title="Undo (Ctrl+Z)">
+        <Button icon={<UndoOutlined />} onClick={history.undo} disabled={!history.canUndo} />
+      </Tooltip>
+
+      <Tooltip title="Redo (Ctrl+Shift+Z)">
+        <Button icon={<RedoOutlined />} onClick={history.redo} disabled={!history.canRedo} />
+      </Tooltip>
+
+      <Divider style={{ margin: '4px 0' }} />
 
       <Tooltip title="Clear Canvas">
         <Button icon={<DeleteOutlined />} danger onClick={clearCanvas} />

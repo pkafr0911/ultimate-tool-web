@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { Canvas, FabricObject } from 'fabric';
+import { useHistory } from './hooks/useHistory';
 
 interface VectorEditorContextType {
   canvas: Canvas | null;
@@ -8,6 +9,13 @@ interface VectorEditorContextType {
   setSelectedObject: (object: FabricObject | null) => void;
   activeTool: string;
   setActiveTool: (tool: string) => void;
+  history: {
+    saveState: () => void;
+    undo: () => void;
+    redo: () => void;
+    canUndo: boolean;
+    canRedo: boolean;
+  };
 }
 
 const VectorEditorContext = createContext<VectorEditorContextType | undefined>(undefined);
@@ -16,6 +24,8 @@ export const VectorEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [canvas, setCanvas] = useState<Canvas | null>(null);
   const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
   const [activeTool, setActiveTool] = useState<string>('select');
+
+  const history = useHistory(canvas);
 
   return (
     <VectorEditorContext.Provider
@@ -26,6 +36,7 @@ export const VectorEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setSelectedObject,
         activeTool,
         setActiveTool,
+        history,
       }}
     >
       {children}
