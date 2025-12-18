@@ -68,7 +68,7 @@ export const getTourSteps = (
   {
     title: '🖼️ Layer Tool (V)',
     description:
-      'Add and manage image layers. Drag and drop images onto the canvas, adjust opacity and blend modes, resize, rotate, and position layers with full control.',
+      'Add and manage image layers. Drag and drop images onto the canvas, adjust opacity and blend modes, resize, rotate (Hold Shift), and position layers with full control.',
   },
   {
     title: '🔤 Text Tool (T)',
@@ -120,7 +120,7 @@ export const getTourSteps = (
           <strong>Ctrl+Z</strong>: Undo
         </div>
         <div>
-          <strong>Ctrl+Y</strong>: Redo
+          <strong>Ctrl+Y / Ctrl+Shift+Z</strong>: Redo
         </div>
         <div>
           <strong>Scroll</strong>: Zoom in/out

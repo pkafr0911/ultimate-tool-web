@@ -60,6 +60,12 @@
         icon: 'fileImage',
         component: './PicsEditor',
       },
+      {
+        path: '/image-converter/vector-editor',
+        name: 'vector-editor',
+        icon: 'edit',
+        component: './VectorEditor',
+      },
       { path: '/image-converter/base64', name: 'base64', icon: 'fileText', component: './Base64' },
       {
         path: '/image-converter/text-art',
