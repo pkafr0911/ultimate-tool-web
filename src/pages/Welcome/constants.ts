@@ -269,6 +269,7 @@ export const categories = [
     title: 'Image Converter',
     keys: [
       'Pics Editor',
+      'Vector Editor',
       'SVG Viewer',
       'Image Base64 Converter',
       'Text Art Generator',

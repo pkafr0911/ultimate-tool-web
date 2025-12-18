@@ -24,6 +24,7 @@ import {
   TextArtIcon,
   TicTacToeIcon,
   UUIDIcon,
+  VectorIcon,
   VideoIcon,
   WheelIcon,
 } from './components/CustomIcons';
@@ -135,6 +136,12 @@ export const pages = [
     path: '/image-converter/pics-editor',
     icon: <PicsEditorIcon />,
     desc: 'Just photoshop but faster.',
+  },
+  {
+    name: 'Vector Editor',
+    path: '/image-converter/vector-editor',
+    icon: <VectorIcon />,
+    desc: 'Create and edit vector graphics.',
   },
   {
     name: 'Image Base64 Converter',

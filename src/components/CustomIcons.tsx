@@ -643,6 +643,27 @@ export const ChessIcon: React.FC<IconProps> = ({ color = '#000000', ...props }) 
   </BaseIcon>
 );
 
+export const VectorIcon: React.FC<IconProps> = ({ color = '#FA541C', ...props }) => (
+  <BaseIcon color={color} {...props}>
+    <path
+      d="M18.5 2.5L21.5 5.5L8.5 18.5H5.5V15.5L18.5 2.5Z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill={color}
+      fillOpacity="0.1"
+    />
+    <path
+      d="M14 7L17 10"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </BaseIcon>
+);
+
 export const CommandIcon: React.FC<IconProps> = ({ color = '#262626', ...props }) => (
   <BaseIcon color={color} {...props}>
     <rect
