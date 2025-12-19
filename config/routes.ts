@@ -66,6 +66,12 @@
         icon: 'edit',
         component: './VectorEditor',
       },
+      {
+        path: '/image-converter/photo-editor',
+        name: 'photo-editor',
+        icon: 'edit',
+        component: './PhotoEditor',
+      },
       { path: '/image-converter/base64', name: 'base64', icon: 'fileText', component: './Base64' },
       {
         path: '/image-converter/text-art',
