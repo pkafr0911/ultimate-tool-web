@@ -40,7 +40,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose }) => {
   };
 
   return (
-    <Modal title="Canvas Settings" open={open} onCancel={onClose} footer={null} destroyOnClose>
+    <Modal title="Canvas Settings" open={open} onCancel={onClose} footer={null} destroyOnHidden>
       <Form
         form={form}
         layout="vertical"
