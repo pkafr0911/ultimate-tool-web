@@ -7,7 +7,7 @@ import { PhotoEditorProvider } from './context';
 import Toolbar from './components/Toolbar';
 import CanvasArea from './components/CanvasArea';
 import LayersPanel from './components/LayersPanel';
-import AdjustmentPanel from './components/AdjustmentPanel';
+import PropertiesPanel from './components/PropertiesPanel';
 import UploadArea from './components/UploadArea';
 import { useImageUpload } from './hooks/useImageUpload';
 import styles from './styles.less';
@@ -53,7 +53,7 @@ const PhotoEditor: React.FC = () => {
                   <CanvasArea />
                 </Content>
                 <Sider theme="light" width={300} className={styles.propertiesSider}>
-                  <AdjustmentPanel />
+                  <PropertiesPanel />
                   <LayersPanel />
                 </Sider>
               </Layout>

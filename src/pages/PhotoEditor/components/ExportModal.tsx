@@ -9,7 +9,7 @@ interface ExportModalProps {
 }
 
 const ExportModal: React.FC<ExportModalProps> = ({ visible, onCancel, canvas }) => {
-  const [format, setFormat] = useState<'png' | 'jpeg' | 'json'>('png');
+  const [format, setFormat] = useState<'png' | 'jpeg' | 'json' | 'svg'>('png');
   const [quality, setQuality] = useState<number>(1);
   const [multiplier, setMultiplier] = useState<number>(1);
 
@@ -20,6 +20,10 @@ const ExportModal: React.FC<ExportModalProps> = ({ visible, onCancel, canvas }) 
       const json = canvas.toJSON();
       const blob = new Blob([JSON.stringify(json)], { type: 'application/json' });
       downloadBlob(blob, 'project.json');
+    } else if (format === 'svg') {
+      const svg = canvas.toSVG();
+      const blob = new Blob([svg], { type: 'image/svg+xml' });
+      downloadBlob(blob, 'image.svg');
     } else {
       const dataURL = canvas.toDataURL({
         format,
@@ -65,10 +69,11 @@ const ExportModal: React.FC<ExportModalProps> = ({ visible, onCancel, canvas }) 
           <Select value={format} onChange={(v) => setFormat(v)}>
             <Select.Option value="png">PNG</Select.Option>
             <Select.Option value="jpeg">JPEG</Select.Option>
+            <Select.Option value="svg">SVG</Select.Option>
             <Select.Option value="json">JSON (Project)</Select.Option>
           </Select>
         </Form.Item>
-        {format !== 'json' && (
+        {format !== 'json' && format !== 'svg' && (
           <>
             <Form.Item label="Quality (0.1 - 1)">
               <InputNumber

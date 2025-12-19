@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Canvas, Image, PencilBrush } from 'fabric';
 import { usePhotoEditor } from '../context';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 const CanvasArea: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -15,6 +16,8 @@ const CanvasArea: React.FC = () => {
     addOnFile,
     setAddOnFile,
   } = usePhotoEditor();
+
+  useKeyboardShortcuts(canvas);
 
   useEffect(() => {
     if (!canvas || !addOnFile) return;
