@@ -11,7 +11,7 @@ export const drawBrushStroke = (
   points: { x: number; y: number }[],
   settings: BrushSettings,
 ) => {
-  if (points.length < 2) return;
+  if (points.length === 0) return;
 
   ctx.save();
   ctx.globalAlpha = settings.opacity * settings.flow;
@@ -26,15 +26,21 @@ export const drawBrushStroke = (
   }
 
   ctx.strokeStyle = settings.color;
+  ctx.fillStyle = settings.color;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
   ctx.beginPath();
-  ctx.moveTo(points[0].x, points[0].y);
-  for (let i = 1; i < points.length; i++) {
-    ctx.lineTo(points[i].x, points[i].y);
+  if (points.length === 1) {
+    ctx.arc(points[0].x, points[0].y, ctx.lineWidth / 2, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i].x, points[i].y);
+    }
+    ctx.stroke();
   }
-  ctx.stroke();
   ctx.restore();
 };
 

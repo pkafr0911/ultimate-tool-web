@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, Tooltip, Space, Divider } from 'antd';
 import {
   DragOutlined,
@@ -13,18 +13,63 @@ import {
   ScissorOutlined,
   BgColorsOutlined,
 } from '@ant-design/icons';
-import { Rect, Circle, IText, Image as FabricImage } from 'fabric';
+import { Rect, Circle, IText, FabricImage } from 'fabric';
 import { usePhotoEditor } from '../context';
 import ExportModal from './ExportModal';
 import LayerMaskModal from './LayerMaskModal';
-import ColorRemovalModal from './ColorRemovalModal';
 import { applyMaskToFabricObject } from '../utils/effectsHelpers';
 
 const Toolbar: React.FC = () => {
   const { canvas, setActiveTool, activeTool, history, selectedObject } = usePhotoEditor();
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [maskModalVisible, setMaskModalVisible] = useState(false);
-  const [colorRemovalModalVisible, setColorRemovalModalVisible] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input or textarea
+      if (
+        (e.target as HTMLElement).tagName === 'INPUT' ||
+        (e.target as HTMLElement).tagName === 'TEXTAREA'
+      ) {
+        return;
+      }
+
+      // Ignore if editing text on canvas
+      if (
+        canvas?.getActiveObject() instanceof IText &&
+        (canvas.getActiveObject() as IText).isEditing
+      ) {
+        return;
+      }
+
+      if (e.key === 'v' || e.key === 'V') setActiveTool('select');
+      if (e.key === 'b' || e.key === 'B') setActiveTool('brush');
+      if (e.key === 'm' || e.key === 'M') {
+        if (selectedObject instanceof FabricImage) setMaskModalVisible(true);
+      }
+      if (e.key === 'r' || e.key === 'R') addRectangle();
+      if (e.key === 'c' || e.key === 'C') addCircle();
+      if (e.key === 't' || e.key === 'T') addText();
+
+      if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          history.redo();
+        } else {
+          history.undo();
+        }
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+        e.preventDefault();
+        history.redo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [canvas, selectedObject, history, activeTool]);
 
   const addRectangle = () => {
     if (!canvas) return;
@@ -101,13 +146,6 @@ const Toolbar: React.FC = () => {
     setMaskModalVisible(false);
   };
 
-  const handleApplyColorRemoval = (maskCanvas: HTMLCanvasElement) => {
-    if (!canvas || !selectedObject) return;
-    applyMaskToFabricObject(canvas, selectedObject, maskCanvas);
-    history.saveState();
-    setColorRemovalModalVisible(false);
-  };
-
   const getSelectedImageCanvas = (): HTMLCanvasElement | null => {
     if (!selectedObject || !(selectedObject instanceof FabricImage)) return null;
     const imgElement = selectedObject.getElement() as HTMLImageElement | HTMLCanvasElement;
@@ -125,27 +163,27 @@ const Toolbar: React.FC = () => {
 
   return (
     <Space direction="vertical" style={{ padding: '8px' }}>
-      <Tooltip title="Select">
+      <Tooltip title="Select (V)">
         <Button
           type={activeTool === 'select' ? 'primary' : 'default'}
           icon={<DragOutlined />}
           onClick={() => setActiveTool('select')}
         />
       </Tooltip>
-      <Tooltip title="Brush">
+      <Tooltip title="Brush (B)">
         <Button
           type={activeTool === 'brush' ? 'primary' : 'default'}
           icon={<HighlightOutlined />}
           onClick={() => setActiveTool('brush')}
         />
       </Tooltip>
-      <Tooltip title="Rectangle">
+      <Tooltip title="Rectangle (R)">
         <Button icon={<BorderOutlined />} onClick={addRectangle} />
       </Tooltip>
-      <Tooltip title="Circle">
+      <Tooltip title="Circle (C)">
         <Button icon={<BorderOutlined style={{ borderRadius: '50%' }} />} onClick={addCircle} />
       </Tooltip>
-      <Tooltip title="Text">
+      <Tooltip title="Text (T)">
         <Button icon={<FontSizeOutlined />} onClick={addText} />
       </Tooltip>
       <Tooltip title="Upload Image">
@@ -158,30 +196,23 @@ const Toolbar: React.FC = () => {
 
       <Divider style={{ margin: '8px 0' }} />
 
-      <Tooltip title="Mask">
+      <Tooltip title="Mask (M)">
         <Button
           icon={<ScissorOutlined />}
           onClick={() => setMaskModalVisible(true)}
           disabled={!isImageSelected}
         />
       </Tooltip>
-      <Tooltip title="Remove Color">
-        <Button
-          icon={<BgColorsOutlined />}
-          onClick={() => setColorRemovalModalVisible(true)}
-          disabled={!isImageSelected}
-        />
-      </Tooltip>
 
       <Divider style={{ margin: '8px 0' }} />
 
-      <Tooltip title="Delete">
+      <Tooltip title="Delete (Del)">
         <Button icon={<DeleteOutlined />} onClick={deleteSelected} danger />
       </Tooltip>
-      <Tooltip title="Undo">
+      <Tooltip title="Undo (Ctrl+Z)">
         <Button icon={<UndoOutlined />} onClick={history.undo} disabled={!history.canUndo} />
       </Tooltip>
-      <Tooltip title="Redo">
+      <Tooltip title="Redo (Ctrl+Y)">
         <Button icon={<RedoOutlined />} onClick={history.redo} disabled={!history.canRedo} />
       </Tooltip>
 
@@ -202,15 +233,6 @@ const Toolbar: React.FC = () => {
           open={maskModalVisible}
           onCancel={() => setMaskModalVisible(false)}
           onApply={handleApplyMask}
-          sourceCanvas={getSelectedImageCanvas()}
-        />
-      )}
-
-      {colorRemovalModalVisible && isImageSelected && (
-        <ColorRemovalModal
-          open={colorRemovalModalVisible}
-          onCancel={() => setColorRemovalModalVisible(false)}
-          onApply={handleApplyColorRemoval}
           sourceCanvas={getSelectedImageCanvas()}
           selectedColor={null}
         />

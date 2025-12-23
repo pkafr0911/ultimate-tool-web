@@ -1,6 +1,6 @@
 import React from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Card, Layout } from 'antd';
+import { Card, Layout, Tag } from 'antd';
 import DragDropWrapper from '@/components/DragDropWrapper';
 import DragOverlay from '@/components/DragOverlay';
 import { PhotoEditorProvider } from './context';
@@ -19,7 +19,13 @@ const PhotoEditor: React.FC = () => {
     useImageUpload();
 
   return (
-    <PageContainer title="Photo Editor">
+    <PageContainer
+      title={
+        <span>
+          Photo Editor <Tag color="cyan">Beta</Tag>
+        </span>
+      }
+    >
       <DragDropWrapper
         setDragging={setDragging}
         dragCounter={dragCounter}

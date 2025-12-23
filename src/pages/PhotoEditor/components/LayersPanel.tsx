@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { List, Button, Typography, Space } from 'antd';
+import { List, Button, Typography, Space, Slider, Select } from 'antd';
 import {
   EyeOutlined,
   EyeInvisibleOutlined,
@@ -28,6 +28,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 const { Title } = Typography;
+const { Option } = Select;
 
 interface SortableItemProps {
   id: string;
@@ -180,9 +181,72 @@ const LayersPanel: React.FC = () => {
     history.saveState();
   };
 
+  const handleOpacityChange = (value: number) => {
+    if (!canvas || !selectedObject) return;
+    selectedObject.set('opacity', value);
+    canvas.requestRenderAll();
+    // history.saveState(); // Maybe debounce this or save onAfterChange
+  };
+
+  const handleOpacityAfterChange = () => {
+    history.saveState();
+  };
+
+  const handleBlendModeChange = (value: string) => {
+    if (!canvas || !selectedObject) return;
+    selectedObject.set('globalCompositeOperation', value);
+    canvas.requestRenderAll();
+    history.saveState();
+  };
+
   return (
     <div style={{ padding: 10 }}>
       <Title level={5}>Layers</Title>
+
+      {selectedObject && (
+        <div style={{ marginBottom: 16, padding: 8, background: '#fafafa', borderRadius: 4 }}>
+          <div style={{ marginBottom: 8 }}>
+            <span style={{ fontSize: 12 }}>
+              Opacity: {Math.round((selectedObject.opacity || 1) * 100)}%
+            </span>
+            <Slider
+              min={0}
+              max={1}
+              step={0.01}
+              value={selectedObject.opacity ?? 1}
+              onChange={handleOpacityChange}
+              onAfterChange={handleOpacityAfterChange}
+            />
+          </div>
+          <div>
+            <span style={{ fontSize: 12 }}>Blend Mode:</span>
+            <Select
+              size="small"
+              style={{ width: '100%' }}
+              value={selectedObject.globalCompositeOperation || 'source-over'}
+              onChange={handleBlendModeChange}
+            >
+              <Option value="source-over">Normal</Option>
+              <Option value="multiply">Multiply</Option>
+              <Option value="screen">Screen</Option>
+              <Option value="overlay">Overlay</Option>
+              <Option value="darken">Darken</Option>
+              <Option value="lighten">Lighten</Option>
+              <Option value="color-dodge">Color Dodge</Option>
+              <Option value="color-burn">Color Burn</Option>
+              <Option value="hard-light">Hard Light</Option>
+              <Option value="soft-light">Soft Light</Option>
+              <Option value="difference">Difference</Option>
+              <Option value="exclusion">Exclusion</Option>
+              <Option value="hue">Hue</Option>
+              <Option value="saturation">Saturation</Option>
+              <Option value="color">Color</Option>
+              <Option value="luminosity">Luminosity</Option>
+            </Select>
+          </div>
+        </div>
+      )}
+
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext
           items={objects.map((obj: any) => obj.uid)}
@@ -190,7 +254,7 @@ const LayersPanel: React.FC = () => {
         >
           <div
             style={{
-              maxHeight: 300,
+              // maxHeight: 300, // Removed to allow scrolling
               overflowY: 'auto',
               border: '1px solid #d9d9d9',
               borderRadius: 4,

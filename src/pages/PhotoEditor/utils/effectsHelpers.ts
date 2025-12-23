@@ -51,7 +51,7 @@ export const calculateColorRemovalAlphaMap = (
   return alphaMap;
 };
 
-import { Canvas, FabricObject, Image as FabricImage } from 'fabric';
+import { Canvas, FabricObject, FabricImage } from 'fabric';
 
 export const applyMaskToFabricObject = (
   canvas: Canvas,
