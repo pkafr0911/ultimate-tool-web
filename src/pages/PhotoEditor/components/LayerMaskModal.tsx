@@ -324,6 +324,7 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
       onOk={handleApply}
       width={1000}
       style={{ top: 20 }}
+      maskClosable={false}
     >
       <div style={{ display: 'flex', gap: 16 }}>
         <div style={{ width: 300 }}>

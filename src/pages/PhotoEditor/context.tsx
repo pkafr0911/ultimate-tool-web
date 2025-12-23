@@ -16,6 +16,8 @@ interface PhotoEditorContextType {
     canUndo: boolean;
     canRedo: boolean;
   };
+  clipboard: FabricObject | null;
+  setClipboard: (object: FabricObject | null) => void;
   imageUrl?: string | null;
   addOnFile?: File | null;
   setAddOnFile?: (file: File | null) => void;
@@ -32,6 +34,7 @@ export const PhotoEditorProvider: React.FC<{
   const [canvas, setCanvas] = useState<Canvas | null>(null);
   const [activeTool, setActiveTool] = useState<string>('select');
   const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
+  const [clipboard, setClipboard] = useState<FabricObject | null>(null);
 
   const history = useHistory(canvas);
 
@@ -45,6 +48,8 @@ export const PhotoEditorProvider: React.FC<{
         selectedObject,
         setSelectedObject,
         history,
+        clipboard,
+        setClipboard,
         imageUrl,
         addOnFile,
         setAddOnFile,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Form, Select, InputNumber, Button, message } from 'antd';
+import { Modal, Form, Select, InputNumber, Button, message, Checkbox } from 'antd';
 import { Canvas } from 'fabric';
 
 interface ExportModalProps {
@@ -12,6 +12,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ visible, onCancel, canvas }) 
   const [format, setFormat] = useState<'png' | 'jpeg' | 'json' | 'svg'>('png');
   const [quality, setQuality] = useState<number>(1);
   const [multiplier, setMultiplier] = useState<number>(1);
+  const [trimWhitespace, setTrimWhitespace] = useState<boolean>(true);
 
   const handleExport = () => {
     if (!canvas) return;
@@ -25,11 +26,55 @@ const ExportModal: React.FC<ExportModalProps> = ({ visible, onCancel, canvas }) 
       const blob = new Blob([svg], { type: 'image/svg+xml' });
       downloadBlob(blob, 'image.svg');
     } else {
-      const dataURL = canvas.toDataURL({
+      let options: any = {
         format,
         quality,
         multiplier,
-      });
+      };
+
+      let savedBackgroundColor: any = null;
+      let savedBackgroundImage: any = null;
+
+      if (trimWhitespace) {
+        const objects = canvas.getObjects();
+        if (objects.length > 0) {
+          let minX = Infinity;
+          let minY = Infinity;
+          let maxX = -Infinity;
+          let maxY = -Infinity;
+
+          objects.forEach((obj) => {
+            const bound = obj.getBoundingRect();
+            if (bound.left < minX) minX = bound.left;
+            if (bound.top < minY) minY = bound.top;
+            if (bound.left + bound.width > maxX) maxX = bound.left + bound.width;
+            if (bound.top + bound.height > maxY) maxY = bound.top + bound.height;
+          });
+
+          options = {
+            ...options,
+            left: minX,
+            top: minY,
+            width: maxX - minX,
+            height: maxY - minY,
+          };
+
+          // Save and remove background
+          savedBackgroundColor = canvas.backgroundColor;
+          savedBackgroundImage = canvas.backgroundImage;
+          canvas.backgroundColor = null as any;
+          canvas.backgroundImage = null as any;
+        }
+      }
+
+      const dataURL = canvas.toDataURL(options);
+
+      // Restore background
+      if (trimWhitespace) {
+        canvas.backgroundColor = savedBackgroundColor;
+        canvas.backgroundImage = savedBackgroundImage;
+      }
+
       const link = document.createElement('a');
       link.download = `image.${format}`;
       link.href = dataURL;
@@ -94,6 +139,14 @@ const ExportModal: React.FC<ExportModalProps> = ({ visible, onCancel, canvas }) 
                 onChange={(v) => setMultiplier(v || 1)}
                 style={{ width: '100%' }}
               />
+            </Form.Item>
+            <Form.Item>
+              <Checkbox
+                checked={trimWhitespace}
+                onChange={(e) => setTrimWhitespace(e.target.checked)}
+              >
+                Trim Whitespace (Export content only)
+              </Checkbox>
             </Form.Item>
           </>
         )}

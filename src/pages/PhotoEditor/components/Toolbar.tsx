@@ -12,17 +12,56 @@ import {
   ExportOutlined,
   ScissorOutlined,
   BgColorsOutlined,
+  CopyOutlined,
+  SnippetsOutlined,
 } from '@ant-design/icons';
-import { Rect, Circle, IText, FabricImage } from 'fabric';
+import { Rect, Circle, IText, FabricImage, ActiveSelection } from 'fabric';
 import { usePhotoEditor } from '../context';
 import ExportModal from './ExportModal';
 import LayerMaskModal from './LayerMaskModal';
 import { applyMaskToFabricObject } from '../utils/effectsHelpers';
 
 const Toolbar: React.FC = () => {
-  const { canvas, setActiveTool, activeTool, history, selectedObject } = usePhotoEditor();
+  const { canvas, setActiveTool, activeTool, history, selectedObject, clipboard, setClipboard } =
+    usePhotoEditor();
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [maskModalVisible, setMaskModalVisible] = useState(false);
+
+  const copy = async () => {
+    if (!canvas) return;
+    const activeObject = canvas.getActiveObject();
+    if (activeObject) {
+      const cloned = await activeObject.clone();
+      setClipboard(cloned);
+    }
+  };
+
+  const paste = async () => {
+    if (!canvas || !clipboard) return;
+    const clonedObj = await clipboard.clone();
+    canvas.discardActiveObject();
+
+    clonedObj.set({
+      left: (clonedObj.left || 0) + 10,
+      top: (clonedObj.top || 0) + 10,
+      evented: true,
+    });
+
+    if (clonedObj instanceof ActiveSelection) {
+      // active selection needs a reference to the canvas.
+      clonedObj.canvas = canvas;
+      clonedObj.forEachObject((obj) => {
+        canvas.add(obj);
+      });
+      clonedObj.setCoords();
+    } else {
+      canvas.add(clonedObj);
+    }
+
+    canvas.setActiveObject(clonedObj);
+    canvas.requestRenderAll();
+    history.saveState();
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -48,7 +87,7 @@ const Toolbar: React.FC = () => {
         if (selectedObject instanceof FabricImage) setMaskModalVisible(true);
       }
       if (e.key === 'r' || e.key === 'R') addRectangle();
-      if (e.key === 'c' || e.key === 'C') addCircle();
+      // if (e.key === 'c' || e.key === 'C') addCircle();
       if (e.key === 't' || e.key === 'T') addText();
 
       if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
@@ -65,11 +104,21 @@ const Toolbar: React.FC = () => {
         e.preventDefault();
         history.redo();
       }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        e.preventDefault();
+        copy();
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        e.preventDefault();
+        paste();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [canvas, selectedObject, history, activeTool]);
+  }, [canvas, selectedObject, history, activeTool, clipboard]);
 
   const addRectangle = () => {
     if (!canvas) return;
@@ -192,6 +241,13 @@ const Toolbar: React.FC = () => {
           onClick={() => document.getElementById('image-upload')?.click()}
         />
         <input type="file" id="image-upload" hidden accept="image/*" onChange={handleImageUpload} />
+      </Tooltip>
+
+      <Tooltip title="Copy (Ctrl+C)">
+        <Button icon={<CopyOutlined />} onClick={copy} disabled={!selectedObject} />
+      </Tooltip>
+      <Tooltip title="Paste (Ctrl+V)">
+        <Button icon={<SnippetsOutlined />} onClick={paste} disabled={!clipboard} />
       </Tooltip>
 
       <Divider style={{ margin: '8px 0' }} />
