@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Canvas, Image, PencilBrush } from 'fabric';
+import { Canvas, Image, PencilBrush, IText } from 'fabric';
 import { usePhotoEditor } from '../context';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
@@ -16,6 +16,7 @@ const CanvasArea: React.FC = () => {
     activeTool,
     addOnFile,
     setAddOnFile,
+    setActiveTool,
   } = usePhotoEditor();
 
   useKeyboardShortcuts(canvas);
@@ -121,6 +122,39 @@ const CanvasArea: React.FC = () => {
       canvas.isDrawingMode = false;
     }
   }, [activeTool, canvas]);
+
+  // Place text on first mouse click when activeTool === 'text'
+  useEffect(() => {
+    if (!canvas) return;
+    if (activeTool !== 'text') return;
+
+    const handleMouseDown = (opt: any) => {
+      try {
+        const pointer = canvas.getViewportPoint(opt.e);
+        const txt = new IText('Text', {
+          left: pointer.x,
+          top: pointer.y,
+          fontSize: 24,
+        });
+        canvas.add(txt);
+        canvas.setActiveObject(txt);
+        setSelectedObject && setSelectedObject(txt);
+        txt.enterEditing && txt.enterEditing();
+        txt.selectAll && txt.selectAll();
+        canvas.requestRenderAll();
+        history.saveState();
+        // switch back to select so subsequent clicks don't add more text
+        setActiveTool && setActiveTool('select');
+      } catch (err) {
+        // ignore
+      }
+    };
+
+    canvas.on('mouse:down', handleMouseDown);
+    return () => {
+      canvas.off('mouse:down', handleMouseDown);
+    };
+  }, [canvas, activeTool, history, setSelectedObject, setActiveTool]);
 
   return (
     <div ref={containerRef} style={{ width: '100%', height: '100%' }}>

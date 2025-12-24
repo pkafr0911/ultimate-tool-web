@@ -3,6 +3,7 @@ import { Button, Tooltip, Space, Divider, Dropdown, Menu } from 'antd';
 import {
   DragOutlined,
   BorderOutlined,
+  PlusCircleOutlined,
   FontSizeOutlined,
   FileImageOutlined,
   DeleteOutlined,
@@ -140,7 +141,7 @@ const Toolbar: React.FC = () => {
       }
       if (e.key === 'r' || e.key === 'R') addRectangle();
       // if (e.key === 'c' || e.key === 'C') addCircle();
-      if (e.key === 't' || e.key === 'T') addText();
+      if (e.key === 't' || e.key === 'T') setActiveTool('text');
 
       if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
 
@@ -218,6 +219,7 @@ const Toolbar: React.FC = () => {
     });
     canvas.add(text);
     canvas.setActiveObject(text);
+    setActiveTool('text');
     history.saveState();
   };
 
@@ -292,10 +294,14 @@ const Toolbar: React.FC = () => {
         <Button icon={<BorderOutlined />} onClick={addRectangle} />
       </Tooltip>
       <Tooltip title="Circle (C)">
-        <Button icon={<BorderOutlined style={{ borderRadius: '50%' }} />} onClick={addCircle} />
+        <Button icon={<PlusCircleOutlined />} onClick={addCircle} />
       </Tooltip>
       <Tooltip title="Text (T)">
-        <Button icon={<FontSizeOutlined />} onClick={addText} />
+        <Button
+          type={activeTool === 'text' ? 'primary' : 'default'}
+          icon={<FontSizeOutlined />}
+          onClick={() => setActiveTool('text')}
+        />
       </Tooltip>
 
       <input type="file" id="image-upload" hidden accept="image/*" onChange={handleImageUpload} />
@@ -372,7 +378,7 @@ const Toolbar: React.FC = () => {
               icon={<ExportOutlined />}
               onClick={() => setExportModalVisible(true)}
             >
-              Export
+              Export (Ctrl + Shift + S)
             </Menu.Item>
           </Menu>
         }
