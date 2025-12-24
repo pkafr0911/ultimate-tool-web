@@ -14,11 +14,15 @@ import {
   BgColorsOutlined,
   CopyOutlined,
   SnippetsOutlined,
+  SaveOutlined,
+  FolderOpenOutlined,
 } from '@ant-design/icons';
 import { Rect, Circle, IText, FabricImage, ActiveSelection } from 'fabric';
 import { usePhotoEditor } from '../context';
 import ExportModal from './ExportModal';
 import LayerMaskModal from './LayerMaskModal';
+import ProjectModal from './ProjectModal';
+import { useProjects } from '../hooks/useProjects';
 import { applyMaskToFabricObject } from '../utils/effectsHelpers';
 
 const Toolbar: React.FC = () => {
@@ -26,6 +30,25 @@ const Toolbar: React.FC = () => {
     usePhotoEditor();
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [maskModalVisible, setMaskModalVisible] = useState(false);
+  const [projectModalVisible, setProjectModalVisible] = useState(false);
+
+  const { savedProjects, saveProject, deleteProject, loadProjects } = useProjects();
+
+  const handleSaveProject = () => {
+    if (!canvas) return;
+    const json = canvas.toJSON();
+    const preview = canvas.toDataURL({ format: 'png', multiplier: 0.5 });
+    saveProject(preview, json);
+  };
+
+  const handleLoadProject = (project: any) => {
+    if (!canvas) return;
+    canvas.loadFromJSON(project.json).then(() => {
+      canvas.renderAll();
+      setProjectModalVisible(false);
+      history.saveState();
+    });
+  };
 
   const copy = async () => {
     if (!canvas) return;
@@ -113,6 +136,11 @@ const Toolbar: React.FC = () => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
         e.preventDefault();
         paste();
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSaveProject();
       }
     };
 
@@ -262,9 +290,6 @@ const Toolbar: React.FC = () => {
 
       <Divider style={{ margin: '8px 0' }} />
 
-      <Tooltip title="Delete (Del)">
-        <Button icon={<DeleteOutlined />} onClick={deleteSelected} danger />
-      </Tooltip>
       <Tooltip title="Undo (Ctrl+Z)">
         <Button icon={<UndoOutlined />} onClick={history.undo} disabled={!history.canUndo} />
       </Tooltip>
@@ -276,6 +301,12 @@ const Toolbar: React.FC = () => {
 
       <Tooltip title="Export">
         <Button icon={<ExportOutlined />} onClick={() => setExportModalVisible(true)} />
+      </Tooltip>
+      <Tooltip title="Save Project">
+        <Button icon={<SaveOutlined />} onClick={handleSaveProject} />
+      </Tooltip>
+      <Tooltip title="Open Projects">
+        <Button icon={<FolderOpenOutlined />} onClick={() => setProjectModalVisible(true)} />
       </Tooltip>
 
       <ExportModal
@@ -293,6 +324,14 @@ const Toolbar: React.FC = () => {
           selectedColor={null}
         />
       )}
+
+      <ProjectModal
+        visible={projectModalVisible}
+        onCancel={() => setProjectModalVisible(false)}
+        projects={savedProjects}
+        onLoad={handleLoadProject}
+        onDelete={deleteProject}
+      />
     </Space>
   );
 };

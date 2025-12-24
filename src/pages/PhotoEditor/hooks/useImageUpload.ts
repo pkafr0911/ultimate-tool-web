@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { message } from 'antd';
+import { SavedProject } from '../types';
 
 export const useImageUpload = () => {
   const [preview, setPreview] = useState<string | null>(null);
+  const [initialProject, setInitialProject] = useState<SavedProject | null>(null);
   const [addOnFile, setAddOnFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
   const dragCounter = useRef(0);
@@ -15,6 +17,7 @@ export const useImageUpload = () => {
           setAddOnFile(file);
         } else {
           setPreview(e.target?.result as string);
+          setInitialProject(null);
         }
       };
       reader.readAsDataURL(file);
@@ -25,9 +28,15 @@ export const useImageUpload = () => {
     [preview],
   );
 
+  const loadProject = useCallback((project: SavedProject) => {
+    setInitialProject(project);
+    setPreview(project.thumbnail);
+  }, []);
+
   const handleClear = useCallback(() => {
     setPreview(null);
     setAddOnFile(null);
+    setInitialProject(null);
     message.info('Image cleared.');
   }, []);
 
@@ -62,5 +71,7 @@ export const useImageUpload = () => {
     dragCounter,
     handleUpload,
     handleClear,
+    loadProject,
+    initialProject,
   };
 };

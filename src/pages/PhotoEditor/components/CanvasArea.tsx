@@ -12,6 +12,7 @@ const CanvasArea: React.FC = () => {
     setSelectedObject,
     history,
     imageUrl,
+    initialProject,
     activeTool,
     addOnFile,
     setAddOnFile,
@@ -50,7 +51,12 @@ const CanvasArea: React.FC = () => {
 
     setCanvas(fabricCanvas);
 
-    if (imageUrl) {
+    if (initialProject) {
+      fabricCanvas.loadFromJSON(initialProject.json).then(() => {
+        fabricCanvas.renderAll();
+        history.saveState();
+      });
+    } else if (imageUrl) {
       Image.fromURL(imageUrl).then((img) => {
         const containerWidth = containerRef.current!.clientWidth;
         const containerHeight = containerRef.current!.clientHeight;

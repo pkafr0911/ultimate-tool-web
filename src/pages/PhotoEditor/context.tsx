@@ -19,6 +19,7 @@ interface PhotoEditorContextType {
   clipboard: FabricObject | null;
   setClipboard: (object: FabricObject | null) => void;
   imageUrl?: string | null;
+  initialProject?: any;
   addOnFile?: File | null;
   setAddOnFile?: (file: File | null) => void;
 }
@@ -28,9 +29,10 @@ const PhotoEditorContext = createContext<PhotoEditorContextType | undefined>(und
 export const PhotoEditorProvider: React.FC<{
   children: React.ReactNode;
   imageUrl?: string | null;
+  initialProject?: any;
   addOnFile?: File | null;
   setAddOnFile?: (file: File | null) => void;
-}> = ({ children, imageUrl, addOnFile, setAddOnFile }) => {
+}> = ({ children, imageUrl, initialProject, addOnFile, setAddOnFile }) => {
   const [canvas, setCanvas] = useState<Canvas | null>(null);
   const [activeTool, setActiveTool] = useState<string>('select');
   const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
@@ -51,6 +53,7 @@ export const PhotoEditorProvider: React.FC<{
         clipboard,
         setClipboard,
         imageUrl,
+        initialProject,
         addOnFile,
         setAddOnFile,
       }}

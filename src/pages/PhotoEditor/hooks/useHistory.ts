@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Canvas } from 'fabric';
 
 export const useHistory = (canvas: Canvas | null) => {
@@ -10,6 +10,11 @@ export const useHistory = (canvas: Canvas | null) => {
     if (!canvas || isHistoryProcessing) return;
 
     const json = JSON.stringify(canvas.toJSON());
+
+    // Avoid saving duplicate states
+    if (history.length > 0 && historyIndex >= 0 && history[historyIndex] === json) {
+      return;
+    }
 
     // If we are in the middle of the history, discard the future
     const newHistory = history.slice(0, historyIndex + 1);
@@ -23,6 +28,26 @@ export const useHistory = (canvas: Canvas | null) => {
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
   }, [canvas, history, historyIndex, isHistoryProcessing]);
+
+  useEffect(() => {
+    if (!canvas) return;
+
+    const handleSave = () => {
+      saveState();
+    };
+
+    canvas.on('object:modified', handleSave);
+    canvas.on('object:added', handleSave);
+    canvas.on('object:removed', handleSave);
+    canvas.on('path:created', handleSave);
+
+    return () => {
+      canvas.off('object:modified', handleSave);
+      canvas.off('object:added', handleSave);
+      canvas.off('object:removed', handleSave);
+      canvas.off('path:created', handleSave);
+    };
+  }, [canvas, saveState]);
 
   const undo = useCallback(() => {
     if (!canvas || historyIndex <= 0 || isHistoryProcessing) return;
