@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Select, InputNumber, Button, Space, Divider } from 'antd';
+import { Select, InputNumber, Button, Space, Divider, ColorPicker } from 'antd';
 import {
   BoldOutlined,
   ItalicOutlined,
@@ -14,7 +14,7 @@ import { IText } from 'fabric';
 const fonts = ['Arial', 'Helvetica', 'Times New Roman', 'Georgia', 'Courier New', 'Verdana'];
 
 const TextStylePanel: React.FC = () => {
-  const { canvas, selectedObject, history } = usePhotoEditor();
+  const { canvas, selectedObject, history, setActiveTool } = usePhotoEditor();
   const [fontFamily, setFontFamily] = useState<string>('Arial');
   const [fontSize, setFontSize] = useState<number>(24);
   const [bold, setBold] = useState<boolean>(false);
@@ -195,13 +195,22 @@ const TextStylePanel: React.FC = () => {
         <div>
           <strong>Color</strong>
           <div style={{ marginTop: 8 }}>
-            <input
-              type="color"
+            <ColorPicker
               value={color}
-              onChange={(e) => {
-                setColor(e.target.value);
-                apply({ fill: e.target.value });
+              onChange={(c) => {
+                const hex = c.toHexString();
+                setColor(hex);
+                apply({ fill: hex });
+                // if user is currently editing the text, ensure text tool stays active
+                try {
+                  if ((selectedObject as any)?.isEditing) {
+                    setActiveTool && setActiveTool('text');
+                  }
+                } catch (e) {
+                  // ignore
+                }
               }}
+              showText
             />
           </div>
         </div>

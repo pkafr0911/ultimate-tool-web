@@ -140,7 +140,6 @@ const Toolbar: React.FC = () => {
         if (selectedObject instanceof FabricImage) setMaskModalVisible(true);
       }
       if (e.key === 'r' || e.key === 'R') addRectangle();
-      // if (e.key === 'c' || e.key === 'C') addCircle();
       if (e.key === 't' || e.key === 'T') setActiveTool('text');
 
       if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();

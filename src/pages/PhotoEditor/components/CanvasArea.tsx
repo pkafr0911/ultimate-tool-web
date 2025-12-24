@@ -9,6 +9,7 @@ const CanvasArea: React.FC = () => {
   const {
     canvas,
     setCanvas,
+    selectedObject,
     setSelectedObject,
     history,
     imageUrl,
@@ -19,7 +20,12 @@ const CanvasArea: React.FC = () => {
     setActiveTool,
   } = usePhotoEditor();
 
+  const isEditingRef = useRef(false);
+
   useKeyboardShortcuts(canvas);
+
+  const altPressedRef = useRef(false);
+  const previewDivRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!canvas || !addOnFile) return;
@@ -38,6 +44,122 @@ const CanvasArea: React.FC = () => {
     };
     reader.readAsDataURL(addOnFile);
   }, [addOnFile, canvas]);
+
+  // Alt+hover preview and Alt+click to pick brush color when activeTool === 'brush'
+  useEffect(() => {
+    if (!canvas || !containerRef.current) return;
+
+    const container = containerRef.current;
+    const lower = (canvas.lowerCanvasEl as HTMLCanvasElement) || null;
+
+    // create preview div
+    const preview = document.createElement('div');
+    preview.style.position = 'absolute';
+    preview.style.pointerEvents = 'none';
+    preview.style.width = '28px';
+    preview.style.height = '28px';
+    preview.style.borderRadius = '50%';
+    preview.style.boxShadow = '0 0 4px rgba(0,0,0,0.5)';
+    preview.style.border = '2px solid #fff';
+    preview.style.transform = 'translate(-50%, -50%)';
+    preview.style.display = 'none';
+    container.appendChild(preview);
+    previewDivRef.current = preview;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Alt') {
+        altPressedRef.current = true;
+        if (activeTool === 'brush') {
+          // disable drawing while picking
+          canvas.isDrawingMode = false;
+        }
+      }
+    };
+
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Alt') {
+        altPressedRef.current = false;
+        if (activeTool === 'brush') {
+          canvas.isDrawingMode = true;
+        }
+        if (previewDivRef.current) previewDivRef.current.style.display = 'none';
+      }
+    };
+
+    const onMouseMove = (opt: any) => {
+      if (!altPressedRef.current || activeTool !== 'brush') return;
+      try {
+        const evt = opt && opt.e;
+        const pointer = canvas.getPointer(evt);
+        if (!lower) return;
+        const ctx = lower.getContext('2d');
+        if (!ctx) return;
+        const x = Math.floor(pointer.x);
+        const y = Math.floor(pointer.y);
+        if (x < 0 || y < 0 || x >= lower.width || y >= lower.height) {
+          if (previewDivRef.current) previewDivRef.current.style.display = 'none';
+          return;
+        }
+        const pixel = ctx.getImageData(x, y, 1, 1).data;
+        const hex =
+          '#' + [pixel[0], pixel[1], pixel[2]].map((v) => v.toString(16).padStart(2, '0')).join('');
+        if (previewDivRef.current) {
+          previewDivRef.current.style.background = hex;
+          previewDivRef.current.style.display = 'block';
+          // position using client coords
+          const rect = container.getBoundingClientRect();
+          const clientX = evt.clientX || rect.left + pointer.x;
+          const clientY = evt.clientY || rect.top + pointer.y;
+          previewDivRef.current.style.left = clientX - rect.left + 24 + 'px';
+          previewDivRef.current.style.top = clientY - rect.top + 24 + 'px';
+        }
+      } catch (err) {
+        if (previewDivRef.current) previewDivRef.current.style.display = 'none';
+      }
+    };
+
+    const onMouseDown = (opt: any) => {
+      if (!altPressedRef.current || activeTool !== 'brush') return;
+      try {
+        const evt = opt && opt.e;
+        const pointer = canvas.getPointer(evt);
+        if (!lower) return;
+        const ctx = lower.getContext('2d');
+        if (!ctx) return;
+        const x = Math.floor(pointer.x);
+        const y = Math.floor(pointer.y);
+        if (x < 0 || y < 0 || x >= lower.width || y >= lower.height) return;
+        const pixel = ctx.getImageData(x, y, 1, 1).data;
+        const hex =
+          '#' + [pixel[0], pixel[1], pixel[2]].map((v) => v.toString(16).padStart(2, '0')).join('');
+        if (canvas.freeDrawingBrush) {
+          (canvas.freeDrawingBrush as any).color = hex;
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    canvas.on('mouse:move', onMouseMove);
+    canvas.on('mouse:down', onMouseDown);
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      canvas.off('mouse:move', onMouseMove);
+      canvas.off('mouse:down', onMouseDown);
+      if (previewDivRef.current) {
+        try {
+          container.removeChild(previewDivRef.current);
+        } catch (e) {
+          // ignore
+        }
+        previewDivRef.current = null;
+      }
+    };
+  }, [canvas, activeTool]);
 
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
@@ -86,6 +208,13 @@ const CanvasArea: React.FC = () => {
     fabricCanvas.on('selection:updated', updateSelection);
     fabricCanvas.on('selection:cleared', () => setSelectedObject(null));
 
+    // When entering/exiting text editing, keep the active tool in 'text'
+    const onTextEnter = () => setActiveTool && setActiveTool('text');
+    const onTextExit = () => setActiveTool && setActiveTool('select');
+
+    fabricCanvas.on('text:editing:entered', onTextEnter);
+    fabricCanvas.on('text:editing:exited', onTextExit);
+
     const saveHistory = () => {
       history.saveState();
     };
@@ -111,6 +240,20 @@ const CanvasArea: React.FC = () => {
     };
   }, []);
 
+  // If selected object is a text object and is being edited, ensure the active tool is 'text'
+  useEffect(() => {
+    if (!selectedObject) return;
+    try {
+      const editing = !!(selectedObject as any).isEditing;
+      isEditingRef.current = editing;
+      if (editing) {
+        setActiveTool && setActiveTool('text');
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [selectedObject, setActiveTool]);
+
   useEffect(() => {
     if (!canvas) return;
     if (activeTool === 'brush') {
@@ -130,6 +273,9 @@ const CanvasArea: React.FC = () => {
 
     const handleMouseDown = (opt: any) => {
       try {
+        // If a text object is currently being edited, do not create a new text object
+        if (isEditingRef.current) return;
+
         const pointer = canvas.getViewportPoint(opt.e);
         const txt = new IText('Text', {
           left: pointer.x,
