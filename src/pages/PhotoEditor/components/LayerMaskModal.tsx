@@ -68,6 +68,7 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
   const [brushType, setBrushType] = useState<'hard' | 'soft'>('hard');
   const [isDrawing, setIsDrawing] = useState(false);
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
+  const [previewColor, setPreviewColor] = useState<string | null>(null);
   const [displayParams, setDisplayParams] = useState({ scale: 1, x: 0, y: 0 });
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -259,6 +260,26 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
     });
     setCursorPos(coords);
 
+    // when alt is pressed, sample color under cursor and show preview
+    if (isAltPressed && coords && sourceCanvas) {
+      try {
+        const ctx = sourceCanvas.getContext('2d');
+        if (ctx) {
+          const x = Math.max(0, Math.min(coords.x, sourceCanvas.width - 1));
+          const y = Math.max(0, Math.min(coords.y, sourceCanvas.height - 1));
+          const pixel = ctx.getImageData(x, y, 1, 1).data;
+          const hex =
+            '#' +
+            [pixel[0], pixel[1], pixel[2]].map((v) => v.toString(16).padStart(2, '0')).join('');
+          setPreviewColor(hex);
+        }
+      } catch (err) {
+        setPreviewColor(null);
+      }
+    } else {
+      setPreviewColor(null);
+    }
+
     if (isAltPressed) return;
 
     if (isDrawing && coords && lastDrawPoint.current) {
@@ -306,9 +327,42 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
     const screenY = cursorPos.y * displayParams.scale + displayParams.y;
     const screenSize = brushSize * displayParams.scale;
 
+    // draw brush cursor
     drawBrushCursor(ctx, screenX, screenY, screenSize, '#fff');
     drawBrushCursor(ctx, screenX, screenY, screenSize, '#000'); // Double outline for visibility
-  }, [cursorPos, brushSize, displayParams]);
+
+    // draw live color preview when alt is pressed
+    if (isAltPressed && previewColor) {
+      const previewRadius = 9;
+      const offset = 12; // offset so preview doesn't sit under cursor
+      const px = Math.min(
+        overlayCanvasRef.current.width - previewRadius - 4,
+        Math.max(previewRadius + 4, screenX + offset),
+      );
+      const py = Math.min(
+        overlayCanvasRef.current.height - previewRadius - 4,
+        Math.max(previewRadius + 4, screenY + offset),
+      );
+
+      // outer border
+      ctx.beginPath();
+      ctx.arc(px, py, previewRadius + 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#00000088';
+      ctx.fill();
+
+      // color circle
+      ctx.beginPath();
+      ctx.arc(px, py, previewRadius, 0, Math.PI * 2);
+      ctx.fillStyle = previewColor;
+      ctx.fill();
+
+      // hex label
+      ctx.font = '12px sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.fillText(previewColor.toUpperCase(), px, py + previewRadius + 14);
+    }
+  }, [cursorPos, brushSize, displayParams, isAltPressed, previewColor]);
 
   const handleApply = () => {
     if (previewCanvasRef.current) {
