@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Tooltip, Space, Divider } from 'antd';
+import { Button, Tooltip, Space, Divider, Dropdown, Menu } from 'antd';
 import {
   DragOutlined,
   BorderOutlined,
@@ -16,6 +16,8 @@ import {
   SnippetsOutlined,
   SaveOutlined,
   FolderOpenOutlined,
+  MoreOutlined,
+  UploadOutlined,
 } from '@ant-design/icons';
 import { Rect, Circle, IText, FabricImage, ActiveSelection } from 'fabric';
 import { usePhotoEditor } from '../context';
@@ -86,6 +88,33 @@ const Toolbar: React.FC = () => {
     history.saveState();
   };
 
+  const handleImportProjectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!canvas) return;
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const text = ev.target?.result as string;
+        const json = JSON.parse(text);
+        canvas.loadFromJSON(json, () => {
+          canvas.renderAll();
+          history.saveState();
+        });
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to import project JSON', err);
+        // message could be used but importing antd here would duplicate import; use alert as fallback
+        // If you prefer antd message, we can import it at top.
+        alert('Failed to import project file. Make sure it is a valid project JSON.');
+      }
+    };
+    reader.readAsText(file);
+    // reset input so same file can be re-imported if needed
+    e.currentTarget.value = '';
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if typing in an input or textarea
@@ -141,6 +170,11 @@ const Toolbar: React.FC = () => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
         handleSaveProject();
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
+        e.preventDefault();
+        setExportModalVisible(true);
       }
     };
 
@@ -263,20 +297,15 @@ const Toolbar: React.FC = () => {
       <Tooltip title="Text (T)">
         <Button icon={<FontSizeOutlined />} onClick={addText} />
       </Tooltip>
-      <Tooltip title="Upload Image">
-        <Button
-          icon={<FileImageOutlined />}
-          onClick={() => document.getElementById('image-upload')?.click()}
-        />
-        <input type="file" id="image-upload" hidden accept="image/*" onChange={handleImageUpload} />
-      </Tooltip>
 
-      <Tooltip title="Copy (Ctrl+C)">
-        <Button icon={<CopyOutlined />} onClick={copy} disabled={!selectedObject} />
-      </Tooltip>
-      <Tooltip title="Paste (Ctrl+V)">
-        <Button icon={<SnippetsOutlined />} onClick={paste} disabled={!clipboard} />
-      </Tooltip>
+      <input type="file" id="image-upload" hidden accept="image/*" onChange={handleImageUpload} />
+      <input
+        type="file"
+        id="project-import"
+        hidden
+        accept="application/json, .json"
+        onChange={handleImportProjectFile}
+      />
 
       <Divider style={{ margin: '8px 0' }} />
 
@@ -299,15 +328,60 @@ const Toolbar: React.FC = () => {
 
       <Divider style={{ margin: '8px 0' }} />
 
-      <Tooltip title="Export">
-        <Button icon={<ExportOutlined />} onClick={() => setExportModalVisible(true)} />
-      </Tooltip>
-      <Tooltip title="Save Project">
-        <Button icon={<SaveOutlined />} onClick={handleSaveProject} />
-      </Tooltip>
-      <Tooltip title="Open Projects">
-        <Button icon={<FolderOpenOutlined />} onClick={() => setProjectModalVisible(true)} />
-      </Tooltip>
+      <Dropdown
+        overlay={
+          <Menu>
+            <Menu.Item
+              key="upload"
+              icon={<FileImageOutlined />}
+              onClick={() => document.getElementById('image-upload')?.click()}
+            >
+              Upload Image
+            </Menu.Item>
+            <Menu.Item key="copy" icon={<CopyOutlined />} onClick={copy} disabled={!selectedObject}>
+              Copy (Ctrl + C)
+            </Menu.Item>
+            <Menu.Item
+              key="paste"
+              icon={<SnippetsOutlined />}
+              onClick={paste}
+              disabled={!clipboard}
+            >
+              Paste (Ctrl + V)
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item key="save" icon={<SaveOutlined />} onClick={handleSaveProject}>
+              Save Project (Ctrl + S)
+            </Menu.Item>
+            <Menu.Item
+              key="open"
+              icon={<FolderOpenOutlined />}
+              onClick={() => setProjectModalVisible(true)}
+            >
+              Open Projects
+            </Menu.Item>
+            <Menu.Item
+              key="import"
+              icon={<UploadOutlined />}
+              onClick={() => document.getElementById('project-import')?.click()}
+            >
+              Import Project (JSON)
+            </Menu.Item>
+            <Menu.Item
+              key="export"
+              icon={<ExportOutlined />}
+              onClick={() => setExportModalVisible(true)}
+            >
+              Export
+            </Menu.Item>
+          </Menu>
+        }
+        trigger={['click']}
+      >
+        <Tooltip title="More">
+          <Button icon={<MoreOutlined />}></Button>
+        </Tooltip>
+      </Dropdown>
 
       <ExportModal
         visible={exportModalVisible}
