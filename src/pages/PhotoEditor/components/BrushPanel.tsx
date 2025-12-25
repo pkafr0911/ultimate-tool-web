@@ -4,15 +4,13 @@ import { usePhotoEditor } from '../context';
 import { PencilBrush, CircleBrush, SprayBrush, Shadow } from 'fabric';
 
 const BrushPanel: React.FC = () => {
-  const { canvas } = usePhotoEditor();
-  const [color, setColor] = useState<string>('#000000');
-  const [width, setWidth] = useState<number>(5);
+  const { canvas, brushSize, setBrushSize, brushColor, setBrushColor } = usePhotoEditor();
   const [shadowWidth, setShadowWidth] = useState<number>(0);
   const [brushType, setBrushType] = useState<string>('Pencil');
 
   const draggingWidth = useRef(false);
   const widthStartX = useRef<number | null>(null);
-  const widthStartValue = useRef<number>(width);
+  const widthStartValue = useRef<number>(brushSize);
 
   const draggingShadow = useRef(false);
   const shadowStartX = useRef<number | null>(null);
@@ -23,7 +21,7 @@ const BrushPanel: React.FC = () => {
     e.preventDefault();
     draggingWidth.current = true;
     widthStartX.current = e.clientX;
-    widthStartValue.current = width;
+    widthStartValue.current = brushSize;
     const prevUserSelect = document.body.style.userSelect;
     document.body.style.userSelect = 'none';
 
@@ -32,7 +30,7 @@ const BrushPanel: React.FC = () => {
       const delta = ev.clientX - widthStartX.current;
       const sensitivity = 0.2; // pixels -> width
       const newVal = Math.max(1, Math.min(2000, widthStartValue.current + delta * sensitivity));
-      setWidth(Number(newVal.toFixed(0)));
+      setBrushSize(Number(newVal.toFixed(0)));
     };
 
     const onMouseUp = () => {
@@ -85,15 +83,15 @@ const BrushPanel: React.FC = () => {
     }
 
     const brush = canvas.freeDrawingBrush;
-    brush.color = color;
-    brush.width = width;
+    brush.color = brushColor;
+    brush.width = brushSize;
 
     if (shadowWidth > 0) {
-      brush.shadow = new Shadow({ blur: shadowWidth, color: color });
+      brush.shadow = new Shadow({ blur: shadowWidth, color: brushColor });
     } else {
       brush.shadow = null;
     }
-  }, [canvas, color, width, shadowWidth]);
+  }, [canvas, brushColor, brushSize, shadowWidth]);
 
   const handleBrushChange = (type: string) => {
     if (!canvas) return;
@@ -111,10 +109,10 @@ const BrushPanel: React.FC = () => {
         brush = new PencilBrush(canvas);
         break;
     }
-    brush.color = color;
-    brush.width = width;
+    brush.color = brushColor;
+    brush.width = brushSize;
     if (shadowWidth > 0) {
-      brush.shadow = new Shadow({ blur: shadowWidth, color: color });
+      brush.shadow = new Shadow({ blur: shadowWidth, color: brushColor });
     }
     canvas.freeDrawingBrush = brush;
   };
@@ -134,7 +132,11 @@ const BrushPanel: React.FC = () => {
         <div>
           <Typography.Text>Color</Typography.Text>
           <br />
-          <ColorPicker value={color} onChange={(c) => setColor(c.toHexString())} showText />
+          <ColorPicker
+            value={brushColor}
+            onChange={(c) => setBrushColor(c.toHexString())}
+            showText
+          />
         </div>
         <div>
           <Typography.Text
@@ -148,8 +150,8 @@ const BrushPanel: React.FC = () => {
             type="number"
             min={1}
             max={2000}
-            value={width}
-            onChange={(e) => setWidth(Number(e.target.value || 1))}
+            value={brushSize}
+            onChange={(e) => setBrushSize(Number(e.target.value || 1))}
             style={{ width: '100%' }}
           />
         </div>

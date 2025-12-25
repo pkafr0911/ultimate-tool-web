@@ -22,6 +22,10 @@ interface PhotoEditorContextType {
   initialProject?: any;
   addOnFile?: File | null;
   setAddOnFile?: (file: File | null) => void;
+  brushSize: number;
+  setBrushSize: (size: number) => void;
+  brushColor: string;
+  setBrushColor: (color: string) => void;
 }
 
 const PhotoEditorContext = createContext<PhotoEditorContextType | undefined>(undefined);
@@ -37,6 +41,8 @@ export const PhotoEditorProvider: React.FC<{
   const [activeTool, setActiveTool] = useState<string>('select');
   const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
   const [clipboard, setClipboard] = useState<FabricObject | null>(null);
+  const [brushSize, setBrushSize] = useState<number>(5);
+  const [brushColor, setBrushColor] = useState<string>('#000000');
 
   const history = useHistory(canvas);
 
@@ -56,6 +62,10 @@ export const PhotoEditorProvider: React.FC<{
         initialProject,
         addOnFile,
         setAddOnFile,
+        brushSize,
+        setBrushSize,
+        brushColor,
+        setBrushColor,
       }}
     >
       {children}
