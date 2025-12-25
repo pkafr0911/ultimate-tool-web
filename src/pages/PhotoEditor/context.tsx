@@ -26,6 +26,8 @@ interface PhotoEditorContextType {
   setBrushSize: (size: number) => void;
   brushColor: string;
   setBrushColor: (color: string) => void;
+  brushOpacity: number;
+  setBrushOpacity: (opacity: number) => void;
 }
 
 const PhotoEditorContext = createContext<PhotoEditorContextType | undefined>(undefined);
@@ -43,6 +45,7 @@ export const PhotoEditorProvider: React.FC<{
   const [clipboard, setClipboard] = useState<FabricObject | null>(null);
   const [brushSize, setBrushSize] = useState<number>(5);
   const [brushColor, setBrushColor] = useState<string>('#000000');
+  const [brushOpacity, setBrushOpacity] = useState<number>(1);
 
   const history = useHistory(canvas);
 
@@ -66,6 +69,8 @@ export const PhotoEditorProvider: React.FC<{
         setBrushSize,
         brushColor,
         setBrushColor,
+        brushOpacity,
+        setBrushOpacity,
       }}
     >
       {children}

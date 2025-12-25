@@ -4,7 +4,15 @@ import { usePhotoEditor } from '../context';
 import { PencilBrush, CircleBrush, SprayBrush, Shadow } from 'fabric';
 
 const BrushPanel: React.FC = () => {
-  const { canvas, brushSize, setBrushSize, brushColor, setBrushColor } = usePhotoEditor();
+  const {
+    canvas,
+    brushSize,
+    setBrushSize,
+    brushColor,
+    setBrushColor,
+    brushOpacity,
+    setBrushOpacity,
+  } = usePhotoEditor();
   const [shadowWidth, setShadowWidth] = useState<number>(0);
   const [brushType, setBrushType] = useState<string>('Pencil');
 
@@ -15,6 +23,10 @@ const BrushPanel: React.FC = () => {
   const draggingShadow = useRef(false);
   const shadowStartX = useRef<number | null>(null);
   const shadowStartValue = useRef<number>(shadowWidth);
+
+  const draggingOpacity = useRef(false);
+  const opacityStartX = useRef<number | null>(null);
+  const opacityStartValue = useRef<number>(brushOpacity);
 
   const handleWidthLabelMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
@@ -74,6 +86,35 @@ const BrushPanel: React.FC = () => {
     window.addEventListener('mouseup', onMouseUp);
   };
 
+  const handleOpacityLabelMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    draggingOpacity.current = true;
+    opacityStartX.current = e.clientX;
+    opacityStartValue.current = brushOpacity;
+    const prevUserSelect = document.body.style.userSelect;
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!draggingOpacity.current || opacityStartX.current === null) return;
+      const delta = ev.clientX - opacityStartX.current;
+      const sensitivity = 0.002; // pixels -> opacity
+      const newVal = Math.max(0, Math.min(1, opacityStartValue.current + delta * sensitivity));
+      setBrushOpacity(Number(newVal.toFixed(2)));
+    };
+
+    const onMouseUp = () => {
+      draggingOpacity.current = false;
+      opacityStartX.current = null;
+      document.body.style.userSelect = prevUserSelect;
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
   useEffect(() => {
     if (!canvas) return;
 
@@ -83,15 +124,23 @@ const BrushPanel: React.FC = () => {
     }
 
     const brush = canvas.freeDrawingBrush;
-    brush.color = brushColor;
+    // Apply opacity to color
+    // Fabric brush color is a string. We need to parse it or use rgba.
+    // Assuming brushColor is hex.
+    // Simple hex to rgba conversion
+    const hex = brushColor.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    brush.color = `rgba(${r},${g},${b},${brushOpacity})`;
     brush.width = brushSize;
 
     if (shadowWidth > 0) {
-      brush.shadow = new Shadow({ blur: shadowWidth, color: brushColor });
+      brush.shadow = new Shadow({ blur: shadowWidth, color: brush.color });
     } else {
       brush.shadow = null;
     }
-  }, [canvas, brushColor, brushSize, shadowWidth]);
+  }, [canvas, brushColor, brushSize, shadowWidth, brushOpacity]);
 
   const handleBrushChange = (type: string) => {
     if (!canvas) return;
@@ -109,10 +158,14 @@ const BrushPanel: React.FC = () => {
         brush = new PencilBrush(canvas);
         break;
     }
-    brush.color = brushColor;
+    const hex = brushColor.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    brush.color = `rgba(${r},${g},${b},${brushOpacity})`;
     brush.width = brushSize;
     if (shadowWidth > 0) {
-      brush.shadow = new Shadow({ blur: shadowWidth, color: brushColor });
+      brush.shadow = new Shadow({ blur: shadowWidth, color: brush.color });
     }
     canvas.freeDrawingBrush = brush;
   };
@@ -151,6 +204,23 @@ const BrushPanel: React.FC = () => {
             max={2000}
             value={brushSize}
             onChange={(v) => setBrushSize(Number(v || 1))}
+            style={{ width: '100%' }}
+          />
+        </div>
+        <div>
+          <Typography.Text
+            onMouseDown={handleOpacityLabelMouseDown}
+            style={{ cursor: 'ew-resize', userSelect: 'none' }}
+          >
+            Opacity
+          </Typography.Text>
+          <br />
+          <InputNumber
+            min={0}
+            max={1}
+            step={0.01}
+            value={brushOpacity}
+            onChange={(v) => setBrushOpacity(Number(v || 1))}
             style={{ width: '100%' }}
           />
         </div>

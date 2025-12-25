@@ -7,9 +7,11 @@ import {
   UnlockOutlined,
   DeleteOutlined,
   HolderOutlined,
+  GroupOutlined,
+  UngroupOutlined,
 } from '@ant-design/icons';
 import { usePhotoEditor } from '../context';
-import { FabricObject } from 'fabric';
+import { FabricObject, ActiveSelection, Group } from 'fabric';
 import {
   DndContext,
   closestCenter,
@@ -34,7 +36,7 @@ interface SortableItemProps {
   id: string;
   children: React.ReactNode;
   isSelected: boolean;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
 }
 
 const SortableItem: React.FC<SortableItemProps> = ({ id, children, isSelected, onClick }) => {
@@ -66,10 +68,11 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, children, isSelected, o
           alignItems: 'center',
           color: '#999',
         }}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <HolderOutlined />
       </div>
-      <div onClick={onClick} style={{ flex: 1, cursor: 'pointer' }}>
+      <div onClick={(e) => onClick(e)} style={{ flex: 1, cursor: 'pointer' }}>
         {children}
       </div>
     </div>
@@ -79,9 +82,11 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, children, isSelected, o
 const LayersPanel: React.FC = () => {
   const { canvas, selectedObject, setSelectedObject, history } = usePhotoEditor();
   const [objects, setObjects] = useState<FabricObject[]>([]);
+  const [activeUids, setActiveUids] = useState<string[]>([]);
   const draggingOpacity = useRef(false);
   const opacityStartX = useRef<number | null>(null);
   const opacityStartValue = useRef<number>(100);
+  const lastClickedIndex = useRef<number | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -100,6 +105,36 @@ const LayersPanel: React.FC = () => {
     setObjects([...objs].reverse());
   };
 
+  const handleGroup = () => {
+    if (!canvas) return;
+    const activeObject = canvas.getActiveObject();
+    if (!activeObject) return;
+
+    if (activeObject.type === 'activeSelection') {
+      (activeObject as any).toGroup();
+      canvas.requestRenderAll();
+      updateObjects();
+      // Update selection to the new group
+      const newGroup = canvas.getActiveObject() || null;
+      setSelectedObject(newGroup);
+    }
+  };
+
+  const handleUngroup = () => {
+    if (!canvas) return;
+    const activeObject = canvas.getActiveObject();
+    if (!activeObject) return;
+
+    if (activeObject.type === 'group') {
+      (activeObject as any).toActiveSelection();
+      canvas.requestRenderAll();
+      updateObjects();
+      // Update selection
+      const newSelection = canvas.getActiveObject() || null;
+      setSelectedObject(newSelection);
+    }
+  };
+
   useEffect(() => {
     if (!canvas) return;
 
@@ -112,6 +147,15 @@ const LayersPanel: React.FC = () => {
     canvas.on('object:added', debouncedUpdate);
     canvas.on('object:removed', debouncedUpdate);
     canvas.on('object:modified', debouncedUpdate);
+    // update selection highlights when selection changes (supports multi-select)
+    const updateSelection = () => {
+      const active = canvas.getActiveObjects() || [];
+      const uids = active.map((o: any) => o.uid).filter(Boolean);
+      setActiveUids(uids);
+    };
+    canvas.on('selection:created', updateSelection);
+    canvas.on('selection:updated', updateSelection);
+    canvas.on('selection:cleared', () => setActiveUids([]));
 
     updateObjects();
 
@@ -119,6 +163,9 @@ const LayersPanel: React.FC = () => {
       canvas.off('object:added', debouncedUpdate);
       canvas.off('object:removed', debouncedUpdate);
       canvas.off('object:modified', debouncedUpdate);
+      canvas.off('selection:created', updateSelection);
+      canvas.off('selection:updated', updateSelection);
+      canvas.off('selection:cleared', () => setActiveUids([]));
       clearTimeout(timeout);
     };
   }, [canvas]);
@@ -171,11 +218,61 @@ const LayersPanel: React.FC = () => {
     setObjects([...(canvas?.getObjects() || [])].reverse());
   };
 
-  const selectObject = (obj: FabricObject) => {
-    if (!canvas || !(obj as any).visible || !(obj as any).selectable) return;
+  const selectObject = (obj: FabricObject, e?: React.MouseEvent) => {
+    if (!canvas || !obj.visible || !obj.selectable) return;
+
+    const idx = objects.findIndex((o: any) => o === obj);
+    // Ctrl/Cmd -> toggle selection
+    const isCtrl = e && (e.ctrlKey || e.metaKey);
+    const isShift = e && e.shiftKey;
+
+    if (isCtrl) {
+      const active = canvas.getActiveObjects() || [];
+      const already = active.includes(obj as any);
+      let newActive = [] as any[];
+      if (already) {
+        newActive = active.filter((a: any) => a !== obj);
+      } else {
+        newActive = [...active, obj];
+      }
+
+      if (newActive.length === 0) {
+        canvas.discardActiveObject();
+        setSelectedObject(null);
+      } else if (newActive.length === 1) {
+        canvas.setActiveObject(newActive[0]);
+        setSelectedObject(newActive[0]);
+      } else {
+        const sel = new ActiveSelection(newActive, { canvas });
+        canvas.setActiveObject(sel);
+        setSelectedObject(newActive[newActive.length - 1]);
+      }
+      canvas.requestRenderAll();
+      lastClickedIndex.current = idx;
+      return;
+    }
+
+    if (isShift && lastClickedIndex.current !== null) {
+      const start = Math.min(lastClickedIndex.current, idx);
+      const end = Math.max(lastClickedIndex.current, idx);
+      const range = objects.slice(start, end + 1).map((o: any) => o) as any[];
+      if (range.length === 1) {
+        canvas.setActiveObject(range[0]);
+        setSelectedObject(range[0]);
+      } else {
+        const sel = new ActiveSelection(range, { canvas });
+        canvas.setActiveObject(sel);
+        setSelectedObject(range[range.length - 1]);
+      }
+      canvas.requestRenderAll();
+      return;
+    }
+
+    // Default: single select
     canvas.setActiveObject(obj);
+    setSelectedObject(obj);
     canvas.requestRenderAll();
-    setSelectedObject && setSelectedObject(obj);
+    lastClickedIndex.current = idx;
   };
 
   const deleteObject = (obj: FabricObject, e: React.MouseEvent) => {
@@ -248,6 +345,22 @@ const LayersPanel: React.FC = () => {
   return (
     <div style={{ padding: 10 }}>
       <Title level={5}>Layers</Title>
+      <div style={{ marginBottom: 8 }}>
+        <Space>
+          <Button
+            icon={<GroupOutlined />}
+            onClick={handleGroup}
+            disabled={!selectedObject}
+            title="Group Layers"
+          />
+          <Button
+            icon={<UngroupOutlined />}
+            onClick={handleUngroup}
+            disabled={!selectedObject || selectedObject.type !== 'group'}
+            title="Ungroup Layers"
+          />
+        </Space>
+      </div>
 
       {selectedObject && (
         <div style={{ marginBottom: 16, padding: 8, background: '#fafafa', borderRadius: 4 }}>
@@ -324,7 +437,7 @@ const LayersPanel: React.FC = () => {
             }}
           >
             {objects.map((item: any, index) => {
-              const isSelected = selectedObject === item;
+              const isSelected = activeUids.includes(item.uid);
               const type = item.type || 'Object';
               const name = item.name || `${type} ${objects.length - index}`;
 
@@ -333,7 +446,7 @@ const LayersPanel: React.FC = () => {
                   key={item.uid}
                   id={item.uid}
                   isSelected={isSelected}
-                  onClick={() => selectObject(item)}
+                  onClick={(e) => selectObject(item, e)}
                 >
                   <div
                     style={{
