@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { List, Button, Typography, Space, Slider, Select } from 'antd';
+import React, { useEffect, useState, useRef } from 'react';
+import { List, Button, Typography, Space, InputNumber, Select } from 'antd';
 import {
   EyeOutlined,
   EyeInvisibleOutlined,
@@ -79,6 +79,9 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, children, isSelected, o
 const LayersPanel: React.FC = () => {
   const { canvas, selectedObject, setSelectedObject, history } = usePhotoEditor();
   const [objects, setObjects] = useState<FabricObject[]>([]);
+  const draggingOpacity = useRef(false);
+  const opacityStartX = useRef<number | null>(null);
+  const opacityStartValue = useRef<number>(100);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -169,9 +172,10 @@ const LayersPanel: React.FC = () => {
   };
 
   const selectObject = (obj: FabricObject) => {
-    if (!canvas || !obj.visible || !obj.selectable) return;
+    if (!canvas || !(obj as any).visible || !(obj as any).selectable) return;
     canvas.setActiveObject(obj);
     canvas.requestRenderAll();
+    setSelectedObject && setSelectedObject(obj);
   };
 
   const deleteObject = (obj: FabricObject, e: React.MouseEvent) => {
@@ -186,6 +190,48 @@ const LayersPanel: React.FC = () => {
     selectedObject.set('opacity', value);
     canvas.requestRenderAll();
     // history.saveState(); // Maybe debounce this or save onAfterChange
+  };
+
+  const handleOpacityNumberChange = (v: number | undefined | null) => {
+    if (!canvas || !selectedObject) return;
+    const value = Number(v || 0);
+    selectedObject.set('opacity', Math.max(0, Math.min(100, value)) / 100);
+    canvas.requestRenderAll();
+  };
+
+  const handleOpacityLabelMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    draggingOpacity.current = true;
+    opacityStartX.current = e.clientX;
+    // store percentage (0-100)
+    opacityStartValue.current = Math.round(((selectedObject?.opacity ?? 1) as number) * 100);
+    const prevUserSelect = document.body.style.userSelect;
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!draggingOpacity.current || opacityStartX.current === null) return;
+      const delta = ev.clientX - opacityStartX.current;
+      const sensitivity = 0.2; // pixels -> percent
+      let newVal = Math.max(0, Math.min(100, opacityStartValue.current + delta * sensitivity));
+      const obj = canvas?.getActiveObject() as FabricObject | undefined;
+      if (obj && canvas) {
+        obj.set('opacity', newVal / 100);
+        canvas.requestRenderAll();
+      }
+    };
+
+    const onMouseUp = () => {
+      draggingOpacity.current = false;
+      opacityStartX.current = null;
+      document.body.style.userSelect = prevUserSelect;
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      history.saveState();
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
   };
 
   const handleOpacityAfterChange = () => {
@@ -206,43 +252,59 @@ const LayersPanel: React.FC = () => {
       {selectedObject && (
         <div style={{ marginBottom: 16, padding: 8, background: '#fafafa', borderRadius: 4 }}>
           <div style={{ marginBottom: 8 }}>
-            <span style={{ fontSize: 12 }}>
-              Opacity: {Math.round((selectedObject.opacity || 1) * 100)}%
-            </span>
-            <Slider
-              min={0}
-              max={1}
-              step={0.01}
-              value={selectedObject.opacity ?? 1}
-              onChange={handleOpacityChange}
-              onAfterChange={handleOpacityAfterChange}
-            />
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontSize: 12,
+                cursor: 'ew-resize',
+                userSelect: 'none',
+              }}
+              onMouseDown={handleOpacityLabelMouseDown}
+            >
+              <div style={{ marginRight: 8 }}>Opacity:</div>
+              <InputNumber
+                size="small"
+                min={0}
+                max={100}
+                step={1}
+                value={Math.round((selectedObject.opacity ?? 1) * 100)}
+                onChange={(v) => handleOpacityNumberChange(v)}
+                onBlur={() => handleOpacityAfterChange()}
+                style={{ flex: 1 }}
+              />
+            </div>
           </div>
           <div>
-            <span style={{ fontSize: 12 }}>Blend Mode:</span>
-            <Select
-              size="small"
-              style={{ width: '100%' }}
-              value={selectedObject.globalCompositeOperation || 'source-over'}
-              onChange={handleBlendModeChange}
+            <div
+              style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, width: '100%' }}
             >
-              <Option value="source-over">Normal</Option>
-              <Option value="multiply">Multiply</Option>
-              <Option value="screen">Screen</Option>
-              <Option value="overlay">Overlay</Option>
-              <Option value="darken">Darken</Option>
-              <Option value="lighten">Lighten</Option>
-              <Option value="color-dodge">Color Dodge</Option>
-              <Option value="color-burn">Color Burn</Option>
-              <Option value="hard-light">Hard Light</Option>
-              <Option value="soft-light">Soft Light</Option>
-              <Option value="difference">Difference</Option>
-              <Option value="exclusion">Exclusion</Option>
-              <Option value="hue">Hue</Option>
-              <Option value="saturation">Saturation</Option>
-              <Option value="color">Color</Option>
-              <Option value="luminosity">Luminosity</Option>
-            </Select>
+              <div style={{ marginRight: 8 }}>Blend Mode:</div>
+              <Select
+                size="small"
+                style={{ flex: 1 }}
+                value={selectedObject.globalCompositeOperation || 'source-over'}
+                onChange={handleBlendModeChange}
+              >
+                <Option value="source-over">Normal</Option>
+                <Option value="multiply">Multiply</Option>
+                <Option value="screen">Screen</Option>
+                <Option value="overlay">Overlay</Option>
+                <Option value="darken">Darken</Option>
+                <Option value="lighten">Lighten</Option>
+                <Option value="color-dodge">Color Dodge</Option>
+                <Option value="color-burn">Color Burn</Option>
+                <Option value="hard-light">Hard Light</Option>
+                <Option value="soft-light">Soft Light</Option>
+                <Option value="difference">Difference</Option>
+                <Option value="exclusion">Exclusion</Option>
+                <Option value="hue">Hue</Option>
+                <Option value="saturation">Saturation</Option>
+                <Option value="color">Color</Option>
+                <Option value="luminosity">Luminosity</Option>
+              </Select>
+            </div>
           </div>
         </div>
       )}

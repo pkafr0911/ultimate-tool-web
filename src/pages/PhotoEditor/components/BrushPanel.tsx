@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { ColorPicker, Slider, Typography, Space, Select } from 'antd';
+import { ColorPicker, Slider, Typography, Space, Select, InputNumber } from 'antd';
 import { usePhotoEditor } from '../context';
 import { PencilBrush, CircleBrush, SprayBrush, Shadow } from 'fabric';
 
@@ -146,12 +146,11 @@ const BrushPanel: React.FC = () => {
             Width
           </Typography.Text>
           <br />
-          <input
-            type="number"
+          <InputNumber
             min={1}
             max={2000}
             value={brushSize}
-            onChange={(e) => setBrushSize(Number(e.target.value || 1))}
+            onChange={(v) => setBrushSize(Number(v || 1))}
             style={{ width: '100%' }}
           />
         </div>
@@ -163,12 +162,11 @@ const BrushPanel: React.FC = () => {
             Shadow Blur
           </Typography.Text>
           <br />
-          <input
-            type="number"
+          <InputNumber
             min={0}
             max={500}
             value={shadowWidth}
-            onChange={(e) => setShadowWidth(Number(e.target.value || 0))}
+            onChange={(v) => setShadowWidth(Number(v || 0))}
             style={{ width: '100%' }}
           />
         </div>
