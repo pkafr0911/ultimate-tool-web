@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Canvas, Image, PencilBrush, IText } from 'fabric';
+import { Canvas, Image, PencilBrush, IText, Point } from 'fabric';
 import { usePhotoEditor } from '../context';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
@@ -357,6 +357,43 @@ const CanvasArea: React.FC = () => {
     fabricCanvas.on('object:added', saveHistory);
     fabricCanvas.on('object:removed', saveHistory);
 
+    // Ctrl + mouse wheel to zoom (centered at pointer)
+    const onWheel = (ev: WheelEvent) => {
+      // only when ctrlKey is pressed
+      if (!ev.ctrlKey) return;
+      ev.preventDefault();
+
+      try {
+        const currentZoom = fabricCanvas.getZoom() || 1;
+        // wheel up -> zoom in, wheel down -> zoom out
+        const delta = ev.deltaY;
+        // Use an exponential zoom factor for smoother control
+        const zoomFactor = delta < 0 ? 1.12 : 0.88;
+        let newZoom = currentZoom * zoomFactor;
+        newZoom = Math.max(0.1, Math.min(5, newZoom));
+
+        // Get pointer in canvas coordinates
+        // fabricCanvas.getPointer works with native events too
+        const pointer = (fabricCanvas as any).getPointer(ev) as { x: number; y: number };
+        if (pointer && typeof pointer.x === 'number' && typeof pointer.y === 'number') {
+          fabricCanvas.zoomToPoint(new Point(pointer.x, pointer.y), newZoom);
+        } else {
+          // fallback: compute from client coords
+          const rect = fabricCanvas.lowerCanvasEl.getBoundingClientRect();
+          const x = ev.clientX - rect.left;
+          const y = ev.clientY - rect.top;
+          fabricCanvas.zoomToPoint(new Point(x, y), newZoom);
+        }
+
+        fabricCanvas.requestRenderAll();
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    // attach to container so we can prevent browser zoom
+    containerRef.current.addEventListener('wheel', onWheel, { passive: false });
+
     const handleResize = () => {
       if (containerRef.current) {
         fabricCanvas.setDimensions({
@@ -371,6 +408,11 @@ const CanvasArea: React.FC = () => {
     return () => {
       fabricCanvas.dispose();
       window.removeEventListener('resize', handleResize);
+      if (containerRef.current) {
+        try {
+          containerRef.current.removeEventListener('wheel', onWheel as EventListener);
+        } catch (e) {}
+      }
     };
   }, []);
 
