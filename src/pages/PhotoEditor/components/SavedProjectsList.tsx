@@ -44,17 +44,22 @@ const SavedProjectsList: React.FC<SavedProjectsListProps> = ({ projects, onLoad,
                 />
               </div>
             }
+            onClick={() => onLoad(item)}
             actions={[
-              <Button type="text" icon={<FolderOpenOutlined />} onClick={() => onLoad(item)}>
-                Load
-              </Button>,
               <Popconfirm
                 title="Delete project?"
-                onConfirm={() => onDelete(item.id)}
+                onConfirm={() => {
+                  onDelete(item.id);
+                }}
                 okText="Yes"
                 cancelText="No"
               >
-                <Button type="text" danger icon={<DeleteOutlined />}>
+                <Button
+                  type="text"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   Delete
                 </Button>
               </Popconfirm>,

@@ -58,6 +58,8 @@ export const useProjects = () => {
     try {
       await deleteProjectFromDB(id);
       setSavedProjects((prev) => prev.filter((p) => p.id !== id));
+      // If the deleted project is currently loaded, clear it so editor doesn't reference it
+      setCurrentProject((cur) => (cur && cur.id === id ? null : cur));
       message.success('Project deleted');
     } catch (err) {
       console.error(err);

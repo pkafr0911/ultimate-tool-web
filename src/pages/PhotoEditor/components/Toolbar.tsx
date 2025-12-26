@@ -35,7 +35,14 @@ const Toolbar: React.FC = () => {
   const [maskModalVisible, setMaskModalVisible] = useState(false);
   const [projectModalVisible, setProjectModalVisible] = useState(false);
 
-  const { savedProjects, saveProject, deleteProject, loadProjects } = useProjects();
+  const {
+    savedProjects,
+    saveProject,
+    deleteProject,
+    loadProjects,
+    loadProjectIntoEditor,
+    clearCurrentProject,
+  } = useProjects();
 
   const handleSaveProject = () => {
     if (!canvas) return;
@@ -48,9 +55,21 @@ const Toolbar: React.FC = () => {
     if (!canvas) return;
     canvas.loadFromJSON(project.json).then(() => {
       canvas.renderAll();
+      // mark the project as current so saving will overwrite
+      loadProjectIntoEditor(project);
       setProjectModalVisible(false);
       history.saveState();
     });
+  };
+
+  const newProject = () => {
+    if (!canvas) return;
+    // clear canvas and reset state
+    canvas.discardActiveObject();
+    canvas.clear();
+    // ensure any background or options are reset if needed (left minimal)
+    history.saveState();
+    clearCurrentProject();
   };
 
   const copy = async () => {
@@ -175,6 +194,11 @@ const Toolbar: React.FC = () => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
         e.preventDefault();
         setExportModalVisible(true);
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        newProject();
       }
     };
 
@@ -355,6 +379,9 @@ const Toolbar: React.FC = () => {
               Paste (Ctrl + V)
             </Menu.Item>
             <Menu.Divider />
+            <Menu.Item key="new" icon={<FileImageOutlined />} onClick={newProject}>
+              New Project (Ctrl + N)
+            </Menu.Item>
             <Menu.Item key="save" icon={<SaveOutlined />} onClick={handleSaveProject}>
               Save Project (Ctrl + S)
             </Menu.Item>
