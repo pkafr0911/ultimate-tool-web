@@ -169,8 +169,15 @@
     routes: [
       { path: '/docs/commands', name: 'commands', icon: 'fileText', component: './Commands' },
       { path: '/docs/emojis', name: 'emojis', icon: 'smile', component: './Emojis' },
+      {
+        path: '/docs/google-drive',
+        name: 'google-drive',
+        icon: 'cloud',
+        component: './GoogleDrive',
+      },
     ],
   },
+
   {
     path: '/webflow-scroll',
     name: 'Webflow Scroll',
