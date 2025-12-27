@@ -11,7 +11,7 @@ import {
   UngroupOutlined,
 } from '@ant-design/icons';
 import { usePhotoEditor } from '../context';
-import { FabricObject, ActiveSelection, Group } from 'fabric';
+import { FabricObject, ActiveSelection, Group, util } from 'fabric';
 import {
   DndContext,
   closestCenter,
@@ -105,19 +105,27 @@ const LayersPanel: React.FC = () => {
     setObjects([...objs].reverse());
   };
 
-  const handleGroup = () => {
+  const handleMerge = () => {
     if (!canvas) return;
-    const activeObject = canvas.getActiveObject();
-    if (!activeObject) return;
+    const activeObjects = [...canvas.getActiveObjects()];
+    if (activeObjects.length <= 1) return;
 
-    if (activeObject.type === 'activeSelection') {
-      (activeObject as any).toGroup();
-      canvas.requestRenderAll();
-      updateObjects();
-      // Update selection to the new group
-      const newGroup = canvas.getActiveObject() || null;
-      setSelectedObject(newGroup);
-    }
+    canvas.discardActiveObject();
+
+    const group = new Group(activeObjects);
+    if (!(group as any).uid) (group as any).uid = Math.random().toString(36).substr(2, 9);
+
+    activeObjects.forEach((obj) => canvas.remove(obj));
+    canvas.add(group);
+
+    canvas.setActiveObject(group);
+    canvas.requestRenderAll();
+
+    history.saveState();
+    updateObjects();
+
+    setSelectedObject(group);
+    setActiveUids([(group as any).uid]);
   };
 
   const handleUngroup = () => {
@@ -125,13 +133,51 @@ const LayersPanel: React.FC = () => {
     const activeObject = canvas.getActiveObject();
     if (!activeObject) return;
 
-    if (activeObject.type === 'group') {
-      (activeObject as any).toActiveSelection();
+    if (activeObject.type === 'group' || activeObject instanceof Group) {
+      const group = activeObject as Group;
+      const items = group.getObjects();
+
+      // In Fabric.js v6, toActiveSelection might be missing or behave differently.
+      // We manually ungroup by calculating the absolute transform of each object.
+      const restoredItems = items.map((item) => {
+        const matrix = item.calcTransformMatrix();
+        const options = util.qrDecompose(matrix);
+
+        // Apply the absolute transform options to the item
+        item.set({
+          ...options,
+          left: options.translateX,
+          top: options.translateY,
+          angle: options.angle,
+          scaleX: options.scaleX,
+          scaleY: options.scaleY,
+          skewX: options.skewX,
+          skewY: options.skewY,
+        });
+        // Remove from group (this might be redundant if we remove group, but safe)
+        // group.remove(item);
+        return item;
+      });
+
+      // Remove the group from canvas
+      canvas.remove(group);
+
+      // Add items back to canvas
+      restoredItems.forEach((item) => {
+        canvas.add(item);
+      });
+
+      // Create selection
+      const activeSelection = new ActiveSelection(restoredItems, { canvas });
+      canvas.setActiveObject(activeSelection);
+
       canvas.requestRenderAll();
+      history.saveState();
       updateObjects();
-      // Update selection
-      const newSelection = canvas.getActiveObject() || null;
-      setSelectedObject(newSelection);
+
+      setSelectedObject(activeSelection);
+      const uids = restoredItems.map((o: any) => o.uid);
+      setActiveUids(uids);
     }
   };
 
@@ -147,15 +193,26 @@ const LayersPanel: React.FC = () => {
     canvas.on('object:added', debouncedUpdate);
     canvas.on('object:removed', debouncedUpdate);
     canvas.on('object:modified', debouncedUpdate);
+
     // update selection highlights when selection changes (supports multi-select)
     const updateSelection = () => {
       const active = canvas.getActiveObjects() || [];
       const uids = active.map((o: any) => o.uid).filter(Boolean);
       setActiveUids(uids);
+
+      // Sync selectedObject with canvas selection
+      const activeObj = canvas.getActiveObject();
+      setSelectedObject(activeObj ?? null);
     };
+
+    const clearSelection = () => {
+      setActiveUids([]);
+      setSelectedObject(null);
+    };
+
     canvas.on('selection:created', updateSelection);
     canvas.on('selection:updated', updateSelection);
-    canvas.on('selection:cleared', () => setActiveUids([]));
+    canvas.on('selection:cleared', clearSelection);
 
     updateObjects();
 
@@ -165,7 +222,7 @@ const LayersPanel: React.FC = () => {
       canvas.off('object:modified', debouncedUpdate);
       canvas.off('selection:created', updateSelection);
       canvas.off('selection:updated', updateSelection);
-      canvas.off('selection:cleared', () => setActiveUids([]));
+      canvas.off('selection:cleared', clearSelection);
       clearTimeout(timeout);
     };
   }, [canvas]);
@@ -349,9 +406,9 @@ const LayersPanel: React.FC = () => {
         <Space>
           <Button
             icon={<GroupOutlined />}
-            onClick={handleGroup}
+            onClick={handleMerge}
             disabled={!selectedObject}
-            title="Group Layers"
+            title="Merge Layers"
           />
           <Button
             icon={<UngroupOutlined />}
