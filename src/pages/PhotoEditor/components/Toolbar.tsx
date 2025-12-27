@@ -182,10 +182,11 @@ const Toolbar: React.FC = () => {
         copy();
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
-        e.preventDefault();
-        paste();
-      }
+      // Paste handled by 'paste' event listener below to support image pasting
+      // if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+      //   e.preventDefault();
+      //   paste();
+      // }
 
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
@@ -206,6 +207,29 @@ const Toolbar: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [canvas, selectedObject, history, activeTool, clipboard]);
+
+  // Handle Paste (System Image vs Internal Object)
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      // Check for images in system clipboard
+      const items = e.clipboardData?.items;
+      const hasImage = items && Array.from(items).some((item) => item.type.includes('image'));
+
+      if (hasImage) {
+        // Let the global paste handler (in useImageUpload) handle the image
+        return;
+      }
+
+      // If no image, try to paste internal object
+      if (clipboard) {
+        e.preventDefault();
+        paste();
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [clipboard, canvas, history]);
 
   const addRectangle = () => {
     if (!canvas) return;
