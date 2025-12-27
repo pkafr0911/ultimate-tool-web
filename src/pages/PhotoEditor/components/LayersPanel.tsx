@@ -190,7 +190,24 @@ const LayersPanel: React.FC = () => {
       timeout = setTimeout(updateObjects, 100);
     };
 
-    canvas.on('object:added', debouncedUpdate);
+    const handleObjectAdded = () => {
+      const objs = canvas.getObjects();
+      if (objs.length === 1) {
+        const obj = objs[0];
+        obj.set({
+          lockMovementX: true,
+          lockMovementY: true,
+          lockRotation: true,
+          lockScalingX: true,
+          lockScalingY: true,
+          selectable: false,
+          hoverCursor: 'default',
+        });
+      }
+      debouncedUpdate();
+    };
+
+    canvas.on('object:added', handleObjectAdded);
     canvas.on('object:removed', debouncedUpdate);
     canvas.on('object:modified', debouncedUpdate);
 
@@ -217,7 +234,7 @@ const LayersPanel: React.FC = () => {
     updateObjects();
 
     return () => {
-      canvas.off('object:added', debouncedUpdate);
+      canvas.off('object:added', handleObjectAdded);
       canvas.off('object:removed', debouncedUpdate);
       canvas.off('object:modified', debouncedUpdate);
       canvas.off('selection:created', updateSelection);

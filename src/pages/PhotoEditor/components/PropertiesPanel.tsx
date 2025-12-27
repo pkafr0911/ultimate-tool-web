@@ -4,6 +4,8 @@ import AdjustmentPanel from './AdjustmentPanel';
 import BrushPanel from './BrushPanel';
 import TextStylePanel from './TextStylePanel';
 import AlignControls from './AlignControls';
+import LayerStylePanel from './LayerStylePanel';
+import { FabricImage } from 'fabric';
 
 const PropertiesPanel: React.FC = () => {
   const { activeTool, selectedObject } = usePhotoEditor();
@@ -13,21 +15,25 @@ const PropertiesPanel: React.FC = () => {
   if (activeTool === 'text') return <TextStylePanel />;
 
   // if a text object is selected, show text panel too
-  if (selectedObject && (selectedObject as any).isType === 'i-text')
+  if (selectedObject && (selectedObject.type === 'i-text' || selectedObject.type === 'text'))
     return (
       <>
         <TextStylePanel />
+        <LayerStylePanel />
         <AlignControls />
       </>
     );
 
-  if (selectedObject)
+  if (selectedObject) {
+    const isImage = selectedObject instanceof FabricImage || selectedObject.type === 'image';
+
     return (
       <>
-        <AdjustmentPanel />
+        {isImage ? <AdjustmentPanel /> : <LayerStylePanel />}
         <AlignControls />
       </>
     );
+  }
 
   return <AdjustmentPanel />;
 };
