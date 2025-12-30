@@ -435,6 +435,13 @@ const Toolbar: React.FC = () => {
 
   return (
     <Space direction="vertical" style={{ padding: '8px' }}>
+      <Tooltip title="Hand (H)">
+        <Button
+          type={activeTool === 'hand' ? 'primary' : 'default'}
+          icon={<IconFont name="iconhand" styles={{ height: 16, width: 16 }} />}
+          onClick={() => setActiveTool('hand')}
+        />
+      </Tooltip>
       <Tooltip title="Select (V)">
         <Button
           type={activeTool === 'select' ? 'primary' : 'default'}
@@ -447,14 +454,6 @@ const Toolbar: React.FC = () => {
           type={activeTool === 'brush' ? 'primary' : 'default'}
           icon={<HighlightOutlined />}
           onClick={() => setActiveTool('brush')}
-        />
-      </Tooltip>
-
-      <Tooltip title="Hand (H)">
-        <Button
-          type={activeTool === 'hand' ? 'primary' : 'default'}
-          icon={<IconFont name="iconhand" styles={{ height: 16, width: 16 }} />}
-          onClick={() => setActiveTool('hand')}
         />
       </Tooltip>
 
