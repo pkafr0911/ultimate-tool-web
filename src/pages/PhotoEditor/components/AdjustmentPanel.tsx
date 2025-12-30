@@ -188,7 +188,7 @@ const AdjustmentPanel: React.FC = () => {
                 step={0.01}
                 defaultValue={0}
                 onChange={handleBrightness}
-                onAfterChange={() => history.saveState()}
+                onChangeComplete={() => history.saveState()}
               />
             </div>
             <div>
@@ -199,7 +199,7 @@ const AdjustmentPanel: React.FC = () => {
                 step={0.01}
                 defaultValue={0}
                 onChange={handleContrast}
-                onAfterChange={() => history.saveState()}
+                onChangeComplete={() => history.saveState()}
               />
             </div>
             <div>
@@ -210,7 +210,7 @@ const AdjustmentPanel: React.FC = () => {
                 step={0.01}
                 defaultValue={0}
                 onChange={handleSaturation}
-                onAfterChange={() => history.saveState()}
+                onChangeComplete={() => history.saveState()}
               />
             </div>
             <div>
@@ -221,7 +221,7 @@ const AdjustmentPanel: React.FC = () => {
                 step={0.01}
                 defaultValue={0}
                 onChange={handleVibrance}
-                onAfterChange={() => history.saveState()}
+                onChangeComplete={() => history.saveState()}
               />
             </div>
             <div>
@@ -232,7 +232,7 @@ const AdjustmentPanel: React.FC = () => {
                 step={0.1}
                 defaultValue={1}
                 onChange={handleGamma}
-                onAfterChange={() => history.saveState()}
+                onChangeComplete={() => history.saveState()}
               />
             </div>
             <div>
@@ -243,7 +243,7 @@ const AdjustmentPanel: React.FC = () => {
                 step={0.01}
                 defaultValue={0}
                 onChange={handleHueRotation}
-                onAfterChange={() => history.saveState()}
+                onChangeComplete={() => history.saveState()}
               />
             </div>
           </Space>
@@ -259,7 +259,7 @@ const AdjustmentPanel: React.FC = () => {
                 step={0.01}
                 defaultValue={0}
                 onChange={handleBlur}
-                onAfterChange={() => history.saveState()}
+                onChangeComplete={() => history.saveState()}
               />
             </div>
             <div>
@@ -269,7 +269,7 @@ const AdjustmentPanel: React.FC = () => {
                 max={1000}
                 defaultValue={0}
                 onChange={handleNoise}
-                onAfterChange={() => history.saveState()}
+                onChangeComplete={() => history.saveState()}
               />
             </div>
             <div>
@@ -279,7 +279,7 @@ const AdjustmentPanel: React.FC = () => {
                 max={20}
                 defaultValue={1}
                 onChange={handlePixelate}
-                onAfterChange={() => history.saveState()}
+                onChangeComplete={() => history.saveState()}
               />
             </div>
           </Space>
