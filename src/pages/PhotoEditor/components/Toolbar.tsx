@@ -21,13 +21,23 @@ import {
   AppstoreAddOutlined,
   UploadOutlined,
 } from '@ant-design/icons';
-import { Rect, Circle, Triangle, Polygon, IText, FabricImage, ActiveSelection } from 'fabric';
+import {
+  Rect,
+  Circle,
+  Triangle,
+  Polygon,
+  IText,
+  FabricImage,
+  ActiveSelection,
+  Point,
+} from 'fabric';
 import { usePhotoEditor } from '../context';
 import ExportModal from './ExportModal';
 import LayerMaskModal from './LayerMaskModal';
 import ProjectModal from './ProjectModal';
 import { useProjects } from '../hooks/useProjects';
 import { applyMaskToFabricObject } from '../utils/effectsHelpers';
+import IconFont from '@/components/IconFont';
 
 const Toolbar: React.FC = () => {
   const { canvas, setActiveTool, activeTool, history, selectedObject, clipboard, setClipboard } =
@@ -155,6 +165,7 @@ const Toolbar: React.FC = () => {
       }
 
       if (e.key === 'v' || e.key === 'V') setActiveTool('select');
+      if (e.key === 'h' || e.key === 'H') setActiveTool('hand');
       if (e.key === 'b' || e.key === 'B') setActiveTool('brush');
       if (e.key === 'm' || e.key === 'M') {
         if (selectedObject instanceof FabricImage) setMaskModalVisible(true);
@@ -230,6 +241,71 @@ const Toolbar: React.FC = () => {
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
   }, [clipboard, canvas, history]);
+
+  // Hand/pan tool: enable panning the canvas by dragging when activeTool === 'hand'
+  useEffect(() => {
+    if (!canvas) return;
+
+    let isPanning = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    const startPan = (opt: any) => {
+      if (activeTool !== 'hand') return;
+      isPanning = true;
+      const e = opt.e as MouseEvent;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      // discard selection and prevent object events while panning
+      try {
+        canvas.discardActiveObject();
+      } catch (e) {
+        // ignore
+      }
+      canvas.requestRenderAll();
+      canvas.defaultCursor = 'grabbing';
+      document.body.style.cursor = 'grabbing';
+      canvas.forEachObject((o) => (o.evented = false));
+    };
+
+    const movePan = (opt: any) => {
+      if (!isPanning || activeTool !== 'hand') return;
+      const e = opt.e as MouseEvent;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      // fabric expects a Point instance
+      canvas.relativePan(new Point(dx, dy));
+      canvas.requestRenderAll();
+    };
+
+    const endPan = () => {
+      if (!isPanning) return;
+      isPanning = false;
+      canvas.defaultCursor = 'default';
+      document.body.style.cursor = 'default';
+      canvas.forEachObject((o) => (o.evented = true));
+    };
+
+    canvas.on('mouse:down', startPan);
+    canvas.on('mouse:move', movePan);
+    canvas.on('mouse:up', endPan);
+
+    // Ensure cleanup and restore state when tool changes or unmount
+    return () => {
+      canvas.off('mouse:down', startPan);
+      canvas.off('mouse:move', movePan);
+      canvas.off('mouse:up', endPan);
+      try {
+        canvas.forEachObject((o) => (o.evented = true));
+      } catch (e) {
+        // ignore
+      }
+      canvas.defaultCursor = 'default';
+      document.body.style.cursor = 'default';
+    };
+  }, [canvas, activeTool]);
 
   const addRectangle = () => {
     if (!canvas) return;
@@ -371,6 +447,14 @@ const Toolbar: React.FC = () => {
           type={activeTool === 'brush' ? 'primary' : 'default'}
           icon={<HighlightOutlined />}
           onClick={() => setActiveTool('brush')}
+        />
+      </Tooltip>
+
+      <Tooltip title="Hand (H)">
+        <Button
+          type={activeTool === 'hand' ? 'primary' : 'default'}
+          icon={<IconFont name="iconhand" styles={{ height: 16, width: 16 }} />}
+          onClick={() => setActiveTool('hand')}
         />
       </Tooltip>
 

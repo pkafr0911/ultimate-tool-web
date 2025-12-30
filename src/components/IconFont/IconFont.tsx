@@ -1,16 +1,16 @@
-import React from 'react';
+import React, { CSSProperties } from 'react';
 
 type Props = {
   name: string;
-  style?: object;
+  styles?: CSSProperties;
 };
 
 /**
  * Icon Font
  * https://www.iconfont.cn/help/detail?helptype=code
  */
-const IconFont: React.FC<Props> = ({ name, style }) => (
-  <svg className="icon" aria-hidden="true" style={style}>
+const IconFont: React.FC<Props> = ({ name, styles }) => (
+  <svg className="icon" aria-hidden="true" style={styles}>
     <use xlinkHref={`#${name}`} />
   </svg>
 );
