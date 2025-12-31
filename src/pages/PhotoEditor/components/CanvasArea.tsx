@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Canvas, Image, PencilBrush, IText, Point } from 'fabric';
+import { Canvas, FabricImage, PencilBrush, IText, Point } from 'fabric';
 import { usePhotoEditor } from '../context';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
@@ -46,7 +46,7 @@ const CanvasArea: React.FC = () => {
     const reader = new FileReader();
     reader.onload = (f) => {
       const data = f.target?.result as string;
-      Image.fromURL(data).then((img) => {
+      FabricImage.fromURL(data).then((img) => {
         img.scaleToWidth(200);
         canvas.add(img);
         canvas.centerObject(img);
@@ -311,7 +311,7 @@ const CanvasArea: React.FC = () => {
         history.saveState();
       });
     } else if (imageUrl) {
-      Image.fromURL(imageUrl).then((img) => {
+      FabricImage.fromURL(imageUrl).then((img) => {
         const containerWidth = containerRef.current!.clientWidth;
         const containerHeight = containerRef.current!.clientHeight;
 
