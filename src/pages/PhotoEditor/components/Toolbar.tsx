@@ -38,7 +38,7 @@ import ProjectModal from './ProjectModal';
 import { useProjects } from '../hooks/useProjects';
 import { applyMaskToFabricObject } from '../utils/effectsHelpers';
 import IconFont from '@/components/IconFont';
-import HslAdjustmentModal from './HslAdjustmentModal';
+import CameraRawModal from './CameraRaw/CameraRawModal';
 
 const Toolbar: React.FC = () => {
   const { canvas, setActiveTool, activeTool, history, selectedObject, clipboard, setClipboard } =
@@ -47,7 +47,7 @@ const Toolbar: React.FC = () => {
   const spacePressedRef = useRef(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [maskModalVisible, setMaskModalVisible] = useState(false);
-  const [hslModalVisible, setHslModalVisible] = useState(false);
+  const [cameraRawVisible, setCameraRawVisible] = useState(false);
   const [projectModalVisible, setProjectModalVisible] = useState(false);
 
   const {
@@ -449,7 +449,7 @@ const Toolbar: React.FC = () => {
     setMaskModalVisible(false);
   };
 
-  const handleApplyHsl = (processedCanvas: HTMLCanvasElement) => {
+  const handleApplyCameraRaw = (processedCanvas: HTMLCanvasElement) => {
     if (!canvas || !selectedObject || !(selectedObject instanceof FabricImage)) return;
 
     const newImg = new FabricImage(processedCanvas);
@@ -480,7 +480,7 @@ const Toolbar: React.FC = () => {
     canvas.setActiveObject(newImg);
     canvas.requestRenderAll();
     history.saveState();
-    setHslModalVisible(false);
+    setCameraRawVisible(false);
   };
 
   const getSelectedImageCanvas = (): HTMLCanvasElement | null => {
@@ -572,10 +572,10 @@ const Toolbar: React.FC = () => {
           disabled={!isImageSelected}
         />
       </Tooltip>
-      <Tooltip title="HSL Adjustments">
+      <Tooltip title="Camera Raw Filter">
         <Button
           icon={<BgColorsOutlined />}
-          onClick={() => setHslModalVisible(true)}
+          onClick={() => setCameraRawVisible(true)}
           disabled={!isImageSelected}
         />
       </Tooltip>
@@ -665,11 +665,11 @@ const Toolbar: React.FC = () => {
         />
       )}
 
-      {hslModalVisible && isImageSelected && (
-        <HslAdjustmentModal
-          visible={hslModalVisible}
-          onCancel={() => setHslModalVisible(false)}
-          onApply={handleApplyHsl}
+      {cameraRawVisible && isImageSelected && (
+        <CameraRawModal
+          visible={cameraRawVisible}
+          onCancel={() => setCameraRawVisible(false)}
+          onApply={handleApplyCameraRaw}
           sourceCanvas={getSelectedImageCanvas()}
         />
       )}

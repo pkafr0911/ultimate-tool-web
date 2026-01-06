@@ -6,6 +6,7 @@ type CustomSliderProps = {
   value: number;
   min: number;
   max: number;
+  step?: number;
   onChange: (v: number) => void;
   onChangeComplete?: () => void;
   gradient?: string; // 👈 dynamic CSS gradient for track
@@ -16,6 +17,7 @@ export const CustomSlider = ({
   value,
   min,
   max,
+  step = 1,
   gradient,
   onChange,
   onChangeComplete,
@@ -35,6 +37,7 @@ export const CustomSlider = ({
       <InputNumber
         min={min}
         max={max}
+        step={step}
         value={value}
         onChange={(v) => onChange(Number(v))}
         onBlur={() => onChangeComplete?.()}
@@ -47,6 +50,7 @@ export const CustomSlider = ({
     <Slider
       min={min}
       max={max}
+      step={step}
       value={value}
       onChange={onChange}
       onChangeComplete={onChangeComplete}

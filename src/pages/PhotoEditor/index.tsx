@@ -13,6 +13,7 @@ import SavedProjectsList from './components/SavedProjectsList';
 import { useImageUpload } from './hooks/useImageUpload';
 import { useProjects } from './hooks/useProjects';
 import styles from './styles.less';
+import './styles.less';
 
 const { Sider, Content } = Layout;
 
