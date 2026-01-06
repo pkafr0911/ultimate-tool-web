@@ -38,6 +38,7 @@ import ProjectModal from './ProjectModal';
 import { useProjects } from '../hooks/useProjects';
 import { applyMaskToFabricObject } from '../utils/effectsHelpers';
 import IconFont from '@/components/IconFont';
+import HslAdjustmentModal from './HslAdjustmentModal';
 
 const Toolbar: React.FC = () => {
   const { canvas, setActiveTool, activeTool, history, selectedObject, clipboard, setClipboard } =
@@ -46,6 +47,7 @@ const Toolbar: React.FC = () => {
   const spacePressedRef = useRef(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [maskModalVisible, setMaskModalVisible] = useState(false);
+  const [hslModalVisible, setHslModalVisible] = useState(false);
   const [projectModalVisible, setProjectModalVisible] = useState(false);
 
   const {
@@ -447,6 +449,40 @@ const Toolbar: React.FC = () => {
     setMaskModalVisible(false);
   };
 
+  const handleApplyHsl = (processedCanvas: HTMLCanvasElement) => {
+    if (!canvas || !selectedObject || !(selectedObject instanceof FabricImage)) return;
+
+    const newImg = new FabricImage(processedCanvas);
+
+    // Copy properties
+    newImg.set({
+      left: selectedObject.left,
+      top: selectedObject.top,
+      scaleX: selectedObject.scaleX,
+      scaleY: selectedObject.scaleY,
+      angle: selectedObject.angle,
+      skewX: selectedObject.skewX,
+      skewY: selectedObject.skewY,
+      flipX: selectedObject.flipX,
+      flipY: selectedObject.flipY,
+      originX: selectedObject.originX,
+      originY: selectedObject.originY,
+      opacity: selectedObject.opacity,
+    });
+
+    // Replace in canvas
+    const index = canvas.getObjects().indexOf(selectedObject);
+    canvas.discardActiveObject();
+    canvas.remove(selectedObject);
+    canvas.add(newImg);
+    canvas.moveObjectTo(newImg, index);
+
+    canvas.setActiveObject(newImg);
+    canvas.requestRenderAll();
+    history.saveState();
+    setHslModalVisible(false);
+  };
+
   const getSelectedImageCanvas = (): HTMLCanvasElement | null => {
     if (!selectedObject || !(selectedObject instanceof FabricImage)) return null;
     const imgElement = selectedObject.getElement() as HTMLImageElement | HTMLCanvasElement;
@@ -536,6 +572,13 @@ const Toolbar: React.FC = () => {
           disabled={!isImageSelected}
         />
       </Tooltip>
+      <Tooltip title="HSL Adjustments">
+        <Button
+          icon={<BgColorsOutlined />}
+          onClick={() => setHslModalVisible(true)}
+          disabled={!isImageSelected}
+        />
+      </Tooltip>
 
       <Divider style={{ margin: '8px 0' }} />
 
@@ -619,6 +662,15 @@ const Toolbar: React.FC = () => {
           onApply={handleApplyMask}
           sourceCanvas={getSelectedImageCanvas()}
           selectedColor={null}
+        />
+      )}
+
+      {hslModalVisible && isImageSelected && (
+        <HslAdjustmentModal
+          visible={hslModalVisible}
+          onCancel={() => setHslModalVisible(false)}
+          onApply={handleApplyHsl}
+          sourceCanvas={getSelectedImageCanvas()}
         />
       )}
 
