@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Button, Tooltip, Space, Divider, Dropdown, Menu } from 'antd';
 import {
   DragOutlined,
@@ -42,6 +42,8 @@ import IconFont from '@/components/IconFont';
 const Toolbar: React.FC = () => {
   const { canvas, setActiveTool, activeTool, history, selectedObject, clipboard, setClipboard } =
     usePhotoEditor();
+  const prevToolRef = useRef<string | null>(null);
+  const spacePressedRef = useRef(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [maskModalVisible, setMaskModalVisible] = useState(false);
   const [projectModalVisible, setProjectModalVisible] = useState(false);
@@ -164,6 +166,17 @@ const Toolbar: React.FC = () => {
         return;
       }
 
+      // Hold Space to temporarily switch to Hand tool
+      if (e.code === 'Space') {
+        if (!spacePressedRef.current) {
+          spacePressedRef.current = true;
+          prevToolRef.current = activeTool;
+          if (activeTool !== 'hand') setActiveTool('hand');
+        }
+        e.preventDefault();
+        return;
+      }
+
       if (e.key === 'v' || e.key === 'V') setActiveTool('select');
       if (e.key === 'h' || e.key === 'H') setActiveTool('hand');
       if (e.key === 'b' || e.key === 'B') setActiveTool('brush');
@@ -215,8 +228,24 @@ const Toolbar: React.FC = () => {
       }
     };
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && spacePressedRef.current) {
+        spacePressedRef.current = false;
+        const prev = prevToolRef.current;
+        prevToolRef.current = null;
+        if (prev && prev !== 'hand') {
+          setActiveTool(prev);
+        }
+        e.preventDefault();
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   }, [canvas, selectedObject, history, activeTool, clipboard]);
 
   // Handle Paste (System Image vs Internal Object)
