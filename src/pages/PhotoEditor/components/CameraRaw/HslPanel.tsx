@@ -8,6 +8,8 @@ const { Text } = Typography;
 interface HslPanelProps {
   adjustments: Record<string, { h: number; s: number; l: number }>;
   onChange: (adjustments: Record<string, { h: number; s: number; l: number }>) => void;
+  activeChannel?: string;
+  onActiveChannelChange?: (channel: string) => void;
 }
 
 const colorSwatches = [
@@ -44,8 +46,24 @@ const getSliderGradient = (activeColor: string, type: 'h' | 's' | 'l') => {
   }
 };
 
-const HslPanel: React.FC<HslPanelProps> = ({ adjustments, onChange }) => {
-  const [activeChannel, setActiveChannel] = useState<string>('red');
+const HslPanel: React.FC<HslPanelProps> = ({
+  adjustments,
+  onChange,
+  activeChannel: propActiveChannel,
+  onActiveChannelChange,
+}) => {
+  const [localActiveChannel, setLocalActiveChannel] = useState<string>('red');
+
+  const activeChannel = propActiveChannel !== undefined ? propActiveChannel : localActiveChannel;
+
+  const handleChannelChange = (channel: string) => {
+    if (onActiveChannelChange) {
+      onActiveChannelChange(channel);
+    } else {
+      setLocalActiveChannel(channel);
+    }
+  };
+
   const currentAdj = adjustments[activeChannel] || { h: 0, s: 0, l: 0 };
 
   const updateAdjustment = (field: 'h' | 's' | 'l', value: number) => {
@@ -62,7 +80,7 @@ const HslPanel: React.FC<HslPanelProps> = ({ adjustments, onChange }) => {
     <div>
       <Tabs
         activeKey={activeChannel}
-        onChange={setActiveChannel}
+        onChange={handleChannelChange}
         type="card"
         size="small"
         items={colorRanges.map((range) => ({

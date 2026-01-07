@@ -76,6 +76,18 @@ export const colorRanges = [
   { name: 'magenta', range: [285, 345] },
 ];
 
+export const getColorNameFromHue = (hue: number): string => {
+  const deg = ((hue % 360) + 360) % 360;
+  const entry = colorRanges.find(({ range }) => {
+    const [start, end] = range;
+    if (start <= end) {
+      return deg >= start && deg < end;
+    }
+    return deg >= start || deg < end;
+  });
+  return entry?.name || 'red';
+};
+
 /**
  * Applies HSL adjustments to specific color ranges.
  * @param data Image data to modify

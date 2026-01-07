@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Modal, Tabs, Row, Col, Typography, Button, Spin } from 'antd';
+import { Modal, Tabs, Row, Col, Typography, Button, Spin, Tooltip } from 'antd';
+import { EyeOutlined, EyeInvisibleOutlined, AimOutlined } from '@ant-design/icons';
 import { CameraRawSettings, applyCameraRawPipeline } from '../../utils/cameraRawHelpers';
 import HslPanel from './HslPanel';
 import CurvesPanel from './CurvesPanel';
 import ColorGradingPanel from './ColorGradingPanel';
-import { colorRanges } from '../../utils/hslHelpers';
+import { colorRanges, rgbToHsl, getColorNameFromHue } from '../../utils/hslHelpers';
 import RGBHistogram from './RGBHistogram';
 
 const { Text } = Typography;
@@ -24,6 +25,7 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [showBefore, setShowBefore] = useState(false);
   const [redData, setRedData] = useState<number[]>(new Array(256).fill(0));
   const [greenData, setGreenData] = useState<number[]>(new Array(256).fill(0));
   const [blueData, setBlueData] = useState<number[]>(new Array(256).fill(0));
@@ -66,6 +68,15 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
 
   const [settings, setSettings] = useState<CameraRawSettings>(initialSettings);
 
+  // Color Picker State
+  const [isPicking, setIsPicking] = useState(false);
+  const [activeHslChannel, setActiveHslChannel] = useState<string>('red');
+  const [activeTab, setActiveTab] = useState('hsl');
+  const [pickerPos, setPickerPos] = useState<{ x: number; y: number } | null>(null);
+  const [sampledColor, setSampledColor] = useState<{ h: number; s: number; l: number } | null>(
+    null,
+  );
+
   // Reset when opened
   useEffect(() => {
     if (visible) {
@@ -106,29 +117,48 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
       // Get image data
       const imageData = ctx.getImageData(0, 0, previewWidth, previewHeight);
 
-      // Apply Pipeline
-      applyCameraRawPipeline(imageData, settings);
+      // If showing 'before', skip processing and show original
+      if (showBefore) {
+        // Compute hist from original
+        const rHist = new Array(256).fill(0);
+        const gHist = new Array(256).fill(0);
+        const bHist = new Array(256).fill(0);
+        const d = imageData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          rHist[d[i]] += 1;
+          gHist[d[i + 1]] += 1;
+          bHist[d[i + 2]] += 1;
+        }
+        setRedData(rHist);
+        setGreenData(gHist);
+        setBlueData(bHist);
 
-      // Compute simple 256-bin RGB histograms from processed image
-      const rHist = new Array(256).fill(0);
-      const gHist = new Array(256).fill(0);
-      const bHist = new Array(256).fill(0);
-      const d = imageData.data;
-      for (let i = 0; i < d.length; i += 4) {
-        rHist[d[i]] += 1;
-        gHist[d[i + 1]] += 1;
-        bHist[d[i + 2]] += 1;
+        // original already on canvas; nothing else to do
+      } else {
+        // Apply Pipeline
+        applyCameraRawPipeline(imageData, settings);
+
+        // Compute simple 256-bin RGB histograms from processed image
+        const rHist = new Array(256).fill(0);
+        const gHist = new Array(256).fill(0);
+        const bHist = new Array(256).fill(0);
+        const d = imageData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          rHist[d[i]] += 1;
+          gHist[d[i + 1]] += 1;
+          bHist[d[i + 2]] += 1;
+        }
+        setRedData(rHist);
+        setGreenData(gHist);
+        setBlueData(bHist);
+
+        // Put processed data back
+        ctx.putImageData(imageData, 0, 0);
       }
-      setRedData(rHist);
-      setGreenData(gHist);
-      setBlueData(bHist);
-
-      // Put back
-      ctx.putImageData(imageData, 0, 0);
     }, 50);
 
     return () => clearTimeout(timer);
-  }, [visible, sourceCanvas, settings]);
+  }, [visible, sourceCanvas, settings, showBefore]);
 
   const handleApply = async () => {
     if (!sourceCanvas) return;
@@ -155,6 +185,70 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
     }, 100);
   };
 
+  const handleCanvasClick = (
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>,
+  ) => {
+    // Enable picking if isPicking mode is on OR Alt key is pressed
+    const isAlt = (e as React.MouseEvent).altKey;
+    if ((!isPicking && !isAlt) || !previewCanvasRef.current) return;
+
+    const canvas = previewCanvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = (e as React.MouseEvent).clientX;
+      clientY = (e as React.MouseEvent).clientY;
+    }
+
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const canvasX = Math.floor(x * scaleX);
+    const canvasY = Math.floor(y * scaleY);
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const size = 3;
+    const imageData = ctx.getImageData(
+      Math.max(0, canvasX - 1),
+      Math.max(0, canvasY - 1),
+      size,
+      size,
+    );
+    const data = imageData.data;
+    if (data.length === 0) return;
+
+    let r = 0,
+      g = 0,
+      b = 0;
+    const count = data.length / 4;
+    for (let i = 0; i < data.length; i += 4) {
+      r += data[i];
+      g += data[i + 1];
+      b += data[i + 2];
+    }
+    r = Math.round(r / count);
+    g = Math.round(g / count);
+    b = Math.round(b / count);
+
+    const [h, s, l] = rgbToHsl(r, g, b);
+    const hueDeg = h * 360;
+
+    const channel = getColorNameFromHue(hueDeg);
+
+    setActiveHslChannel(channel);
+    setActiveTab('hsl');
+    setSampledColor({ h: hueDeg, s, l });
+    setPickerPos({ x, y });
+  };
+
   const tabsItems = [
     {
       key: 'hsl',
@@ -163,6 +257,8 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
         <HslPanel
           adjustments={settings.hsl}
           onChange={(hsl) => setSettings({ ...settings, hsl })}
+          activeChannel={activeHslChannel}
+          onActiveChannelChange={setActiveHslChannel}
         />
       ),
     },
@@ -213,16 +309,94 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
             flexDirection: 'column',
           }}
         >
-          <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-            <canvas
-              ref={previewCanvasRef}
+          <div
+            style={{
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'center',
+              position: 'relative',
+            }}
+          >
+            <div
               style={{
-                maxWidth: '100%',
-                maxHeight: '550px',
-                border: '1px solid #ccc',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                position: 'absolute',
+                right: 12,
+                top: 12,
+                zIndex: 3,
+                display: 'flex',
+                gap: 8,
               }}
-            />
+            >
+              <Tooltip title="Pick color to select HSL channel">
+                <Button
+                  size="small"
+                  type={isPicking ? 'primary' : 'default'}
+                  icon={<AimOutlined />}
+                  onClick={() => {
+                    setIsPicking(!isPicking);
+                    setPickerPos(null);
+                  }}
+                />
+              </Tooltip>
+              <Button
+                size="small"
+                icon={showBefore ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                onClick={() => setShowBefore((s) => !s)}
+              />
+            </div>
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <canvas
+                ref={previewCanvasRef}
+                onClick={handleCanvasClick}
+                onTouchStart={handleCanvasClick}
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '550px',
+                  border: '1px solid #ccc',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  cursor: isPicking ? 'crosshair' : 'default',
+                  display: 'block',
+                }}
+              />
+              {isPicking && pickerPos && sampledColor && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: pickerPos.x,
+                    top: pickerPos.y,
+                    transform: 'translate(-50%, -50%)',
+                    pointerEvents: 'none',
+                    zIndex: 10,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 20,
+                      height: 20,
+                      border: '2px solid white',
+                      borderRadius: '50%',
+                      boxShadow: '0 0 2px black',
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 24,
+                      left: 0,
+                      background: 'rgba(0,0,0,0.8)',
+                      color: '#fff',
+                      padding: '2px 6px',
+                      borderRadius: 4,
+                      fontSize: 10,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    H:{Math.round(sampledColor.h)} S:{Math.round(sampledColor.s * 100)} L:
+                    {Math.round(sampledColor.l * 100)}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </Col>
         <Col span={8}>
@@ -234,7 +408,33 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
               blueData={blueData}
             />
           </div>
-          <Tabs defaultActiveKey="hsl" items={tabsItems} />
+
+          <div style={{ marginTop: 12, marginBottom: 16, padding: '0 8px' }}>
+            <Row gutter={[12, 8]}>
+              <Col span={12}>
+                <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
+                  Resolution
+                </Text>
+                <Text style={{ fontSize: 13 }}>
+                  {sourceCanvas ? `${sourceCanvas.width} × ${sourceCanvas.height}` : 'N/A'}
+                </Text>
+              </Col>
+              <Col span={6}>
+                <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
+                  ISO
+                </Text>
+                <Text style={{ fontSize: 13 }}>--</Text>
+              </Col>
+              <Col span={6}>
+                <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
+                  Exp
+                </Text>
+                <Text style={{ fontSize: 13 }}>--</Text>
+              </Col>
+            </Row>
+          </div>
+
+          <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabsItems} />
         </Col>
       </Row>
     </Modal>
