@@ -5,6 +5,7 @@ import HslPanel from './HslPanel';
 import CurvesPanel from './CurvesPanel';
 import ColorGradingPanel from './ColorGradingPanel';
 import { colorRanges } from '../../utils/hslHelpers';
+import RGBHistogram from './RGBHistogram';
 
 const { Text } = Typography;
 
@@ -23,6 +24,9 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [redData, setRedData] = useState<number[]>(new Array(256).fill(0));
+  const [greenData, setGreenData] = useState<number[]>(new Array(256).fill(0));
+  const [blueData, setBlueData] = useState<number[]>(new Array(256).fill(0));
 
   const initialSettings: CameraRawSettings = useMemo(() => {
     const hsl: any = {};
@@ -54,6 +58,8 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
         highlights: { h: 0, s: 0, l: 0 },
         blending: 0.5,
         balance: 0,
+        temperature: 0,
+        tint: 0,
       },
     };
   }, []);
@@ -102,6 +108,20 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
 
       // Apply Pipeline
       applyCameraRawPipeline(imageData, settings);
+
+      // Compute simple 256-bin RGB histograms from processed image
+      const rHist = new Array(256).fill(0);
+      const gHist = new Array(256).fill(0);
+      const bHist = new Array(256).fill(0);
+      const d = imageData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        rHist[d[i]] += 1;
+        gHist[d[i + 1]] += 1;
+        bHist[d[i + 2]] += 1;
+      }
+      setRedData(rHist);
+      setGreenData(gHist);
+      setBlueData(bHist);
 
       // Put back
       ctx.putImageData(imageData, 0, 0);
@@ -173,7 +193,7 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
       title="Camera Raw Filter"
       open={visible}
       onCancel={onCancel}
-      width={1000}
+      width={1200}
       onOk={handleApply}
       confirmLoading={loading}
       okText="Apply"
@@ -181,7 +201,7 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
     >
       <Row gutter={24}>
         <Col
-          span={14}
+          span={16}
           style={{
             textAlign: 'center',
             background: '#f0f0f0',
@@ -190,19 +210,30 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             minHeight: 400,
+            flexDirection: 'column',
           }}
         >
-          <canvas
-            ref={previewCanvasRef}
-            style={{
-              maxWidth: '100%',
-              maxHeight: '550px',
-              border: '1px solid #ccc',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-            }}
-          />
+          <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <canvas
+              ref={previewCanvasRef}
+              style={{
+                maxWidth: '100%',
+                maxHeight: '550px',
+                border: '1px solid #ccc',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              }}
+            />
+          </div>
         </Col>
-        <Col span={10}>
+        <Col span={8}>
+          <div style={{ width: '100%' }}>
+            <RGBHistogram
+              canvasRef={previewCanvasRef}
+              redData={redData}
+              greenData={greenData}
+              blueData={blueData}
+            />
+          </div>
           <Tabs defaultActiveKey="hsl" items={tabsItems} />
         </Col>
       </Row>

@@ -16,6 +16,8 @@ export interface CameraRawSettings {
     highlights: { h: number; s: number; l: number };
     blending: number;
     balance: number;
+    temperature: number;
+    tint: number;
   };
 }
 
@@ -206,42 +208,79 @@ export const applyCameraRawPipeline = (imageData: ImageData, settings: CameraRaw
     // Calculate Luma (0..1)
     const luma = 0.299 * (r / 255) + 0.587 * (g / 255) + 0.114 * (b / 255);
 
-    // Define weights
-    // Shadows: 1 at 0, 0 at 0.5
-    // Highlights: 0 at 0.5, 1 at 1
-    // Midtones: Parabola peaking at 0.5
+    // Balance shifts the midpoint of tones (-1..1) -> center shift up to +/-0.25
+    const center = 0.5 + (colorGrading.balance || 0) * 0.25;
+    // Blending controls the softness (0..1)
+    const width = 0.5 + (colorGrading.blending ?? 0) * 0.5; // denom scale
+    const denom = Math.max(0.001, 0.5 * width);
 
-    let shadowFactor = Math.max(0, 1 - luma * 2); // 0..0.5 maps to 1..0
-    let highlightFactor = Math.max(0, (luma - 0.5) * 2); // 0.5..1 maps to 0..1
-    let midtoneFactor = 1 - Math.abs(luma - 0.5) * 2; // 0..1 maps to 0..1..0 peak 0.5
+    // Compute per-zone factors with linear falloff centered on `center`.
+    let shadowFactor = clamp01((center - luma) / denom);
+    let highlightFactor = clamp01((luma - center) / denom);
+    let midtoneFactor = Math.max(0, 1 - Math.abs(luma - center) / denom);
 
-    // Simple additive color grading
+    // Simple additive color grading + luminance shift
     const gradingIntensity = 2.0;
 
-    if (colorGrading.shadows.s > 0) {
-      // Mix shadow color
-      const [sr, sg, sb] = hslToRgb(colorGrading.shadows.h / 360, colorGrading.shadows.s, 0.5); // Use 0.5 L for pure color
+    // Shadows
+    if (Math.abs(colorGrading.shadows.s) > 0 || Math.abs(colorGrading.shadows.l) > 0) {
+      const [sr, sg, sb] = hslToRgb(colorGrading.shadows.h / 360, colorGrading.shadows.s, 0.5);
+      const lShift = colorGrading.shadows.l || 0;
       r += (sr - 128) * shadowFactor * gradingIntensity;
       g += (sg - 128) * shadowFactor * gradingIntensity;
       b += (sb - 128) * shadowFactor * gradingIntensity;
+      const lumAdd = lShift * 255 * shadowFactor;
+      r += lumAdd;
+      g += lumAdd;
+      b += lumAdd;
     }
 
-    if (colorGrading.highlights.s > 0) {
+    // Highlights
+    if (Math.abs(colorGrading.highlights.s) > 0 || Math.abs(colorGrading.highlights.l) > 0) {
       const [hr, hg, hb] = hslToRgb(
         colorGrading.highlights.h / 360,
         colorGrading.highlights.s,
         0.5,
       );
+      const lShift = colorGrading.highlights.l || 0;
       r += (hr - 128) * highlightFactor * gradingIntensity;
       g += (hg - 128) * highlightFactor * gradingIntensity;
       b += (hb - 128) * highlightFactor * gradingIntensity;
+      const lumAdd = lShift * 255 * highlightFactor;
+      r += lumAdd;
+      g += lumAdd;
+      b += lumAdd;
     }
 
-    if (colorGrading.midtones.s > 0) {
+    // Midtones
+    if (Math.abs(colorGrading.midtones.s) > 0 || Math.abs(colorGrading.midtones.l) > 0) {
       const [mr, mg, mb] = hslToRgb(colorGrading.midtones.h / 360, colorGrading.midtones.s, 0.5);
+      const lShift = colorGrading.midtones.l || 0;
       r += (mr - 128) * midtoneFactor * gradingIntensity;
       g += (mg - 128) * midtoneFactor * gradingIntensity;
       b += (mb - 128) * midtoneFactor * gradingIntensity;
+      const lumAdd = lShift * 255 * midtoneFactor;
+      r += lumAdd;
+      g += lumAdd;
+      b += lumAdd;
+    }
+
+    // --- 4. Temperature & Tint ---
+    // Temperature: warm (positive) -> more red, less blue
+    // Tint: green (positive) / magenta (negative)
+    const temp = colorGrading.temperature || 0; // -1..1
+    const tint = colorGrading.tint || 0; // -1..1
+    if (temp !== 0) {
+      const tempAmount = temp * 40; // tunable intensity
+      r += tempAmount;
+      b -= tempAmount;
+    }
+    if (tint !== 0) {
+      const tintAmount = tint * 30;
+      g += tintAmount;
+      // reduce red and blue slightly for magenta/green balance
+      r -= tintAmount * 0.35;
+      b -= tintAmount * 0.35;
     }
 
     data[i] = clamp(r);
