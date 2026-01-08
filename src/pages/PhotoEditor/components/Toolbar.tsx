@@ -199,7 +199,7 @@ const Toolbar: React.FC = () => {
 
       if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
 
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
         e.preventDefault();
         if (e.shiftKey) {
           history.redo();
