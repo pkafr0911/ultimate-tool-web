@@ -20,6 +20,8 @@ import {
   MoreOutlined,
   AppstoreAddOutlined,
   UploadOutlined,
+  ColumnWidthOutlined,
+  BorderOuterOutlined,
 } from '@ant-design/icons';
 import {
   Rect,
@@ -35,6 +37,7 @@ import { usePhotoEditor } from '../context';
 import ExportModal from './ExportModal';
 import LayerMaskModal from './LayerMaskModal';
 import ProjectModal from './ProjectModal';
+import CropModal from './CropModal';
 import { useProjects } from '../hooks/useProjects';
 import { applyMaskToFabricObject } from '../utils/effectsHelpers';
 import IconFont from '@/components/IconFont';
@@ -49,6 +52,7 @@ const Toolbar: React.FC = () => {
   const [maskModalVisible, setMaskModalVisible] = useState(false);
   const [cameraRawVisible, setCameraRawVisible] = useState(false);
   const [projectModalVisible, setProjectModalVisible] = useState(false);
+  const [cropModalVisible, setCropModalVisible] = useState(false);
 
   const {
     savedProjects,
@@ -182,6 +186,11 @@ const Toolbar: React.FC = () => {
       if (e.key === 'v' || e.key === 'V') setActiveTool('select');
       if (e.key === 'h' || e.key === 'H') setActiveTool('hand');
       if (e.key === 'b' || e.key === 'B') setActiveTool('brush');
+      if (e.key === 'c' || e.key === 'C') {
+        if (!(e.ctrlKey || e.metaKey)) {
+          setCropModalVisible(true);
+        }
+      }
       if (e.key === 'm' || e.key === 'M') {
         if (selectedObject instanceof FabricImage) setMaskModalVisible(true);
       }
@@ -565,6 +574,9 @@ const Toolbar: React.FC = () => {
 
       <Divider style={{ margin: '8px 0' }} />
 
+      <Tooltip title="Crop (C)">
+        <Button icon={<BorderOuterOutlined />} onClick={() => setCropModalVisible(true)} />
+      </Tooltip>
       <Tooltip title="Mask (M)">
         <Button
           icon={<ScissorOutlined />}
@@ -681,6 +693,15 @@ const Toolbar: React.FC = () => {
         onLoad={handleLoadProject}
         onDelete={deleteProject}
       />
+
+      {cropModalVisible && (
+        <CropModal
+          visible={cropModalVisible}
+          onCancel={() => setCropModalVisible(false)}
+          canvas={canvas}
+          history={history}
+        />
+      )}
     </Space>
   );
 };
