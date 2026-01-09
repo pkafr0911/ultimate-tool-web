@@ -143,3 +143,42 @@ export const applyMaskToCanvas = (
   ctx.putImageData(imageData, 0, 0);
   // history.push(canvas.toDataURL(), label, false); // History handling might differ
 };
+
+export const applyBlurResultToCanvas = async (
+  canvas: Canvas,
+  resultCanvas: HTMLCanvasElement,
+  mode: 'overlay' | 'flatten' = 'overlay',
+) => {
+  const resultImg = new FabricImage(resultCanvas);
+
+  if (mode === 'flatten') {
+    // Flatten: clear and replace with single image
+    canvas.clear();
+    // Assuming resultCanvas has same dimensions as canvas
+    // canvas.setDimensions({ width: resultImg.width!, height: resultImg.height! });
+
+    resultImg.set({
+      left: 0,
+      top: 0,
+      originX: 'left',
+      originY: 'top',
+      selectable: true,
+      evented: true,
+    });
+    canvas.add(resultImg);
+  } else {
+    // Overlay: add on top, locked
+    resultImg.set({
+      left: 0,
+      top: 0,
+      originX: 'left',
+      originY: 'top',
+      selectable: false,
+      evented: false,
+      opacity: 1,
+    });
+    canvas.add(resultImg);
+  }
+
+  canvas.requestRenderAll();
+};

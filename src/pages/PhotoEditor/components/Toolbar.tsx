@@ -38,6 +38,7 @@ import ExportModal from './ExportModal';
 import LayerMaskModal from './LayerMaskModal';
 import ProjectModal from './ProjectModal';
 import CropModal from './CropModal';
+import BlurBrushModal from './BlurBrush/BlurBrushModal';
 import { useProjects } from '../hooks/useProjects';
 import { applyMaskToFabricObject } from '../utils/effectsHelpers';
 import IconFont from '@/components/IconFont';
@@ -53,6 +54,7 @@ const Toolbar: React.FC = () => {
   const [cameraRawVisible, setCameraRawVisible] = useState(false);
   const [projectModalVisible, setProjectModalVisible] = useState(false);
   const [cropModalVisible, setCropModalVisible] = useState(false);
+  const [blurBrushVisible, setBlurBrushVisible] = useState(false);
 
   const {
     savedProjects,
@@ -591,6 +593,9 @@ const Toolbar: React.FC = () => {
           disabled={!isImageSelected}
         />
       </Tooltip>
+      <Tooltip title="Blur Brush">
+        <Button icon={<HighlightOutlined />} onClick={() => setBlurBrushVisible(true)} />
+      </Tooltip>
 
       <Divider style={{ margin: '8px 0' }} />
 
@@ -698,6 +703,15 @@ const Toolbar: React.FC = () => {
         <CropModal
           visible={cropModalVisible}
           onCancel={() => setCropModalVisible(false)}
+          canvas={canvas}
+          history={history}
+        />
+      )}
+
+      {blurBrushVisible && (
+        <BlurBrushModal
+          visible={blurBrushVisible}
+          onCancel={() => setBlurBrushVisible(false)}
           canvas={canvas}
           history={history}
         />
