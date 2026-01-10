@@ -16,6 +16,8 @@ interface VectorEditorContextType {
     canUndo: boolean;
     canRedo: boolean;
   };
+  pointEditor: any;
+  setPointEditor: (editor: any) => void;
 }
 
 const VectorEditorContext = createContext<VectorEditorContextType | undefined>(undefined);
@@ -24,6 +26,7 @@ export const VectorEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [canvas, setCanvas] = useState<Canvas | null>(null);
   const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
   const [activeTool, setActiveTool] = useState<string>('select');
+  const [pointEditor, setPointEditor] = useState<any>(null);
 
   const history = useHistory(canvas);
 
@@ -37,6 +40,8 @@ export const VectorEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
         activeTool,
         setActiveTool,
         history,
+        pointEditor,
+        setPointEditor,
       }}
     >
       {children}

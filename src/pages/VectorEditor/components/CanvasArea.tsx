@@ -3,14 +3,38 @@ import { Canvas, TEvent, Rect, Circle, IText, Point } from 'fabric';
 import { useVectorEditor } from '../context';
 import { useShortcuts } from '../hooks/useShortcuts';
 import { usePenTool } from '../hooks/usePenTool';
+import { usePointEditor } from '../hooks/usePointEditor';
 
 const CanvasArea: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { setCanvas, setSelectedObject, activeTool, setActiveTool, history, canvas } =
-    useVectorEditor();
+  const {
+    setCanvas,
+    setSelectedObject,
+    activeTool,
+    setActiveTool,
+    history,
+    canvas,
+    setPointEditor,
+  } = useVectorEditor();
 
   const penTool = usePenTool(canvas, history.saveState);
+
+  const pointEditor = usePointEditor(canvas, history, {
+    onChange: (event) => {
+      console.log('Point edit:', event);
+    },
+    onCommit: (object) => {
+      console.log('Committed changes to:', object);
+    },
+  });
+
+  // Expose point editor to context
+  useEffect(() => {
+    if (canvas) {
+      setPointEditor(pointEditor);
+    }
+  }, [canvas, pointEditor, setPointEditor]);
 
   // Initialize Canvas
   useEffect(() => {
@@ -83,6 +107,8 @@ const CanvasArea: React.FC = () => {
   useEffect(() => {
     if (!canvas) return;
 
+    console.log('Active tool changed to:', activeTool);
+
     canvas.isDrawingMode = false;
 
     if (activeTool === 'pan') {
@@ -135,9 +161,48 @@ const CanvasArea: React.FC = () => {
 
   // Shortcuts
   useShortcuts({
-    v: () => setActiveTool('select'),
-    h: () => setActiveTool('pan'),
-    ' ': () => setActiveTool('pan'), // Space for pan
+    v: () => {
+      console.log('V key pressed - switching to select tool');
+      // Selection Tool - exit point edit mode if active
+      if (pointEditor.isEditing) {
+        pointEditor.exit(true);
+      }
+      setActiveTool('select');
+    },
+    h: () => {
+      console.log('H key pressed - switching to pan tool');
+      setActiveTool('pan');
+    },
+    ' ': () => {
+      console.log('Space key pressed - switching to pan tool');
+      setActiveTool('pan');
+    }, // Space for pan
+    a: () => {
+      console.log('A key pressed - attempting to enter point edit mode');
+      // Direct Selection Tool - enter point edit mode
+      const activeObj = canvas?.getActiveObject();
+      console.log('Active object:', activeObj);
+      console.log('Point editor is editing:', pointEditor.isEditing);
+      console.log('Canvas exists:', !!canvas);
+
+      if (!canvas) {
+        console.log('No canvas available');
+        return;
+      }
+
+      if (!activeObj) {
+        console.log('No object selected - cannot enter point edit mode');
+        return;
+      }
+
+      if (pointEditor.isEditing) {
+        console.log('Already in point edit mode');
+        return;
+      }
+
+      console.log('Entering point edit mode for object:', activeObj.type);
+      pointEditor.enter(activeObj);
+    },
     r: () => {
       if (!canvas) return;
       const rect = new Rect({
@@ -176,9 +241,40 @@ const CanvasArea: React.FC = () => {
       canvas.setActiveObject(text);
       setActiveTool('select');
     },
-    p: () => setActiveTool('pen'),
+    p: () => {
+      console.log('P key pressed - switching to pen tool');
+      setActiveTool('pen');
+    },
+    'shift+c': () => {
+      // Convert anchor type
+      if (pointEditor.isEditing && pointEditor.selectedAnchorIndex !== null) {
+        const current = pointEditor.getAnchors()[pointEditor.selectedAnchorIndex];
+        const newType = current.type === 'smooth' ? 'corner' : 'smooth';
+        pointEditor.convertPointType(pointEditor.selectedAnchorIndex, newType);
+      }
+    },
+    enter: () => {
+      // Commit point edit
+      if (pointEditor.isEditing) {
+        pointEditor.exit(true);
+      }
+    },
+    escape: () => {
+      // Cancel point edit
+      if (pointEditor.isEditing) {
+        pointEditor.exit(false);
+      }
+    },
     delete: () => {
       if (!canvas) return;
+
+      // If in point edit mode and anchor selected, delete the anchor
+      if (pointEditor.isEditing && pointEditor.selectedAnchorIndex !== null) {
+        pointEditor.removePoint(pointEditor.selectedAnchorIndex);
+        return;
+      }
+
+      // Otherwise delete selected objects
       const activeObjects = canvas.getActiveObjects();
       if (activeObjects.length) {
         canvas.discardActiveObject();
@@ -190,6 +286,14 @@ const CanvasArea: React.FC = () => {
     },
     backspace: () => {
       if (!canvas) return;
+
+      // If in point edit mode and anchor selected, delete the anchor
+      if (pointEditor.isEditing && pointEditor.selectedAnchorIndex !== null) {
+        pointEditor.removePoint(pointEditor.selectedAnchorIndex);
+        return;
+      }
+
+      // Otherwise delete selected objects
       const activeObjects = canvas.getActiveObjects();
       if (activeObjects.length) {
         canvas.discardActiveObject();

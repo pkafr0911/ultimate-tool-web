@@ -25,6 +25,8 @@ export const useShortcuts = (shortcuts: ShortcutMap) => {
       if (shift) keyString += 'shift+';
       keyString += key;
 
+      console.log('Key pressed:', { key, ctrl, shift, keyString });
+
       if (shortcuts[keyString]) {
         e.preventDefault();
         shortcuts[keyString](e);
@@ -33,6 +35,7 @@ export const useShortcuts = (shortcuts: ShortcutMap) => {
         // But be careful not to trigger 'v' when 'ctrl+v' is pressed if 'ctrl+v' is not defined but 'v' is.
         // The logic above handles exact matches first.
         if (!ctrl && !shift) {
+          e.preventDefault();
           shortcuts[key](e);
         }
       }
