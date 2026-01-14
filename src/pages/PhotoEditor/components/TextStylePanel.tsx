@@ -105,6 +105,7 @@ const TextStylePanel: React.FC = () => {
             setFontFamily(v);
             apply({ fontFamily: v });
           }}
+          style={{ width: '100%' }}
         >
           {fonts.map((f) => (
             <Select.Option key={f} value={f}>

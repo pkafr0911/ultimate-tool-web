@@ -12,8 +12,8 @@ import {
   message,
   Tooltip,
 } from 'antd';
-import { SignJWT, decodeJwt, decodeProtectedHeader, jwtVerify } from 'jose';
-import React, { useState } from 'react';
+import { SignJWT, decodeJwt, decodeProtectedHeader, jwtVerify, importPKCS8, importSPKI } from 'jose';
+import React, { useState, useMemo } from 'react';
 import {
   ArrowRightOutlined,
   ArrowLeftOutlined,
@@ -36,10 +36,17 @@ const JWTTool: React.FC = () => {
     '{\n  "sub": "1234567890",\n  "name": "John Doe",\n  "iat": 1516239022\n}',
   );
   const [secret, setSecret] = useState('secret');
+  const [privateKey, setPrivateKey] = useState('');
+  const [publicKey, setPublicKey] = useState('');
   const [token, setToken] = useState('');
   const [expiration, setExpiration] = useState('2h');
 
   const encoder = new TextEncoder();
+
+  // Determine if algorithm is symmetric (HMAC) or asymmetric (RSA/ECDSA/PS)
+  const isSymmetric = useMemo(() => {
+    return algorithm.startsWith('HS');
+  }, [algorithm]);
 
   // --- Helpers ---
   const parseJSON = (text: string, label: string) => {
@@ -63,7 +70,24 @@ const JWTTool: React.FC = () => {
       header.alg = algorithm;
       setHeaderStr(formatJSON(header));
 
-      const secretKey = encoder.encode(secret);
+      let cryptoKey: Uint8Array | CryptoKey;
+
+      if (isSymmetric) {
+        // Use secret for HMAC algorithms
+        cryptoKey = encoder.encode(secret);
+      } else {
+        // Use private key for asymmetric algorithms
+        if (!privateKey) {
+          message.error('Private key is required for asymmetric algorithms');
+          return;
+        }
+        try {
+          cryptoKey = await importPKCS8(privateKey, algorithm);
+        } catch (err: any) {
+          message.error('Invalid private key format. Expected PKCS8 PEM format.');
+          return;
+        }
+      }
 
       let jwtBuilder = new SignJWT(payload).setProtectedHeader(header).setIssuedAt();
 
@@ -71,7 +95,7 @@ const JWTTool: React.FC = () => {
         jwtBuilder = jwtBuilder.setExpirationTime(expiration);
       }
 
-      const jwt = await jwtBuilder.sign(secretKey);
+      const jwt = await jwtBuilder.sign(cryptoKey);
 
       setToken(jwt);
       message.success('Token generated successfully!');
@@ -83,8 +107,28 @@ const JWTTool: React.FC = () => {
   const handleVerify = async () => {
     if (!token) return;
     try {
-      const secretKey = encoder.encode(secret);
-      const { payload, protectedHeader } = await jwtVerify(token, secretKey, {
+      let cryptoKey: Uint8Array | CryptoKey;
+
+      if (isSymmetric) {
+        // Use secret for HMAC algorithms
+        cryptoKey = encoder.encode(secret);
+      } else {
+        // Use public key for asymmetric algorithms
+        if (!publicKey) {
+          message.warning('Public key not provided. Decoding without verification...');
+          handleDecodeOnly();
+          return;
+        }
+        try {
+          cryptoKey = await importSPKI(publicKey, algorithm);
+        } catch (err: any) {
+          message.warning('Invalid public key. Decoding without verification...');
+          handleDecodeOnly();
+          return;
+        }
+      }
+
+      const { payload, protectedHeader } = await jwtVerify(token, cryptoKey, {
         algorithms: [algorithm],
       });
 
@@ -92,7 +136,8 @@ const JWTTool: React.FC = () => {
       setPayloadStr(formatJSON(payload));
       message.success('Token verified successfully!');
     } catch (err: any) {
-      message.error(`Verification failed: ${err.message}`);
+      message.warning(`Verification failed: ${err.message}. Decoding without verification...`);
+      handleDecodeOnly();
     }
   };
 
@@ -169,6 +214,15 @@ const JWTTool: React.FC = () => {
                       <Option value="HS256">HS256</Option>
                       <Option value="HS384">HS384</Option>
                       <Option value="HS512">HS512</Option>
+                      <Option value="RS256">RS256</Option>
+                      <Option value="RS384">RS384</Option>
+                      <Option value="RS512">RS512</Option>
+                      <Option value="ES256">ES256</Option>
+                      <Option value="ES384">ES384</Option>
+                      <Option value="ES512">ES512</Option>
+                      <Option value="PS256">PS256</Option>
+                      <Option value="PS384">PS384</Option>
+                      <Option value="PS512">PS512</Option>
                     </Select>
                   </Col>
                   <Col span={12}>
@@ -219,13 +273,37 @@ const JWTTool: React.FC = () => {
 
               {/* Secret Key */}
               <div style={{ marginTop: 16 }}>
-                <Text strong>Secret Key</Text>
-                <Input.Password
-                  value={secret}
-                  onChange={(e) => setSecret(e.target.value)}
-                  placeholder="your-256-bit-secret"
-                  iconRender={(visible) => (visible ? <UnlockOutlined /> : <LockOutlined />)}
-                />
+                {isSymmetric ? (
+                  <>
+                    <Text strong>Secret Key</Text>
+                    <Input.Password
+                      value={secret}
+                      onChange={(e) => setSecret(e.target.value)}
+                      placeholder="your-256-bit-secret"
+                      iconRender={(visible) => (visible ? <UnlockOutlined /> : <LockOutlined />)}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Text strong>Private Key (PKCS8 PEM)</Text>
+                    <TextArea
+                      value={privateKey}
+                      onChange={(e) => setPrivateKey(e.target.value)}
+                      placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
+                      autoSize={{ minRows: 4, maxRows: 8 }}
+                      className="code-font"
+                      style={{ marginBottom: 16 }}
+                    />
+                    <Text strong>Public Key (SPKI PEM) - for verification</Text>
+                    <TextArea
+                      value={publicKey}
+                      onChange={(e) => setPublicKey(e.target.value)}
+                      placeholder="-----BEGIN PUBLIC KEY-----&#10;...&#10;-----END PUBLIC KEY-----"
+                      autoSize={{ minRows: 4, maxRows: 8 }}
+                      className="code-font"
+                    />
+                  </>
+                )}
               </div>
 
               {/* Action: Encode */}
