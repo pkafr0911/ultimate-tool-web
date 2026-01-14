@@ -12,7 +12,14 @@ import {
   message,
   Tooltip,
 } from 'antd';
-import { SignJWT, decodeJwt, decodeProtectedHeader, jwtVerify, importPKCS8, importSPKI } from 'jose';
+import {
+  SignJWT,
+  decodeJwt,
+  decodeProtectedHeader,
+  jwtVerify,
+  importPKCS8,
+  importSPKI,
+} from 'jose';
 import React, { useState, useMemo } from 'react';
 import {
   ArrowRightOutlined,
