@@ -132,8 +132,8 @@ export const pages = [
     desc: 'View and inspect SVG files in the browser.',
   },
   {
-    name: 'Pics Editor',
-    path: '/image-converter/pics-editor',
+    name: 'Photo Editor',
+    path: '/image-converter/photo-editor',
     icon: <PicsEditorIcon />,
     desc: 'Just photoshop but faster.',
   },

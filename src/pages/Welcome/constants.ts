@@ -181,7 +181,7 @@ interface HeroVisualConfig {
 
 export const heroVisuals: HeroVisualConfig[] = [
   {
-    key: 'Pics Editor',
+    key: 'Photo Editor',
     className: 'featured-left',
     initial: { opacity: 0, x: -100, rotateY: -15 },
     animate: { opacity: 1, x: 0, rotateY: 0 },
@@ -268,7 +268,7 @@ export const categories = [
   {
     title: 'Image Converter',
     keys: [
-      'Pics Editor',
+      'Photo Editor',
       'Vector Editor',
       'SVG Viewer',
       'Image Base64 Converter',
