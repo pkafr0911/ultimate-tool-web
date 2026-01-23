@@ -145,10 +145,10 @@ const EpochPage: React.FC = () => {
               value={epochInput}
               onChange={(e) => setEpochInput(e.target.value)}
               onPressEnter={handleEpochToDate}
-              addonAfter={
-                <Button type="text" onClick={handleEpochToDate} icon={<SwapRightOutlined />} />
-              }
             />
+            <Button type="primary" block onClick={handleEpochToDate}>
+              Convert
+            </Button>
             <Text type="secondary" style={{ fontSize: 12 }}>
               Supports auto-detection for seconds, milliseconds, and microseconds.
             </Text>
