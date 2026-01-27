@@ -1,29 +1,64 @@
 .readme-card {
+  height: calc(100vh - 120px);
+
+  .ant-card-body {
+    height: calc(100% - 60px);
+    padding: 16px;
+  }
+
   .readme-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
+    height: 100%;
+
+    .ant-splitter {
+      height: 100%;
+    }
 
     .editor-pane,
     .preview-pane {
       display: flex;
-      flex: 1;
       flex-direction: column;
-      min-width: 600px;
+      height: 100%;
+      transition: all 0.3s ease;
+
+      &.fullscreen {
+        flex: 1 !important;
+        max-width: 100% !important;
+      }
+
+      &.hidden {
+        flex: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        overflow: hidden;
+      }
+
+      .pane-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+
+        h5 {
+          margin: 0;
+        }
+      }
     }
 
     .quill-editor {
-      height: 600px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
       border: 1px solid #f0f0f0;
       border-radius: 8px;
 
       .ql-container {
-        height: 600px;
+        flex: 1;
+        overflow-y: auto;
       }
     }
 
     .markdown-preview {
-      height: 600px;
+      flex: 1;
       overflow-y: auto;
       border-radius: 8px;
       padding: 24px;

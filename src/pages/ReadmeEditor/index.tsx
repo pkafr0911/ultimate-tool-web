@@ -4,9 +4,11 @@ import {
   DownloadOutlined,
   EditOutlined,
   FileMarkdownOutlined,
+  FullscreenOutlined,
+  FullscreenExitOutlined,
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
-import { Button, Card, message, Segmented, Space, Typography } from 'antd';
+import { Button, Card, message, Segmented, Space, Splitter, Typography } from 'antd';
 import MarkdownIt from 'markdown-it';
 import React, { useEffect, useState } from 'react';
 import ReactQuill from 'react-quill';
@@ -52,6 +54,7 @@ const ReadmeEditorPage: React.FC = () => {
     '<h2>Welcome to README Editor</h2><p>Start typing here...</p>',
   );
   const [markdownContent, setMarkdownContent] = useState<string>('');
+  const [fullscreenMode, setFullscreenMode] = useState<'none' | 'editor' | 'preview'>('none');
 
   // Load GitHub theme for dark/light mode
   useEffect(() => {
@@ -94,6 +97,14 @@ const ReadmeEditorPage: React.FC = () => {
     link.click();
   };
 
+  const toggleEditorFullscreen = () => {
+    setFullscreenMode((prev) => (prev === 'editor' ? 'none' : 'editor'));
+  };
+
+  const togglePreviewFullscreen = () => {
+    setFullscreenMode((prev) => (prev === 'preview' ? 'none' : 'preview'));
+  };
+
   return (
     <Card
       title={
@@ -114,60 +125,91 @@ const ReadmeEditorPage: React.FC = () => {
       className="readme-card"
     >
       <div className="readme-container">
-        {/* Left side: Editor */}
-        <div className="editor-pane">
-          <Title level={5}>{mode === 'rich' ? 'Edit (Rich Text)' : 'Edit (Raw Markdown)'}</Title>
+        <Splitter>
+          {/* Left side: Editor */}
+          <Splitter.Panel
+            defaultSize="50%"
+            min="20%"
+            max="80%"
+            className={`editor-pane ${fullscreenMode === 'editor' ? 'fullscreen' : ''} ${fullscreenMode === 'preview' ? 'hidden' : ''}`}
+          >
+            <div className="pane-header">
+              <Title level={5}>
+                {mode === 'rich' ? 'Edit (Rich Text)' : 'Edit (Raw Markdown)'}
+              </Title>
+              <Button
+                icon={
+                  fullscreenMode === 'editor' ? <FullscreenExitOutlined /> : <FullscreenOutlined />
+                }
+                onClick={toggleEditorFullscreen}
+                size="small"
+                type="text"
+              />
+            </div>
 
-          {mode === 'rich' ? (
-            <ReactQuill value={htmlContent} onChange={setHtmlContent} className="quill-editor" />
-          ) : (
-            <Editor
-              height="600px"
-              language="markdown"
-              value={markdownContent}
-              onChange={(val) => setMarkdownContent(val || '')}
-              theme={darkMode ? 'vs-dark' : 'light'}
-              options={{
-                minimap: { enabled: false },
-                automaticLayout: true,
-              }}
-            />
-          )}
-        </div>
+            {mode === 'rich' ? (
+              <ReactQuill value={htmlContent} onChange={setHtmlContent} className="quill-editor" />
+            ) : (
+              <Editor
+                height="100%"
+                language="markdown"
+                value={markdownContent}
+                onChange={(val) => setMarkdownContent(val || '')}
+                theme={darkMode ? 'vs-dark' : 'light'}
+                options={{
+                  minimap: { enabled: false },
+                  automaticLayout: true,
+                }}
+              />
+            )}
+          </Splitter.Panel>
 
-        {/* Right side: Preview */}
-        <div className="preview-pane">
-          <Title level={5}>{mode === 'rich' ? 'Raw Markdown (.md)' : 'Rendered Preview'}</Title>
+          {/* Right side: Preview */}
+          <Splitter.Panel
+            className={`preview-pane ${fullscreenMode === 'preview' ? 'fullscreen' : ''} ${fullscreenMode === 'editor' ? 'hidden' : ''}`}
+          >
+            <div className="pane-header">
+              <Title level={5}>{mode === 'rich' ? 'Raw Markdown (.md)' : 'Rendered Preview'}</Title>
+              <Button
+                icon={
+                  fullscreenMode === 'preview' ? <FullscreenExitOutlined /> : <FullscreenOutlined />
+                }
+                onClick={togglePreviewFullscreen}
+                size="small"
+                type="text"
+              />
+            </div>
 
-          {mode === 'rich' ? (
-            <Editor
-              height="600px"
-              language="markdown"
-              value={markdownContent}
-              options={{
-                readOnly: true,
-                minimap: { enabled: false },
-                automaticLayout: true,
-              }}
-            />
-          ) : (
-            <div
-              className={`markdown-preview markdown-body ${
-                darkMode ? 'markdown-dark' : 'markdown-light'
-              }`}
-              dangerouslySetInnerHTML={{ __html: htmlContent }}
-            />
-          )}
+            {mode === 'rich' ? (
+              <Editor
+                height="100%"
+                language="markdown"
+                value={markdownContent}
+                options={{
+                  readOnly: true,
+                  minimap: { enabled: false },
+                  automaticLayout: true,
+                }}
+              />
+            ) : (
+              <div
+                className={`markdown-preview markdown-body ${
+                  darkMode ? 'markdown-dark' : 'markdown-light'
+                }`}
+                dangerouslySetInnerHTML={{ __html: htmlContent }}
+              />
+            )}
 
-          <Space className="button-group">
-            <Button icon={<CopyOutlined />} onClick={handleCopy}>
-              Copy
-            </Button>
-            <Button icon={<DownloadOutlined />} onClick={handleDownload}>
-              Download
-            </Button>
-          </Space>
-        </div>
+            <Space className="button-group">
+              <Button icon={<CopyOutlined />} onClick={handleCopy}>
+                Copy
+              </Button>
+              <Button icon={<DownloadOutlined />} onClick={handleDownload}>
+                Download
+              </Button>
+            </Space>
+          </Splitter.Panel>
+        </Splitter>
       </div>
     </Card>
   );
