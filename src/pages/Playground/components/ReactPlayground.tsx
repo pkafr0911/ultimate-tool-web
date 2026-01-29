@@ -1,7 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, Space, Tabs, Typography, Segmented, Splitter, Button, Modal } from 'antd';
+import { Card, Space, Tabs, Segmented, Splitter, Button, Modal } from 'antd';
 import { useMonaco } from '@monaco-editor/react';
-import { FileAddOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import {
+  FileAddOutlined,
+  QuestionCircleOutlined,
+  FullscreenOutlined,
+  FullscreenExitOutlined,
+} from '@ant-design/icons';
 import { prettifyCSS, prettifyJS } from '../utils/formatters';
 import { DEFAULT_REACT_TS, REACT_EXTRA_LIB, DEFAULT_REACT_CSS } from '../constants';
 import { useDarkMode } from '@/hooks/useDarkMode';
@@ -13,8 +18,6 @@ import CodeEditor from './common/CodeEditor';
 import TemplateModal from './common/TemplateModal';
 
 type Props = { onOpenSettings: () => void };
-
-const { Text } = Typography;
 
 type FileTab = {
   name: string;
@@ -30,8 +33,8 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
     { name: 'App.tsx', language: 'typescript', content: DEFAULT_REACT_TS },
   ]);
   const [activeTab, setActiveTab] = useState('App.tsx');
-  const [splitDirection, setSplitDirection] = useState<'vertical' | 'horizontal'>('horizontal');
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [fullscreenMode, setFullscreenMode] = useState<'none' | 'editor' | 'preview'>('none');
 
   useEffect(() => {
     if (monaco) {
@@ -286,22 +289,6 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
             </Space>
           }
         />
-
-        <Space align="center" style={{ marginLeft: 'auto' }}>
-          <Text type="secondary" style={{ marginRight: 4 }}>
-            Layout:
-          </Text>
-          <Segmented
-            options={[
-              { label: 'Horizontal', value: 'horizontal' },
-              { label: 'Vertical', value: 'vertical' },
-            ]}
-            value={splitDirection}
-            onChange={(val) => setSplitDirection(val as 'vertical' | 'horizontal')}
-            size="middle"
-            style={{ minWidth: 180 }}
-          />
-        </Space>
       </div>
 
       <TemplateModal
@@ -314,17 +301,25 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
         }}
       />
 
-      <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
-        <Splitter
-          layout={splitDirection}
-          style={{
-            flex: 1,
-            display: 'flex',
-            height: splitDirection === 'vertical' ? 'calc(100vh - 120px)' : undefined,
-            width: '100%',
-          }}
-        >
-          <Splitter.Panel defaultSize="50%" min="25%" max="75%">
+      <div className="playground-splitter-container">
+        <Splitter>
+          <Splitter.Panel
+            defaultSize="50%"
+            min="20%"
+            max="80%"
+            className={`editor-pane ${fullscreenMode === 'editor' ? 'fullscreen' : ''} ${fullscreenMode === 'preview' ? 'hidden' : ''}`}
+          >
+            <div className="pane-header">
+              <span style={{ fontWeight: 500 }}>Editor</span>
+              <Button
+                icon={
+                  fullscreenMode === 'editor' ? <FullscreenExitOutlined /> : <FullscreenOutlined />
+                }
+                onClick={() => setFullscreenMode((prev) => (prev === 'editor' ? 'none' : 'editor'))}
+                size="small"
+                type="text"
+              />
+            </div>
             <Tabs
               type="editable-card"
               activeKey={activeTab}
@@ -354,7 +349,22 @@ const ReactPlayground: React.FC<Props> = ({ onOpenSettings }) => {
             />
           </Splitter.Panel>
 
-          <Splitter.Panel>
+          <Splitter.Panel
+            className={`preview-pane ${fullscreenMode === 'preview' ? 'fullscreen' : ''} ${fullscreenMode === 'editor' ? 'hidden' : ''}`}
+          >
+            <div className="pane-header">
+              <span style={{ fontWeight: 500 }}>Preview</span>
+              <Button
+                icon={
+                  fullscreenMode === 'preview' ? <FullscreenExitOutlined /> : <FullscreenOutlined />
+                }
+                onClick={() =>
+                  setFullscreenMode((prev) => (prev === 'preview' ? 'none' : 'preview'))
+                }
+                size="small"
+                type="text"
+              />
+            </div>
             <PreviewFrame srcDoc={srcDoc} title="React Live Preview" />
           </Splitter.Panel>
         </Splitter>

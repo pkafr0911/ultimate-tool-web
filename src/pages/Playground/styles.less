@@ -1,6 +1,8 @@
 .playground-container {
-  min-height: 100vh;
+  height: calc(100vh - 56px);
   padding: 24px;
+  display: flex;
+  flex-direction: column;
   background: radial-gradient(circle at 10% 20%, #e9e3ff, #b5fffc);
 
   @media (max-width: 768px) {
@@ -20,11 +22,69 @@
 }
 
 .html-card,
+.react-card,
 .playground-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 16px;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  .ant-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    min-height: 0;
+  }
+
+  .playground-splitter-container {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+
+    .ant-splitter {
+      height: 100%;
+      flex: 1;
+    }
+  }
+
+  .editor-pane,
+  .preview-pane {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: all 0.3s ease;
+
+    &.fullscreen {
+      flex: 1 !important;
+      max-width: 100% !important;
+    }
+
+    &.hidden {
+      flex: 0 !important;
+      min-width: 0 !important;
+      max-width: 0 !important;
+      overflow: hidden;
+    }
+
+    .pane-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+
+      h5 {
+        margin: 0;
+      }
+
+      span {
+        font-weight: 500;
+      }
+    }
+  }
 }
 
 .playground-output {

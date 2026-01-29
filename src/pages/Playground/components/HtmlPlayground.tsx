@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
-import { Card, Segmented, Space, Splitter, Tabs, Typography, Button } from 'antd';
-import { CodeOutlined, EditOutlined, FormatPainterOutlined } from '@ant-design/icons';
+import { Card, Segmented, Space, Splitter, Tabs, Button } from 'antd';
+import {
+  CodeOutlined,
+  EditOutlined,
+  FormatPainterOutlined,
+  FullscreenOutlined,
+  FullscreenExitOutlined,
+} from '@ant-design/icons';
 import ReactQuill from 'react-quill';
 import { prettifyCSS, prettifyHTML, prettifyJS } from '../utils/formatters';
 import { DEFAULT_CSS, DEFAULT_HTML, DEFAULT_SCRIPT } from '../constants';
@@ -18,8 +24,6 @@ type Props = {
   onOpenSettings: () => void;
 };
 
-const { Text } = Typography;
-
 const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
   const { darkMode } = useDarkMode();
 
@@ -28,8 +32,8 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
   const [jsContent, setJsContent] = usePlaygroundState('playground_html_js', DEFAULT_SCRIPT);
 
   const [viewMode, setViewMode] = useState<'rich' | 'html'>('html');
-  const [splitDirection, setSplitDirection] = useState<'vertical' | 'horizontal'>('horizontal');
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [fullscreenMode, setFullscreenMode] = useState<'none' | 'editor' | 'preview'>('none');
 
   const preview = usePreviewGenerator(htmlContent, cssContent, jsContent);
 
@@ -79,22 +83,6 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
           onDownload={() => handleDownload('index.html', preview)}
           onReset={handleReset}
         />
-
-        <Space align="center" style={{ marginLeft: 'auto' }}>
-          <Text type="secondary" style={{ marginRight: 4 }}>
-            Layout:
-          </Text>
-          <Segmented
-            options={[
-              { label: 'Horizontal', value: 'horizontal' },
-              { label: 'Vertical', value: 'vertical' },
-            ]}
-            value={splitDirection}
-            onChange={(val) => setSplitDirection(val as 'vertical' | 'horizontal')}
-            size="middle"
-            style={{ minWidth: 180 }}
-          />
-        </Space>
       </div>
 
       <TemplateModal
@@ -108,24 +96,25 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
         }}
       />
 
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: 'flex',
-        }}
-      >
-        <Splitter
-          key={splitDirection}
-          layout={splitDirection}
-          style={{
-            flex: 1,
-            display: 'flex',
-            height: splitDirection === 'vertical' ? 'calc(100vh - 120px)' : undefined,
-            width: '100%',
-          }}
-        >
-          <Splitter.Panel defaultSize="50%" min="25%" max="75%">
+      <div className="playground-splitter-container">
+        <Splitter>
+          <Splitter.Panel
+            defaultSize="50%"
+            min="20%"
+            max="80%"
+            className={`editor-pane ${fullscreenMode === 'editor' ? 'fullscreen' : ''} ${fullscreenMode === 'preview' ? 'hidden' : ''}`}
+          >
+            <div className="pane-header">
+              <span style={{ fontWeight: 500 }}>Editor</span>
+              <Button
+                icon={
+                  fullscreenMode === 'editor' ? <FullscreenExitOutlined /> : <FullscreenOutlined />
+                }
+                onClick={() => setFullscreenMode((prev) => (prev === 'editor' ? 'none' : 'editor'))}
+                size="small"
+                type="text"
+              />
+            </div>
             <Tabs
               defaultActiveKey="html"
               type="card"
@@ -213,7 +202,22 @@ const HtmlPlayground: React.FC<Props> = ({ onOpenSettings }) => {
             />
           </Splitter.Panel>
 
-          <Splitter.Panel>
+          <Splitter.Panel
+            className={`preview-pane ${fullscreenMode === 'preview' ? 'fullscreen' : ''} ${fullscreenMode === 'editor' ? 'hidden' : ''}`}
+          >
+            <div className="pane-header">
+              <span style={{ fontWeight: 500 }}>Preview</span>
+              <Button
+                icon={
+                  fullscreenMode === 'preview' ? <FullscreenExitOutlined /> : <FullscreenOutlined />
+                }
+                onClick={() =>
+                  setFullscreenMode((prev) => (prev === 'preview' ? 'none' : 'preview'))
+                }
+                size="small"
+                type="text"
+              />
+            </div>
             <PreviewFrame srcDoc={preview} title="Live HTML Preview" />
           </Splitter.Panel>
         </Splitter>

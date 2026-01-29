@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Space, Typography, Segmented, Splitter, Button } from 'antd';
-import { PlayCircleOutlined } from '@ant-design/icons';
+import { Card, Typography, Splitter, Button } from 'antd';
+import { PlayCircleOutlined, FullscreenOutlined, FullscreenExitOutlined } from '@ant-design/icons';
 import { prettifyJS } from '../utils/formatters';
 import { DEFAULT_CODE } from '../constants';
 import { useDarkMode } from '@/hooks/useDarkMode';
@@ -14,7 +14,7 @@ type Props = {
   onOpenSettings: () => void;
 };
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 const JsRunner: React.FC<Props> = ({ onOpenSettings }) => {
   const { darkMode } = useDarkMode();
@@ -26,8 +26,8 @@ const JsRunner: React.FC<Props> = ({ onOpenSettings }) => {
 
   const [code, setCode] = usePlaygroundState('playground_js_code', DEFAULT_CODE);
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [splitDirection, setSplitDirection] = useState<'vertical' | 'horizontal'>('horizontal');
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [fullscreenMode, setFullscreenMode] = useState<'none' | 'editor' | 'preview'>('none');
 
   const runCode = () => {
     const newLogs: LogEntry[] = [];
@@ -125,22 +125,6 @@ const JsRunner: React.FC<Props> = ({ onOpenSettings }) => {
             </Button>
           }
         />
-
-        <Space align="center" style={{ marginLeft: 'auto' }}>
-          <Text type="secondary" style={{ marginRight: 4 }}>
-            Layout:
-          </Text>
-          <Segmented
-            options={[
-              { label: 'Horizontal', value: 'horizontal' },
-              { label: 'Vertical', value: 'vertical' },
-            ]}
-            value={splitDirection}
-            onChange={(val) => setSplitDirection(val as 'vertical' | 'horizontal')}
-            size="middle"
-            style={{ minWidth: 180 }}
-          />
-        </Space>
       </div>
 
       <TemplateModal
@@ -152,31 +136,38 @@ const JsRunner: React.FC<Props> = ({ onOpenSettings }) => {
         }}
       />
 
-      <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
-        <Splitter
-          layout={splitDirection}
-          style={{
-            flex: 1,
-            display: 'flex',
-            height: splitDirection === 'vertical' ? 'calc(100vh - 120px)' : undefined,
-            width: '100%',
-          }}
-        >
-          <Splitter.Panel defaultSize="60%" min="25%" max="75%">
-            <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <Title level={5} style={{ padding: '8px 12px', margin: 0 }}>
+      <div className="playground-splitter-container">
+        <Splitter>
+          <Splitter.Panel
+            defaultSize="60%"
+            min="20%"
+            max="80%"
+            className={`editor-pane ${fullscreenMode === 'editor' ? 'fullscreen' : ''} ${fullscreenMode === 'preview' ? 'hidden' : ''}`}
+          >
+            <div className="pane-header">
+              <Title level={5} style={{ margin: 0 }}>
                 {language === 'typescript' ? 'TypeScript Editor' : 'JavaScript Editor'}
               </Title>
-              <CodeEditor
-                height="100%"
-                language={language}
-                value={code}
-                onChange={(val) => setCode(val || '')}
+              <Button
+                icon={
+                  fullscreenMode === 'editor' ? <FullscreenExitOutlined /> : <FullscreenOutlined />
+                }
+                onClick={() => setFullscreenMode((prev) => (prev === 'editor' ? 'none' : 'editor'))}
+                size="small"
+                type="text"
               />
             </div>
+            <CodeEditor
+              height="100%"
+              language={language}
+              value={code}
+              onChange={(val) => setCode(val || '')}
+            />
           </Splitter.Panel>
 
-          <Splitter.Panel>
+          <Splitter.Panel
+            className={`preview-pane ${fullscreenMode === 'preview' ? 'fullscreen' : ''} ${fullscreenMode === 'editor' ? 'hidden' : ''}`}
+          >
             <div
               style={{
                 width: '100%',
@@ -187,14 +178,29 @@ const JsRunner: React.FC<Props> = ({ onOpenSettings }) => {
                 color: darkMode ? '#d4d4d4' : '#000',
               }}
             >
-              <Title level={5} style={{ padding: '8px 12px', margin: 0 }}>
-                Console Output
-              </Title>
+              <div className="pane-header">
+                <Title level={5} style={{ margin: 0 }}>
+                  Console Output
+                </Title>
+                <Button
+                  icon={
+                    fullscreenMode === 'preview' ? (
+                      <FullscreenExitOutlined />
+                    ) : (
+                      <FullscreenOutlined />
+                    )
+                  }
+                  onClick={() =>
+                    setFullscreenMode((prev) => (prev === 'preview' ? 'none' : 'preview'))
+                  }
+                  size="small"
+                  type="text"
+                />
+              </div>
               <div
                 style={{
                   flex: 1,
                   overflow: 'hidden',
-                  borderTop: splitDirection === 'horizontal' ? '1px solid #ddd' : undefined,
                 }}
               >
                 <Console logs={logs} />
