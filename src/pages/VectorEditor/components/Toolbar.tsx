@@ -15,13 +15,14 @@ import {
   ExpandOutlined,
   EditOutlined,
   SettingOutlined,
+  AimOutlined,
 } from '@ant-design/icons';
-import { Rect, Circle, IText } from 'fabric';
+import { Rect, Circle, IText, Path } from 'fabric';
 import { useVectorEditor } from '../context';
 import SettingsModal from './SettingsModal';
 
 const Toolbar: React.FC = () => {
-  const { canvas, activeTool, setActiveTool, history } = useVectorEditor();
+  const { canvas, activeTool, setActiveTool, history, pointEditor } = useVectorEditor();
   const [settingsOpen, setSettingsOpen] = React.useState(false);
 
   const addRectangle = () => {
@@ -71,6 +72,32 @@ const Toolbar: React.FC = () => {
     canvas.backgroundColor = '#ffffff';
     canvas.renderAll();
     history.saveState();
+  };
+
+  const enterDirectSelection = () => {
+    if (!canvas || !pointEditor) return;
+
+    const activeObj = canvas.getActiveObject();
+    if (!activeObj) {
+      console.log('No object selected for point editing');
+      return;
+    }
+
+    // Check if object is a Path
+    if (!(activeObj instanceof Path)) {
+      console.log('Point editing only works with Path objects');
+      return;
+    }
+
+    if (pointEditor.isEditing) {
+      // Already in point edit mode - exit
+      pointEditor.exit(true);
+      setActiveTool('select');
+    } else {
+      // Enter point edit mode
+      pointEditor.enter(activeObj);
+      setActiveTool('direct-select');
+    }
   };
 
   const exportSVG = () => {
@@ -145,6 +172,14 @@ const Toolbar: React.FC = () => {
           type={activeTool === 'select' ? 'primary' : 'default'}
           icon={<DragOutlined />}
           onClick={() => setActiveTool('select')}
+        />
+      </Tooltip>
+
+      <Tooltip title="Direct Select / Point Edit (A)">
+        <Button
+          type={activeTool === 'direct-select' || pointEditor?.isEditing ? 'primary' : 'default'}
+          icon={<AimOutlined />}
+          onClick={enterDirectSelection}
         />
       </Tooltip>
 
