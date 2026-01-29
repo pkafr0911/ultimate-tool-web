@@ -44,8 +44,8 @@ const CropModal: React.FC<CropModalProps> = ({ visible, onCancel, canvas, histor
     previewCanvas.width = canvasWidth;
     previewCanvas.height = canvasHeight;
 
-    // Draw the current canvas state
-    const canvasElement = canvas.getElement();
+    // Draw the current canvas state - use lowerCanvasEl for Fabric.js 6
+    const canvasElement = canvas.lowerCanvasEl as HTMLCanvasElement;
     ctx.drawImage(canvasElement, 0, 0);
 
     // Draw crop overlay

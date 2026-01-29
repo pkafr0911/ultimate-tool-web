@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { Canvas, FabricObject } from 'fabric';
-import { useHistory } from './hooks/useHistory';
+import { useHistoryOptimized, HistoryEntry } from './hooks/useHistoryOptimized';
 
 interface PhotoEditorContextType {
   canvas: Canvas | null;
@@ -10,11 +10,15 @@ interface PhotoEditorContextType {
   selectedObject: FabricObject | null;
   setSelectedObject: (object: FabricObject | null) => void;
   history: {
-    saveState: () => void;
+    saveState: (description?: string) => void;
     undo: () => void;
     redo: () => void;
+    goToEntry: (entryId: string) => void;
     canUndo: boolean;
     canRedo: boolean;
+    entries: HistoryEntry[];
+    currentIndex: number;
+    isProcessing: boolean;
   };
   clipboard: FabricObject | null;
   setClipboard: (object: FabricObject | null) => void;
@@ -47,7 +51,12 @@ export const PhotoEditorProvider: React.FC<{
   const [brushColor, setBrushColor] = useState<string>('#000000');
   const [brushOpacity, setBrushOpacity] = useState<number>(1);
 
-  const history = useHistory(canvas);
+  const history = useHistoryOptimized(canvas, {
+    maxEntries: 50,
+    keyFrameInterval: 10,
+    enableThumbnails: true,
+    thumbnailSize: 64,
+  });
 
   return (
     <PhotoEditorContext.Provider

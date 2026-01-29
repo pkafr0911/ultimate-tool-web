@@ -1,21 +1,16 @@
 import React from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Card, Layout, Tag, Divider } from 'antd';
+import { Card, Tag, Divider } from 'antd';
 import DragDropWrapper from '@/components/DragDropWrapper';
 import DragOverlay from '@/components/DragOverlay';
 import { PhotoEditorProvider } from './context';
-import Toolbar from './components/Toolbar';
-import CanvasArea from './components/CanvasArea';
-import LayersPanel from './components/LayersPanel';
-import PropertiesPanel from './components/PropertiesPanel';
+import EditorLayout from './components/EditorLayout';
 import UploadArea from './components/UploadArea';
 import SavedProjectsList from './components/SavedProjectsList';
 import { useImageUpload } from './hooks/useImageUpload';
 import { useProjects } from './hooks/useProjects';
 import styles from './styles.less';
 import './styles.less';
-
-const { Sider, Content } = Layout;
 
 const PhotoEditor: React.FC = () => {
   const {
@@ -79,18 +74,7 @@ const PhotoEditor: React.FC = () => {
               addOnFile={addOnFile}
               setAddOnFile={setAddOnFile}
             >
-              <Layout style={{ height: '100%' }}>
-                <Sider theme="light" width={60} className={styles.toolbarSider}>
-                  <Toolbar />
-                </Sider>
-                <Content className={styles.canvasContent}>
-                  <CanvasArea />
-                </Content>
-                <Sider theme="light" width={300} className={styles.propertiesSider}>
-                  <PropertiesPanel />
-                  <LayersPanel />
-                </Sider>
-              </Layout>
+              <EditorLayout />
             </PhotoEditorProvider>
           )}
         </Card>
