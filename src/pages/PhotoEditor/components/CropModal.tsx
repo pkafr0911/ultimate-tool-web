@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Modal, InputNumber, Button, Space, message, Select, Checkbox } from 'antd';
+import { Modal, InputNumber, Button, Space, Select, Checkbox, message } from 'antd';
 import { Canvas as FabricCanvas } from 'fabric';
+import { photoEditorMessages } from '../hooks/useNotification';
 
 const { Option } = Select;
 
@@ -243,12 +244,12 @@ const CropModal: React.FC<CropModalProps> = ({ visible, onCancel, canvas, histor
 
   const handleConfirm = () => {
     if (!canvas) {
-      message.error('Canvas not available');
+      photoEditorMessages.genericError('Canvas not available');
       return;
     }
 
     if (cropArea.width < 1 || cropArea.height < 1) {
-      message.error('Crop area is too small');
+      photoEditorMessages.genericError('Crop area is too small');
       return;
     }
 
@@ -299,7 +300,7 @@ const CropModal: React.FC<CropModalProps> = ({ visible, onCancel, canvas, histor
       );
     } catch (error) {
       console.error('Crop error:', error);
-      message.error('Failed to crop canvas');
+      photoEditorMessages.operationFailed('Crop');
     }
   };
 

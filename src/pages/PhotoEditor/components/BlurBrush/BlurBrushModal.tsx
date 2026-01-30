@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Modal, Slider, Button, Space, Typography, Spin, Radio, message, Tooltip } from 'antd';
+import { Modal, Slider, Button, Space, Typography, Spin, Radio, Tooltip } from 'antd';
 import { Canvas as FabricCanvas, FabricImage, PencilBrush } from 'fabric';
 import { DeleteOutlined, UndoOutlined, EyeOutlined } from '@ant-design/icons';
 import { loadOpenCv, applyBlurWithMask } from '../../utils/opencvHelpers';
 import { applyBlurResultToCanvas } from '../../utils/effectsHelpers';
+import { photoEditorMessages } from '../../hooks/useNotification';
 
 const { Text } = Typography;
 
@@ -41,7 +42,7 @@ const BlurBrushModal: React.FC<BlurBrushModalProps> = ({ visible, onCancel, canv
   useEffect(() => {
     if (visible) {
       loadOpenCv().catch((err) => {
-        message.error('Failed to load OpenCV libraries: ' + err.message);
+        photoEditorMessages.genericError('Failed to load OpenCV: ' + err.message);
       });
     }
   }, [visible]);
@@ -307,10 +308,10 @@ const BlurBrushModal: React.FC<BlurBrushModalProps> = ({ visible, onCancel, canv
       if (ctx) {
         ctx.drawImage(result, 0, 0);
       }
-      message.success('Preview generated');
+      photoEditorMessages.filterApplied('Blur preview');
     } catch (e: any) {
       console.error(e);
-      message.error('Preview failed: ' + e.message);
+      photoEditorMessages.filterFailed('Blur preview');
     } finally {
       setIsProcessing(false);
     }
@@ -327,11 +328,11 @@ const BlurBrushModal: React.FC<BlurBrushModalProps> = ({ visible, onCancel, canv
       await applyBlurResultToCanvas(canvas, previewCanvasRef.current, applyMode);
       history.saveState();
 
-      message.success('Blur applied successfully');
+      photoEditorMessages.filterApplied('Blur');
       onCancel();
     } catch (e: any) {
       console.error(e);
-      message.error('Apply failed: ' + e.message);
+      photoEditorMessages.filterFailed('Blur');
     } finally {
       setIsProcessing(false);
     }

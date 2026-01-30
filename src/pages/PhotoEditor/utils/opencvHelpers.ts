@@ -1,5 +1,6 @@
 // Helper to manage OpenCV.js loading and operations
 import cv from '@techstark/opencv-js';
+import { imageProcessingService } from '../workers/imageProcessingService';
 
 // Ensure global cv is available for potential legacy or debug usage
 // @ts-ignore
@@ -8,16 +9,27 @@ if (typeof window !== 'undefined' && !window.cv) {
   window.cv = cv;
 }
 
+let isOpenCvAvailable = false;
+
 export const loadOpenCv = (): Promise<void> => {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     // @ts-ignore
     if (cv.getBuildInformation) {
+      isOpenCvAvailable = true;
       resolve();
     } else {
       // @ts-ignore
       cv['onRuntimeInitialized'] = () => {
+        isOpenCvAvailable = true;
         resolve();
       };
+      // Timeout fallback
+      setTimeout(() => {
+        if (!isOpenCvAvailable) {
+          console.warn('OpenCV initialization timed out, using WebWorker fallback');
+          resolve(); // Still resolve, but OpenCV won't be available
+        }
+      }, 5000);
     }
   });
 };
@@ -28,9 +40,17 @@ export const applyBlurWithMask = async (
   blurAmount: number = 15,
   maskFeather: number = 7,
 ): Promise<HTMLCanvasElement> => {
-  // Using imported cv module
+  // Try OpenCV first, fall back to WebWorker
   // @ts-ignore
-  if (!cv || !cv.imread) throw new Error('OpenCV.js not loaded');
+  if (!isOpenCvAvailable || !cv || !cv.imread) {
+    console.log('Using WebWorker for blur processing');
+    return imageProcessingService.applyBlurWithMask(
+      sourceCanvas,
+      maskCanvas,
+      blurAmount,
+      maskFeather,
+    );
+  }
 
   // Ensure mask and source dimensions match
   if (sourceCanvas.width !== maskCanvas.width || sourceCanvas.height !== maskCanvas.height) {

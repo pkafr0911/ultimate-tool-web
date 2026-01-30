@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { Button, Tooltip, Radio, Slider, Space, Divider, message } from 'antd';
+import { Button, Tooltip, Radio, Slider, Space, Divider } from 'antd';
 import {
   BorderOutlined,
   RadiusSettingOutlined,
@@ -9,6 +9,7 @@ import {
   CloseOutlined,
 } from '@ant-design/icons';
 import { Canvas, FabricImage, FabricObject } from 'fabric';
+import { photoEditorMessages } from '../hooks/useNotification';
 
 export type SelectionMode = 'rectangle' | 'ellipse' | 'lasso' | 'polygon';
 
@@ -282,7 +283,7 @@ const SelectionTools: React.FC<SelectionToolsProps> = ({
       const maskCanvas = generateMaskCanvas();
       if (maskCanvas && onSelectionComplete) {
         onSelectionComplete(maskCanvas);
-        message.success('Selection created');
+        photoEditorMessages.selectionCreated();
       }
 
       // Clear selection state

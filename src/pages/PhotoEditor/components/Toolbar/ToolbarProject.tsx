@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Button, Dropdown, Menu, Tooltip, message } from 'antd';
+import { Button, Dropdown, Menu, Tooltip } from 'antd';
 import {
   FileImageOutlined,
   CopyOutlined,
@@ -11,6 +11,7 @@ import {
   ExportOutlined,
 } from '@ant-design/icons';
 import { Canvas, FabricObject, ActiveSelection } from 'fabric';
+import { photoEditorMessages } from '../../hooks/useNotification';
 import ExportModal from '../ExportModal';
 import ProjectModal from '../ProjectModal';
 import { SavedProject } from '../../types';
@@ -57,7 +58,7 @@ const ToolbarProject: React.FC<ToolbarProjectProps> = ({
     if (activeObject) {
       const cloned = await activeObject.clone();
       setClipboard(cloned);
-      message.success('Copied to clipboard');
+      photoEditorMessages.copied();
     }
   };
 
@@ -85,7 +86,7 @@ const ToolbarProject: React.FC<ToolbarProjectProps> = ({
     canvas.setActiveObject(clonedObj);
     canvas.requestRenderAll();
     saveState();
-    message.success('Pasted from clipboard');
+    photoEditorMessages.pasted();
   };
 
   const handleImportProjectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,11 +102,11 @@ const ToolbarProject: React.FC<ToolbarProjectProps> = ({
         canvas.loadFromJSON(json, () => {
           canvas.renderAll();
           saveState();
-          message.success('Project imported successfully');
+          photoEditorMessages.projectLoaded();
         });
       } catch (err) {
         console.error('Failed to import project JSON', err);
-        message.error('Failed to import project file. Make sure it is a valid project JSON.');
+        photoEditorMessages.projectImportFailed();
       }
     };
     reader.readAsText(file);
@@ -125,7 +126,7 @@ const ToolbarProject: React.FC<ToolbarProjectProps> = ({
         canvas.centerObject(img);
         canvas.setActiveObject(img);
         saveState();
-        message.success('Image added');
+        photoEditorMessages.imageAdded();
       });
     };
     reader.readAsDataURL(file);

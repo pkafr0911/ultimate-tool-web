@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Modal, Form, Select, InputNumber, Button, message, Checkbox } from 'antd';
+import { Modal, Form, Select, InputNumber, Button, Checkbox } from 'antd';
 import { Canvas } from 'fabric';
+import { photoEditorMessages } from '../hooks/useNotification';
 
 interface ExportModalProps {
   visible: boolean;
@@ -82,7 +83,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ visible, onCancel, canvas }) 
       link.click();
       document.body.removeChild(link);
     }
-    message.success('Export successful');
+    photoEditorMessages.projectExported(format);
     onCancel();
   };
 

@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Space, Divider, message } from 'antd';
+import { Space, Divider } from 'antd';
 import { IText, FabricImage, Point } from 'fabric';
 import { usePhotoEditor } from '../../context';
 import { useProjects } from '../../hooks/useProjects';
+import { photoEditorMessages } from '../../hooks/useNotification';
 import ToolbarBrushTools from './ToolbarBrushTools';
 import ToolbarShapes from './ToolbarShapes';
 import ToolbarFilters from './ToolbarFilters';
@@ -31,7 +32,7 @@ const Toolbar: React.FC = () => {
     const json = canvas.toJSON();
     const preview = canvas.toDataURL({ format: 'png', multiplier: 0.5 });
     saveProject(preview, json);
-    message.success('Project saved');
+    photoEditorMessages.projectSaved();
   };
 
   const handleLoadProject = (project: any) => {
@@ -41,7 +42,7 @@ const Toolbar: React.FC = () => {
       loadProjectIntoEditor(project);
       setProjectModalVisible(false);
       history.saveState();
-      message.success('Project loaded');
+      photoEditorMessages.projectLoaded();
     });
   };
 
@@ -51,7 +52,7 @@ const Toolbar: React.FC = () => {
     canvas.clear();
     history.saveState();
     clearCurrentProject();
-    message.info('New project created');
+    photoEditorMessages.canvasCleared();
   };
 
   // Keyboard shortcuts

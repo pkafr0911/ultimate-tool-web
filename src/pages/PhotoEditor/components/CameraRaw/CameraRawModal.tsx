@@ -7,6 +7,7 @@ import CurvesPanel from './CurvesPanel';
 import ColorGradingPanel from './ColorGradingPanel';
 import { colorRanges, rgbToHsl, getColorNameFromHue } from '../../utils/hslHelpers';
 import RGBHistogram from './RGBHistogram';
+import { useProgressivePreview, getImageSizeInfo } from '../../hooks/useProgressivePreview';
 
 const { Text } = Typography;
 
@@ -77,6 +78,12 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
     null,
   );
 
+  // Use progressive preview hook
+  const { createPreviewCanvas, shouldUseProgressivePreview } = useProgressivePreview({
+    maxPreviewSize: 600,
+    qualityThreshold: 600 * 600,
+  });
+
   // Reset when opened
   useEffect(() => {
     if (visible) {
@@ -92,18 +99,10 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
 
     // Use a timeout to debounce heavy processing
     const timer = setTimeout(() => {
-      const MAX_PREVIEW_SIZE = 600;
-      let previewWidth = sourceCanvas.width;
-      let previewHeight = sourceCanvas.height;
-
-      if (sourceCanvas.width > MAX_PREVIEW_SIZE || sourceCanvas.height > MAX_PREVIEW_SIZE) {
-        const ratio = Math.min(
-          MAX_PREVIEW_SIZE / sourceCanvas.width,
-          MAX_PREVIEW_SIZE / sourceCanvas.height,
-        );
-        previewWidth = Math.floor(sourceCanvas.width * ratio);
-        previewHeight = Math.floor(sourceCanvas.height * ratio);
-      }
+      // Use progressive preview for large images
+      const previewCanvas = createPreviewCanvas(sourceCanvas);
+      const previewWidth = previewCanvas.width;
+      const previewHeight = previewCanvas.height;
 
       canvas.width = previewWidth;
       canvas.height = previewHeight;
@@ -111,8 +110,8 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Draw source to preview
-      ctx.drawImage(sourceCanvas, 0, 0, previewWidth, previewHeight);
+      // Draw preview to canvas
+      ctx.drawImage(previewCanvas, 0, 0);
 
       // Get image data
       const imageData = ctx.getImageData(0, 0, previewWidth, previewHeight);

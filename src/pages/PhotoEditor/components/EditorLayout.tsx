@@ -35,7 +35,7 @@ const EditorLayout: React.FC = () => {
               <LayersPanel />
             </Panel>
             <Panel header="History" key="history" style={{ padding: 0 }}>
-              <div style={{ maxHeight: 300, overflow: 'hidden' }}>
+              <div style={{ overflow: 'hidden' }}>
                 <HistoryPanel
                   entries={history.entries}
                   currentIndex={history.currentIndex}
