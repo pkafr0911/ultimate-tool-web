@@ -365,9 +365,46 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
   }, [cursorPos, brushSize, displayParams, isAltPressed, previewColor]);
 
   const handleApply = () => {
-    if (previewCanvasRef.current) {
-      onApply(previewCanvasRef.current);
+    if (!sourceCanvas || !previewCanvasRef.current || !maskCanvasRef.current) return;
+
+    const w = sourceCanvas.width;
+    const h = sourceCanvas.height;
+
+    // Build the final composited image with current settings (independent of previewMode)
+    const resultCanvas = document.createElement('canvas');
+    resultCanvas.width = w;
+    resultCanvas.height = h;
+    const ctx = resultCanvas.getContext('2d')!;
+    ctx.drawImage(sourceCanvas, 0, 0);
+
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const alphaMap = calculateColorRemovalAlphaMap(
+      imageData.data,
+      activeColor,
+      tolerance,
+      invert,
+      feather,
+    );
+
+    const maskCtx = maskCanvasRef.current.getContext('2d')!;
+    const manualMaskData = maskCtx.getImageData(0, 0, w, h);
+    const finalImageData = ctx.createImageData(w, h);
+
+    for (let i = 0; i < w * h; i++) {
+      const a = imageData.data[i * 4 + 3];
+      const autoAlpha = alphaMap[i];
+      const manualAlpha = manualMaskData.data[i * 4];
+      const finalAlpha = Math.round(a * (autoAlpha / 255) * (manualAlpha / 255));
+
+      // Store as both RGB and Alpha so consumers can read either channel
+      finalImageData.data[i * 4] = finalAlpha;
+      finalImageData.data[i * 4 + 1] = finalAlpha;
+      finalImageData.data[i * 4 + 2] = finalAlpha;
+      finalImageData.data[i * 4 + 3] = 255;
     }
+
+    ctx.putImageData(finalImageData, 0, 0);
+    onApply(resultCanvas);
   };
 
   return (
