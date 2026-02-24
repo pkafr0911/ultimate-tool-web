@@ -34,7 +34,7 @@ const AlignControls: React.FC = () => {
     if (history) history.saveState();
   };
 
-  const alignHorizontalToFirst = (mode: 'left' | 'center' | 'right') => {
+  const alignHorizontal = (mode: 'left' | 'center' | 'right') => {
     if (!canvas || !selectedObject) return;
     const target = getContentBounds();
     if (!target) return;
@@ -52,7 +52,7 @@ const AlignControls: React.FC = () => {
     apply({ left });
   };
 
-  const alignVerticalToFirst = (mode: 'top' | 'middle' | 'bottom') => {
+  const alignVertical = (mode: 'top' | 'middle' | 'bottom') => {
     if (!canvas || !selectedObject) return;
     const target = getContentBounds();
     if (!target) return;
@@ -77,16 +77,16 @@ const AlignControls: React.FC = () => {
       </div>
       <div style={{ marginBottom: 8 }}>
         <Space>
-          <Button onClick={() => alignHorizontalToFirst('left')}>H: Left</Button>
-          <Button onClick={() => alignHorizontalToFirst('center')}>H: Center</Button>
-          <Button onClick={() => alignHorizontalToFirst('right')}>H: Right</Button>
+          <Button onClick={() => alignHorizontal('left')}>H: Left</Button>
+          <Button onClick={() => alignHorizontal('center')}>H: Center</Button>
+          <Button onClick={() => alignHorizontal('right')}>H: Right</Button>
         </Space>
       </div>
       <div>
         <Space>
-          <Button onClick={() => alignVerticalToFirst('top')}>V: Top</Button>
-          <Button onClick={() => alignVerticalToFirst('middle')}>V: Middle</Button>
-          <Button onClick={() => alignVerticalToFirst('bottom')}>V: Bottom</Button>
+          <Button onClick={() => alignVertical('top')}>V: Top</Button>
+          <Button onClick={() => alignVertical('middle')}>V: Middle</Button>
+          <Button onClick={() => alignVertical('bottom')}>V: Bottom</Button>
         </Space>
       </div>
     </div>
