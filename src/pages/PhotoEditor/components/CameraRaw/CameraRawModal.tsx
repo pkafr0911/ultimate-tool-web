@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Modal, Tabs, Row, Col, Typography, Button, Spin, Tooltip } from 'antd';
+import { Modal, Tabs, Row, Col, Typography, Button, Tooltip } from 'antd';
 import { EyeOutlined, EyeInvisibleOutlined, AimOutlined } from '@ant-design/icons';
 import { CameraRawSettings, applyCameraRawPipeline } from '../../utils/cameraRawHelpers';
 import HslPanel from './HslPanel';

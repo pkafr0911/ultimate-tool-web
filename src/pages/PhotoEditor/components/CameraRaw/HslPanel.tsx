@@ -3,8 +3,6 @@ import { Tabs, Typography, Button } from 'antd';
 import { colorRanges } from '../../utils/hslHelpers';
 import { CustomSlider } from '../CustomSlider';
 
-const { Text } = Typography;
-
 interface HslPanelProps {
   adjustments: Record<string, { h: number; s: number; l: number }>;
   onChange: (adjustments: Record<string, { h: number; s: number; l: number }>) => void;

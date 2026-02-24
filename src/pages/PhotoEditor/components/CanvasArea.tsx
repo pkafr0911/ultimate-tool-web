@@ -349,13 +349,8 @@ const CanvasArea: React.FC = () => {
     fabricCanvas.on('text:editing:entered', onTextEnter);
     fabricCanvas.on('text:editing:exited', onTextExit);
 
-    const saveHistory = () => {
-      history.saveState();
-    };
-
-    fabricCanvas.on('object:modified', saveHistory);
-    fabricCanvas.on('object:added', saveHistory);
-    fabricCanvas.on('object:removed', saveHistory);
+    // Note: history event listeners (object:modified, object:added, object:removed)
+    // are registered by useHistoryOptimized hook — no need to duplicate them here.
 
     // Ctrl + mouse wheel to zoom (centered at pointer)
     const onWheel = (ev: WheelEvent) => {

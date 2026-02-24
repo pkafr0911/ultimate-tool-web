@@ -24,7 +24,7 @@ const TextStylePanel: React.FC = () => {
   const [color, setColor] = useState<string>('#000000');
 
   useEffect(() => {
-    if (selectedObject && (selectedObject as any).isType === 'i-text') {
+    if (selectedObject && (selectedObject as any).isType('i-text')) {
       const txt = selectedObject as IText;
       setFontFamily((txt.fontFamily as string) || 'Arial');
       setFontSize((txt.fontSize as number) || 24);

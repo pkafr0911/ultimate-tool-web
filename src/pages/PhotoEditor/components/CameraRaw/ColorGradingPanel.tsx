@@ -4,7 +4,6 @@ import { CustomSlider } from '../CustomSlider';
 import { CameraRawSettings } from '../../utils/cameraRawHelpers';
 
 const { Panel } = Collapse;
-const { Text } = Typography;
 
 interface ColorGradingPanelProps {
   settings: CameraRawSettings['colorGrading'];
