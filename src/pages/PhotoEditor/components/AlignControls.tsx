@@ -5,16 +5,25 @@ import { usePhotoEditor } from '../context';
 const AlignControls: React.FC = () => {
   const { canvas, selectedObject, history } = usePhotoEditor();
 
-  const getFirstLayerRect = () => {
+  const getContentBounds = () => {
     if (!canvas) return null;
-    const objs = canvas.getObjects();
-    if (!objs || objs.length === 0) return null;
-    const first = objs[0];
-    try {
-      return first.getBoundingRect();
-    } catch (e) {
-      return null;
-    }
+    const objects = canvas.getObjects();
+    if (!objects || objects.length === 0) return null;
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    objects.forEach((obj) => {
+      const bound = obj.getBoundingRect();
+      if (bound.left < minX) minX = bound.left;
+      if (bound.top < minY) minY = bound.top;
+      if (bound.left + bound.width > maxX) maxX = bound.left + bound.width;
+      if (bound.top + bound.height > maxY) maxY = bound.top + bound.height;
+    });
+
+    return { left: minX, top: minY, width: maxX - minX, height: maxY - minY };
   };
 
   const apply = (patch: Record<string, any>) => {
@@ -27,7 +36,7 @@ const AlignControls: React.FC = () => {
 
   const alignHorizontalToFirst = (mode: 'left' | 'center' | 'right') => {
     if (!canvas || !selectedObject) return;
-    const target = getFirstLayerRect();
+    const target = getContentBounds();
     if (!target) return;
     const objRect = selectedObject.getBoundingRect();
 
@@ -45,7 +54,7 @@ const AlignControls: React.FC = () => {
 
   const alignVerticalToFirst = (mode: 'top' | 'middle' | 'bottom') => {
     if (!canvas || !selectedObject) return;
-    const target = getFirstLayerRect();
+    const target = getContentBounds();
     if (!target) return;
     const objRect = selectedObject.getBoundingRect();
 
@@ -64,7 +73,7 @@ const AlignControls: React.FC = () => {
   return (
     <div style={{ padding: 12 }}>
       <div style={{ marginBottom: 6 }}>
-        <strong>Align to First Layer</strong>
+        <strong>Align to Content Bounds</strong>
       </div>
       <div style={{ marginBottom: 8 }}>
         <Space>
