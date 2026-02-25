@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Canvas, FabricImage, PencilBrush, IText, Point } from 'fabric';
 import { usePhotoEditor } from '../context';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useSnappingGuides } from '../hooks/useSnappingGuides';
 
 const CanvasArea: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -27,6 +28,7 @@ const CanvasArea: React.FC = () => {
   const isEditingRef = useRef(false);
 
   useKeyboardShortcuts(canvas);
+  useSnappingGuides(canvas);
 
   const altPressedRef = useRef(false);
   const previewDivRef = useRef<HTMLDivElement | null>(null);
