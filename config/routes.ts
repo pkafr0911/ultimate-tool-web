@@ -54,23 +54,23 @@
         icon: 'fileImage',
         component: './SVGViewer',
       },
+      // {
+      //   path: '/image-converter/pics-editor',
+      //   name: 'pics-editor',
+      //   icon: 'fileImage',
+      //   component: './PicsEditor',
+      // },
       {
-        path: '/image-converter/pics-editor',
-        name: 'pics-editor',
+        path: '/image-converter/photo-editor',
+        name: 'photo-editor',
         icon: 'fileImage',
-        component: './PicsEditor',
+        component: './PhotoEditor',
       },
       {
         path: '/image-converter/vector-editor',
         name: 'vector-editor',
         icon: 'edit',
         component: './VectorEditor',
-      },
-      {
-        path: '/image-converter/photo-editor',
-        name: 'photo-editor',
-        icon: 'edit',
-        component: './PhotoEditor',
       },
       { path: '/image-converter/base64', name: 'base64', icon: 'fileText', component: './Base64' },
       {
