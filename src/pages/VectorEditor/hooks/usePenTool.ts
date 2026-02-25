@@ -1,305 +1,685 @@
-import { useState, useRef, useCallback } from 'react'; // Import React hooks for state and refs
-import { Canvas, Path, Circle, Line, Object as FabricObject } from 'fabric'; // Import Fabric.js classes
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { Canvas, Path, Circle, Line } from 'fabric';
 
-interface Point {
-  x: number; // X coordinate
-  y: number; // Y coordinate
-  cp1?: { x: number; y: number }; // Incoming control point (Bezier handle)
-  cp2?: { x: number; y: number }; // Outgoing control point (Bezier handle)
+// ── Types ──────────────────────────────────────────────────────────────────
+
+/** An anchor along the path being drawn */
+interface Anchor {
+  x: number;
+  y: number;
+  /** Incoming control point (handle before the anchor) */
+  cp1?: { x: number; y: number };
+  /** Outgoing control point (handle after the anchor) */
+  cp2?: { x: number; y: number };
 }
 
-// Extend Fabric Object type to include isTemp
+/** Custom circle type used for interactive control-point handles */
+interface ControlCircle extends Circle {
+  isTemp?: boolean;
+  _penRole?: 'anchor' | 'cpIn' | 'cpOut';
+  _anchorIdx?: number;
+}
+
+/** Custom line used for handle-to-anchor connectors */
+interface HandleLine extends Line {
+  isTemp?: boolean;
+  _penRole?: 'handleLine';
+  _anchorIdx?: number;
+  _cpType?: 'cpIn' | 'cpOut';
+}
+
+// Extend Fabric Object type
 declare module 'fabric' {
   interface Object {
-    isTemp?: boolean; // Flag to identify temporary objects (markers, helpers)
+    isTemp?: boolean;
   }
 }
 
+// ── Helper: rebuild path commands from anchors ─────────────────────────────
+
+function anchorsToPathString(anchors: Anchor[], closed: boolean = false): string {
+  if (anchors.length === 0) return '';
+
+  let d = `M ${anchors[0].x} ${anchors[0].y}`;
+
+  for (let i = 1; i < anchors.length; i++) {
+    const prev = anchors[i - 1];
+    const curr = anchors[i];
+
+    if (prev.cp2 || curr.cp1) {
+      const cp1x = prev.cp2 ? prev.cp2.x : prev.x;
+      const cp1y = prev.cp2 ? prev.cp2.y : prev.y;
+      const cp2x = curr.cp1 ? curr.cp1.x : curr.x;
+      const cp2y = curr.cp1 ? curr.cp1.y : curr.y;
+      d += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${curr.x} ${curr.y}`;
+    } else {
+      d += ` L ${curr.x} ${curr.y}`;
+    }
+  }
+
+  if (closed && anchors.length > 2) {
+    const last = anchors[anchors.length - 1];
+    const first = anchors[0];
+    if (last.cp2 || first.cp1) {
+      const cp1x = last.cp2 ? last.cp2.x : last.x;
+      const cp1y = last.cp2 ? last.cp2.y : last.y;
+      const cp2x = first.cp1 ? first.cp1.x : first.x;
+      const cp2y = first.cp1 ? first.cp1.y : first.y;
+      d += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${first.x} ${first.y}`;
+    } else {
+      d += ` L ${first.x} ${first.y}`;
+    }
+    d += ' Z';
+  }
+
+  return d;
+}
+
+// ── Hook ────────────────────────────────────────────────────────────────────
+
 export const usePenTool = (canvas: Canvas | null, saveHistory?: () => void) => {
-  const [isDrawing, setIsDrawing] = useState(false); // State to track if drawing is active
-  const activePath = useRef<Path | null>(null); // Ref to store the current path being drawn
-  const points = useRef<Point[]>([]); // Ref to store points of the path
-  const markers = useRef<Circle[]>([]); // Ref to store visual markers (circles) at points
-  const isDragging = useRef(false); // Ref to track if mouse is being dragged (for curves)
-  const dragStartPoint = useRef<{ x: number; y: number } | null>(null); // Ref to store start point of drag
-  const rubberBand = useRef<Path | null>(null); // Ref for the preview line (rubber band)
-  const handleLines = useRef<Line[]>([]); // Ref for visual lines connecting control points
+  // ── State ──
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
-  const generatePathString = (pts: Point[], closed: boolean = false) => {
-    if (pts.length === 0) return ''; // Return empty if no points
+  // ── Refs (mutable data that doesn't trigger re-renders) ──
+  const pathRef = useRef<Path | null>(null);
+  const anchorsRef = useRef<Anchor[]>([]);
+  const controlObjects = useRef<(ControlCircle | HandleLine)[]>([]);
+  const rubberBand = useRef<Path | null>(null);
+  const isClosedRef = useRef(false);
 
-    let d = `M ${pts[0].x} ${pts[0].y}`; // Start path command (Move to)
+  /** True while the mouse is held down (for drag-to-curve) */
+  const isDragging = useRef(false);
+  /** The index of the anchor whose handles are being dragged */
+  const dragAnchorIdx = useRef<number | null>(null);
 
-    for (let i = 1; i < pts.length; i++) {
-      const curr = pts[i]; // Current point
-      const prev = pts[i - 1]; // Previous point
+  // ── Edit-mode refs (for post-finish interactive editing) ──
+  const editDragTarget = useRef<{
+    type: 'anchor' | 'cpIn' | 'cpOut';
+    index: number;
+  } | null>(null);
 
-      if (prev.cp2 || curr.cp1) {
-        // If control points exist, draw Bezier curve
-        const cp1x = prev.cp2 ? prev.cp2.x : prev.x; // Control point 1 X
-        const cp1y = prev.cp2 ? prev.cp2.y : prev.y; // Control point 1 Y
-        const cp2x = curr.cp1 ? curr.cp1.x : curr.x; // Control point 2 X
-        const cp2y = curr.cp1 ? curr.cp1.y : curr.y; // Control point 2 Y
+  // ── Style constants ──
+  const ANCHOR_RADIUS = 5;
+  const HANDLE_RADIUS = 4;
+  const ANCHOR_FILL = '#ffffff';
+  const ANCHOR_FILL_START = '#4CAF50';
+  const ANCHOR_STROKE = '#333333';
+  const HANDLE_FILL = '#1890ff';
+  const HANDLE_LINE_COLOR = '#999999';
+  const PATH_STROKE = '#333333';
+  const PATH_STROKE_WIDTH = 2;
+  const RUBBERBAND_STROKE = '#999999';
 
-        d += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${curr.x} ${curr.y}`; // Cubic Bezier command
-      } else {
-        d += ` L ${curr.x} ${curr.y}`; // Line command
-      }
-    }
+  // ── Helpers ────────────────────────────────────────────────────────────
 
-    if (closed) {
-      d += ' Z'; // Close path command
-    }
-
-    return d; // Return SVG path data string
-  };
-
-  const updatePath = useCallback(() => {
-    if (!canvas || points.current.length === 0) return; // Exit if no canvas or points
-
-    const d = generatePathString(points.current); // Generate path string
-
-    if (activePath.current) {
-      canvas.remove(activePath.current); // Remove old path instance
-    }
-
-    const newPath = new Path(d, {
-      fill: '', // No fill
-      stroke: 'black', // Black stroke
-      strokeWidth: 2, // Stroke width
-      selectable: false, // Not selectable while drawing
-      evented: false, // No events
-      objectCaching: false, // Disable caching for performance during draw
-    });
-    newPath.isTemp = true; // Mark as temporary
-
-    canvas.add(newPath); // Add to canvas
-    canvas.sendObjectToBack(newPath); // Send to back so markers are on top
-    activePath.current = newPath; // Update ref
-    canvas.requestRenderAll(); // Render canvas
+  /** Remove all temporary control objects (circles, lines) from canvas */
+  const clearControlObjects = useCallback(() => {
+    if (!canvas) return;
+    controlObjects.current.forEach((obj) => canvas.remove(obj));
+    controlObjects.current = [];
   }, [canvas]);
 
-  const addMarker = useCallback(
-    (x: number, y: number, isStart: boolean = false) => {
-      if (!canvas) return; // Exit if no canvas
+  /** Remove rubber band preview */
+  const clearRubberBand = useCallback(() => {
+    if (!canvas || !rubberBand.current) return;
+    canvas.remove(rubberBand.current);
+    rubberBand.current = null;
+  }, [canvas]);
 
-      const marker = new Circle({
-        left: x, // X position
-        top: y, // Y position
-        radius: 4, // Radius
-        fill: isStart ? '#00ff00' : '#ffffff', // Green for start, white for others
-        stroke: '#333', // Dark stroke
-        strokeWidth: 1, // Stroke width
-        originX: 'center', // Center origin
-        originY: 'center', // Center origin
-        selectable: false, // Not selectable
-        evented: true, // Enable events (for clicking start point to close)
-        hasControls: false, // No controls
-        hasBorders: false, // No borders
-      });
-      marker.isTemp = true; // Mark as temporary
+  // ── Path manipulation ────────────────────────────────────────────────
 
-      canvas.add(marker); // Add to canvas
-      markers.current.push(marker); // Add to markers array
-      canvas.requestRenderAll(); // Render canvas
-      return marker; // Return marker instance
+  /**
+   * Sync the path by recreating it from current anchors.
+   * Fabric.js v6 needs fresh pathOffset / width / height calculation
+   * which only happens during Path construction — mutating `.path` in-place
+   * leaves stale dimensions and the stroke can disappear.
+   */
+  const syncPathData = useCallback(() => {
+    if (!canvas || !pathRef.current) return;
+
+    const d = anchorsToPathString(anchorsRef.current, isClosedRef.current);
+    if (!d) return;
+
+    const old = pathRef.current;
+    const replacement = new Path(d, {
+      fill: old.fill ?? '',
+      stroke: old.stroke ?? PATH_STROKE,
+      strokeWidth: old.strokeWidth ?? PATH_STROKE_WIDTH,
+      selectable: false,
+      evented: false,
+      objectCaching: false,
+      perPixelTargetFind: true,
+    });
+    replacement.isTemp = true;
+
+    canvas.remove(old);
+    canvas.add(replacement);
+    canvas.sendObjectToBack(replacement);
+    pathRef.current = replacement;
+    canvas.requestRenderAll();
+  }, [canvas]);
+
+  /**
+   * Create the initial Path object (first click) or update it in-place.
+   */
+  const ensurePath = useCallback(() => {
+    if (!canvas) return;
+
+    if (pathRef.current) {
+      syncPathData();
+      return;
+    }
+
+    const d = anchorsToPathString(anchorsRef.current);
+    if (!d) return;
+
+    const path = new Path(d, {
+      fill: '',
+      stroke: PATH_STROKE,
+      strokeWidth: PATH_STROKE_WIDTH,
+      selectable: false,
+      evented: false,
+      objectCaching: false,
+      perPixelTargetFind: true,
+    });
+    path.isTemp = true;
+    canvas.add(path);
+    canvas.sendObjectToBack(path);
+    pathRef.current = path;
+  }, [canvas, syncPathData]);
+
+  // ── Control-point rendering ────────────────────────────────────────────
+
+  const makeAnchorCircle = useCallback(
+    (x: number, y: number, index: number, isStart: boolean = false): ControlCircle => {
+      const c = new Circle({
+        left: x,
+        top: y,
+        radius: ANCHOR_RADIUS,
+        fill: isStart ? ANCHOR_FILL_START : ANCHOR_FILL,
+        stroke: ANCHOR_STROKE,
+        strokeWidth: 1.5,
+        originX: 'center',
+        originY: 'center',
+        selectable: false,
+        evented: true,
+        hasControls: false,
+        hasBorders: false,
+        hoverCursor: isStart ? 'pointer' : 'default',
+      }) as ControlCircle;
+      c.isTemp = true;
+      c._penRole = 'anchor';
+      c._anchorIdx = index;
+      return c;
     },
-    [canvas],
+    [],
   );
 
-  const finishPath = useCallback(
-    (closed: boolean = false) => {
-      if (!canvas || !activePath.current) return; // Exit if no active path
+  const makeHandleCircle = useCallback(
+    (x: number, y: number, index: number, role: 'cpIn' | 'cpOut'): ControlCircle => {
+      const c = new Circle({
+        left: x,
+        top: y,
+        radius: HANDLE_RADIUS,
+        fill: HANDLE_FILL,
+        stroke: '#ffffff',
+        strokeWidth: 1,
+        originX: 'center',
+        originY: 'center',
+        selectable: false,
+        evented: true,
+        hasControls: false,
+        hasBorders: false,
+        hoverCursor: 'move',
+      }) as ControlCircle;
+      c.isTemp = true;
+      c._penRole = role;
+      c._anchorIdx = index;
+      return c;
+    },
+    [],
+  );
 
-      const d = generatePathString(points.current, closed); // Generate final path string
+  const makeHandleLine = useCallback(
+    (
+      ax: number,
+      ay: number,
+      hx: number,
+      hy: number,
+      index: number,
+      cpType: 'cpIn' | 'cpOut',
+    ): HandleLine => {
+      const l = new Line([ax, ay, hx, hy], {
+        stroke: HANDLE_LINE_COLOR,
+        strokeWidth: 1,
+        strokeDashArray: [3, 3],
+        selectable: false,
+        evented: false,
+        hasControls: false,
+        hasBorders: false,
+      }) as HandleLine;
+      l.isTemp = true;
+      l._penRole = 'handleLine';
+      l._anchorIdx = index;
+      l._cpType = cpType;
+      return l;
+    },
+    [],
+  );
 
-      if (activePath.current) canvas.remove(activePath.current); // Remove temporary path
-      markers.current.forEach((m) => canvas.remove(m)); // Remove all markers
-      markers.current = []; // Clear markers array
+  /**
+   * Re-render all interactive control circles & handle lines.
+   */
+  const renderControls = useCallback(() => {
+    if (!canvas) return;
+    clearControlObjects();
 
-      if (rubberBand.current) {
-        canvas.remove(rubberBand.current); // Remove rubber band
-        rubberBand.current = null; // Clear ref
+    const objs: (ControlCircle | HandleLine)[] = [];
+    const ancs = anchorsRef.current;
+
+    for (let i = 0; i < ancs.length; i++) {
+      const a = ancs[i];
+
+      // Incoming control handle + line
+      if (a.cp1) {
+        const hl = makeHandleLine(a.x, a.y, a.cp1.x, a.cp1.y, i, 'cpIn');
+        objs.push(hl);
+        canvas.add(hl);
+
+        const hc = makeHandleCircle(a.cp1.x, a.cp1.y, i, 'cpIn');
+        objs.push(hc);
+        canvas.add(hc);
       }
 
-      handleLines.current.forEach((l) => canvas.remove(l)); // Remove handle lines
-      handleLines.current = []; // Clear handle lines array
+      // Outgoing control handle + line
+      if (a.cp2) {
+        const hl = makeHandleLine(a.x, a.y, a.cp2.x, a.cp2.y, i, 'cpOut');
+        objs.push(hl);
+        canvas.add(hl);
 
-      const finalPath = new Path(d, {
-        fill: closed ? '#cccccc' : '', // Fill if closed
-        stroke: 'black', // Stroke color
-        strokeWidth: 2, // Stroke width
-        selectable: true, // Make selectable
-        evented: true, // Enable events
-        objectCaching: true, // Enable caching
+        const hc = makeHandleCircle(a.cp2.x, a.cp2.y, i, 'cpOut');
+        objs.push(hc);
+        canvas.add(hc);
+      }
+
+      // Anchor circle (drawn on top)
+      const ac = makeAnchorCircle(a.x, a.y, i, i === 0);
+      objs.push(ac);
+      canvas.add(ac);
+    }
+
+    controlObjects.current = objs;
+    canvas.requestRenderAll();
+  }, [canvas, clearControlObjects, makeAnchorCircle, makeHandleCircle, makeHandleLine]);
+
+  // ── Rubber band (preview line from last anchor to cursor) ──────────────
+
+  const updateRubberBand = useCallback(
+    (pointerX: number, pointerY: number) => {
+      if (!canvas || anchorsRef.current.length === 0) return;
+
+      clearRubberBand();
+
+      const last = anchorsRef.current[anchorsRef.current.length - 1];
+      let d: string;
+
+      if (last.cp2) {
+        d = `M ${last.x} ${last.y} C ${last.cp2.x} ${last.cp2.y} ${pointerX} ${pointerY} ${pointerX} ${pointerY}`;
+      } else {
+        d = `M ${last.x} ${last.y} L ${pointerX} ${pointerY}`;
+      }
+
+      const rb = new Path(d, {
+        fill: '',
+        stroke: RUBBERBAND_STROKE,
+        strokeWidth: 1,
+        strokeDashArray: [5, 5],
+        selectable: false,
+        evented: false,
+        objectCaching: false,
       });
-
-      canvas.add(finalPath); // Add final path to canvas
-      canvas.setActiveObject(finalPath); // Select the new path
-
-      setIsDrawing(false); // Stop drawing mode
-      activePath.current = null; // Clear active path ref
-      points.current = []; // Clear points
-      isDragging.current = false; // Reset dragging state
-      dragStartPoint.current = null; // Reset drag start point
-
-      if (saveHistory) saveHistory(); // Save to history
-      canvas.requestRenderAll(); // Render canvas
+      rb.isTemp = true;
+      canvas.add(rb);
+      rubberBand.current = rb;
+      canvas.requestRenderAll();
     },
-    [canvas, saveHistory],
+    [canvas, clearRubberBand],
   );
+
+  // ── Finish / close path ───────────────────────────────────────────────
+
+  /**
+   * Finish the current path and enter edit mode.
+   * Control points stay on canvas and are draggable – exactly like the
+   * Fabric.js quadratic-curve & stickman demos.
+   */
+  const finishPath = useCallback(
+    (closed: boolean = false) => {
+      if (!canvas || anchorsRef.current.length < 2) {
+        // Not enough points – cancel
+        if (pathRef.current) canvas?.remove(pathRef.current);
+        clearControlObjects();
+        clearRubberBand();
+        pathRef.current = null;
+        anchorsRef.current = [];
+        setIsDrawing(false);
+        return;
+      }
+
+      clearRubberBand();
+      isClosedRef.current = closed;
+
+      // Build final path string
+      const d = anchorsToPathString(anchorsRef.current, closed);
+
+      // Remove the temporary in-progress Path
+      if (pathRef.current) canvas.remove(pathRef.current);
+
+      // Create a fresh Path (objectCaching: false so direct .path[] edits render)
+      const finalPath = new Path(d, {
+        fill: closed ? 'rgba(200,200,200,0.3)' : '',
+        stroke: PATH_STROKE,
+        strokeWidth: PATH_STROKE_WIDTH,
+        selectable: false,
+        evented: false,
+        objectCaching: false,
+        perPixelTargetFind: true,
+      });
+      canvas.add(finalPath);
+      canvas.sendObjectToBack(finalPath);
+      pathRef.current = finalPath;
+
+      // Re-render interactive control handles
+      clearControlObjects();
+      renderControls();
+
+      setIsDrawing(false);
+      setIsEditMode(true);
+      isDragging.current = false;
+      dragAnchorIdx.current = null;
+
+      if (saveHistory) saveHistory();
+      canvas.requestRenderAll();
+    },
+    [canvas, clearControlObjects, clearRubberBand, renderControls, saveHistory],
+  );
+
+  /**
+   * Exit edit mode: make the path a normal selectable object.
+   */
+  const exitEditMode = useCallback(() => {
+    if (!canvas) return;
+
+    clearControlObjects();
+    clearRubberBand();
+
+    if (pathRef.current) {
+      // Rebuild path from current anchors so position/dimensions are correct
+      const d = anchorsToPathString(anchorsRef.current, isClosedRef.current);
+      const newPath = new Path(d, {
+        fill: pathRef.current.fill,
+        stroke: pathRef.current.stroke,
+        strokeWidth: pathRef.current.strokeWidth,
+        selectable: true,
+        evented: true,
+        objectCaching: true,
+        perPixelTargetFind: true,
+      });
+      canvas.remove(pathRef.current);
+      canvas.add(newPath);
+      canvas.setActiveObject(newPath);
+    }
+
+    pathRef.current = null;
+    anchorsRef.current = [];
+    isClosedRef.current = false;
+    editDragTarget.current = null;
+    setIsEditMode(false);
+    canvas.requestRenderAll();
+  }, [canvas, clearControlObjects, clearRubberBand]);
+
+  /**
+   * Cancel drawing (discard everything).
+   */
+  const cancelDrawing = useCallback(() => {
+    if (!canvas) return;
+
+    if (pathRef.current) canvas.remove(pathRef.current);
+    clearControlObjects();
+    clearRubberBand();
+
+    pathRef.current = null;
+    anchorsRef.current = [];
+    isClosedRef.current = false;
+    isDragging.current = false;
+    dragAnchorIdx.current = null;
+    setIsDrawing(false);
+    setIsEditMode(false);
+    canvas.requestRenderAll();
+  }, [canvas, clearControlObjects, clearRubberBand]);
+
+  // ── Drawing-mode mouse handlers ───────────────────────────────────────
 
   const onMouseDown = useCallback(
     (e: any) => {
-      if (!canvas) return; // Exit if no canvas
-      const pointer = canvas.getPointer(e.e); // Get mouse pointer coordinates
+      if (!canvas) return;
 
-      if (isDrawing && markers.current.length > 0) {
-        const startMarker = markers.current[0]; // Get start marker
-        if (e.target === startMarker) {
-          finishPath(true); // Close path if start marker clicked
+      // ── Edit mode: start dragging a control point ──
+      if (isEditMode) {
+        const target = e.target as ControlCircle | undefined;
+        if (target && target.isTemp && target._penRole) {
+          if (target._penRole === 'anchor') {
+            editDragTarget.current = { type: 'anchor', index: target._anchorIdx! };
+            isDragging.current = true;
+          } else if (target._penRole === 'cpIn') {
+            editDragTarget.current = { type: 'cpIn', index: target._anchorIdx! };
+            isDragging.current = true;
+          } else if (target._penRole === 'cpOut') {
+            editDragTarget.current = { type: 'cpOut', index: target._anchorIdx! };
+            isDragging.current = true;
+          }
           return;
         }
-        if (markers.current.includes(e.target)) {
-          return; // Ignore clicks on other markers
+        // Click on empty area – exit edit mode
+        exitEditMode();
+        return;
+      }
+
+      const pointer = canvas.getPointer(e.e);
+
+      // ── Check if clicking the start anchor to close the path ──
+      if (isDrawing && anchorsRef.current.length > 2) {
+        const target = e.target as ControlCircle | undefined;
+        if (target && target.isTemp && target._penRole === 'anchor' && target._anchorIdx === 0) {
+          finishPath(true);
+          return;
         }
       }
 
+      // ── Start or continue drawing ──
       if (!isDrawing) {
-        setIsDrawing(true); // Start drawing
-        points.current = [{ x: pointer.x, y: pointer.y }]; // Initialize points
-        addMarker(pointer.x, pointer.y, true); // Add start marker
-        updatePath(); // Draw initial path
+        anchorsRef.current = [{ x: pointer.x, y: pointer.y }];
+        setIsDrawing(true);
+        ensurePath();
+        renderControls();
       } else {
-        points.current.push({ x: pointer.x, y: pointer.y }); // Add new point
-        addMarker(pointer.x, pointer.y); // Add marker
-        updatePath(); // Update path
+        anchorsRef.current.push({ x: pointer.x, y: pointer.y });
+        syncPathData();
+        renderControls();
       }
 
-      isDragging.current = true; // Start dragging (potential curve)
-      dragStartPoint.current = { x: pointer.x, y: pointer.y }; // Record drag start
+      // Start tracking drag (for creating curve handles)
+      isDragging.current = true;
+      dragAnchorIdx.current = anchorsRef.current.length - 1;
     },
-    [canvas, isDrawing, updatePath, addMarker, finishPath],
+    [
+      canvas,
+      isDrawing,
+      isEditMode,
+      ensurePath,
+      syncPathData,
+      renderControls,
+      finishPath,
+      exitEditMode,
+    ],
   );
 
   const onMouseMove = useCallback(
     (e: any) => {
-      if (!canvas || !isDrawing) return; // Exit if not drawing
+      if (!canvas) return;
 
-      const pointer = canvas.getPointer(e.e); // Get pointer coordinates
+      const pointer = canvas.getPointer(e.e);
 
-      if (isDragging.current && points.current.length > 0) {
-        // Dragging to create handles (Bezier curves)
-        const currentPointIndex = points.current.length - 1; // Get last point index
-        const currentPoint = points.current[currentPointIndex]; // Get last point
+      // ── Edit mode: drag a control point ──
+      if (isEditMode && isDragging.current && editDragTarget.current) {
+        const { type, index } = editDragTarget.current;
+        const anchor = anchorsRef.current[index];
+        if (!anchor) return;
 
-        const dx = pointer.x - currentPoint.x; // Calculate delta X
-        const dy = pointer.y - currentPoint.y; // Calculate delta Y
-
-        currentPoint.cp2 = { x: currentPoint.x + dx, y: currentPoint.y + dy }; // Set outgoing control point
-        currentPoint.cp1 = { x: currentPoint.x - dx, y: currentPoint.y - dy }; // Set incoming control point (mirrored)
-
-        updatePath(); // Update path with curves
-
-        // Visualize handles
-        handleLines.current.forEach((l) => canvas.remove(l)); // Remove old handle lines
-        handleLines.current = []; // Clear array
-
-        if (currentPoint.cp1) {
-          const l1 = new Line(
-            [currentPoint.x, currentPoint.y, currentPoint.cp1.x, currentPoint.cp1.y],
-            {
-              stroke: '#666', // Gray color
-              strokeWidth: 1, // Thin line
-              selectable: false, // Not selectable
-              evented: false, // No events
-            },
-          );
-          l1.isTemp = true; // Mark as temp
-          canvas.add(l1); // Add to canvas
-          handleLines.current.push(l1); // Store ref
-        }
-        if (currentPoint.cp2) {
-          const l2 = new Line(
-            [currentPoint.x, currentPoint.y, currentPoint.cp2.x, currentPoint.cp2.y],
-            {
-              stroke: '#666', // Gray color
-              strokeWidth: 1, // Thin line
-              selectable: false, // Not selectable
-              evented: false, // No events
-            },
-          );
-          l2.isTemp = true; // Mark as temp
-          canvas.add(l2); // Add to canvas
-          handleLines.current.push(l2); // Store ref
+        if (type === 'anchor') {
+          const dx = pointer.x - anchor.x;
+          const dy = pointer.y - anchor.y;
+          anchor.x = pointer.x;
+          anchor.y = pointer.y;
+          if (anchor.cp1) {
+            anchor.cp1.x += dx;
+            anchor.cp1.y += dy;
+          }
+          if (anchor.cp2) {
+            anchor.cp2.x += dx;
+            anchor.cp2.y += dy;
+          }
+        } else if (type === 'cpIn') {
+          anchor.cp1 = { x: pointer.x, y: pointer.y };
+          // Mirror to cp2 unless Alt is held (break tangent)
+          if (!e.e.altKey && anchor.cp2) {
+            const dx = pointer.x - anchor.x;
+            const dy = pointer.y - anchor.y;
+            anchor.cp2 = { x: anchor.x - dx, y: anchor.y - dy };
+          }
+        } else if (type === 'cpOut') {
+          anchor.cp2 = { x: pointer.x, y: pointer.y };
+          if (!e.e.altKey && anchor.cp1) {
+            const dx = pointer.x - anchor.x;
+            const dy = pointer.y - anchor.y;
+            anchor.cp1 = { x: anchor.x - dx, y: anchor.y - dy };
+          }
         }
 
-        // Hide rubber band while dragging handles
-        if (rubberBand.current) {
-          canvas.remove(rubberBand.current);
-          rubberBand.current = null;
-        }
-      } else if (points.current.length > 0) {
-        // Rubber band preview (line to mouse cursor)
-        const lastPoint = points.current[points.current.length - 1]; // Last placed point
-        let d = `M ${lastPoint.x} ${lastPoint.y}`; // Start from last point
+        // Directly update the path data (like the Fabric demos)
+        syncPathData();
+        renderControls();
+        return;
+      }
 
-        if (lastPoint.cp2) {
-          // Curve to mouse if last point has control point
-          d += ` C ${lastPoint.cp2.x} ${lastPoint.cp2.y} ${pointer.x} ${pointer.y} ${pointer.x} ${pointer.y}`;
-        } else {
-          // Line to mouse otherwise
-          d += ` L ${pointer.x} ${pointer.y}`;
-        }
+      // ── Drawing mode ──
+      if (!isDrawing) return;
 
-        if (rubberBand.current) {
-          canvas.remove(rubberBand.current); // Remove old rubber band
-        }
+      if (isDragging.current && dragAnchorIdx.current !== null) {
+        const idx = dragAnchorIdx.current;
+        const anchor = anchorsRef.current[idx];
+        if (!anchor) return;
 
-        const rb = new Path(d, {
-          fill: '', // No fill
-          stroke: '#999', // Light gray
-          strokeWidth: 1, // Thin line
-          strokeDashArray: [5, 5], // Dashed line
-          selectable: false, // Not selectable
-          evented: false, // No events
-        });
-        rb.isTemp = true; // Mark as temp
-        canvas.add(rb); // Add to canvas
-        rubberBand.current = rb; // Store ref
-        canvas.requestRenderAll(); // Render canvas
+        const dx = pointer.x - anchor.x;
+        const dy = pointer.y - anchor.y;
+
+        // Set outgoing + mirrored incoming control handles
+        anchor.cp2 = { x: anchor.x + dx, y: anchor.y + dy };
+        anchor.cp1 = { x: anchor.x - dx, y: anchor.y - dy };
+
+        syncPathData();
+        renderControls();
+        clearRubberBand();
+      } else {
+        updateRubberBand(pointer.x, pointer.y);
       }
     },
-    [canvas, isDrawing, updatePath],
+    [
+      canvas,
+      isDrawing,
+      isEditMode,
+      syncPathData,
+      renderControls,
+      clearRubberBand,
+      updateRubberBand,
+    ],
   );
 
   const onMouseUp = useCallback(
-    (e: any) => {
-      isDragging.current = false; // Stop dragging
-      dragStartPoint.current = null; // Clear drag start
-      // Clear handle lines on mouse up
-      if (canvas) {
-        handleLines.current.forEach((l) => canvas.remove(l)); // Remove handle lines
-        handleLines.current = []; // Clear array
-        canvas.requestRenderAll(); // Render canvas
+    (_e: any) => {
+      if (isEditMode && isDragging.current && editDragTarget.current) {
+        isDragging.current = false;
+        editDragTarget.current = null;
+        if (saveHistory) saveHistory();
+        return;
       }
+
+      isDragging.current = false;
+      dragAnchorIdx.current = null;
     },
-    [canvas],
+    [isEditMode, saveHistory],
   );
 
   const onDoubleClick = useCallback(
-    (e: any) => {
-      finishPath(false); // Finish path (open) on double click
+    (_e: any) => {
+      if (isDrawing) {
+        // Remove the extra anchor added by the first click of the dblclick
+        if (anchorsRef.current.length > 2) {
+          anchorsRef.current.pop();
+        }
+        finishPath(false);
+      }
     },
-    [finishPath],
+    [isDrawing, finishPath],
   );
 
+  const onKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isEditMode) {
+          exitEditMode();
+        } else if (isDrawing) {
+          cancelDrawing();
+        }
+      } else if (e.key === 'Enter') {
+        if (isDrawing) {
+          finishPath(false);
+        } else if (isEditMode) {
+          exitEditMode();
+        }
+      }
+    },
+    [isDrawing, isEditMode, finishPath, exitEditMode, cancelDrawing],
+  );
+
+  // ── Keyboard listener ──────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!isDrawing && !isEditMode) return;
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isDrawing, isEditMode, onKeyDown]);
+
+  // ── Public API ─────────────────────────────────────────────────────────
+
   return {
-    isDrawing, // Export drawing state
-    onMouseDown, // Export mouse down handler
-    onMouseMove, // Export mouse move handler
-    onMouseUp, // Export mouse up handler
-    onDoubleClick, // Export double click handler
-    finishPath, // Export finish path function
+    /** True while placing anchor points */
+    isDrawing,
+    /** True while in post-finish edit mode (draggable control points) */
+    isEditMode,
+    /** Canvas event handlers */
+    onMouseDown,
+    onMouseMove,
+    onMouseUp,
+    onDoubleClick,
+    /** Programmatically finish the current path */
+    finishPath,
+    /** Leave edit mode, make path a normal selectable object */
+    exitEditMode,
+    /** Discard the current drawing */
+    cancelDrawing,
   };
 };

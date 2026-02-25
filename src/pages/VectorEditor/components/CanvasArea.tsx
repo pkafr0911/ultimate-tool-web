@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { Canvas, TEvent, Rect, Circle, IText, Point } from 'fabric';
+import React, { useEffect, useRef, useMemo } from 'react';
+import { Canvas, Rect, Circle, IText, Point, Path } from 'fabric';
 import { useVectorEditor } from '../context';
 import { useShortcuts } from '../hooks/useShortcuts';
 import { usePenTool } from '../hooks/usePenTool';
@@ -11,6 +11,7 @@ const CanvasArea: React.FC = () => {
   const {
     setCanvas,
     setSelectedObject,
+    selectedObject,
     activeTool,
     setActiveTool,
     history,
@@ -28,6 +29,13 @@ const CanvasArea: React.FC = () => {
       console.log('Committed changes to:', object);
     },
   });
+
+  // Keep toolbar in sync with pen edit mode
+  useEffect(() => {
+    if (penTool.isEditMode) {
+      setActiveTool('pen');
+    }
+  }, [penTool.isEditMode, setActiveTool]);
 
   // Expose point editor to context
   useEffect(() => {
@@ -122,6 +130,8 @@ const CanvasArea: React.FC = () => {
       canvas.defaultCursor = 'crosshair';
       canvas.selection = false;
       canvas.forEachObject((obj) => {
+        // Keep pen-tool control objects interactive
+        if (obj.isTemp) return;
         obj.selectable = false;
         obj.evented = false;
       });
@@ -137,9 +147,12 @@ const CanvasArea: React.FC = () => {
     canvas.requestRenderAll();
   }, [activeTool, canvas]);
 
-  // Bind Pen Events
+  // Bind Pen Events (active during drawing AND post-finish edit mode)
   useEffect(() => {
-    if (!canvas || activeTool !== 'pen') return;
+    if (!canvas) return;
+    // Bind when pen tool is active OR when still in edit mode
+    const penActive = activeTool === 'pen' || penTool.isEditMode;
+    if (!penActive) return;
 
     const onMouseDown = (opt: any) => penTool.onMouseDown(opt);
     const onMouseMove = (opt: any) => penTool.onMouseMove(opt);
@@ -163,7 +176,15 @@ const CanvasArea: React.FC = () => {
   useShortcuts({
     v: () => {
       console.log('V key pressed - switching to select tool');
-      // Selection Tool - exit point edit mode if active
+      // Exit pen edit mode if active
+      if (penTool.isEditMode) {
+        penTool.exitEditMode();
+      }
+      // Exit pen drawing if active
+      if (penTool.isDrawing) {
+        penTool.cancelDrawing();
+      }
+      // Exit point edit mode if active
       if (pointEditor.isEditing) {
         pointEditor.exit(true);
       }
@@ -243,6 +264,10 @@ const CanvasArea: React.FC = () => {
     },
     p: () => {
       console.log('P key pressed - switching to pen tool');
+      // If in pen edit mode, exit first
+      if (penTool.isEditMode) {
+        penTool.exitEditMode();
+      }
       setActiveTool('pen');
     },
     'shift+c': () => {
@@ -260,8 +285,14 @@ const CanvasArea: React.FC = () => {
       }
     },
     escape: () => {
-      // Cancel point edit
-      if (pointEditor.isEditing) {
+      // Cancel pen tool edit mode or point edit
+      if (penTool.isEditMode) {
+        penTool.exitEditMode();
+        setActiveTool('select');
+      } else if (penTool.isDrawing) {
+        penTool.cancelDrawing();
+        setActiveTool('select');
+      } else if (pointEditor.isEditing) {
         pointEditor.exit(false);
       }
     },
@@ -323,9 +354,41 @@ const CanvasArea: React.FC = () => {
     },
   });
 
+  // Show guide when a Path object is selected and no editing is active
+  const showEditGuide = useMemo(() => {
+    return (
+      selectedObject instanceof Path &&
+      !penTool.isDrawing &&
+      !penTool.isEditMode &&
+      !pointEditor.isEditing &&
+      activeTool === 'select'
+    );
+  }, [selectedObject, penTool.isDrawing, penTool.isEditMode, pointEditor.isEditing, activeTool]);
+
   return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+    <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
       <canvas ref={canvasRef} />
+      {showEditGuide && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 12,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(0,0,0,0.72)',
+            color: '#fff',
+            padding: '6px 16px',
+            borderRadius: 6,
+            fontSize: 13,
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+            zIndex: 10,
+            userSelect: 'none',
+          }}
+        >
+          Double-click or press <b>A</b> to edit points
+        </div>
+      )}
     </div>
   );
 };
