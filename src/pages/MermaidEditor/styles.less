@@ -1,0 +1,310 @@
+.mermaidEditorPage {
+  height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    flex-shrink: 0;
+
+    .toolbarLeft {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toolbarRight {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+
+  .editorContainer {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+
+    .editorPane {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+
+      .editorTabs {
+        display: flex;
+        border-bottom: 1px solid #f0f0f0;
+        background: #fafafa;
+        flex-shrink: 0;
+
+        .editorTab {
+          padding: 8px 16px;
+          cursor: pointer;
+          border-bottom: 2px solid transparent;
+          font-size: 13px;
+          font-weight: 500;
+          color: #666;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+
+          &:hover {
+            color: #1890ff;
+            background: #e6f7ff;
+          }
+
+          &.active {
+            color: #1890ff;
+            border-bottom-color: #1890ff;
+            background: #fff;
+          }
+        }
+      }
+
+      .editorContent {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+      }
+    }
+
+    .previewPane {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+      background: #fff;
+
+      .previewHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 16px;
+        border-bottom: 1px solid #f0f0f0;
+        background: #fafafa;
+        flex-shrink: 0;
+
+        .previewTitle {
+          font-size: 13px;
+          font-weight: 500;
+          color: #666;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .previewActions {
+          display: flex;
+          gap: 4px;
+        }
+      }
+
+      .previewContent {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        position: relative;
+        user-select: none;
+
+        .mermaidOutput {
+          will-change: transform;
+          pointer-events: none;
+
+          svg {
+            max-width: none !important;
+            width: auto !important;
+            height: auto !important;
+            overflow: visible !important;
+          }
+        }
+
+        .errorMessage {
+          color: #ff4d4f;
+          white-space: pre-wrap;
+          font-family: monospace;
+          font-size: 13px;
+          padding: 16px;
+          background: #fff2f0;
+          border: 1px solid #ffccc7;
+          border-radius: 6px;
+          max-width: 80%;
+          overflow: auto;
+        }
+      }
+    }
+  }
+
+  .sampleDiagramsPanel {
+    .sampleGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 8px;
+      padding: 8px 0;
+
+      .sampleCard {
+        padding: 10px 12px;
+        border: 1px solid #f0f0f0;
+        border-radius: 6px;
+        cursor: pointer;
+        text-align: center;
+        font-size: 13px;
+        transition: all 0.2s;
+        background: #fafafa;
+
+        &:hover {
+          border-color: #1890ff;
+          color: #1890ff;
+          background: #e6f7ff;
+        }
+
+        .sampleIcon {
+          font-size: 20px;
+          margin-bottom: 4px;
+        }
+      }
+    }
+  }
+
+  .fullscreenOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+
+    .fullscreenHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .fullscreenContent {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      user-select: none;
+
+      .mermaidOutput {
+        will-change: transform;
+        pointer-events: none;
+
+        svg {
+          max-width: none !important;
+          width: auto !important;
+          height: auto !important;
+          overflow: visible !important;
+        }
+      }
+    }
+  }
+}
+
+// Dark mode
+.mermaidEditorPageDark {
+  .toolbar {
+    background: #1f1f1f;
+    border-bottom-color: #303030;
+  }
+
+  .editorContainer {
+    .editorPane {
+      .editorTabs {
+        background: #1a1a1a;
+        border-bottom-color: #303030;
+
+        .editorTab {
+          color: #999;
+
+          &:hover {
+            color: #40a9ff;
+            background: #111d2c;
+          }
+
+          &.active {
+            color: #40a9ff;
+            border-bottom-color: #40a9ff;
+            background: #1f1f1f;
+          }
+        }
+      }
+    }
+
+    .previewPane {
+      background: #1f1f1f;
+
+      .previewHeader {
+        background: #1a1a1a;
+        border-bottom-color: #303030;
+
+        .previewTitle {
+          color: #999;
+        }
+      }
+
+      .previewContent {
+        .errorMessage {
+          background: #2a1215;
+          border-color: #58181c;
+          color: #ff7875;
+        }
+      }
+    }
+  }
+
+  .sampleDiagramsPanel {
+    .sampleGrid {
+      .sampleCard {
+        border-color: #303030;
+        background: #1a1a1a;
+        color: #ccc;
+
+        &:hover {
+          border-color: #40a9ff;
+          color: #40a9ff;
+          background: #111d2c;
+        }
+      }
+    }
+  }
+
+  .fullscreenOverlay {
+    background: #141414;
+
+    .fullscreenHeader {
+      border-bottom-color: #303030;
+    }
+  }
+}
+
+// Mobile
+@media (max-width: 768px) {
+  .mermaidEditorPage {
+    height: calc(100vh - 100px);
+
+    .toolbar {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  }
+}

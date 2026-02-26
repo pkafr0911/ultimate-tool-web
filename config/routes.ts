@@ -104,6 +104,12 @@
         icon: 'file',
         component: './HtmlEditor',
       },
+      {
+        path: '/editor/mermaid-editor',
+        name: 'mermaid-editor',
+        icon: 'apartmentOutlined',
+        component: './MermaidEditor',
+      },
     ],
   },
   {

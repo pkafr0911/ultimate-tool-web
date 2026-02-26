@@ -32,6 +32,7 @@ export default {
   'menu.editor.readme-editor': 'Readme Editor',
   'menu.editor.json-formatter': 'Json Formatter',
   'menu.editor.html-editor': 'HTML Editor',
+  'menu.editor.mermaid-editor': 'Mermaid Editor',
 
   // Playground
   'menu.playground': 'Playground',
