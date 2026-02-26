@@ -2,6 +2,7 @@ import { useDarkMode } from '@/hooks/useDarkMode';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import {
   AimOutlined,
+  BorderOutlined,
   CodeOutlined,
   CopyOutlined,
   DownloadOutlined,
@@ -26,17 +27,64 @@ const { Title, Text } = Typography;
 
 type EditorTab = 'code' | 'config';
 
+const CHECKERBOARD_STYLE: React.CSSProperties = {
+  backgroundImage: [
+    'linear-gradient(45deg, rgba(0,0,0,0.06) 25%, transparent 25%)',
+    'linear-gradient(-45deg, rgba(0,0,0,0.06) 25%, transparent 25%)',
+    'linear-gradient(45deg, transparent 75%, rgba(0,0,0,0.06) 75%)',
+    'linear-gradient(-45deg, transparent 75%, rgba(0,0,0,0.06) 75%)',
+  ].join(', '),
+  backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+  backgroundSize: '20px 20px',
+};
+
+const getPreviewBgStyle = (bg: string, showGrid: boolean): React.CSSProperties => {
+  if (showGrid) {
+    return {
+      backgroundColor: bg,
+      ...CHECKERBOARD_STYLE,
+    };
+  }
+  return { backgroundColor: bg };
+};
+
+const STORAGE_KEY = 'mermaid-editor';
+
+const loadFromStorage = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {
+    // ignore
+  }
+  return null;
+};
+
 const MermaidEditorPage: React.FC = () => {
   const { darkMode } = useDarkMode();
   const isMobile = useIsMobile();
 
-  const [code, setCode] = useState<string>(DEFAULT_CODE);
-  const [config, setConfig] = useState<string>(DEFAULT_CONFIG);
+  const saved = useRef(loadFromStorage()).current;
+
+  const [code, setCode] = useState<string>(saved?.code ?? DEFAULT_CODE);
+  const [config, setConfig] = useState<string>(saved?.config ?? DEFAULT_CONFIG);
   const [activeTab, setActiveTab] = useState<EditorTab>('code');
   const [svgOutput, setSvgOutput] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [previewBg, setPreviewBg] = useState(darkMode ? '#1f1f1f' : '#ffffff');
+  const [previewBg, setPreviewBg] = useState(
+    saved?.previewBg ?? (darkMode ? '#1f1f1f' : '#ffffff'),
+  );
+  const [showGrid, setShowGrid] = useState<boolean>(saved?.showGrid ?? true);
+
+  // Save to localStorage on change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ code, config, previewBg, showGrid }));
+    } catch {
+      // ignore quota errors
+    }
+  }, [code, config, previewBg, showGrid]);
 
   const BG_PRESETS = [
     '#ffffff',
@@ -49,7 +97,6 @@ const MermaidEditorPage: React.FC = () => {
     '#f6ffed',
     '#fff7e6',
     '#fff1f0',
-    'transparent',
   ];
 
   const previewRef = useRef<HTMLDivElement>(null);
@@ -506,6 +553,14 @@ const MermaidEditorPage: React.FC = () => {
                 </Text>
               </span>
               <div className={styles.previewActions}>
+                <Tooltip title="Toggle Grid">
+                  <Button
+                    type={showGrid ? 'primary' : 'text'}
+                    size="small"
+                    icon={<BorderOutlined />}
+                    onClick={() => setShowGrid((v) => !v)}
+                  />
+                </Tooltip>
                 <ColorPicker
                   size="small"
                   value={previewBg}
@@ -556,7 +611,7 @@ const MermaidEditorPage: React.FC = () => {
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
-              style={{ cursor: 'grab', background: previewBg }}
+              style={{ cursor: 'grab', ...getPreviewBgStyle(previewBg, showGrid) }}
             >
               {error ? (
                 <div className={styles.errorMessage}>{error}</div>
@@ -625,7 +680,7 @@ const MermaidEditorPage: React.FC = () => {
             onMouseMove={handleFsMouseMove}
             onMouseUp={handleFsMouseUp}
             onMouseLeave={handleFsMouseUp}
-            style={{ cursor: 'grab', background: previewBg }}
+            style={{ cursor: 'grab', ...getPreviewBgStyle(previewBg, showGrid) }}
           >
             {error ? (
               <div className={styles.errorMessage}>{error}</div>
