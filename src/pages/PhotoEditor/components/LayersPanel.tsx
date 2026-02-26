@@ -72,7 +72,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, children, isSelected, o
       >
         <HolderOutlined />
       </div>
-      <div onClick={(e) => onClick(e)} style={{ flex: 1, cursor: 'pointer' }}>
+      <div onClick={(e) => onClick(e)} style={{ flex: 1, cursor: 'pointer', userSelect: 'none' }}>
         {children}
       </div>
     </div>
