@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { ColorPicker, Slider, Typography, Space, Select, InputNumber, Tooltip, Tag } from 'antd';
 import { CheckOutlined } from '@ant-design/icons';
 import { usePhotoEditor } from '../context';
-import { PencilBrush, CircleBrush, SprayBrush, Shadow } from 'fabric';
+import { PencilBrush, CircleBrush, SprayBrush, PatternBrush, Shadow } from 'fabric';
 
 type ToneName = 'warm' | 'cool' | 'earth' | 'pastel' | 'neon' | 'monochrome' | 'skin' | 'nature';
 
@@ -317,7 +317,18 @@ const BrushPanel: React.FC = () => {
     } else {
       brush.shadow = null;
     }
-  }, [canvas, brushColor, brushSize, shadowWidth, brushOpacity]);
+    // Re-scale dash arrays when brushSize changes
+    if (brushType === 'Dashed' || brushType === 'Dotted' || brushType === 'DashDot') {
+      const s = Math.max(1, brushSize * 0.8);
+      if (brushType === 'Dashed') {
+        brush.strokeDashArray = [4 * s, 2.5 * s];
+      } else if (brushType === 'Dotted') {
+        brush.strokeDashArray = [0.1 * s, 2.5 * s];
+      } else {
+        brush.strokeDashArray = [4 * s, 1.5 * s, 0.1 * s, 1.5 * s];
+      }
+    }
+  }, [canvas, brushColor, brushSize, shadowWidth, brushOpacity, brushType]);
 
   const handleBrushChange = (type: string) => {
     if (!canvas) return;
@@ -330,6 +341,38 @@ const BrushPanel: React.FC = () => {
       case 'Spray':
         brush = new SprayBrush(canvas);
         break;
+      case 'Pattern':
+        brush = new PatternBrush(canvas);
+        break;
+      case 'Dashed': {
+        brush = new PencilBrush(canvas);
+        const dScale = Math.max(1, brushSize * 0.8);
+        brush.strokeDashArray = [4 * dScale, 2.5 * dScale];
+        brush.needsFullRender = () => true;
+        break;
+      }
+      case 'Dotted': {
+        brush = new PencilBrush(canvas);
+        const dotScale = Math.max(1, brushSize * 0.8);
+        brush.strokeDashArray = [0.1 * dotScale, 2.5 * dotScale];
+        brush.strokeLineCap = 'round';
+        brush.needsFullRender = () => true;
+        break;
+      }
+      case 'DashDot': {
+        brush = new PencilBrush(canvas);
+        const ddScale = Math.max(1, brushSize * 0.8);
+        brush.strokeDashArray = [4 * ddScale, 1.5 * ddScale, 0.1 * ddScale, 1.5 * ddScale];
+        brush.strokeLineCap = 'round';
+        brush.needsFullRender = () => true;
+        break;
+      }
+      case 'Marker': {
+        brush = new PencilBrush(canvas);
+        brush.strokeLineCap = 'square';
+        brush.strokeLineJoin = 'bevel';
+        break;
+      }
       case 'Pencil':
       default:
         brush = new PencilBrush(canvas);
@@ -357,6 +400,11 @@ const BrushPanel: React.FC = () => {
             <Select.Option value="Pencil">Pencil</Select.Option>
             <Select.Option value="Circle">Circle</Select.Option>
             <Select.Option value="Spray">Spray</Select.Option>
+            <Select.Option value="Pattern">Pattern</Select.Option>
+            <Select.Option value="Dashed">Dashed</Select.Option>
+            <Select.Option value="Dotted">Dotted</Select.Option>
+            <Select.Option value="DashDot">Dash-Dot</Select.Option>
+            <Select.Option value="Marker">Marker</Select.Option>
           </Select>
         </div>
         <div>
