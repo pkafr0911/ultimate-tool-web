@@ -1,7 +1,178 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { ColorPicker, Slider, Typography, Space, Select, InputNumber } from 'antd';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { ColorPicker, Slider, Typography, Space, Select, InputNumber, Tooltip, Tag } from 'antd';
+import { CheckOutlined } from '@ant-design/icons';
 import { usePhotoEditor } from '../context';
 import { PencilBrush, CircleBrush, SprayBrush, Shadow } from 'fabric';
+
+type ToneName = 'warm' | 'cool' | 'earth' | 'pastel' | 'neon' | 'monochrome' | 'skin' | 'nature';
+
+const COLOR_TONES: Record<ToneName, { label: string; colors: string[] }> = {
+  warm: {
+    label: 'Warm',
+    colors: [
+      '#FF4500',
+      '#FF6347',
+      '#FF7F50',
+      '#FF8C00',
+      '#FFA500',
+      '#FFD700',
+      '#FFBB33',
+      '#E25822',
+    ],
+  },
+  cool: {
+    label: 'Cool',
+    colors: [
+      '#0077B6',
+      '#00B4D8',
+      '#48CAE4',
+      '#90E0EF',
+      '#5E60CE',
+      '#7B68EE',
+      '#4169E1',
+      '#1E90FF',
+    ],
+  },
+  earth: {
+    label: 'Earth',
+    colors: [
+      '#8B4513',
+      '#A0522D',
+      '#CD853F',
+      '#D2B48C',
+      '#556B2F',
+      '#6B8E23',
+      '#808000',
+      '#BDB76B',
+    ],
+  },
+  pastel: {
+    label: 'Pastel',
+    colors: [
+      '#FFB3BA',
+      '#FFDFBA',
+      '#FFFFBA',
+      '#BAFFC9',
+      '#BAE1FF',
+      '#E8BAFF',
+      '#FFC8DD',
+      '#BDE0FE',
+    ],
+  },
+  neon: {
+    label: 'Neon',
+    colors: [
+      '#FF00FF',
+      '#00FF00',
+      '#00FFFF',
+      '#FF073A',
+      '#DFFF00',
+      '#FF6EC7',
+      '#7DF9FF',
+      '#FF3F00',
+    ],
+  },
+  monochrome: {
+    label: 'Mono',
+    colors: [
+      '#000000',
+      '#1A1A1A',
+      '#333333',
+      '#4D4D4D',
+      '#808080',
+      '#B3B3B3',
+      '#D9D9D9',
+      '#FFFFFF',
+    ],
+  },
+  skin: {
+    label: 'Skin',
+    colors: [
+      '#FFDFC4',
+      '#F0C8A0',
+      '#D4A574',
+      '#C68642',
+      '#8D5524',
+      '#6B3E26',
+      '#5C3317',
+      '#3B2219',
+    ],
+  },
+  nature: {
+    label: 'Nature',
+    colors: [
+      '#228B22',
+      '#32CD32',
+      '#90EE90',
+      '#006400',
+      '#87CEEB',
+      '#4682B4',
+      '#F4A460',
+      '#DAA520',
+    ],
+  },
+};
+
+const PRESET_COLORS = [
+  '#000000',
+  '#FFFFFF',
+  '#FF0000',
+  '#00FF00',
+  '#0000FF',
+  '#FFFF00',
+  '#FF00FF',
+  '#00FFFF',
+  '#FF8C00',
+  '#8B008B',
+  '#006400',
+  '#DC143C',
+  '#4169E1',
+  '#FF69B4',
+  '#808080',
+];
+
+const ColorSwatch: React.FC<{
+  color: string;
+  selected: boolean;
+  onClick: () => void;
+  size?: number;
+}> = ({ color, selected, onClick, size = 22 }) => (
+  <Tooltip title={color}>
+    <div
+      onClick={onClick}
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: color,
+        borderRadius: 4,
+        cursor: 'pointer',
+        border: selected ? '2px solid #1677ff' : '1px solid #d9d9d9',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: 'all 0.2s',
+        boxShadow: selected ? '0 0 0 2px rgba(22,119,255,0.3)' : 'none',
+      }}
+    >
+      {selected && (
+        <CheckOutlined
+          style={{
+            fontSize: 10,
+            color: isLightColor(color) ? '#333' : '#fff',
+          }}
+        />
+      )}
+    </div>
+  </Tooltip>
+);
+
+function isLightColor(hex: string): boolean {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 155;
+}
 
 const BrushPanel: React.FC = () => {
   const {
@@ -15,6 +186,12 @@ const BrushPanel: React.FC = () => {
   } = usePhotoEditor();
   const [shadowWidth, setShadowWidth] = useState<number>(0);
   const [brushType, setBrushType] = useState<string>('Pencil');
+  const [selectedTone, setSelectedTone] = useState<ToneName | null>(null);
+
+  const recommendedColors = useMemo(() => {
+    if (!selectedTone) return PRESET_COLORS;
+    return COLOR_TONES[selectedTone].colors;
+  }, [selectedTone]);
 
   const draggingWidth = useRef(false);
   const widthStartX = useRef<number | null>(null);
@@ -190,6 +367,50 @@ const BrushPanel: React.FC = () => {
             onChange={(c) => setBrushColor(c.toHexString())}
             showText
           />
+        </div>
+        <div>
+          <Typography.Text>Color Tone</Typography.Text>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+            <Tag
+              style={{ cursor: 'pointer', margin: 0 }}
+              color={selectedTone === null ? 'blue' : undefined}
+              onClick={() => setSelectedTone(null)}
+            >
+              All
+            </Tag>
+            {(Object.keys(COLOR_TONES) as ToneName[]).map((tone) => (
+              <Tag
+                key={tone}
+                style={{ cursor: 'pointer', margin: 0 }}
+                color={selectedTone === tone ? 'blue' : undefined}
+                onClick={() => setSelectedTone(tone)}
+              >
+                {COLOR_TONES[tone].label}
+              </Tag>
+            ))}
+          </div>
+        </div>
+        <div>
+          <Typography.Text>
+            {selectedTone ? `${COLOR_TONES[selectedTone].label} Presets` : 'Preset Colors'}
+          </Typography.Text>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 4,
+              marginTop: 4,
+            }}
+          >
+            {recommendedColors.map((color) => (
+              <ColorSwatch
+                key={color}
+                color={color}
+                selected={brushColor.toLowerCase() === color.toLowerCase()}
+                onClick={() => setBrushColor(color)}
+              />
+            ))}
+          </div>
         </div>
         <div>
           <Typography.Text
