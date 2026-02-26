@@ -11,6 +11,7 @@ export default {
   'menu.utility.password': 'Password Generator',
   'menu.utility.jwt': 'JWT Encrypt / Decrypt',
   'menu.utility.colorpicker': 'Color Picker',
+  'menu.utility.stress-test': 'Stress Test',
 
   // Randomizer
   'menu.randomizer': 'Randomizer',

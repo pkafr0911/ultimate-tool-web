@@ -35,6 +35,12 @@
         icon: 'bgColors',
         component: './ColorPicker',
       },
+      {
+        path: '/utility/stress-test',
+        name: 'stress-test',
+        icon: 'thunderbolt',
+        component: './StressTest',
+      },
     ],
   },
   {
