@@ -1,5 +1,17 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Badge, Card, Col, Descriptions, Progress, Row, Space, Tag, Typography } from 'antd';
+import {
+  Alert,
+  Badge,
+  Card,
+  Col,
+  Descriptions,
+  Progress,
+  Row,
+  Select,
+  Space,
+  Tag,
+  Typography,
+} from 'antd';
 import { ControlOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
@@ -40,6 +52,7 @@ const AXIS_LABELS = ['Left Stick X', 'Left Stick Y', 'Right Stick X', 'Right Sti
 const GamepadTest: React.FC = () => {
   const [gamepads, setGamepads] = useState<(GamepadState | null)[]>([]);
   const [connected, setConnected] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const animRef = useRef<number>(0);
   const canvasLeftRef = useRef<HTMLCanvasElement>(null);
   const canvasRightRef = useRef<HTMLCanvasElement>(null);
@@ -74,12 +87,21 @@ const GamepadTest: React.FC = () => {
     setGamepads(states);
     setConnected(hasAny);
 
-    // Draw stick visualizations
+    // Auto-select first available gamepad if none selected or selected one disconnected
+    setSelectedIndex((prev) => {
+      if (prev !== null && states[prev]) return prev;
+      const firstIdx = states.findIndex((g) => g !== null);
+      return firstIdx >= 0 ? firstIdx : null;
+    });
+
+    // Draw stick visualizations for the selected gamepad
     if (hasAny) {
-      const first = states.find((g) => g !== null) as GamepadState | undefined;
-      if (first) {
-        drawStick(canvasLeftRef.current, first.axes[0] || 0, first.axes[1] || 0);
-        drawStick(canvasRightRef.current, first.axes[2] || 0, first.axes[3] || 0);
+      const selected = states.find(
+        (g, i) => g !== null && (selectedIndex === null || i === selectedIndex),
+      ) as GamepadState | undefined;
+      if (selected) {
+        drawStick(canvasLeftRef.current, selected.axes[0] || 0, selected.axes[1] || 0);
+        drawStick(canvasRightRef.current, selected.axes[2] || 0, selected.axes[3] || 0);
       }
     }
 
@@ -164,7 +186,10 @@ const GamepadTest: React.FC = () => {
     };
   }, [pollGamepads]);
 
-  const activeGamepad = gamepads.find((g) => g !== null) as GamepadState | undefined;
+  const connectedGamepads = gamepads.filter((g): g is GamepadState => g !== null);
+  const activeGamepad = (
+    selectedIndex !== null ? gamepads[selectedIndex] : gamepads.find((g) => g !== null)
+  ) as GamepadState | undefined;
 
   return (
     <div className="gamepad-test">
@@ -178,6 +203,29 @@ const GamepadTest: React.FC = () => {
         />
       )}
 
+      {connected && connectedGamepads.length > 1 && (
+        <Card size="small" style={{ marginBottom: 16 }}>
+          <Space align="center" wrap>
+            <Text strong>Select Device:</Text>
+            <Select
+              value={selectedIndex ?? undefined}
+              onChange={(val) => setSelectedIndex(val)}
+              style={{ minWidth: 320 }}
+              options={connectedGamepads.map((gp) => ({
+                value: gp.index,
+                label: (
+                  <Space>
+                    <Tag color="green">Player {gp.index + 1}</Tag>
+                    {gp.id}
+                  </Space>
+                ),
+              }))}
+            />
+            <Text type="secondary">{connectedGamepads.length} devices connected</Text>
+          </Space>
+        </Card>
+      )}
+
       {activeGamepad && (
         <>
           <Card
@@ -187,6 +235,9 @@ const GamepadTest: React.FC = () => {
                 {activeGamepad.id}
                 <Tag color="green">Connected</Tag>
                 <Tag color="blue">{activeGamepad.mapping} mapping</Tag>
+                {connectedGamepads.length > 1 && (
+                  <Tag color="purple">Player {activeGamepad.index + 1}</Tag>
+                )}
               </Space>
             }
             style={{ marginBottom: 16 }}
@@ -304,18 +355,31 @@ const GamepadTest: React.FC = () => {
       )}
 
       {/* Multiple gamepads summary */}
-      {gamepads.filter((g) => g !== null).length > 1 && (
-        <Card title="Connected Gamepads" size="small" style={{ marginTop: 16 }}>
+      {connectedGamepads.length > 1 && (
+        <Card title="All Connected Gamepads" size="small" style={{ marginTop: 16 }}>
           <Space direction="vertical" style={{ width: '100%' }}>
-            {gamepads.map((gp, i) =>
-              gp ? (
-                <Badge.Ribbon text={`Player ${i + 1}`} key={i}>
-                  <Card size="small">
-                    <Text>{gp.id}</Text>
-                  </Card>
-                </Badge.Ribbon>
-              ) : null,
-            )}
+            {connectedGamepads.map((gp) => (
+              <Badge.Ribbon
+                text={`Player ${gp.index + 1}`}
+                key={gp.index}
+                color={gp.index === selectedIndex ? 'blue' : undefined}
+              >
+                <Card
+                  size="small"
+                  hoverable
+                  style={{
+                    cursor: 'pointer',
+                    borderColor: gp.index === selectedIndex ? '#1677ff' : undefined,
+                  }}
+                  onClick={() => setSelectedIndex(gp.index)}
+                >
+                  <Space>
+                    <Text strong={gp.index === selectedIndex}>{gp.id}</Text>
+                    {gp.index === selectedIndex && <Tag color="blue">Testing</Tag>}
+                  </Space>
+                </Card>
+              </Badge.Ribbon>
+            ))}
           </Space>
         </Card>
       )}
