@@ -300,6 +300,54 @@
     font-size: 14px;
     animation: blink-recording 1s infinite;
   }
+
+  .camera-quality-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .camera-metric-row {
+    .camera-metric-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+  }
+
+  .camera-color-temp-bar {
+    position: relative;
+    height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(
+      to right,
+      #ff6b35,
+      #ffb347,
+      #ffe4b5,
+      #fff,
+      #cce5ff,
+      #87ceeb,
+      #6495ed
+    );
+    margin: 6px 0 2px;
+  }
+
+  .camera-color-temp-indicator {
+    position: absolute;
+    top: -3px;
+    width: 4px;
+    height: 16px;
+    background: #333;
+    border-radius: 2px;
+    transform: translateX(-50%);
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+  }
+
+  .camera-color-temp-labels {
+    display: flex;
+    justify-content: space-between;
+  }
 }
 
 @keyframes blink-recording {
@@ -634,6 +682,13 @@
 /* ═══ Dark mode ═══════════════════════════════════════════════════════════ */
 :global(.ant-layout-dark),
 :global([data-theme='dark']) {
+  .camera-test {
+    .camera-color-temp-indicator {
+      background: #fff;
+      box-shadow: 0 0 3px rgba(255, 255, 255, 0.5);
+    }
+  }
+
   .keyboard-test {
     .kb-toolbar {
       background: rgba(255, 255, 255, 0.04);
