@@ -49,25 +49,22 @@ const MouseTest: React.FC = () => {
     {} as Record<number, number>,
   );
 
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      const rect = testAreaRef.current?.getBoundingClientRect();
-      if (!rect) return;
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const rect = testAreaRef.current?.getBoundingClientRect();
+    if (!rect) return;
 
-      setButtonStates((prev) => ({ ...prev, [e.button]: true }));
-      setClicks((prev) => [
-        ...prev,
-        {
-          button: e.button,
-          timestamp: Date.now(),
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        },
-      ]);
-    },
-    [],
-  );
+    setButtonStates((prev) => ({ ...prev, [e.button]: true }));
+    setClicks((prev) => [
+      ...prev,
+      {
+        button: e.button,
+        timestamp: Date.now(),
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      },
+    ]);
+  }, []);
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
     setButtonStates((prev) => ({ ...prev, [e.button]: false }));
@@ -219,10 +216,7 @@ const MouseTest: React.FC = () => {
               <div className="mouse-crosshair-v" style={{ left: position.x }} />
 
               {/* Cursor dot */}
-              <div
-                className="mouse-cursor-dot"
-                style={{ left: position.x, top: position.y }}
-              />
+              <div className="mouse-cursor-dot" style={{ left: position.x, top: position.y }} />
 
               {/* Instruction overlay */}
               {clicks.length === 0 && (
@@ -253,9 +247,7 @@ const MouseTest: React.FC = () => {
                       className={`mouse-btn-visual mouse-btn-left ${buttonStates[0] ? 'mouse-btn-visual--active' : ''}`}
                     >
                       <span>L</span>
-                      <Tag color={buttonStates[0] ? 'blue' : 'default'}>
-                        {buttonCounts[0] || 0}
-                      </Tag>
+                      <Tag color={buttonStates[0] ? 'blue' : 'default'}>{buttonCounts[0] || 0}</Tag>
                     </div>
                     <div
                       className={`mouse-btn-visual mouse-btn-middle ${buttonStates[1] ? 'mouse-btn-visual--active' : ''}`}
@@ -269,9 +261,7 @@ const MouseTest: React.FC = () => {
                       className={`mouse-btn-visual mouse-btn-right ${buttonStates[2] ? 'mouse-btn-visual--active' : ''}`}
                     >
                       <span>R</span>
-                      <Tag color={buttonStates[2] ? 'red' : 'default'}>
-                        {buttonCounts[2] || 0}
-                      </Tag>
+                      <Tag color={buttonStates[2] ? 'red' : 'default'}>{buttonCounts[2] || 0}</Tag>
                     </div>
                   </div>
                   {/* Scroll indicator */}
@@ -315,25 +305,13 @@ const MouseTest: React.FC = () => {
                   <Statistic title="CPS (5s)" value={cps} />
                 </Col>
                 <Col span={12}>
-                  <Statistic
-                    title="Speed"
-                    value={speed}
-                    suffix="px/s"
-                  />
+                  <Statistic title="Speed" value={speed} suffix="px/s" />
                 </Col>
                 <Col span={12}>
-                  <Statistic
-                    title="Distance"
-                    value={Math.round(moveDistance)}
-                    suffix="px"
-                  />
+                  <Statistic title="Distance" value={Math.round(moveDistance)} suffix="px" />
                 </Col>
                 <Col span={12}>
-                  <Statistic
-                    title="Scroll"
-                    value={Math.round(scrollDelta.total)}
-                    suffix="Δ"
-                  />
+                  <Statistic title="Scroll" value={Math.round(scrollDelta.total)} suffix="Δ" />
                 </Col>
               </Row>
             </Card>
@@ -366,9 +344,7 @@ const MouseTest: React.FC = () => {
             {/* Click log */}
             <Card title="Recent Clicks" size="small">
               <div className="mouse-click-log">
-                {clicks.length === 0 && (
-                  <Text type="secondary">No clicks recorded yet</Text>
-                )}
+                {clicks.length === 0 && <Text type="secondary">No clicks recorded yet</Text>}
                 {clicks
                   .slice(-10)
                   .reverse()
