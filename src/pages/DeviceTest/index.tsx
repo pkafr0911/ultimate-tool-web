@@ -7,9 +7,10 @@ import CameraTest from './CameraTest';
 import MicrophoneTest from './MicrophoneTest';
 import HeadphoneTest from './HeadphoneTest';
 import GamepadTest from './GamepadTest';
+import MouseTest from './MouseTest';
 import './styles.less';
 
-const TABS = ['keyboard', 'camera', 'microphone', 'headphone', 'gamepad'] as const;
+const TABS = ['keyboard', 'camera', 'microphone', 'headphone', 'gamepad', 'mouse'] as const;
 type TabKey = (typeof TABS)[number];
 
 function getTabFromPath(pathname: string): TabKey {
@@ -28,7 +29,7 @@ const DeviceTest: React.FC = () => {
   return (
     <PageContainer
       title="Device Test"
-      subTitle="Test your keyboard, camera, microphone, headphone & gamepad"
+      subTitle="Test your keyboard, camera, microphone, headphone, gamepad & mouse"
     >
       <div className="device-test-page">
         <Tabs
@@ -61,6 +62,11 @@ const DeviceTest: React.FC = () => {
               key: 'gamepad',
               label: '🎮 Gamepad',
               children: <GamepadTest />,
+            },
+            {
+              key: 'mouse',
+              label: '🖱️ Mouse',
+              children: <MouseTest />,
             },
           ]}
         />

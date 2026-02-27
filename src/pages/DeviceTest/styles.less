@@ -382,6 +382,255 @@
   }
 }
 
+/* ═══ Mouse Test ══════════════════════════════════════════════════════════ */
+.mouse-test {
+  .mouse-test-area {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    background: #fafafa;
+    border: 2px dashed #d9d9d9;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: crosshair;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .mouse-trail-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .mouse-click-ripple {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border: 2px solid;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: mouse-ripple 0.6s ease-out forwards;
+    pointer-events: none;
+  }
+
+  @keyframes mouse-ripple {
+    0% {
+      width: 10px;
+      height: 10px;
+      opacity: 1;
+    }
+    100% {
+      width: 50px;
+      height: 50px;
+      opacity: 0;
+    }
+  }
+
+  .mouse-crosshair-h {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(22, 119, 255, 0.2);
+    pointer-events: none;
+  }
+
+  .mouse-crosshair-v {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(22, 119, 255, 0.2);
+    pointer-events: none;
+  }
+
+  .mouse-cursor-dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #1677ff;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    box-shadow: 0 0 6px rgba(22, 119, 255, 0.4);
+    z-index: 2;
+  }
+
+  .mouse-test-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .mouse-pos-label {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 11px;
+    font-family: monospace;
+    color: #999;
+    pointer-events: none;
+  }
+
+  .mouse-reset-btn {
+    padding: 2px 16px;
+    height: 24px;
+    border: 1px solid #ff4d4f;
+    border-radius: 4px;
+    background: #fff;
+    color: #ff4d4f;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #ff4d4f;
+      color: #fff;
+    }
+  }
+
+  /* ── Mouse visual ───────────────────────────────────────── */
+  .mouse-visual {
+    display: flex;
+    justify-content: center;
+    padding: 12px 0;
+  }
+
+  .mouse-body {
+    position: relative;
+    width: 120px;
+  }
+
+  .mouse-buttons-row {
+    display: flex;
+    gap: 4px;
+  }
+
+  .mouse-btn-visual {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 12px 4px;
+    background: #f5f5f5;
+    border: 2px solid #d9d9d9;
+    border-radius: 8px 8px 0 0;
+    transition: all 0.1s ease;
+
+    span {
+      font-weight: 700;
+      font-size: 14px;
+      color: #666;
+    }
+
+    &.mouse-btn-visual--active {
+      border-color: #1677ff;
+      background: #e6f4ff;
+
+      span {
+        color: #1677ff;
+      }
+    }
+  }
+
+  .mouse-btn-middle {
+    flex: 0.5;
+    border-radius: 4px 4px 0 0;
+  }
+
+  .mouse-scroll-visual {
+    width: 30px;
+    height: 40px;
+    background: #f0f0f0;
+    border: 2px solid #d9d9d9;
+    border-radius: 10px;
+    margin: 4px auto;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .mouse-scroll-indicator {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 14px;
+    background: #999;
+    border-radius: 4px;
+    transition: transform 0.1s ease;
+  }
+
+  .mouse-side-buttons {
+    position: absolute;
+    left: -28px;
+    top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .mouse-side-btn {
+    width: 24px;
+    padding: 4px 2px;
+    background: #f5f5f5;
+    border: 2px solid #d9d9d9;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 10px;
+    transition: all 0.1s ease;
+
+    span {
+      display: block;
+      font-weight: 600;
+      color: #666;
+    }
+
+    small {
+      font-size: 9px;
+      color: #999;
+    }
+
+    &.mouse-side-btn--active {
+      border-color: #722ed1;
+      background: #f9f0ff;
+
+      span {
+        color: #722ed1;
+      }
+    }
+  }
+
+  /* ── Click log ──────────────────────────────────────────── */
+  .mouse-click-log {
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .mouse-click-log-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid #f0f0f0;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
 /* ═══ Dark mode ═══════════════════════════════════════════════════════════ */
 :global(.ant-layout-dark),
 :global([data-theme='dark']) {
@@ -487,6 +736,76 @@
 
     .axis-bar-center {
       background: #666;
+    }
+  }
+
+  .mouse-test {
+    .mouse-test-area {
+      background: #1a1a1a;
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .mouse-crosshair-h,
+    .mouse-crosshair-v {
+      background: rgba(22, 119, 255, 0.15);
+    }
+
+    .mouse-pos-label {
+      color: #666;
+    }
+
+    .mouse-reset-btn {
+      background: transparent;
+      border-color: #ff4d4f;
+    }
+
+    .mouse-btn-visual {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+
+      span {
+        color: #aaa;
+      }
+
+      &.mouse-btn-visual--active {
+        background: rgba(22, 119, 255, 0.15);
+        border-color: #1677ff;
+
+        span {
+          color: #69b1ff;
+        }
+      }
+    }
+
+    .mouse-scroll-visual {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .mouse-scroll-indicator {
+      background: #666;
+    }
+
+    .mouse-side-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+
+      span {
+        color: #aaa;
+      }
+
+      &.mouse-side-btn--active {
+        background: rgba(114, 46, 209, 0.15);
+        border-color: #722ed1;
+
+        span {
+          color: #b37feb;
+        }
+      }
+    }
+
+    .mouse-click-log-item {
+      border-bottom-color: rgba(255, 255, 255, 0.06);
     }
   }
 }

@@ -59,6 +59,7 @@
           { path: '/utility/device-test/microphone', component: './DeviceTest' },
           { path: '/utility/device-test/headphone', component: './DeviceTest' },
           { path: '/utility/device-test/gamepad', component: './DeviceTest' },
+          { path: '/utility/device-test/mouse', component: './DeviceTest' },
         ],
       },
     ],
