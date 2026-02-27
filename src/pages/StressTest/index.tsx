@@ -63,6 +63,11 @@ const StressTestPage: React.FC = () => {
   // Tour refs
   const refTestPlan = useRef<HTMLDivElement>(null);
   const refConfig = useRef<HTMLDivElement>(null);
+  const refPanelRequest = useRef<HTMLDivElement>(null);
+  const refPanelLoad = useRef<HTMLDivElement>(null);
+  const refPanelAssertions = useRef<HTMLDivElement>(null);
+  const refPanelExtractors = useRef<HTMLDivElement>(null);
+  const refPanelCSV = useRef<HTMLDivElement>(null);
   const refRunBtn = useRef<HTMLDivElement>(null);
   const refToolbar = useRef<HTMLDivElement>(null);
 
@@ -94,13 +99,72 @@ const StressTestPage: React.FC = () => {
     {
       title: '⚙️ Configuration Panels',
       description:
-        'Configure your test here:\n\n' +
-        '• **HTTP Request** — Set the URL, method, headers, cookies, and request body.\n' +
-        '• **Thread Group** — Set number of virtual users (threads), total requests, ramp-up time, schedule mode, and think-time timers.\n' +
-        '• **Assertions** — Validate responses (status code, body content, response time, JSON path, etc.).\n' +
-        '• **Post-Processors** — Extract values from responses (regex, JSON path, CSS selector) for variable chaining.\n' +
-        '• **CSV Data Set** — Parameterize requests with CSV data using ${variable} placeholders.',
+        "Below are five configuration panels — each controls a different aspect of your test, just like JMeter's tree elements. Let's walk through each one.",
       target: () => refConfig.current!,
+      placement: 'top',
+    },
+    {
+      title: '🌐 HTTP Request',
+      description:
+        'Define the HTTP request to send:\n\n' +
+        '• **Method** — GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS.\n' +
+        '• **URL** — The full endpoint URL. Supports `${variable}` placeholders from extractors or CSV data.\n' +
+        '• **Headers** — Add custom headers (e.g. Authorization, Accept). Use the key-value pairs editor.\n' +
+        "• **Cookies** — Attach cookies by name/value/domain/path, like JMeter's HTTP Cookie Manager.\n" +
+        '• **Body** — For POST/PUT/PATCH: choose a content type preset (JSON, Form, XML, Text, GraphQL) and write the request body. Body also supports variable substitution.',
+      target: () => refPanelRequest.current!,
+      placement: 'bottom',
+    },
+    {
+      title: '🧵 Thread Group',
+      description:
+        "Control the load pattern — equivalent to JMeter's Thread Group:\n\n" +
+        '• **Concurrency (Threads)** — Number of virtual users sending requests in parallel.\n' +
+        '• **Schedule Mode** — Choose between a fixed **request count** or a **duration** (seconds) based run.\n' +
+        '• **Total Requests** — How many requests to send in total (request-count mode).\n' +
+        '• **Duration** — How long to keep sending requests (duration mode).\n' +
+        '• **Ramp-Up Time** — Gradually increase threads over N seconds (avoids thundering herd start).\n' +
+        '• **Startup Delay** — Wait N seconds before launching the first request.\n' +
+        '• **Timer (Think Time)** — Add a delay between each request per thread. Choose from Constant, Uniform Random, Gaussian Random, or Poisson timers with configurable parameters.',
+      target: () => refPanelLoad.current!,
+      placement: 'bottom',
+    },
+    {
+      title: '✅ Assertions',
+      description:
+        "Automatically validate every response — like JMeter's Response Assertion & JSON Assertion:\n\n" +
+        '• **Status Code** — Check the HTTP status (e.g. equals 200, or not-equals 500).\n' +
+        '• **Response Body Contains** — Verify the body contains a specific string.\n' +
+        '• **Response Body Matches (Regex)** — Match body content against a regular expression.\n' +
+        '• **Response Time** — Assert that the response is faster than a threshold (ms).\n' +
+        '• **JSON Path** — Extract a value from the JSON body via a path (e.g. `$.data.id`) and compare it.\n' +
+        '• **Header** — Check that a specific response header matches an expected value.\n\n' +
+        'Each assertion can be individually enabled/disabled. Failed assertions are flagged in the results table.',
+      target: () => refPanelAssertions.current!,
+      placement: 'bottom',
+    },
+    {
+      title: '🔗 Post-Processors / Extractors',
+      description:
+        "Extract values from responses and chain them into subsequent requests — like JMeter's Regular Expression Extractor & JSON Extractor:\n\n" +
+        '• **Regex Extractor** — Apply a regex with a capture group to the response body. The matched value is stored in a named variable.\n' +
+        '• **JSON Path Extractor** — Use a JSON path expression (e.g. `$.token`) to pull values from JSON responses.\n' +
+        '• **CSS Selector Extractor** — Use a CSS selector + optional attribute to extract data from HTML responses.\n' +
+        '• **Header Extractor** — Extract a value from a specific response header.\n\n' +
+        'Extracted variables can be referenced as `${variableName}` in the URL, headers, cookies, or body of the request.',
+      target: () => refPanelExtractors.current!,
+      placement: 'bottom',
+    },
+    {
+      title: '📋 CSV Data Set Config',
+      description:
+        "Parameterize your requests with external data — like JMeter's CSV Data Set Config:\n\n" +
+        '• **Upload or paste** CSV data with a header row defining variable names.\n' +
+        '• **Preview** your data in a table before running.\n' +
+        '• Variables from the CSV are available as `${columnName}` in the URL, headers, body, and more.\n' +
+        '• Each thread picks the next row in order — when all rows are used, it wraps around from the beginning.\n\n' +
+        'Example: upload a CSV with columns `username,password` and use `${username}` and `${password}` in a POST body to test login with different credentials.',
+      target: () => refPanelCSV.current!,
       placement: 'top',
     },
     {
@@ -231,16 +295,18 @@ const StressTestPage: React.FC = () => {
               {
                 key: 'request',
                 label: (
-                  <Space>
-                    <ApiOutlined />
-                    <span>HTTP Request</span>
-                    {config.url && (
-                      <Text type="secondary" style={{ fontSize: 11 }}>
-                        {config.method} {config.url.slice(0, 60)}
-                        {config.url.length > 60 ? '...' : ''}
-                      </Text>
-                    )}
-                  </Space>
+                  <div ref={refPanelRequest}>
+                    <Space>
+                      <ApiOutlined />
+                      <span>HTTP Request</span>
+                      {config.url && (
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                          {config.method} {config.url.slice(0, 60)}
+                          {config.url.length > 60 ? '...' : ''}
+                        </Text>
+                      )}
+                    </Space>
+                  </div>
                 ),
                 children: (
                   <RequestConfig config={config} onChange={updateConfig} disabled={isRunning} />
@@ -249,17 +315,19 @@ const StressTestPage: React.FC = () => {
               {
                 key: 'load',
                 label: (
-                  <Space>
-                    <DashboardOutlined />
-                    <span>Thread Group</span>
-                    <Text type="secondary" style={{ fontSize: 11 }}>
-                      {config.concurrency} threads ×{' '}
-                      {config.scheduleMode === 'duration'
-                        ? `${config.duration}s`
-                        : `${config.totalRequests} reqs`}
-                      {config.rampUpTime > 0 ? ` (ramp ${config.rampUpTime}s)` : ''}
-                    </Text>
-                  </Space>
+                  <div ref={refPanelLoad}>
+                    <Space>
+                      <DashboardOutlined />
+                      <span>Thread Group</span>
+                      <Text type="secondary" style={{ fontSize: 11 }}>
+                        {config.concurrency} threads ×{' '}
+                        {config.scheduleMode === 'duration'
+                          ? `${config.duration}s`
+                          : `${config.totalRequests} reqs`}
+                        {config.rampUpTime > 0 ? ` (ramp ${config.rampUpTime}s)` : ''}
+                      </Text>
+                    </Space>
+                  </div>
                 ),
                 children: (
                   <LoadConfig config={config} onChange={updateConfig} disabled={isRunning} />
@@ -268,15 +336,17 @@ const StressTestPage: React.FC = () => {
               {
                 key: 'assertions',
                 label: (
-                  <Space>
-                    <CheckCircleOutlined />
-                    <span>Assertions</span>
-                    {config.assertions.length > 0 && (
-                      <Text type="secondary" style={{ fontSize: 11 }}>
-                        ({config.assertions.filter((a) => a.enabled).length} active)
-                      </Text>
-                    )}
-                  </Space>
+                  <div ref={refPanelAssertions}>
+                    <Space>
+                      <CheckCircleOutlined />
+                      <span>Assertions</span>
+                      {config.assertions.length > 0 && (
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                          ({config.assertions.filter((a) => a.enabled).length} active)
+                        </Text>
+                      )}
+                    </Space>
+                  </div>
                 ),
                 children: (
                   <AssertionsConfig config={config} onChange={updateConfig} disabled={isRunning} />
@@ -285,15 +355,17 @@ const StressTestPage: React.FC = () => {
               {
                 key: 'extractors',
                 label: (
-                  <Space>
-                    <ExportOutlined />
-                    <span>Post-Processors / Extractors</span>
-                    {config.extractors.length > 0 && (
-                      <Text type="secondary" style={{ fontSize: 11 }}>
-                        ({config.extractors.filter((e) => e.enabled).length} active)
-                      </Text>
-                    )}
-                  </Space>
+                  <div ref={refPanelExtractors}>
+                    <Space>
+                      <ExportOutlined />
+                      <span>Post-Processors / Extractors</span>
+                      {config.extractors.length > 0 && (
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                          ({config.extractors.filter((e) => e.enabled).length} active)
+                        </Text>
+                      )}
+                    </Space>
+                  </div>
                 ),
                 children: (
                   <ExtractorsConfig config={config} onChange={updateConfig} disabled={isRunning} />
@@ -302,15 +374,17 @@ const StressTestPage: React.FC = () => {
               {
                 key: 'csv',
                 label: (
-                  <Space>
-                    <DatabaseOutlined />
-                    <span>CSV Data Set Config</span>
-                    {config.csvData.enabled && (
-                      <Text type="secondary" style={{ fontSize: 11 }}>
-                        ({config.csvData.data.length} rows)
-                      </Text>
-                    )}
-                  </Space>
+                  <div ref={refPanelCSV}>
+                    <Space>
+                      <DatabaseOutlined />
+                      <span>CSV Data Set Config</span>
+                      {config.csvData.enabled && (
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                          ({config.csvData.data.length} rows)
+                        </Text>
+                      )}
+                    </Space>
+                  </div>
                 ),
                 children: (
                   <CSVDataSetConfig config={config} onChange={updateConfig} disabled={isRunning} />
