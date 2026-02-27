@@ -127,6 +127,36 @@ export const pages = [
     icon: <EpochIcon />,
     desc: 'See what browser APIs expose about your system.',
   },
+  {
+    name: 'Keyboard Test',
+    path: '/utility/device-test/keyboard',
+    icon: <>⌨️</>,
+    desc: 'Test every key on your keyboard and track presses.',
+  },
+  {
+    name: 'Camera Test',
+    path: '/utility/device-test/camera',
+    icon: <>📷</>,
+    desc: 'Preview your webcam and check camera details.',
+  },
+  {
+    name: 'Microphone Test',
+    path: '/utility/device-test/microphone',
+    icon: <>🎤</>,
+    desc: 'Visualize mic input, volume and record audio.',
+  },
+  {
+    name: 'Headphone Test',
+    path: '/utility/device-test/headphone',
+    icon: <>🎧</>,
+    desc: 'Test left/right channels, frequency range and sound quality.',
+  },
+  {
+    name: 'Gamepad Test',
+    path: '/utility/device-test/gamepad',
+    icon: <>🎮</>,
+    desc: 'Detect and test connected controllers in real time.',
+  },
 
   // Image Converter
   {

@@ -47,6 +47,20 @@
         icon: 'laptop',
         component: './SystemInfo',
       },
+      {
+        path: '/utility/device-test',
+        name: 'device-test',
+        icon: 'desktop',
+        component: './DeviceTest',
+        routes: [
+          { path: '/utility/device-test', redirect: '/utility/device-test/keyboard' },
+          { path: '/utility/device-test/keyboard', component: './DeviceTest' },
+          { path: '/utility/device-test/camera', component: './DeviceTest' },
+          { path: '/utility/device-test/microphone', component: './DeviceTest' },
+          { path: '/utility/device-test/headphone', component: './DeviceTest' },
+          { path: '/utility/device-test/gamepad', component: './DeviceTest' },
+        ],
+      },
     ],
   },
   {

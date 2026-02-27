@@ -13,6 +13,7 @@ export default {
   'menu.utility.colorpicker': 'Color Picker',
   'menu.utility.stress-test': 'Stress Test',
   'menu.utility.system-info': 'System Info',
+  'menu.utility.device-test': 'Device Test',
 
   // Randomizer
   'menu.randomizer': 'Randomizer',

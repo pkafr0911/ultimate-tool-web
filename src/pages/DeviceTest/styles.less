@@ -1,0 +1,506 @@
+.device-test-page {
+  .ant-tabs-nav {
+    margin-bottom: 16px;
+  }
+}
+
+/* ═══ Keyboard Test ═══════════════════════════════════════════════════════ */
+.keyboard-test {
+  &:focus {
+    outline: none;
+  }
+
+  /* ── Toolbar ───────────────────────────────────────────── */
+  .kb-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 14px 20px;
+    background: #f8fafc;
+    border: 1px solid #e8ecf1;
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+
+  .kb-toolbar-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .kb-toolbar-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #8c8c8c;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .kb-reset-btn {
+    padding: 2px 16px;
+    height: 24px;
+    border: 1px solid #ff4d4f;
+    border-radius: 4px;
+    background: #fff;
+    color: #ff4d4f;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #ff4d4f;
+      color: #fff;
+    }
+  }
+
+  /* ── Input area ────────────────────────────────────────── */
+  .kb-input-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border: 1px solid #e8ecf1;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    min-height: 44px;
+    background: #fff;
+  }
+
+  .kb-input-text {
+    flex: 1;
+    font-size: 14px;
+    color: #333;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 60px;
+    overflow-y: auto;
+  }
+
+  .kb-input-placeholder {
+    color: #bfbfbf;
+  }
+
+  .kb-input-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 16px;
+    background: #1677ff;
+    margin-left: 1px;
+    vertical-align: text-bottom;
+    animation: kb-blink 1s step-end infinite;
+  }
+
+  @keyframes kb-blink {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
+  }
+
+  /* ── Keyboard layout ───────────────────────────────────── */
+  .kb-layout {
+    position: relative;
+    padding: 18px;
+    background: #f0f2f5;
+    border: 1px solid #e8ecf1;
+    border-radius: 14px;
+    overflow-x: auto;
+    transition: transform 0.3s ease;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .kb-key {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border: 1.5px solid #dde1e6;
+    border-radius: 8px;
+    cursor: default;
+    user-select: none;
+    transition: all 0.08s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    gap: 0;
+    padding: 3px 2px;
+
+    .kb-key-sub {
+      font-size: 9px;
+      font-weight: 500;
+      color: #999;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .kb-key-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #333;
+      text-align: center;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .kb-key-count {
+      position: absolute;
+      top: 2px;
+      right: 3px;
+      font-size: 8px;
+      font-weight: 700;
+      color: #1677ff;
+      pointer-events: none;
+    }
+
+    &:hover {
+      border-color: #bbb;
+    }
+
+    &.kb-key--pressed {
+      background: #e6f4ff;
+      border-color: #91caff;
+
+      .kb-key-label {
+        color: #1677ff;
+      }
+
+      .kb-key-sub {
+        color: #69b1ff;
+      }
+    }
+
+    &.kb-key--active {
+      background: #1677ff;
+      border-color: #0958d9;
+      transform: translateY(1px);
+      box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.2);
+
+      .kb-key-label {
+        color: #fff;
+      }
+
+      .kb-key-sub {
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .kb-key-count {
+        color: rgba(255, 255, 255, 0.9);
+      }
+    }
+  }
+
+  /* ── Stats card ────────────────────────────────────────── */
+  .kb-stats-card {
+    height: 100%;
+  }
+
+  .kb-stat-item {
+    .kb-stat-label {
+      font-size: 12px;
+      color: #8c8c8c;
+      margin-bottom: 4px;
+    }
+
+    .kb-stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #262626;
+      word-break: break-all;
+
+      &.kb-stat-value--blue {
+        color: #1677ff;
+      }
+    }
+  }
+
+  /* ── Performance card ──────────────────────────────────── */
+  .kb-perf-card {
+    height: 100%;
+  }
+
+  .kb-perf-badges {
+    display: flex;
+    gap: 8px;
+  }
+
+  .kb-perf-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid #e8ecf1;
+    border-radius: 6px;
+    padding: 2px 10px;
+    min-width: 44px;
+  }
+
+  .kb-perf-badge-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #8c8c8c;
+  }
+
+  .kb-perf-badge-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1677ff;
+  }
+
+  .kb-perf-canvas {
+    width: 100%;
+    height: 120px;
+    border-radius: 6px;
+  }
+}
+
+/* ═══ Camera Test ═════════════════════════════════════════════════════════ */
+.camera-test {
+  .camera-preview-wrapper {
+    position: relative;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .camera-video {
+    width: 100%;
+    max-height: 480px;
+    object-fit: contain;
+    display: block;
+  }
+
+  .camera-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .recording-indicator {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255, 0, 0, 0.8);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 14px;
+    animation: blink-recording 1s infinite;
+  }
+}
+
+@keyframes blink-recording {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* ═══ Microphone Test ═════════════════════════════════════════════════════ */
+.microphone-test {
+  .mic-visualizer {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+}
+
+/* ═══ Gamepad Test ════════════════════════════════════════════════════════ */
+.gamepad-test {
+  .gamepad-buttons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+
+  .gamepad-btn {
+    padding: 8px 12px;
+    background: #fafafa;
+    border: 2px solid #d9d9d9;
+    border-radius: 8px;
+    text-align: center;
+    transition: all 0.1s ease;
+
+    .gamepad-btn-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #666;
+    }
+
+    &.gamepad-btn--pressed {
+      background: linear-gradient(135deg, #e6f4ff, #bae0ff);
+      border-color: #1677ff;
+      box-shadow: 0 0 8px rgba(22, 119, 255, 0.3);
+
+      .gamepad-btn-label {
+        color: #0958d9;
+        font-weight: 700;
+      }
+    }
+  }
+
+  .axis-bar-track {
+    position: relative;
+    flex: 1;
+    height: 16px;
+    background: #f0f0f0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .axis-bar-fill {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-radius: 8px;
+    transition: width 0.05s ease;
+  }
+
+  .axis-bar-center {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: #999;
+    transform: translateX(-50%);
+  }
+}
+
+/* ═══ Dark mode ═══════════════════════════════════════════════════════════ */
+:global(.ant-layout-dark),
+:global([data-theme='dark']) {
+  .keyboard-test {
+    .kb-toolbar {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .kb-input-area {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .kb-input-text {
+      color: #ddd;
+    }
+
+    .kb-layout {
+      background: #1a1a1a;
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .kb-key {
+      background: #2a2a2a;
+      border-color: #444;
+
+      .kb-key-label {
+        color: #ddd;
+      }
+
+      .kb-key-sub {
+        color: #777;
+      }
+
+      &.kb-key--pressed {
+        background: #003a8c;
+        border-color: #1677ff;
+
+        .kb-key-label {
+          color: #69b1ff;
+        }
+
+        .kb-key-sub {
+          color: #4096ff;
+        }
+      }
+
+      &.kb-key--active {
+        background: #1677ff;
+        border-color: #4096ff;
+
+        .kb-key-label {
+          color: #fff;
+        }
+
+        .kb-key-sub {
+          color: rgba(255, 255, 255, 0.8);
+        }
+      }
+    }
+
+    .kb-stat-item .kb-stat-value {
+      color: #ddd;
+    }
+
+    .kb-perf-badge {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .kb-perf-badge-label {
+      color: #777;
+    }
+
+    .kb-reset-btn {
+      background: transparent;
+      border-color: #ff4d4f;
+    }
+  }
+
+  .gamepad-test {
+    .gamepad-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.15);
+
+      .gamepad-btn-label {
+        color: #aaa;
+      }
+
+      &.gamepad-btn--pressed {
+        background: rgba(22, 119, 255, 0.15);
+        border-color: #1677ff;
+
+        .gamepad-btn-label {
+          color: #69b1ff;
+        }
+      }
+    }
+
+    .axis-bar-track {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .axis-bar-center {
+      background: #666;
+    }
+  }
+}
+
+/* ═══ Responsive ══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .keyboard-test {
+    .kb-toolbar {
+      gap: 12px;
+      padding: 10px;
+    }
+
+    .kb-layout {
+      transform-origin: top left !important;
+    }
+  }
+}
