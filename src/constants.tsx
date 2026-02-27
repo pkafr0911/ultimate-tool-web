@@ -112,6 +112,13 @@ export const pages = [
     desc: 'Pick colors and see HEX/RGB values instantly.',
   },
 
+  {
+    name: 'System Info',
+    path: '/utility/system-info',
+    icon: <EpochIcon />,
+    desc: 'See what browser APIs expose about your system.',
+  },
+
   // Image Converter
   {
     name: 'Image To Text',

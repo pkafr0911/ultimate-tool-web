@@ -12,6 +12,7 @@ export default {
   'menu.utility.jwt': 'JWT Encrypt / Decrypt',
   'menu.utility.colorpicker': 'Color Picker',
   'menu.utility.stress-test': 'Stress Test',
+  'menu.utility.system-info': 'System Info',
 
   // Randomizer
   'menu.randomizer': 'Randomizer',

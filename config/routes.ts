@@ -41,6 +41,12 @@
         icon: 'thunderbolt',
         component: './StressTest',
       },
+      {
+        path: '/utility/system-info',
+        name: 'system-info',
+        icon: 'laptop',
+        component: './SystemInfo',
+      },
     ],
   },
   {
