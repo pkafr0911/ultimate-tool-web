@@ -723,3 +723,98 @@ export const EmojiIcon: React.FC<IconProps> = ({ color = '#FAAD14', ...props }) 
     />
   </BaseIcon>
 );
+
+export const StressTestIcon: React.FC<IconProps> = ({ color = '#FAAD14', ...props }) => (
+  <BaseIcon color={color} {...props}>
+    <path
+      d="M13 2L3 14H12L11 22L21 10H12L13 2Z"
+      stroke={color}
+      strokeWidth="2"
+      fill={color}
+      fillOpacity="0.1"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </BaseIcon>
+);
+
+export const MermaidIcon: React.FC<IconProps> = ({ color = '#FF3670', ...props }) => (
+  <BaseIcon color={color} {...props}>
+    <rect
+      x="3"
+      y="3"
+      width="7"
+      height="5"
+      rx="1"
+      stroke={color}
+      strokeWidth="2"
+      fill={color}
+      fillOpacity="0.1"
+    />
+    <rect
+      x="14"
+      y="3"
+      width="7"
+      height="5"
+      rx="1"
+      stroke={color}
+      strokeWidth="2"
+      fill={color}
+      fillOpacity="0.1"
+    />
+    <rect
+      x="8"
+      y="16"
+      width="8"
+      height="5"
+      rx="1"
+      stroke={color}
+      strokeWidth="2"
+      fill={color}
+      fillOpacity="0.1"
+    />
+    <path
+      d="M6.5 8V12H12V16"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M17.5 8V12H12V16"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </BaseIcon>
+);
+
+export const GoogleDriveIcon: React.FC<IconProps> = ({ color = '#4285F4', ...props }) => (
+  <BaseIcon color={color} {...props}>
+    <path
+      d="M8.5 2L1 15H7.5L15 2H8.5Z"
+      stroke={color}
+      strokeWidth="2"
+      fill={color}
+      fillOpacity="0.1"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M15 2L22.5 15H16L8.5 2"
+      stroke={color}
+      strokeWidth="2"
+      fill="#FBBC04"
+      fillOpacity="0.1"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M1 15L4.75 22H19.25L22.5 15H1Z"
+      stroke={color}
+      strokeWidth="2"
+      fill="#34A853"
+      fillOpacity="0.1"
+      strokeLinejoin="round"
+    />
+  </BaseIcon>
+);

@@ -6,10 +6,12 @@ import {
   CommandIcon,
   EmojiIcon,
   EpochIcon,
+  GoogleDriveIcon,
   HtmlIcon,
   ImageToTextIcon,
   JsonIcon,
   JWTIcon,
+  MermaidIcon,
   MinesweeperIcon,
   PasswordIcon,
   PicsEditorIcon,
@@ -19,6 +21,7 @@ import {
   ReadmeIcon,
   RegexIcon,
   SnakeIcon,
+  StressTestIcon,
   SudokuIcon,
   SVGIcon,
   TextArtIcon,
@@ -113,6 +116,12 @@ export const pages = [
   },
 
   {
+    name: 'Stress Test',
+    path: '/utility/stress-test',
+    icon: <StressTestIcon />,
+    desc: 'Run stress tests to evaluate performance.',
+  },
+  {
     name: 'System Info',
     path: '/utility/system-info',
     icon: <EpochIcon />,
@@ -176,6 +185,12 @@ export const pages = [
     icon: <HtmlIcon />,
     desc: 'Edit HTML with live preview support.',
   },
+  {
+    name: 'Mermaid Editor',
+    path: '/editor/mermaid-editor',
+    icon: <MermaidIcon />,
+    desc: 'Create and edit Mermaid diagrams visually.',
+  },
 
   // Randomizer
   {
@@ -235,5 +250,11 @@ export const pages = [
     path: '/docs/emojis',
     icon: <EmojiIcon />,
     desc: 'Find and copy emojis and kaomojis.',
+  },
+  {
+    name: 'Google Drive',
+    path: '/docs/google-drive',
+    icon: <GoogleDriveIcon />,
+    desc: 'Browse and manage Google Drive files.',
   },
 ];

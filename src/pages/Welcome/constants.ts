@@ -256,6 +256,8 @@ export const categories = [
       'JWT Encrypt/Decrypt',
       'Epoch Converter',
       'Video Analyzer',
+      'Stress Test',
+      'System Info',
     ],
     desc: 'From quick conversions to encryption — everything you need for everyday dev work.',
     tagline: 'Essential tools, instant access',
@@ -285,13 +287,14 @@ export const categories = [
   },
   {
     title: 'Editor',
-    keys: ['Json Formatter', 'Readme Editor', 'HTML Editor'],
-    desc: 'Edit JSON, Markdown, or HTML instantly with built-in formatters.',
+    keys: ['Json Formatter', 'Readme Editor', 'HTML Editor', 'Mermaid Editor'],
+    desc: 'Edit JSON, Markdown, HTML, or Mermaid diagrams instantly with built-in formatters.',
     tagline: 'Edit and format with precision',
     features: [
       'Format JSON with syntax highlighting',
       'Preview Markdown in real-time',
       'Edit HTML with live preview',
+      'Create and edit Mermaid diagrams visually',
     ],
   },
   {
@@ -313,8 +316,8 @@ export const categories = [
   },
   {
     title: 'Docs / Commands',
-    keys: ['Commands', 'Emojis /  Kaomojis '],
-    desc: 'Quick access to useful documentation and expressive emoji tools.',
+    keys: ['Commands', 'Emojis /  Kaomojis ', 'Google Drive'],
+    desc: 'Quick access to useful documentation, cloud storage, and expressive emoji tools.',
     tagline: 'Find what you need, fast',
   },
 ];
