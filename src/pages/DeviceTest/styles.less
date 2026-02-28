@@ -348,6 +348,214 @@
     display: flex;
     justify-content: space-between;
   }
+
+  .camera-face-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+    transition: transform 0.15s ease;
+  }
+
+  .camera-face-count-badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    background: rgba(82, 196, 26, 0.85);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 13px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition:
+      left 0.15s ease,
+      right 0.15s ease;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .camera-face-loading-badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    background: rgba(22, 119, 255, 0.85);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 12px;
+    z-index: 3;
+    animation: blink-recording 1.5s infinite;
+    transition:
+      left 0.15s ease,
+      right 0.15s ease;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  /* ── Documentation section ─────────────────────── */
+  .camera-docs {
+    padding: 8px 0;
+    line-height: 1.8;
+
+    ol,
+    ul {
+      padding-left: 20px;
+      margin-bottom: 12px;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    h5 {
+      margin-top: 16px;
+    }
+  }
+
+  /* ── Face Detection Pipeline Diagram ────────────── */
+  .face-pipeline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 4px;
+    margin: 12px 0 20px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 8px;
+
+    .face-pipeline-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #e8e8e8;
+      background: #fff;
+      min-width: 86px;
+      flex: 1;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+      transition: box-shadow 0.2s;
+
+      &:hover {
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+      }
+
+      // Coloured top border per step type
+      &.step-camera {
+        border-top: 3px solid #08979c;
+      }
+      &.step-backend {
+        border-top: 3px solid #1677ff;
+      }
+      &.step-model {
+        border-top: 3px solid #722ed1;
+      }
+      &.step-sample {
+        border-top: 3px solid #faad14;
+      }
+      &.step-infer {
+        border-top: 3px solid #13c2c2;
+      }
+      &.step-filter {
+        border-top: 3px solid #52c41a;
+      }
+      &.step-coords {
+        border-top: 3px solid #eb2f96;
+      }
+      &.step-overlay {
+        border-top: 3px solid #ff7a00;
+      }
+
+      .step-icon {
+        font-size: 22px;
+        margin-bottom: 5px;
+        line-height: 1;
+      }
+
+      .step-name {
+        font-weight: 700;
+        font-size: 11px;
+        color: rgba(0, 0, 0, 0.82);
+        white-space: pre-line; // allow \n line breaks in name
+      }
+
+      .step-detail {
+        font-size: 10.5px;
+        color: rgba(0, 0, 0, 0.45);
+        margin-top: 2px;
+        line-height: 1.4;
+      }
+
+      // Floating pill badge above the card
+      .step-badge {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #fff;
+        border: 1px solid #d9d9d9;
+        border-radius: 10px;
+        padding: 1px 7px;
+        font-size: 9.5px;
+        font-weight: 600;
+        white-space: nowrap;
+        color: rgba(0, 0, 0, 0.55);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+    }
+
+    // Arrow connector between steps
+    .face-pipeline-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 2px;
+      color: rgba(0, 0, 0, 0.25);
+      font-size: 16px;
+      flex-shrink: 0;
+      align-self: center;
+    }
+  }
+
+  // Dark mode adjustments for the pipeline chart
+  .dark & .face-pipeline,
+  [data-theme='dark'] & .face-pipeline {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+
+    .face-pipeline-step {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
+
+      .step-name {
+        color: rgba(255, 255, 255, 0.88);
+      }
+      .step-detail {
+        color: rgba(255, 255, 255, 0.4);
+      }
+      .step-badge {
+        background: #1f1f1f;
+        border-color: rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.55);
+      }
+    }
+
+    .face-pipeline-arrow {
+      color: rgba(255, 255, 255, 0.2);
+    }
+  }
 }
 
 @keyframes blink-recording {
