@@ -14,6 +14,8 @@ export default {
   'menu.utility.stress-test': 'Stress Test',
   'menu.utility.system-info': 'System Info',
   'menu.utility.device-test': 'Device Test',
+  'menu.utility.hex': 'Hex Converter',
+  'menu.utility.aes': 'AES Encrypt / Decrypt',
 
   // Randomizer
   'menu.randomizer': 'Randomizer',

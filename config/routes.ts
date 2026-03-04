@@ -29,6 +29,8 @@
       { path: '/utility/uuid', name: 'uuid', icon: 'barcode', component: './UUID' },
       { path: '/utility/password', name: 'password', icon: 'key', component: './Password' },
       { path: '/utility/jwt', name: 'jwt', icon: 'idcard', component: './JWT' },
+      { path: '/utility/hex', name: 'hex', icon: 'highlight', component: './HexConverter' },
+      { path: '/utility/aes', name: 'aes', icon: 'lock', component: './AesConverter' },
       {
         path: '/utility/colorpicker',
         name: 'colorpicker',

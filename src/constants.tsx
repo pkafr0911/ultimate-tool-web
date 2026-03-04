@@ -114,6 +114,18 @@ export const pages = [
     icon: <ColorPickerIcon />,
     desc: 'Pick colors and see HEX/RGB values instantly.',
   },
+  {
+    name: 'Hex Converter',
+    path: '/utility/hex',
+    icon: <>0x</>,
+    desc: 'Encode and decode Hex strings with dump view.',
+  },
+  {
+    name: 'AES Encrypt/Decrypt',
+    path: '/utility/aes',
+    icon: <JWTIcon />,
+    desc: 'Encrypt and decrypt text using AES (GCM/CBC/CTR).',
+  },
 
   {
     name: 'Stress Test',
