@@ -237,3 +237,137 @@ src/pages/StressTest/
 - No distributed testing (single browser tab)
 - localStorage-based test plan storage (not shared across devices)
 - Max concurrency limited by browser connection limits (~6 per domain for HTTP/1.1, more for HTTP/2)
+
+If you want to **temporarily disable CORS for testing in the browser**, there are several common approaches. Choose depending on your situation.
+
+---
+
+## 1. Disable CORS in Chrome (temporary dev mode)
+
+Start Chrome with web security disabled.
+
+```bash
+google-chrome --disable-web-security --user-data-dir=/tmp/chrome-dev
+```
+
+or
+
+```bash
+chromium --disable-web-security --user-data-dir=/tmp/chrome-dev
+```
+
+⚠️ Notes:
+
+- Only for **local development**.
+- Opens a **separate Chrome profile**.
+- Do **not** browse normal websites with this window.
+
+---
+
+## 2. Use a Chrome extension (easiest)
+
+Install an extension like:
+
+- Moesif Origin & CORS Changer
+- Allow CORS: Access-Control-Allow-Origin
+
+Steps:
+
+1. Install extension
+2. Turn it **ON**
+3. Refresh the page
+
+This adds headers like:
+
+```
+Access-Control-Allow-Origin: *
+```
+
+---
+
+## 3. Use a local proxy (recommended for dev)
+
+Run a proxy that forwards requests.
+
+Example with **Node.js** using `http-proxy-middleware`:
+
+```bash
+npm install http-proxy-middleware
+```
+
+Example Express proxy:
+
+```js
+import express from 'express';
+import { createProxyMiddleware } from 'http-proxy-middleware';
+
+const app = express();
+
+app.use(
+  '/api',
+  createProxyMiddleware({
+    target: 'https://api.example.com',
+    changeOrigin: true,
+  }),
+);
+
+app.listen(3000);
+```
+
+Now call:
+
+```
+http://localhost:3000/api/endpoint
+```
+
+---
+
+## 4. Quick public proxy (fast testing)
+
+You can prepend a proxy:
+
+```
+https://cors-anywhere.herokuapp.com/https://api.example.com
+```
+
+Using service like:
+
+- CORS Anywhere
+
+⚠️ Often rate-limited.
+
+---
+
+## 5. Fix it properly (best solution)
+
+Add headers on the backend:
+
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET,POST,PUT,DELETE
+Access-Control-Allow-Headers: Content-Type, Authorization
+```
+
+---
+
+💡 **Best temporary dev solution for you (React / UmiJS project):**
+
+Use a **dev proxy in Umi config**:
+
+```ts
+export default {
+  proxy: {
+    '/api': {
+      target: 'https://api.example.com',
+      changeOrigin: true,
+    },
+  },
+};
+```
+
+---
+
+✅ If you want, I can also show:
+
+- **3 best ways to bypass CORS for API testing (Postman / browser / frontend dev)**
+- **Why CORS happens and how browsers enforce it**.
