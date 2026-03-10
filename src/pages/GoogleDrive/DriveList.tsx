@@ -41,7 +41,8 @@ const getIcon = (mimeType: string, size = 16) => {
   const style = { fontSize: size };
   if (mimeType === 'application/vnd.google-apps.folder')
     return <FolderOutlined style={{ ...style, color: '#faad14' }} />;
-  if (mimeType.includes('image')) return <FileImageOutlined style={{ ...style, color: '#52c41a' }} />;
+  if (mimeType.includes('image'))
+    return <FileImageOutlined style={{ ...style, color: '#52c41a' }} />;
   if (mimeType.includes('pdf')) return <FilePdfOutlined style={{ ...style, color: '#f5222d' }} />;
   return <FileOutlined style={style} />;
 };
@@ -197,10 +198,7 @@ const DriveList: React.FC<DriveListProps> = ({
       dataIndex: 'name',
       key: 'name',
       render: (text: string, record: DriveFile) => (
-        <Space
-          style={{ cursor: 'pointer' }}
-          onClick={() => handleItemClick(record)}
-        >
+        <Space style={{ cursor: 'pointer' }} onClick={() => handleItemClick(record)}>
           {getIcon(record.mimeType)}
           <Text>{text}</Text>
         </Space>

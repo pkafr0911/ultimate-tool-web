@@ -323,10 +323,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           </Select>
         </Form.Item>
 
-        <Form.Item
-          noStyle
-          shouldUpdate={(prev, cur) => prev.type !== cur.type}
-        >
+        <Form.Item noStyle shouldUpdate={(prev, cur) => prev.type !== cur.type}>
           {({ getFieldValue }) =>
             getFieldValue('type') !== 'anyone' && (
               <Form.Item name="notify" label="Send notification email" valuePropName="checked">
@@ -373,7 +370,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             >
               <List.Item.Meta
                 avatar={<Avatar icon={<UserOutlined />} src={perm.photoLink} size="small" />}
-                title={perm.displayName || perm.emailAddress || (perm.type === 'anyone' ? 'Anyone with the link' : perm.type)}
+                title={
+                  perm.displayName ||
+                  perm.emailAddress ||
+                  (perm.type === 'anyone' ? 'Anyone with the link' : perm.type)
+                }
                 description={perm.emailAddress}
               />
               <Tag color={roleColor[perm.role] || 'default'}>{perm.role}</Tag>
