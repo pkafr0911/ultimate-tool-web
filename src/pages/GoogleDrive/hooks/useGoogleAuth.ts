@@ -8,8 +8,7 @@ declare global {
 }
 
 const CLIENT_ID = envConfig.googleClientId;
-const SCOPES =
-  'openid profile email https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.metadata.readonly';
+const SCOPES = 'openid profile email https://www.googleapis.com/auth/drive';
 
 interface GoogleUser {
   name: string;

@@ -96,3 +96,132 @@ export const uploadChunk = async (
   }
   return response;
 };
+
+// ─── File Operations ────────────────────────────────────────────────
+
+export const renameFile = async (
+  token: string,
+  fileId: string,
+  newName: string,
+): Promise<DriveFile> => {
+  const response = await fetch(`${DRIVE_API_BASE}/files/${fileId}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name: newName }),
+  });
+  if (!response.ok) throw new Error('Failed to rename file');
+  return response.json();
+};
+
+export const copyFile = async (
+  token: string,
+  fileId: string,
+  newName?: string,
+): Promise<DriveFile> => {
+  const body: Record<string, any> = {};
+  if (newName) body.name = newName;
+  const response = await fetch(`${DRIVE_API_BASE}/files/${fileId}/copy`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error('Failed to copy file');
+  return response.json();
+};
+
+export const trashFile = async (token: string, fileId: string): Promise<DriveFile> => {
+  const response = await fetch(`${DRIVE_API_BASE}/files/${fileId}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ trashed: true }),
+  });
+  if (!response.ok) throw new Error('Failed to move file to trash');
+  return response.json();
+};
+
+export const moveFile = async (
+  token: string,
+  fileId: string,
+  newParentId: string,
+  oldParentIds: string[],
+): Promise<DriveFile> => {
+  const params = new URLSearchParams({
+    addParents: newParentId,
+    removeParents: oldParentIds.join(','),
+  });
+  const response = await fetch(`${DRIVE_API_BASE}/files/${fileId}?${params.toString()}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({}),
+  });
+  if (!response.ok) throw new Error('Failed to move file');
+  return response.json();
+};
+
+export interface Permission {
+  role: 'reader' | 'writer' | 'commenter' | 'owner';
+  type: 'user' | 'group' | 'domain' | 'anyone';
+  emailAddress?: string;
+}
+
+export const shareFile = async (
+  token: string,
+  fileId: string,
+  permission: Permission,
+  sendNotificationEmail: boolean = true,
+): Promise<any> => {
+  const params = new URLSearchParams({
+    sendNotificationEmail: sendNotificationEmail.toString(),
+  });
+  const response = await fetch(
+    `${DRIVE_API_BASE}/files/${fileId}/permissions?${params.toString()}`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(permission),
+    },
+  );
+  if (!response.ok) throw new Error('Failed to share file');
+  return response.json();
+};
+
+export const listPermissions = async (
+  token: string,
+  fileId: string,
+): Promise<{ permissions: any[] }> => {
+  const response = await fetch(
+    `${DRIVE_API_BASE}/files/${fileId}/permissions?fields=permissions(id,role,type,emailAddress,displayName,photoLink)`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
+  if (!response.ok) throw new Error('Failed to list permissions');
+  return response.json();
+};
+
+export const deletePermission = async (
+  token: string,
+  fileId: string,
+  permissionId: string,
+): Promise<void> => {
+  const response = await fetch(`${DRIVE_API_BASE}/files/${fileId}/permissions/${permissionId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to remove permission');
+};
