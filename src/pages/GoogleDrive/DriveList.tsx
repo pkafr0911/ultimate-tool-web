@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table, Button, Space, Tooltip, Typography, Dropdown } from 'antd';
+import { Table, Button, Space, Tooltip, Typography, Dropdown, Card, Row, Col, Spin } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   FileOutlined,
@@ -19,9 +19,12 @@ import { DriveFile } from './types';
 
 const { Text } = Typography;
 
+export type DisplayMode = 'list' | 'grid';
+
 interface DriveListProps {
   files: DriveFile[];
   loading: boolean;
+  displayMode: DisplayMode;
   onFolderClick: (file: DriveFile) => void;
   onPreview: (file: DriveFile) => void;
   onDetail: (file: DriveFile) => void;
@@ -34,17 +37,19 @@ interface DriveListProps {
   onDelete: (file: DriveFile) => void;
 }
 
-const getIcon = (mimeType: string) => {
+const getIcon = (mimeType: string, size = 16) => {
+  const style = { fontSize: size };
   if (mimeType === 'application/vnd.google-apps.folder')
-    return <FolderOutlined style={{ color: '#faad14' }} />;
-  if (mimeType.includes('image')) return <FileImageOutlined style={{ color: '#52c41a' }} />;
-  if (mimeType.includes('pdf')) return <FilePdfOutlined style={{ color: '#f5222d' }} />;
-  return <FileOutlined />;
+    return <FolderOutlined style={{ ...style, color: '#faad14' }} />;
+  if (mimeType.includes('image')) return <FileImageOutlined style={{ ...style, color: '#52c41a' }} />;
+  if (mimeType.includes('pdf')) return <FilePdfOutlined style={{ ...style, color: '#f5222d' }} />;
+  return <FileOutlined style={style} />;
 };
 
 const DriveList: React.FC<DriveListProps> = ({
   files,
   loading,
+  displayMode,
   onFolderClick,
   onPreview,
   onDetail,
@@ -102,6 +107,90 @@ const DriveList: React.FC<DriveListProps> = ({
     return items;
   };
 
+  const handleItemClick = (record: DriveFile) => {
+    if (record.mimeType === 'application/vnd.google-apps.folder') {
+      onFolderClick(record);
+    } else {
+      onPreview(record);
+    }
+  };
+
+  const loadMoreButton = hasMore ? (
+    <div style={{ textAlign: 'center', marginTop: 16 }}>
+      <Button onClick={onLoadMore} loading={loading}>
+        Load More
+      </Button>
+    </div>
+  ) : null;
+
+  // ── Grid view ──────────────────────────────────────────────────────
+  if (displayMode === 'grid') {
+    return (
+      <Spin spinning={loading}>
+        <Row gutter={[16, 16]}>
+          {files.map((record) => (
+            <Col key={record.id} xs={12} sm={8} md={6} lg={4} xl={4}>
+              <Card
+                hoverable
+                size="small"
+                styles={{ body: { padding: '8px', textAlign: 'center' } }}
+                cover={
+                  record.thumbnailLink ? (
+                    <img
+                      alt={record.name}
+                      src={record.thumbnailLink}
+                      style={{ height: 80, objectFit: 'cover', cursor: 'pointer' }}
+                      onClick={() => handleItemClick(record)}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        height: 80,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        background: '#fafafa',
+                      }}
+                      onClick={() => handleItemClick(record)}
+                    >
+                      {getIcon(record.mimeType, 32)}
+                    </div>
+                  )
+                }
+                actions={[
+                  <Tooltip title="Preview" key="preview">
+                    <EyeOutlined onClick={() => onPreview(record)} />
+                  </Tooltip>,
+                  <Tooltip title="Details" key="detail">
+                    <InfoCircleOutlined onClick={() => onDetail(record)} />
+                  </Tooltip>,
+                  <Dropdown
+                    menu={{ items: getActionMenuItems(record) }}
+                    trigger={['click']}
+                    key="more"
+                  >
+                    <MoreOutlined />
+                  </Dropdown>,
+                ]}
+              >
+                <Text
+                  ellipsis={{ tooltip: record.name }}
+                  style={{ fontSize: 12, cursor: 'pointer', display: 'block' }}
+                  onClick={() => handleItemClick(record)}
+                >
+                  {record.name}
+                </Text>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+        {loadMoreButton}
+      </Spin>
+    );
+  }
+
+  // ── List view (table) ──────────────────────────────────────────────
   const columns = [
     {
       title: 'Name',
@@ -110,13 +199,7 @@ const DriveList: React.FC<DriveListProps> = ({
       render: (text: string, record: DriveFile) => (
         <Space
           style={{ cursor: 'pointer' }}
-          onClick={() => {
-            if (record.mimeType === 'application/vnd.google-apps.folder') {
-              onFolderClick(record);
-            } else {
-              onPreview(record);
-            }
-          }}
+          onClick={() => handleItemClick(record)}
         >
           {getIcon(record.mimeType)}
           <Text>{text}</Text>

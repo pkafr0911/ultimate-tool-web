@@ -10,15 +10,18 @@ import {
   Menu,
   Typography,
   Segmented,
+  Tooltip,
 } from 'antd';
 import {
   GoogleOutlined,
   LogoutOutlined,
-  FolderAddOutlined,
   CloudUploadOutlined,
   TeamOutlined,
   FolderOutlined,
+  AppstoreOutlined,
+  UnorderedListOutlined,
 } from '@ant-design/icons';
+import type { DisplayMode } from './DriveList';
 import { useGoogleAuth } from './hooks/useGoogleAuth';
 import { useDriveApi } from './hooks/useDriveApi';
 import DriveList from './DriveList';
@@ -52,6 +55,7 @@ const GoogleDrivePage: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<DriveFile | null>(null);
   const [previewFile, setPreviewFile] = useState<DriveFile | null>(null);
   const [showUpload, setShowUpload] = useState(false);
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('list');
 
   // Action modals state
   const [renameFile, setRenameFile] = useState<DriveFile | null>(null);
@@ -169,14 +173,32 @@ const GoogleDrivePage: React.FC = () => {
         {isSignedIn ? (
           <>
             <Space direction="vertical" style={{ width: '100%' }} size="middle">
-              <Segmented
-                value={viewMode}
-                onChange={handleViewChange}
-                options={[
-                  { label: 'My Drive', value: 'my-drive', icon: <FolderOutlined /> },
-                  { label: 'Shared with me', value: 'shared', icon: <TeamOutlined /> },
-                ]}
-              />
+              <Space style={{ justifyContent: 'space-between', width: '100%', flexWrap: 'wrap' }}>
+                <Segmented
+                  value={viewMode}
+                  onChange={handleViewChange}
+                  options={[
+                    { label: 'My Drive', value: 'my-drive', icon: <FolderOutlined /> },
+                    { label: 'Shared with me', value: 'shared', icon: <TeamOutlined /> },
+                  ]}
+                />
+                <Space>
+                  <Tooltip title="List view">
+                    <Button
+                      type={displayMode === 'list' ? 'primary' : 'default'}
+                      icon={<UnorderedListOutlined />}
+                      onClick={() => setDisplayMode('list')}
+                    />
+                  </Tooltip>
+                  <Tooltip title="Grid view">
+                    <Button
+                      type={displayMode === 'grid' ? 'primary' : 'default'}
+                      icon={<AppstoreOutlined />}
+                      onClick={() => setDisplayMode('grid')}
+                    />
+                  </Tooltip>
+                </Space>
+              </Space>
 
               {viewMode === 'my-drive' && (
                 <Breadcrumb>
@@ -195,6 +217,7 @@ const GoogleDrivePage: React.FC = () => {
               <DriveList
                 files={files}
                 loading={loading}
+                displayMode={displayMode}
                 onFolderClick={handleFolderClick}
                 onPreview={(file) => setPreviewFile(file)}
                 onDetail={(file) => setSelectedFile(file)}

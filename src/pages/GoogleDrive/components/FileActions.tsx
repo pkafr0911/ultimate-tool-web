@@ -15,6 +15,8 @@ import {
   Button,
   Popconfirm,
   message,
+  Alert,
+  Divider,
 } from 'antd';
 import {
   EditOutlined,
@@ -24,6 +26,7 @@ import {
   DeleteOutlined,
   FolderOutlined,
   UserOutlined,
+  LinkOutlined,
 } from '@ant-design/icons';
 import { DriveFile } from '../types';
 import { useDriveApi } from '../hooks/useDriveApi';
@@ -173,9 +176,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [permissions, setPermissions] = useState<any[]>([]);
   const [loadingPerms, setLoadingPerms] = useState(false);
+  const [shareLink, setShareLink] = useState<string | null>(null);
 
   useEffect(() => {
     if (visible && file) {
+      setShareLink(null);
       loadPermissions();
     }
   }, [visible, file]);
@@ -185,7 +190,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     setLoadingPerms(true);
     try {
       const res = await getPermissions(file.id);
-      setPermissions(res.permissions || []);
+      const perms = res.permissions || [];
+      setPermissions(perms);
+      // If anyone permission already exists, show the share link
+      const anyonePerm = perms.find((p: any) => p.type === 'anyone');
+      if (anyonePerm && file.webViewLink) {
+        setShareLink(file.webViewLink);
+      }
     } catch {
       // ignore
     } finally {
@@ -207,6 +218,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       }
       await share(file.id, permission, values.notify);
       form.resetFields();
+      // Show shareable link for "anyone" type
+      if (values.type === 'anyone' && file.webViewLink) {
+        setShareLink(file.webViewLink);
+      }
       loadPermissions();
       onSuccess();
     } catch {
@@ -220,9 +235,21 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     if (!file) return;
     try {
       await removePermission(file.id, permissionId);
+      // Check if we removed the "anyone" permission — hide link if so
+      const removedPerm = permissions.find((p: any) => p.id === permissionId);
+      if (removedPerm?.type === 'anyone') {
+        setShareLink(null);
+      }
       loadPermissions();
     } catch {
       // handled in hook
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (shareLink) {
+      navigator.clipboard.writeText(shareLink);
+      message.success('Link copied to clipboard');
     }
   };
 
@@ -239,9 +266,28 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       open={visible}
       onCancel={onClose}
       footer={null}
-      width={520}
+      width={540}
       destroyOnClose
     >
+      {shareLink && (
+        <Alert
+          style={{ marginBottom: 16 }}
+          type="success"
+          icon={<LinkOutlined />}
+          showIcon
+          message="Anyone with this link can access the file"
+          description={
+            <Input.Search
+              value={shareLink}
+              readOnly
+              enterButton="Copy"
+              onSearch={handleCopyLink}
+              style={{ marginTop: 8 }}
+            />
+          }
+        />
+      )}
+
       <Form
         form={form}
         layout="vertical"
@@ -277,8 +323,17 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           </Select>
         </Form.Item>
 
-        <Form.Item name="notify" label="Send notification email" valuePropName="checked">
-          <Switch />
+        <Form.Item
+          noStyle
+          shouldUpdate={(prev, cur) => prev.type !== cur.type}
+        >
+          {({ getFieldValue }) =>
+            getFieldValue('type') !== 'anyone' && (
+              <Form.Item name="notify" label="Send notification email" valuePropName="checked">
+                <Switch />
+              </Form.Item>
+            )
+          }
         </Form.Item>
 
         <Button type="primary" onClick={handleShare} loading={loading} block>
@@ -286,45 +341,46 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         </Button>
       </Form>
 
-      <div style={{ marginTop: 24 }}>
-        <Text strong>People with access</Text>
-        {loadingPerms ? (
-          <div style={{ textAlign: 'center', padding: 16 }}>
-            <Spin size="small" />
-          </div>
-        ) : (
-          <List
-            size="small"
-            dataSource={permissions}
-            renderItem={(perm: any) => (
-              <List.Item
-                actions={
-                  perm.role !== 'owner'
-                    ? [
-                        <Popconfirm
-                          title="Remove access?"
-                          onConfirm={() => handleRemovePermission(perm.id)}
-                          key="remove"
-                        >
-                          <Button type="text" danger size="small">
-                            Remove
-                          </Button>
-                        </Popconfirm>,
-                      ]
-                    : undefined
-                }
-              >
-                <List.Item.Meta
-                  avatar={<Avatar icon={<UserOutlined />} src={perm.photoLink} size="small" />}
-                  title={perm.displayName || perm.emailAddress || perm.type}
-                  description={perm.emailAddress}
-                />
-                <Tag color={roleColor[perm.role] || 'default'}>{perm.role}</Tag>
-              </List.Item>
-            )}
-          />
-        )}
-      </div>
+      <Divider />
+
+      <Text strong>People with access</Text>
+      {loadingPerms ? (
+        <div style={{ textAlign: 'center', padding: 16 }}>
+          <Spin size="small" />
+        </div>
+      ) : (
+        <List
+          size="small"
+          style={{ marginTop: 8 }}
+          dataSource={permissions}
+          renderItem={(perm: any) => (
+            <List.Item
+              actions={
+                perm.role !== 'owner'
+                  ? [
+                      <Popconfirm
+                        title="Remove access?"
+                        onConfirm={() => handleRemovePermission(perm.id)}
+                        key="remove"
+                      >
+                        <Button type="text" danger size="small">
+                          Remove
+                        </Button>
+                      </Popconfirm>,
+                    ]
+                  : undefined
+              }
+            >
+              <List.Item.Meta
+                avatar={<Avatar icon={<UserOutlined />} src={perm.photoLink} size="small" />}
+                title={perm.displayName || perm.emailAddress || (perm.type === 'anyone' ? 'Anyone with the link' : perm.type)}
+                description={perm.emailAddress}
+              />
+              <Tag color={roleColor[perm.role] || 'default'}>{perm.role}</Tag>
+            </List.Item>
+          )}
+        />
+      )}
     </Modal>
   );
 };
