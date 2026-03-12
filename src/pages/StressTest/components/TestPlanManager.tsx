@@ -2,6 +2,7 @@ import {
   CopyOutlined,
   DeleteOutlined,
   DownloadOutlined,
+  FileOutlined,
   FolderOpenOutlined,
   SaveOutlined,
   UploadOutlined,
@@ -10,6 +11,7 @@ import { Button, Input, List, message, Modal, Popconfirm, Space, Tag, Typography
 import React, { useEffect, useState } from 'react';
 import type { TestConfig, TestPlan } from '../types';
 import { DEFAULT_CONFIG, deleteTestPlan, generateId, loadTestPlans, saveTestPlan } from '../types';
+import { parseJMX } from '../utils/parseJMX';
 
 const { Text } = Typography;
 
@@ -92,6 +94,28 @@ const TestPlanManager: React.FC<Props> = ({ config, onLoad, disabled }) => {
     input.click();
   };
 
+  const handleImportJMX = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.jmx';
+    input.onchange = (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const parsed = parseJMX(ev.target?.result as string);
+          onLoad(parsed);
+          message.success(`JMeter plan imported from "${file.name}"`);
+        } catch (err: any) {
+          message.error(err?.message || 'Failed to parse JMX file');
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
   return (
     <>
       <Space wrap>
@@ -127,6 +151,9 @@ const TestPlanManager: React.FC<Props> = ({ config, onLoad, disabled }) => {
         </Button>
         <Button icon={<UploadOutlined />} onClick={handleImportJson} size="small">
           Import JSON
+        </Button>
+        <Button icon={<FileOutlined />} onClick={handleImportJMX} size="small">
+          Import JMX
         </Button>
       </Space>
 
