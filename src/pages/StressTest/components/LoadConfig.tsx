@@ -13,7 +13,7 @@ import {
   Typography,
 } from 'antd';
 import React from 'react';
-import type { ScheduleMode, TestConfig, TimerConfig } from '../types';
+import type { OnSampleError, ScheduleMode, TestConfig, TimerConfig } from '../types';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -45,6 +45,33 @@ const LoadConfig: React.FC<Props> = ({ config, onChange, disabled }) => {
           <Radio.Button value="stepping">Stepping Threads</Radio.Button>
         </Radio.Group>
       </Form.Item>
+
+      <Row gutter={16}>
+        <Col xs={12} sm={6}>
+          <Form.Item
+            label={
+              <Space>
+                <span>On Sample Error</span>
+                <Tooltip title="Action when a request fails — like JMeter's ThreadGroup.on_sample_error">
+                  <InfoCircleOutlined />
+                </Tooltip>
+              </Space>
+            }
+          >
+            <Select
+              value={config.onSampleError}
+              onChange={(v) => onChange({ onSampleError: v as OnSampleError })}
+              disabled={disabled}
+              style={{ width: '100%' }}
+            >
+              <Option value="continue">Continue</Option>
+              <Option value="startnextloop">Start Next Loop</Option>
+              <Option value="stopthread">Stop Thread</Option>
+              <Option value="stoptest">Stop Test</Option>
+            </Select>
+          </Form.Item>
+        </Col>
+      </Row>
 
       <Row gutter={16}>
         <Col xs={12} sm={6}>

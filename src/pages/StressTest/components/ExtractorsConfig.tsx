@@ -29,6 +29,8 @@ const EXTRACTOR_TYPES = [
   { value: 'json-path', label: 'JSON Path' },
   { value: 'css-selector', label: 'CSS / jQuery Selector' },
   { value: 'header', label: 'Response Header' },
+  { value: 'xpath', label: 'XPath' },
+  { value: 'boundary', label: 'Boundary Extractor' },
 ];
 
 const ExtractorsConfig: React.FC<Props> = ({ config, onChange, disabled }) => {
@@ -112,7 +114,11 @@ const ExtractorsConfig: React.FC<Props> = ({ config, onChange, disabled }) => {
                         ? '"token":"(.+?)"'
                         : ext.type === 'header'
                           ? 'X-Auth-Token'
-                          : 'div.result'
+                          : ext.type === 'xpath'
+                            ? '//div[@class="result"]/text()'
+                            : ext.type === 'boundary'
+                              ? 'leftBound|||rightBound'
+                              : 'div.result'
                   }
                   disabled={disabled}
                 />

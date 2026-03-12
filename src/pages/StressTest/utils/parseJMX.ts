@@ -10,14 +10,17 @@
 
 import type {
   Assertion,
+  AuthConfig,
   CSVDataConfig,
   CookieEntry,
   Extractor,
   HeaderEntry,
+  OnSampleError,
   TestConfig,
   TimerConfig,
+  UserVariable,
 } from '../types';
-import { DEFAULT_CONFIG, DEFAULT_CSV, DEFAULT_TIMER, generateId } from '../types';
+import { DEFAULT_AUTH, DEFAULT_CONFIG, DEFAULT_CSV, DEFAULT_TIMER, generateId } from '../types';
 
 // ─── XML helpers ────────────────────────────────────────────
 
@@ -90,6 +93,9 @@ const parseThreadGroup = (el: Element): Partial<TestConfig> => {
 
   const usesDuration = scheduler || scheduleDuration;
 
+  // ThreadGroup.on_sample_error
+  const onSampleError = propByName(el, 'ThreadGroup.on_sample_error') || 'continue';
+
   return {
     concurrency: numThreads,
     rampUpTime: rampTime,
@@ -98,6 +104,9 @@ const parseThreadGroup = (el: Element): Partial<TestConfig> => {
     duration: usesDuration ? duration : 60,
     totalRequests: usesDuration ? 100 : numThreads * loops,
     iterations: loops,
+    onSampleError: (['continue', 'stopthread', 'stoptest', 'startnextloop'].includes(onSampleError)
+      ? onSampleError
+      : 'continue') as OnSampleError,
   };
 };
 
@@ -181,7 +190,11 @@ const parseHTTPSampler = (el: Element): Partial<TestConfig> => {
     method,
     body,
     contentType,
-    followRedirects,
+    // JMeter's follow_redirects=false uses a native HTTP client that can handle opaque
+    // redirects. In a browser, fetch({redirect:'manual'}) returns an opaque redirect
+    // response (status 0, unreadable body) which manifests as a CORS/network error.
+    // Always follow redirects when running in the browser.
+    followRedirects: true,
     timeout: responseTimeout || 30000,
     connectTimeout: connectTimeout || 5000,
   };
@@ -392,7 +405,92 @@ const parseExtractors = (doc: Document): Extractor[] => {
     });
   });
 
+  // XPath2Extractor
+  findElements(doc, 'XPath2Extractor').forEach((el) => {
+    const enabled = el.getAttribute('enabled') !== 'false';
+    extractors.push({
+      id: generateId(),
+      enabled,
+      type: 'xpath',
+      expression: propByName(el, 'XPathExtractor2.xpathQuery'),
+      variableName: propByName(el, 'XPathExtractor2.refname'),
+      matchNo: intPropByName(el, 'XPathExtractor2.matchNumber', 1),
+      defaultValue: propByName(el, 'XPathExtractor2.default'),
+    });
+  });
+
+  // BoundaryExtractor
+  findElements(doc, 'BoundaryExtractor').forEach((el) => {
+    const enabled = el.getAttribute('enabled') !== 'false';
+    const left = propByName(el, 'BoundaryExtractor.lboundary');
+    const right = propByName(el, 'BoundaryExtractor.rboundary');
+    extractors.push({
+      id: generateId(),
+      enabled,
+      type: 'boundary',
+      expression: `${left}|||${right}`,
+      variableName: propByName(el, 'BoundaryExtractor.refname'),
+      matchNo: intPropByName(el, 'BoundaryExtractor.match_number', 1),
+      defaultValue: propByName(el, 'BoundaryExtractor.default'),
+    });
+  });
+
   return extractors;
+};
+
+// ─── Auth Manager ───────────────────────────────────────────
+
+const parseAuthManager = (doc: Document): AuthConfig => {
+  const el = findElements(doc, 'AuthManager')[0];
+  if (!el || el.getAttribute('enabled') === 'false') return { ...DEFAULT_AUTH };
+
+  const auth = el.querySelector('[elementType="Authorization"]');
+  if (!auth) return { ...DEFAULT_AUTH };
+
+  const username = propByName(auth, 'Authorization.username');
+  const password = propByName(auth, 'Authorization.password');
+  const mechanism = propByName(auth, 'Authorization.mechanism') || 'BASIC';
+
+  const type =
+    mechanism.toUpperCase() === 'DIGEST'
+      ? 'digest'
+      : mechanism.toUpperCase() === 'BASIC'
+        ? 'basic'
+        : 'basic';
+
+  return {
+    type,
+    username,
+    password,
+    token: '',
+  };
+};
+
+// ─── User Defined Variables ─────────────────────────────────
+
+const parseUserDefinedVariables = (doc: Document): UserVariable[] => {
+  const vars: UserVariable[] = [];
+  findElements(doc, 'Arguments').forEach((el) => {
+    // Only UserDefinedVariables GUI class
+    const guiclass = el.getAttribute('guiclass');
+    if (guiclass && !guiclass.includes('UserDefinedVariables')) return;
+    if (el.getAttribute('enabled') === 'false') return;
+
+    const args = el.querySelectorAll('[elementType="Argument"]');
+    args.forEach((arg) => {
+      const name = propByName(arg, 'Argument.name');
+      const value = propByName(arg, 'Argument.value');
+      if (name) {
+        vars.push({
+          id: generateId(),
+          name,
+          value,
+          enabled: true,
+        });
+      }
+    });
+  });
+  return vars;
 };
 
 // ─── Timers ─────────────────────────────────────────────────
@@ -527,6 +625,12 @@ export const parseJMX = (xmlString: string): TestConfig => {
   if (httpSampler) {
     config.keepAlive = boolPropByName(httpSampler, 'HTTPSampler.use_keepalive', true);
   }
+
+  // Auth Manager
+  config.auth = parseAuthManager(doc);
+
+  // User Defined Variables
+  config.userVariables = parseUserDefinedVariables(doc);
 
   return config;
 };

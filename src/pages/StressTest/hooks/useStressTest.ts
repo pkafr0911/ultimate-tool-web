@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from 'react';
 import type {
   Assertion,
   AssertionResult,
+  AuthConfig,
   CSVDataConfig,
   Extractor,
   LiveStats,
@@ -42,6 +43,41 @@ const getTimerDelay = (timer: TimerConfig): number => {
     default:
       return 0;
   }
+};
+
+// ---- Build auth header ----
+const getAuthHeader = (auth: AuthConfig): string | null => {
+  if (!auth || auth.type === 'none') return null;
+  switch (auth.type) {
+    case 'basic':
+      if (auth.username) {
+        return 'Basic ' + btoa(`${auth.username}:${auth.password}`);
+      }
+      return null;
+    case 'bearer':
+      if (auth.token) return 'Bearer ' + auth.token;
+      return null;
+    case 'digest':
+      // Digest auth requires a challenge–response flow not feasible in simple fetch;
+      // fall back to Basic as an approximation.
+      if (auth.username) {
+        return 'Basic ' + btoa(`${auth.username}:${auth.password}`);
+      }
+      return null;
+    default:
+      return null;
+  }
+};
+
+// ---- Get user-defined variables ----
+const getUserVars = (config: TestConfig): Record<string, string> => {
+  const vars: Record<string, string> = {};
+  (config.userVariables || [])
+    .filter((v) => v.enabled && v.name)
+    .forEach((v) => {
+      vars[v.name] = v.value;
+    });
+  return vars;
 };
 
 // ---- Run assertions against a response ----
@@ -202,6 +238,78 @@ const runExtractors = (
             }
             break;
           }
+          case 'xpath': {
+            // XPath extraction on parsed HTML/XML
+            try {
+              const xParser = new DOMParser();
+              let doc: Document;
+              try {
+                doc = xParser.parseFromString(body, 'text/xml');
+                if (doc.querySelector('parsererror')) throw new Error();
+              } catch {
+                doc = xParser.parseFromString(body, 'text/html');
+              }
+              const result = doc.evaluate(
+                ext.expression,
+                doc,
+                null,
+                XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+                null,
+              );
+              if (result.snapshotLength > 0) {
+                if (ext.matchNo === -1) {
+                  const vals: string[] = [];
+                  for (let i = 0; i < result.snapshotLength; i++) {
+                    vals.push(result.snapshotItem(i)?.textContent || '');
+                  }
+                  vars[ext.variableName] = vals.join(',');
+                } else {
+                  const idx =
+                    ext.matchNo === 0
+                      ? Math.floor(Math.random() * result.snapshotLength)
+                      : ext.matchNo - 1;
+                  vars[ext.variableName] =
+                    result.snapshotItem(idx)?.textContent || ext.defaultValue;
+                }
+              } else {
+                vars[ext.variableName] = ext.defaultValue;
+              }
+            } catch {
+              vars[ext.variableName] = ext.defaultValue;
+            }
+            break;
+          }
+          case 'boundary': {
+            // Boundary extractor: expression = "leftBound|||rightBound"
+            const [left, right] = ext.expression.split('|||');
+            if (left !== undefined && right !== undefined) {
+              const matches: string[] = [];
+              let searchFrom = 0;
+              while (searchFrom < body.length) {
+                const lIdx = body.indexOf(left, searchFrom);
+                if (lIdx === -1) break;
+                const start = lIdx + left.length;
+                const rIdx = body.indexOf(right, start);
+                if (rIdx === -1) break;
+                matches.push(body.substring(start, rIdx));
+                searchFrom = rIdx + right.length;
+              }
+              if (matches.length > 0) {
+                if (ext.matchNo === 0) {
+                  vars[ext.variableName] = matches[Math.floor(Math.random() * matches.length)];
+                } else if (ext.matchNo === -1) {
+                  vars[ext.variableName] = matches.join(',');
+                } else {
+                  vars[ext.variableName] = matches[ext.matchNo - 1] || ext.defaultValue;
+                }
+              } else {
+                vars[ext.variableName] = ext.defaultValue;
+              }
+            } else {
+              vars[ext.variableName] = ext.defaultValue;
+            }
+            break;
+          }
         }
       } catch {
         vars[ext.variableName] = ext.defaultValue;
@@ -263,8 +371,9 @@ export const useStressTest = () => {
       csvVars: Record<string, string>,
       extractedVars: Record<string, string>,
     ): Promise<RequestResult> => {
-      // Merge all variables
-      const allVars = { ...csvVars, ...extractedVars };
+      // Merge all variables (user-defined + csv + extracted)
+      const userVars = getUserVars(config);
+      const allVars = { ...userVars, ...csvVars, ...extractedVars };
       const resolvedUrl = interpolateVars(config.url, allVars);
       const resolvedBody = interpolateVars(config.body, allVars);
 
@@ -286,6 +395,12 @@ export const useStressTest = () => {
             .map((c) => `${c.name}=${interpolateVars(c.value, allVars)}`)
             .join('; ');
           if (cookieStr) headers['Cookie'] = cookieStr;
+        }
+
+        // Auth header
+        const authHeader = getAuthHeader(config.auth);
+        if (authHeader && !headers['Authorization'] && !headers['authorization']) {
+          headers['Authorization'] = authHeader;
         }
 
         const fetchOptions: RequestInit = {
@@ -572,6 +687,20 @@ export const useStressTest = () => {
           Object.assign(sharedVars, result.extractedVars);
 
           allResults.push(result);
+
+          // On-sample-error handling
+          const isError = result.status === 0 || result.status >= 400 || result.error;
+          if (isError && config.onSampleError && config.onSampleError !== 'continue') {
+            if (config.onSampleError === 'stoptest') {
+              abortController.abort();
+              break;
+            } else if (config.onSampleError === 'stopthread') {
+              break;
+            } else if (config.onSampleError === 'startnextloop') {
+              // Skip to next iteration cycle (break inner loop, outer would restart)
+              break;
+            }
+          }
 
           // Update live stats
           const completed = allResults.length;

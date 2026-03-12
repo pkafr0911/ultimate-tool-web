@@ -11,6 +11,7 @@ import {
   ExportOutlined,
   PauseOutlined,
   QuestionCircleOutlined,
+  SettingOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import {
@@ -37,6 +38,7 @@ import RequestConfig from './components/RequestConfig';
 import ResultsSummary from './components/ResultsSummary';
 import ResultsTable from './components/ResultsTable';
 import TestPlanManager from './components/TestPlanManager';
+import UserVariablesConfig from './components/UserVariablesConfig';
 import { useStressTest } from './hooks/useStressTest';
 import type { TestConfig } from './types';
 import { DEFAULT_CONFIG, formatDuration } from './types';
@@ -68,6 +70,7 @@ const StressTestPage: React.FC = () => {
   const refPanelAssertions = useRef<HTMLDivElement>(null);
   const refPanelExtractors = useRef<HTMLDivElement>(null);
   const refPanelCSV = useRef<HTMLDivElement>(null);
+  const refPanelVars = useRef<HTMLDivElement>(null);
   const refRunBtn = useRef<HTMLDivElement>(null);
   const refToolbar = useRef<HTMLDivElement>(null);
 
@@ -388,6 +391,29 @@ const StressTestPage: React.FC = () => {
                 ),
                 children: (
                   <CSVDataSetConfig config={config} onChange={updateConfig} disabled={isRunning} />
+                ),
+              },
+              {
+                key: 'variables',
+                label: (
+                  <div ref={refPanelVars}>
+                    <Space>
+                      <SettingOutlined />
+                      <span>User Defined Variables</span>
+                      {config.userVariables.length > 0 && (
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                          ({config.userVariables.filter((v) => v.enabled).length} active)
+                        </Text>
+                      )}
+                    </Space>
+                  </div>
+                ),
+                children: (
+                  <UserVariablesConfig
+                    config={config}
+                    onChange={updateConfig}
+                    disabled={isRunning}
+                  />
                 ),
               },
             ]}

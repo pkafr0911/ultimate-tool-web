@@ -43,7 +43,7 @@ export interface Assertion {
 export interface Extractor {
   id: string;
   enabled: boolean;
-  type: 'regex' | 'json-path' | 'css-selector' | 'header';
+  type: 'regex' | 'json-path' | 'css-selector' | 'header' | 'xpath' | 'boundary';
   expression: string;
   variableName: string;
   matchNo: number; // 0 = random, -1 = all, n = nth
@@ -69,6 +69,25 @@ export interface CSVDataConfig {
   currentIndex: number;
 }
 
+/** HTTP Authorization config (like JMeter AuthManager) */
+export interface AuthConfig {
+  type: 'none' | 'basic' | 'bearer' | 'digest';
+  username: string;
+  password: string;
+  token: string; // for bearer
+}
+
+/** User-defined variable (like JMeter User Defined Variables) */
+export interface UserVariable {
+  id: string;
+  name: string;
+  value: string;
+  enabled: boolean;
+}
+
+/** Action on sampler error (like JMeter ThreadGroup.on_sample_error) */
+export type OnSampleError = 'continue' | 'stopthread' | 'stoptest' | 'startnextloop';
+
 /** Thread Group schedule mode */
 export type ScheduleMode = 'simple' | 'stepping' | 'duration';
 
@@ -90,7 +109,10 @@ export interface TestConfig {
   scheduleMode: ScheduleMode;
   duration: number; // s – for duration mode
   startupDelay: number; // s
+  onSampleError: OnSampleError;
   // -- Advanced --
+  auth: AuthConfig;
+  userVariables: UserVariable[];
   timer: TimerConfig;
   assertions: Assertion[];
   extractors: Extractor[];
@@ -192,6 +214,13 @@ export const DEFAULT_CSV: CSVDataConfig = {
   currentIndex: 0,
 };
 
+export const DEFAULT_AUTH: AuthConfig = {
+  type: 'none',
+  username: '',
+  password: '',
+  token: '',
+};
+
 export const DEFAULT_CONFIG: TestConfig = {
   url: '',
   method: 'GET',
@@ -208,6 +237,9 @@ export const DEFAULT_CONFIG: TestConfig = {
   scheduleMode: 'simple',
   duration: 60,
   startupDelay: 0,
+  onSampleError: 'continue',
+  auth: { ...DEFAULT_AUTH },
+  userVariables: [],
   timer: { ...DEFAULT_TIMER },
   assertions: [],
   extractors: [],

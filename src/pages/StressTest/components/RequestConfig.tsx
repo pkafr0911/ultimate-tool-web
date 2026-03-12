@@ -1,7 +1,7 @@
-import { AimOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { AimOutlined, DeleteOutlined, LockOutlined, PlusOutlined } from '@ant-design/icons';
 import { Button, Checkbox, Col, Form, Input, Row, Select, Tabs } from 'antd';
 import React from 'react';
-import type { TestConfig } from '../types';
+import type { AuthConfig, TestConfig } from '../types';
 import { CONTENT_TYPES, generateId, HTTP_METHODS } from '../types';
 
 const { TextArea } = Input;
@@ -14,6 +14,10 @@ interface Props {
 }
 
 const RequestConfig: React.FC<Props> = ({ config, onChange, disabled }) => {
+  const updateAuth = (patch: Partial<AuthConfig>) => {
+    onChange({ auth: { ...config.auth, ...patch } });
+  };
+
   const addHeader = () => {
     onChange({
       headers: [...config.headers, { key: '', value: '', id: generateId(), enabled: true }],
@@ -271,6 +275,67 @@ const RequestConfig: React.FC<Props> = ({ config, onChange, disabled }) => {
                     style={{ fontFamily: 'monospace', fontSize: 12 }}
                     disabled={disabled}
                   />
+                )}
+              </>
+            ),
+          },
+          {
+            key: 'auth',
+            label: (
+              <span>
+                <LockOutlined /> Auth{config.auth.type !== 'none' ? ` (${config.auth.type})` : ''}
+              </span>
+            ),
+            children: (
+              <>
+                <Form.Item label="Authorization Type" style={{ marginBottom: 8 }}>
+                  <Select
+                    value={config.auth.type}
+                    onChange={(v) => updateAuth({ type: v })}
+                    disabled={disabled}
+                    style={{ width: 200 }}
+                  >
+                    <Option value="none">No Auth</Option>
+                    <Option value="basic">Basic Auth</Option>
+                    <Option value="bearer">Bearer Token</Option>
+                    <Option value="digest">Digest Auth</Option>
+                  </Select>
+                </Form.Item>
+                {(config.auth.type === 'basic' || config.auth.type === 'digest') && (
+                  <Row gutter={12}>
+                    <Col xs={12}>
+                      <Form.Item label="Username" style={{ marginBottom: 8 }}>
+                        <Input
+                          value={config.auth.username}
+                          onChange={(e) => updateAuth({ username: e.target.value })}
+                          placeholder="Username"
+                          disabled={disabled}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={12}>
+                      <Form.Item label="Password" style={{ marginBottom: 8 }}>
+                        <Input.Password
+                          value={config.auth.password}
+                          onChange={(e) => updateAuth({ password: e.target.value })}
+                          placeholder="Password"
+                          disabled={disabled}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                )}
+                {config.auth.type === 'bearer' && (
+                  <Form.Item label="Token" style={{ marginBottom: 8 }}>
+                    <Input.TextArea
+                      rows={3}
+                      value={config.auth.token}
+                      onChange={(e) => updateAuth({ token: e.target.value })}
+                      placeholder="Paste your bearer token here..."
+                      style={{ fontFamily: 'monospace', fontSize: 12 }}
+                      disabled={disabled}
+                    />
+                  </Form.Item>
                 )}
               </>
             ),
