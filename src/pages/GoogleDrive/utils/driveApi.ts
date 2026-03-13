@@ -225,3 +225,24 @@ export const deletePermission = async (
   });
   if (!response.ok) throw new Error('Failed to remove permission');
 };
+
+export const exportGoogleDoc = async (
+  token: string,
+  fileId: string,
+  exportMimeType: string,
+): Promise<Blob> => {
+  const params = new URLSearchParams({ mimeType: exportMimeType });
+  const response = await fetch(`${DRIVE_API_BASE}/files/${fileId}/export?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Export failed');
+  return response.blob();
+};
+
+export const downloadAsText = async (token: string, fileId: string): Promise<string> => {
+  const response = await fetch(`${DRIVE_API_BASE}/files/${fileId}?alt=media`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Download failed');
+  return response.text();
+};
