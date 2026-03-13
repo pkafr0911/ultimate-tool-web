@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import {
   Button,
@@ -49,8 +49,10 @@ const GoogleDrivePage: React.FC = () => {
     { id: 'root', name: 'My Drive' },
   ]);
   const [files, setFiles] = useState<DriveFile[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [nextPageToken, setNextPageToken] = useState<string | undefined>(undefined);
+  const loadingRef = useRef(false);
 
   const [selectedFile, setSelectedFile] = useState<DriveFile | null>(null);
   const [previewFile, setPreviewFile] = useState<DriveFile | null>(null);
@@ -64,33 +66,49 @@ const GoogleDrivePage: React.FC = () => {
   const [moveFile, setMoveFile] = useState<DriveFile | null>(null);
   const [deleteFile, setDeleteFile] = useState<DriveFile | null>(null);
 
-  const loadFiles = async (folderId: string, token?: string) => {
-    if (!isSignedIn) return;
-    setLoading(true);
-    try {
-      const res = await list(folderId, token);
-      setFiles(token ? [...files, ...res.files] : res.files);
-      setNextPageToken(res.nextPageToken);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loadFiles = useCallback(
+    async (folderId: string, token?: string) => {
+      if (!isSignedIn || loadingRef.current) return;
+      loadingRef.current = true;
+      const isMore = !!token;
+      if (isMore) setLoadingMore(true);
+      else setInitialLoading(true);
+      try {
+        const res = await list(folderId, token);
+        setFiles((prev) => (isMore ? [...prev, ...res.files] : res.files));
+        setNextPageToken(res.nextPageToken);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        loadingRef.current = false;
+        if (isMore) setLoadingMore(false);
+        else setInitialLoading(false);
+      }
+    },
+    [isSignedIn, list],
+  );
 
-  const loadSharedFiles = async (token?: string) => {
-    if (!isSignedIn) return;
-    setLoading(true);
-    try {
-      const res = await listSharedWithMe(token);
-      setFiles(token ? [...files, ...res.files] : res.files);
-      setNextPageToken(res.nextPageToken);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loadSharedFiles = useCallback(
+    async (token?: string) => {
+      if (!isSignedIn || loadingRef.current) return;
+      loadingRef.current = true;
+      const isMore = !!token;
+      if (isMore) setLoadingMore(true);
+      else setInitialLoading(true);
+      try {
+        const res = await listSharedWithMe(token);
+        setFiles((prev) => (isMore ? [...prev, ...res.files] : res.files));
+        setNextPageToken(res.nextPageToken);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        loadingRef.current = false;
+        if (isMore) setLoadingMore(false);
+        else setInitialLoading(false);
+      }
+    },
+    [isSignedIn, listSharedWithMe],
+  );
 
   const refreshCurrentView = () => {
     if (viewMode === 'shared') {
@@ -216,7 +234,8 @@ const GoogleDrivePage: React.FC = () => {
 
               <DriveList
                 files={files}
-                loading={loading}
+                loading={initialLoading}
+                loadingMore={loadingMore}
                 displayMode={displayMode}
                 onFolderClick={handleFolderClick}
                 onPreview={(file) => setPreviewFile(file)}
@@ -305,7 +324,9 @@ const GoogleDrivePage: React.FC = () => {
         visible={!!deleteFile}
         onClose={() => setDeleteFile(null)}
         accessToken={accessToken}
-        onSuccess={refreshCurrentView}
+        onSuccess={() => {
+          if (deleteFile) setFiles((prev) => prev.filter((f) => f.id !== deleteFile.id));
+        }}
       />
     </PageContainer>
   );

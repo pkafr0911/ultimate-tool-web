@@ -1,5 +1,5 @@
-import React from 'react';
-import { Table, Button, Space, Tooltip, Typography, Dropdown, Card, Row, Col, Spin } from 'antd';
+import React, { useRef, useEffect } from 'react';
+import { Table, Space, Tooltip, Typography, Dropdown, Card, Row, Col, Spin, Button } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   FileOutlined,
@@ -24,6 +24,7 @@ export type DisplayMode = 'list' | 'grid';
 interface DriveListProps {
   files: DriveFile[];
   loading: boolean;
+  loadingMore: boolean;
   displayMode: DisplayMode;
   onFolderClick: (file: DriveFile) => void;
   onPreview: (file: DriveFile) => void;
@@ -50,6 +51,7 @@ const getIcon = (mimeType: string, size = 16) => {
 const DriveList: React.FC<DriveListProps> = ({
   files,
   loading,
+  loadingMore,
   displayMode,
   onFolderClick,
   onPreview,
@@ -62,6 +64,22 @@ const DriveList: React.FC<DriveListProps> = ({
   onMove,
   onDelete,
 }) => {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && hasMore && !loading && !loadingMore) {
+          onLoadMore();
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadingMore, onLoadMore]);
   const getActionMenuItems = (record: DriveFile): MenuProps['items'] => {
     const items: MenuProps['items'] = [
       {
@@ -116,13 +134,14 @@ const DriveList: React.FC<DriveListProps> = ({
     }
   };
 
-  const loadMoreButton = hasMore ? (
-    <div style={{ textAlign: 'center', marginTop: 16 }}>
-      <Button onClick={onLoadMore} loading={loading}>
-        Load More
-      </Button>
+  const sentinel = (
+    <div
+      ref={sentinelRef}
+      style={{ height: 1, textAlign: 'center', padding: loadingMore ? 12 : 0 }}
+    >
+      {loadingMore && <Spin size="small" />}
     </div>
-  ) : null;
+  );
 
   // ── Grid view ──────────────────────────────────────────────────────
   if (displayMode === 'grid') {
@@ -186,7 +205,7 @@ const DriveList: React.FC<DriveListProps> = ({
             </Col>
           ))}
         </Row>
-        {loadMoreButton}
+        {sentinel}
       </Spin>
     );
   }
@@ -245,15 +264,7 @@ const DriveList: React.FC<DriveListProps> = ({
       rowKey="id"
       loading={loading}
       pagination={false}
-      footer={() =>
-        hasMore ? (
-          <div style={{ textAlign: 'center' }}>
-            <Button onClick={onLoadMore} loading={loading}>
-              Load More
-            </Button>
-          </div>
-        ) : null
-      }
+      footer={() => (hasMore || loadingMore ? sentinel : null)}
     />
   );
 };
