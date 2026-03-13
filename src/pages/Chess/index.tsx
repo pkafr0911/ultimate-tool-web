@@ -1,465 +1,667 @@
-// ChessGame.tsx
-// Single-file React + TypeScript chess component
-// - No external chess engine/library required (lightweight move generator)
-// - Features: two-player local play, move highlighting, move history, undo/redo, restart, auto-promotion to queen
-// - Limitations: simplified rules (no en-passant, no castling prioritised in this initial version). Check detection implemented; basic checkmate/stalemate detection included.
-import { Button, Card, List, Typography } from 'antd';
+// ChessGame — full rules: castling, en-passant, promotion dialog, SAN history,
+// captured pieces, last-move highlight, check highlight, hint via board highlight.
+import { Button, Card, Modal, Tag, Typography } from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './styles.less';
 
 const { Title, Text } = Typography;
 
-// --------------------------
-// Types
-// --------------------------
-
+/* ─── Types ──────────────────────────────────────────────────────────────────*/
 type Color = 'w' | 'b';
-
 type PieceType = 'K' | 'Q' | 'R' | 'B' | 'N' | 'P';
-
-type Piece = {
-  type: PieceType;
-  color: Color;
-  id: string; // unique id for React keys
-};
-
+type Piece = { type: PieceType; color: Color; id: string };
 type Square = Piece | null;
-
 type Coord = { r: number; c: number };
+type CastlingRights = { wK: boolean; wQ: boolean; bK: boolean; bQ: boolean };
 
 type Move = {
   from: Coord;
   to: Coord;
   piece: Piece;
-  captured?: Piece | null;
-  promotion?: PieceType | null;
+  captured: Piece | null;
+  promotion: PieceType | null;
+  isCastle: 'kingside' | 'queenside' | null;
+  isEnPassant: boolean;
+  san: string;
 };
 
-// --------------------------
-// Helpers
-// --------------------------
+type GameState = {
+  board: Square[][];
+  castling: CastlingRights;
+  enPassant: Coord | null;
+  turn: Color;
+};
 
-const cloneBoard = (board: Square[][]) => board.map((row) => row.map((p) => (p ? { ...p } : null)));
+type HistoryRecord = {
+  state: GameState;
+  move: Move;
+  next: GameState;
+};
 
-const inside = (r: number, c: number) => r >= 0 && r < 8 && c >= 0 && c < 8;
+/* ─── Constants ──────────────────────────────────────────────────────────────*/
+const INIT_CASTLING: CastlingRights = { wK: true, wQ: true, bK: true, bQ: true };
 
-const opposite = (color: Color) => (color === 'w' ? 'b' : 'w');
+const SYM: Record<Color, Record<PieceType, string>> = {
+  w: { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘', P: '♙' },
+  b: { K: '♚', Q: '♛', R: '♜', B: '♝', N: '♞', P: '♟' },
+};
 
-const newId = (() => {
-  let i = 0;
-  return () => `p_${++i}`;
-})();
+const PIECE_VAL: Record<PieceType, number> = { K: 0, Q: 9, R: 5, B: 3, N: 3, P: 1 };
+const PROMO_TYPES: PieceType[] = ['Q', 'R', 'B', 'N'];
+const PROMO_NAMES: Record<PieceType, string> = { Q: 'Queen', R: 'Rook', B: 'Bishop', N: 'Knight', K: '', P: '' };
+const FILES = 'abcdefgh';
 
-// create initial standard chess starting position
-const initialBoard = (): Square[][] => {
-  const empty: Square[][] = Array.from({ length: 8 }, () => Array(8).fill(null));
-  const backRank: PieceType[] = ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'];
+/* ─── Utility ────────────────────────────────────────────────────────────────*/
+let _pid = 0;
+const newId = () => `p${++_pid}`;
+const cloneBoard = (b: Square[][]): Square[][] => b.map((row) => row.map((p) => (p ? { ...p } : null)));
+const inBounds = (r: number, c: number) => r >= 0 && r < 8 && c >= 0 && c < 8;
+const opp = (color: Color): Color => (color === 'w' ? 'b' : 'w');
+const toAlg = (sq: Coord) => `${FILES[sq.c]}${8 - sq.r}`;
+
+/* ─── Board Initialization ───────────────────────────────────────────────────*/
+const makeInitialBoard = (): Square[][] => {
+  const b: Square[][] = Array.from({ length: 8 }, () => Array(8).fill(null));
+  const back: PieceType[] = ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'];
   for (let c = 0; c < 8; c++) {
-    empty[0][c] = { type: backRank[c], color: 'b', id: newId() };
-    empty[1][c] = { type: 'P', color: 'b', id: newId() };
-    empty[6][c] = { type: 'P', color: 'w', id: newId() };
-    empty[7][c] = { type: backRank[c], color: 'w', id: newId() };
+    b[0][c] = { type: back[c], color: 'b', id: newId() };
+    b[1][c] = { type: 'P', color: 'b', id: newId() };
+    b[6][c] = { type: 'P', color: 'w', id: newId() };
+    b[7][c] = { type: back[c], color: 'w', id: newId() };
   }
-  return empty;
+  return b;
 };
 
-// find king coordinate for color
-const findKing = (board: Square[][], color: Color): Coord | null => {
-  for (let r = 0; r < 8; r++)
-    for (let c = 0; c < 8; c++)
-      if (board[r][c]?.type === 'K' && board[r][c]!.color === color) return { r, c };
-  return null;
-};
+const makeInitialState = (): GameState => ({
+  board: makeInitialBoard(),
+  castling: { ...INIT_CASTLING },
+  enPassant: null,
+  turn: 'w',
+});
 
-// generate pseudo-legal moves for a piece at r,c (not considering self-check)
-const generatePieceMoves = (board: Square[][], r: number, c: number): Coord[] => {
+/* ─── Move Generation ────────────────────────────────────────────────────────*/
+
+/**
+ * Return pseudo-legal destination squares for the piece at [r, c].
+ * Pass NO_CASTLE + null enPassant when computing attacks (prevents infinite recursion).
+ */
+function pseudoTargets(
+  board: Square[][],
+  r: number,
+  c: number,
+  castling: CastlingRights,
+  enPassant: Coord | null,
+): Coord[] {
   const p = board[r][c];
   if (!p) return [];
+  const { color } = p;
   const moves: Coord[] = [];
-  const color = p.color;
 
-  const addIf = (rr: number, cc: number) => {
-    if (!inside(rr, cc)) return;
-    const target = board[rr][cc];
-    if (!target || target.color !== color) moves.push({ r: rr, c: cc });
+  const add = (rr: number, cc: number) => {
+    if (!inBounds(rr, cc)) return;
+    const occ = board[rr][cc];
+    if (!occ || occ.color !== color) moves.push({ r: rr, c: cc });
   };
 
-  if (p.type === 'P') {
-    const dir = color === 'w' ? -1 : 1;
-    const startRow = color === 'w' ? 6 : 1;
-    // one forward
-    if (inside(r + dir, c) && !board[r + dir][c]) moves.push({ r: r + dir, c });
-    // two forward from start
-    if (r === startRow && !board[r + dir][c] && !board[r + 2 * dir][c])
-      moves.push({ r: r + 2 * dir, c });
-    // captures
-    for (const dc of [-1, 1]) {
-      const rr = r + dir;
-      const cc = c + dc;
-      if (inside(rr, cc) && board[rr][cc] && board[rr][cc]!.color !== color)
-        moves.push({ r: rr, c: cc });
-    }
-    // NOTE: en-passant omitted in this simplified implementation
-  }
-
-  if (p.type === 'N') {
-    const deltas = [
-      [2, 1],
-      [2, -1],
-      [-2, 1],
-      [-2, -1],
-      [1, 2],
-      [1, -2],
-      [-1, 2],
-      [-1, -2],
-    ];
-    for (const [dr, dc] of deltas) addIf(r + dr, c + dc);
-  }
-
-  if (p.type === 'B' || p.type === 'R' || p.type === 'Q') {
-    const dirs: number[][] = [];
-    if (p.type === 'B' || p.type === 'Q') dirs.push([1, 1], [1, -1], [-1, 1], [-1, -1]);
-    if (p.type === 'R' || p.type === 'Q') dirs.push([1, 0], [-1, 0], [0, 1], [0, -1]);
-    for (const [dr, dc] of dirs) {
-      let rr = r + dr;
-      let cc = c + dc;
-      while (inside(rr, cc)) {
-        if (!board[rr][cc]) moves.push({ r: rr, c: cc });
-        else {
-          if (board[rr][cc]!.color !== color) moves.push({ r: rr, c: cc });
-          break;
-        }
-        rr += dr;
-        cc += dc;
+  switch (p.type) {
+    case 'P': {
+      const dir = color === 'w' ? -1 : 1;
+      const startRow = color === 'w' ? 6 : 1;
+      if (inBounds(r + dir, c) && !board[r + dir][c]) {
+        moves.push({ r: r + dir, c });
+        if (r === startRow && !board[r + 2 * dir][c]) moves.push({ r: r + 2 * dir, c });
       }
+      for (const dc of [-1, 1]) {
+        const nr = r + dir, nc = c + dc;
+        if (!inBounds(nr, nc)) continue;
+        const t = board[nr][nc];
+        if (t && t.color !== color) moves.push({ r: nr, c: nc });
+        else if (enPassant && enPassant.r === nr && enPassant.c === nc) moves.push({ r: nr, c: nc });
+      }
+      break;
+    }
+    case 'N':
+      for (const [dr, dc] of [
+        [2, 1], [2, -1], [-2, 1], [-2, -1],
+        [1, 2], [1, -2], [-1, 2], [-1, -2],
+      ] as [number, number][]) add(r + dr, c + dc);
+      break;
+    case 'B':
+    case 'R':
+    case 'Q': {
+      const diags: [number, number][] = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+      const straights: [number, number][] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+      const dirs = p.type === 'B' ? diags : p.type === 'R' ? straights : [...diags, ...straights];
+      for (const [dr, dc] of dirs) {
+        let rr = r + dr, cc = c + dc;
+        while (inBounds(rr, cc)) {
+          if (board[rr][cc]) {
+            if (board[rr][cc]!.color !== color) moves.push({ r: rr, c: cc });
+            break;
+          }
+          moves.push({ r: rr, c: cc });
+          rr += dr; cc += dc;
+        }
+      }
+      break;
+    }
+    case 'K': {
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++)
+          if (dr !== 0 || dc !== 0) add(r + dr, c + dc);
+      const homeRow = color === 'w' ? 7 : 0;
+      if (r === homeRow && c === 4) {
+        if ((color === 'w' ? castling.wK : castling.bK) && !board[homeRow][5] && !board[homeRow][6])
+          moves.push({ r: homeRow, c: 6 });
+        if ((color === 'w' ? castling.wQ : castling.bQ) && !board[homeRow][1] && !board[homeRow][2] && !board[homeRow][3])
+          moves.push({ r: homeRow, c: 2 });
+      }
+      break;
     }
   }
-
-  if (p.type === 'K') {
-    for (let dr = -1; dr <= 1; dr++)
-      for (let dc = -1; dc <= 1; dc++) if (dr !== 0 || dc !== 0) addIf(r + dr, c + dc);
-    // NOTE: castling omitted for simplicity
-  }
-
   return moves;
-};
+}
 
-// check if a square is attacked by color
-const isSquareAttacked = (board: Square[][], sq: Coord, byColor: Color): boolean => {
-  // iterate all squares of byColor and see if any pseudo-move targets sq
+const NO_CASTLE: CastlingRights = { wK: false, wQ: false, bK: false, bQ: false };
+
+function isAttacked(board: Square[][], sq: Coord, byColor: Color): boolean {
   for (let r = 0; r < 8; r++)
     for (let c = 0; c < 8; c++) {
       const p = board[r][c];
       if (!p || p.color !== byColor) continue;
-      const moves = generatePieceMoves(board, r, c);
-      if (moves.some((m) => m.r === sq.r && m.c === sq.c)) return true;
+      if (pseudoTargets(board, r, c, NO_CASTLE, null).some((t) => t.r === sq.r && t.c === sq.c))
+        return true;
     }
   return false;
-};
+}
 
-// generate all legal moves for a color (filtering moves that leave king in check)
-const generateAllLegalMoves = (board: Square[][], color: Color): Move[] => {
-  const out: Move[] = [];
+function findKing(board: Square[][], color: Color): Coord | null {
   for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (board[r][c]?.type === 'K' && board[r][c]!.color === color) return { r, c };
+  return null;
+}
+
+function getAllLegalMoves(gs: GameState): Move[] {
+  const { board, castling, enPassant, turn } = gs;
+  const result: Move[] = [];
+  for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
-      const p = board[r][c];
-      if (!p || p.color !== color) continue;
-      const targets = generatePieceMoves(board, r, c);
-      for (const t of targets) {
-        const newB = cloneBoard(board);
-        const moving = newB[r][c]!;
-        const captured = newB[t.r][t.c];
-        newB[t.r][t.c] = moving;
-        newB[r][c] = null;
-        // promotion auto-queen when pawn reaches last rank
-        let promotion: PieceType | null = null;
-        if (moving.type === 'P' && (t.r === 0 || t.r === 7)) {
-          newB[t.r][t.c] = { type: 'Q', color: moving.color, id: newId() };
-          promotion = 'Q';
+      const piece = board[r][c];
+      if (!piece || piece.color !== turn) continue;
+      for (const t of pseudoTargets(board, r, c, castling, enPassant)) {
+        const castle: Move['isCastle'] =
+          piece.type === 'K' && Math.abs(t.c - c) === 2
+            ? t.c > c ? 'kingside' : 'queenside'
+            : null;
+        const isEP = piece.type === 'P' && t.c !== c && !board[t.r][t.c];
+        const captured: Piece | null = isEP
+          ? (board[r][t.c] ?? null)
+          : (board[t.r][t.c] ?? null);
+        const isPromo = piece.type === 'P' && (t.r === 0 || t.r === 7);
+
+        const mv: Move = {
+          from: { r, c },
+          to: t,
+          piece,
+          captured,
+          promotion: isPromo ? 'Q' : null,
+          isCastle: castle,
+          isEnPassant: isEP,
+          san: '',
+        };
+
+        const nb = applyMoveTo(board, mv);
+        const kp = findKing(nb, turn);
+        if (!kp || isAttacked(nb, kp, opp(turn))) continue;
+
+        if (castle) {
+          const kp2 = findKing(board, turn)!;
+          if (isAttacked(board, kp2, opp(turn))) continue;
+          const passCol = castle === 'kingside' ? c + 1 : c - 1;
+          if (isAttacked(board, { r, c: passCol }, opp(turn))) continue;
         }
-        // find king pos for color after move
-        const kingPos = findKing(newB, color);
-        const inCheck = kingPos ? isSquareAttacked(newB, kingPos, opposite(color)) : true;
-        if (!inCheck)
-          out.push({ from: { r, c }, to: t, piece: p, captured: captured ?? null, promotion });
+
+        result.push(mv);
       }
     }
-  return out;
-};
+  }
+  return result;
+}
 
-// apply move to board and return new board
-const applyMove = (board: Square[][], mv: Move) => {
+/* ─── Move Application ───────────────────────────────────────────────────────*/
+function applyMoveTo(board: Square[][], mv: Move): Square[][] {
   const b = cloneBoard(board);
   const p = b[mv.from.r][mv.from.c]!;
-  // handle promotion if specified
-  if (mv.promotion) b[mv.to.r][mv.to.c] = { type: mv.promotion, color: p.color, id: newId() };
-  else b[mv.to.r][mv.to.c] = { ...p };
+  b[mv.to.r][mv.to.c] = mv.promotion
+    ? { type: mv.promotion, color: p.color, id: newId() }
+    : { ...p };
   b[mv.from.r][mv.from.c] = null;
+
+  if (mv.isCastle) {
+    const row = p.color === 'w' ? 7 : 0;
+    if (mv.isCastle === 'kingside') { b[row][5] = { ...b[row][7]! }; b[row][7] = null; }
+    else                            { b[row][3] = { ...b[row][0]! }; b[row][0] = null; }
+  }
+  if (mv.isEnPassant) b[mv.from.r][mv.to.c] = null;
+
   return b;
-};
+}
 
-// pretty algebraic for coordinates
-const coordToAlg = (c: Coord) => `${'abcdefgh'[c.c]}${8 - c.r}`;
+function nextCastling(rights: CastlingRights, mv: Move): CastlingRights {
+  const c = { ...rights };
+  if (mv.piece.type === 'K') {
+    if (mv.piece.color === 'w') { c.wK = false; c.wQ = false; }
+    else                        { c.bK = false; c.bQ = false; }
+  }
+  if (mv.from.r === 7 && mv.from.c === 7) c.wK = false;
+  if (mv.from.r === 7 && mv.from.c === 0) c.wQ = false;
+  if (mv.from.r === 0 && mv.from.c === 7) c.bK = false;
+  if (mv.from.r === 0 && mv.from.c === 0) c.bQ = false;
+  if (mv.to.r === 7 && mv.to.c === 7) c.wK = false;
+  if (mv.to.r === 7 && mv.to.c === 0) c.wQ = false;
+  if (mv.to.r === 0 && mv.to.c === 7) c.bK = false;
+  if (mv.to.r === 0 && mv.to.c === 0) c.bQ = false;
+  return c;
+}
 
-// --------------------------
-// React component
-// --------------------------
+function nextEnPassant(mv: Move): Coord | null {
+  if (mv.piece.type === 'P' && Math.abs(mv.to.r - mv.from.r) === 2)
+    return { r: (mv.from.r + mv.to.r) >> 1, c: mv.from.c };
+  return null;
+}
 
-export default function ChessGame(): JSX.Element {
-  const [board, setBoard] = useState<Square[][]>(() => initialBoard());
-  const [turn, setTurn] = useState<Color>('w');
-  const [selected, setSelected] = useState<Coord | null>(null);
-  const [legalMoves, setLegalMoves] = useState<Coord[]>([]);
-  const [history, setHistory] = useState<Move[]>([]);
-  const historyRef = useRef<Move[]>([]);
-  const futureRef = useRef<Move[]>([]);
-  const [orientation, setOrientation] = useState<'white' | 'black'>('white');
+/* ─── SAN Notation ───────────────────────────────────────────────────────────*/
+function makeSAN(mv: Move, allLegal: Move[], afterState: GameState): string {
+  if (mv.isCastle === 'kingside')  return withCheck('O-O', afterState);
+  if (mv.isCastle === 'queenside') return withCheck('O-O-O', afterState);
 
-  // generate legal moves for the selected piece
-  useEffect(() => {
-    if (!selected) return setLegalMoves([]);
-    const p = board[selected.r][selected.c];
-    if (!p || p.color !== turn) return setLegalMoves([]);
-    const moves = generateAllLegalMoves(board, turn).filter(
-      (m) => m.from.r === selected.r && m.from.c === selected.c,
+  let s = '';
+  const { piece, from, to, captured, promotion, isEnPassant } = mv;
+  if (piece.type !== 'P') {
+    s += piece.type;
+    const ambig = allLegal.filter(
+      (m) =>
+        m.piece.type === piece.type &&
+        !(m.from.r === from.r && m.from.c === from.c) &&
+        m.to.r === to.r && m.to.c === to.c,
     );
-    setLegalMoves(moves.map((m) => m.to));
-  }, [selected, board, turn]);
+    if (ambig.length > 0) {
+      const sameFile = ambig.some((m) => m.from.c === from.c);
+      const sameRank = ambig.some((m) => m.from.r === from.r);
+      if (!sameFile)      s += FILES[from.c];
+      else if (!sameRank) s += String(8 - from.r);
+      else                s += toAlg(from);
+    }
+  }
 
-  // move by clicking destination
+  if (captured || isEnPassant) {
+    if (piece.type === 'P') s += FILES[from.c];
+    s += 'x';
+  }
+
+  s += toAlg(to);
+  if (promotion) s += `=${promotion}`;
+  return withCheck(s, afterState);
+}
+
+function withCheck(san: string, gs: GameState): string {
+  const kp = findKing(gs.board, gs.turn);
+  if (!kp || !isAttacked(gs.board, kp, opp(gs.turn))) return san;
+  const legal = getAllLegalMoves(gs);
+  return san + (legal.length === 0 ? '#' : '+');
+}
+
+/* ─── Component ──────────────────────────────────────────────────────────────*/
+export default function ChessGame(): JSX.Element {
+  const [gs, setGs] = useState<GameState>(makeInitialState);
+  const [selected, setSelected] = useState<Coord | null>(null);
+  const [lastMove, setLastMove] = useState<Move | null>(null);
+  const [moves, setMoves] = useState<Move[]>([]);
+  const [orientation, setOrientation] = useState<Color>('w');
+  const [pendingPromo, setPendingPromo] = useState<Move | null>(null);
+  const [gameOver, setGameOver] = useState<string | null>(null);
+  const [hintCoords, setHintCoords] = useState<Coord[] | null>(null);
+
+  const pastRef = useRef<HistoryRecord[]>([]);
+  const futureRef = useRef<HistoryRecord[]>([]);
+  const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const historyEndRef = useRef<HTMLDivElement>(null);
+
+  /* ── Derived ─────────────────────────────────────────────────────────────── */
+  const allLegal  = useMemo(() => getAllLegalMoves(gs), [gs]);
+  const kingPos   = useMemo(() => findKing(gs.board, gs.turn), [gs]);
+  const inCheck   = useMemo(() => (kingPos ? isAttacked(gs.board, kingPos, opp(gs.turn)) : false), [gs, kingPos]);
+
+  const gameStatus = useMemo<'playing' | 'checkmate' | 'stalemate'>(() => {
+    if (allLegal.length > 0) return 'playing';
+    return inCheck ? 'checkmate' : 'stalemate';
+  }, [allLegal, inCheck]);
+
+  const selectedLegal = useMemo(
+    () => (selected ? allLegal.filter((m) => m.from.r === selected.r && m.from.c === selected.c) : []),
+    [allLegal, selected],
+  );
+
+  const whiteCaptured = useMemo(
+    () => moves.filter((m) => m.piece.color === 'w').flatMap((m) => (m.captured ? [m.captured] : [])),
+    [moves],
+  );
+  const blackCaptured = useMemo(
+    () => moves.filter((m) => m.piece.color === 'b').flatMap((m) => (m.captured ? [m.captured] : [])),
+    [moves],
+  );
+  const whiteMat = useMemo(() => whiteCaptured.reduce((s, p) => s + PIECE_VAL[p.type], 0), [whiteCaptured]);
+  const blackMat = useMemo(() => blackCaptured.reduce((s, p) => s + PIECE_VAL[p.type], 0), [blackCaptured]);
+
+  const movePairs = useMemo(() => {
+    const pairs: [Move, Move | null][] = [];
+    for (let i = 0; i < moves.length; i += 2) pairs.push([moves[i], moves[i + 1] ?? null]);
+    return pairs;
+  }, [moves]);
+
+  useEffect(() => {
+    historyEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [moves]);
+
+  /* ── Core move logic ─────────────────────────────────────────────────────── */
+  const commitMove = (mv: Move) => {
+    const nb = applyMoveTo(gs.board, mv);
+    const nc = nextCastling(gs.castling, mv);
+    const ne = nextEnPassant(mv);
+    const nt = opp(gs.turn);
+    const next: GameState = { board: nb, castling: nc, enPassant: ne, turn: nt };
+    const san = makeSAN(mv, allLegal, next);
+    const final: Move = { ...mv, san };
+
+    pastRef.current.push({ state: gs, move: final, next });
+    futureRef.current = [];
+    setGs(next);
+    setMoves(pastRef.current.map((r) => r.move));
+    setLastMove(final);
+    setSelected(null);
+    setHintCoords(null);
+
+    const legalNext = getAllLegalMoves(next);
+    if (legalNext.length === 0) {
+      const kp = findKing(nb, nt);
+      const mate = kp ? isAttacked(nb, kp, opp(nt)) : false;
+      setGameOver(
+        mate
+          ? `${gs.turn === 'w' ? 'White' : 'Black'} wins by checkmate! 🎉`
+          : "It's a draw by stalemate. 🤝",
+      );
+    }
+  };
+
+  /* ── Event Handlers ───────────────────────────────────────────────────────── */
   const handleSquareClick = (r: number, c: number) => {
-    const sq = board[r][c];
-    // if selecting own piece
-    if (sq && sq.color === turn) {
+    if (gameOver) return;
+    const sq = gs.board[r][c];
+
+    if (sq && sq.color === gs.turn) {
       setSelected({ r, c });
       return;
     }
 
-    // if a destination is legal
-    const matched = legalMoves.some((m) => m.r === r && m.c === c);
-    if (selected && matched) {
-      const moves = generateAllLegalMoves(board, turn);
-      const mv = moves.find(
-        (m) => m.from.r === selected.r && m.from.c === selected.c && m.to.r === r && m.to.c === c,
-      );
-      if (!mv) return;
-      // apply
-      const newBoard = applyMove(board, mv);
-      setBoard(newBoard);
-      setTurn(opposite(turn));
-      setSelected(null);
-      // push history
-      historyRef.current.push(mv);
-      setHistory([...historyRef.current]);
-      futureRef.current = [];
-      setLegalMoves([]);
-    } else {
-      // clicking empty/other that is not legal deselects
-      setSelected(null);
-      setLegalMoves([]);
+    const mv = selectedLegal.find((m) => m.to.r === r && m.to.c === c);
+    if (selected && mv) {
+      if (mv.promotion !== null) {
+        setPendingPromo(mv);
+      } else {
+        commitMove(mv);
+      }
+      return;
     }
-  };
 
-  const undo = () => {
-    const h = historyRef.current;
-    if (!h.length) return;
-    const last = h.pop()!;
-    // revert by reconstructing board from history (simple approach)
-    // we'll replay moves from initialBoard up to remaining history
-    const b = initialBoard();
-    for (const m of h) {
-      const applied = applyMove(b, m);
-      // copy back
-      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) b[r][c] = applied[r][c];
-    }
-    futureRef.current.push(last);
-    setBoard(cloneBoard(b));
-    setHistory([...h]);
-    setTurn((t) => opposite(t));
     setSelected(null);
   };
 
+  const handlePromoChoice = (piece: PieceType) => {
+    if (!pendingPromo) return;
+    commitMove({ ...pendingPromo, promotion: piece });
+    setPendingPromo(null);
+  };
+
+  const undo = () => {
+    if (!pastRef.current.length) return;
+    const rec = pastRef.current.pop()!;
+    futureRef.current.push(rec);
+    setGs(rec.state);
+    setMoves(pastRef.current.map((r) => r.move));
+    setLastMove(pastRef.current.length > 0 ? pastRef.current[pastRef.current.length - 1].move : null);
+    setSelected(null);
+    setGameOver(null);
+  };
+
   const redo = () => {
-    const f = futureRef.current;
-    if (!f.length) return;
-    const next = f.pop()!;
-    historyRef.current.push(next);
-    // apply next on current board
-    const nb = applyMove(board, next);
-    setBoard(nb);
-    setHistory([...historyRef.current]);
-    setTurn((t) => opposite(t));
+    if (!futureRef.current.length) return;
+    const rec = futureRef.current.pop()!;
+    pastRef.current.push(rec);
+    setGs(rec.next);
+    setMoves(pastRef.current.map((r) => r.move));
+    setLastMove(rec.move);
     setSelected(null);
   };
 
   const restart = () => {
-    setBoard(initialBoard());
-    setTurn('w');
-    setSelected(null);
-    historyRef.current = [];
+    pastRef.current = [];
     futureRef.current = [];
-    setHistory([]);
+    setGs(makeInitialState());
+    setMoves([]);
+    setLastMove(null);
+    setSelected(null);
+    setGameOver(null);
+    setHintCoords(null);
   };
 
-  // compute game state: check, checkmate, stalemate
-  const gameState = useMemo(() => {
-    const kingPos = findKing(board, turn);
-    const inCheck = kingPos ? isSquareAttacked(board, kingPos, opposite(turn)) : false;
-    const legal = generateAllLegalMoves(board, turn);
-    if (inCheck && legal.length === 0) return { status: 'checkmate' as const, inCheck };
-    if (!inCheck && legal.length === 0) return { status: 'stalemate' as const, inCheck };
-    return { status: 'playing' as const, inCheck };
-  }, [board, turn]);
-
-  // helpers for UI: piece symbol
-  const pieceSymbol = (p: Piece) => {
-    const map: Record<PieceType, string> = { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘', P: '♙' };
-    const s = map[p.type];
-    return p.color === 'w'
-      ? s
-      : s
-          .replace('♔', '♚')
-          .replace('♕', '♛')
-          .replace('♖', '♜')
-          .replace('♗', '♝')
-          .replace('♘', '♞')
-          .replace('♙', '♟');
+  const showHint = () => {
+    if (!allLegal.length) return;
+    const captures = allLegal.filter((m) => m.captured || m.isEnPassant);
+    const pool = captures.length > 0 ? captures : allLegal;
+    const mv = pool[Math.floor(Math.random() * pool.length)];
+    if (hintTimer.current) clearTimeout(hintTimer.current);
+    setHintCoords([mv.from, mv.to]);
+    hintTimer.current = setTimeout(() => setHintCoords(null), 2500);
   };
 
-  // quick hint: returns a legal move for current player (first available)
-  const hint = () => {
-    const legal = generateAllLegalMoves(board, turn);
-    if (!legal.length) return alert('No legal moves');
-    const m = legal[0];
-    alert(`Try: ${coordToAlg(m.from)} → ${coordToAlg(m.to)}`);
+  /* ── Square class helper ─────────────────────────────────────────────────── */
+  const squareClass = (r: number, c: number): string => {
+    const dark = (r + c) % 2 === 1;
+    const isSelected = selected?.r === r && selected?.c === c;
+    const lm = selectedLegal.find((m) => m.to.r === r && m.to.c === c);
+    const isLastFrom = lastMove && lastMove.from.r === r && lastMove.from.c === c;
+    const isLastTo   = lastMove && lastMove.to.r === r && lastMove.to.c === c;
+    const isHint     = hintCoords?.some((h) => h.r === r && h.c === c) ?? false;
+    const isCheckKing = inCheck && kingPos?.r === r && kingPos?.c === c;
+
+    return [
+      'chess-square',
+      dark ? 'dark' : 'light',
+      isSelected ? 'selected' : '',
+      (isLastFrom || isLastTo) && !isSelected ? 'last-move' : '',
+      isHint ? 'hint' : '',
+      isCheckKing ? 'in-check' : '',
+      lm ? (lm.captured || lm.isEnPassant ? 'legal-capture' : 'legal-target') : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
   };
 
+  /* ── Orientation helpers ─────────────────────────────────────────────────── */
+  const visFiles = orientation === 'w'
+    ? ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    : ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'];
+  const visRanks = orientation === 'w' ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8];
+  const topColor    = orientation === 'w' ? 'b' : 'w' as Color;
+  const bottomColor = orientation === 'w' ? 'w' : 'b' as Color;
+
+  /* ── Player bar ──────────────────────────────────────────────────────────── */
+  const renderPlayerBar = (color: Color) => {
+    const captured = color === 'w' ? whiteCaptured : blackCaptured;
+    const myMat    = color === 'w' ? whiteMat : blackMat;
+    const oppMat   = color === 'w' ? blackMat : whiteMat;
+    const adv      = myMat - oppMat;
+    return (
+      <div className={`chess-player-bar ${color === 'w' ? 'bar-white' : 'bar-black'}`}>
+        <span className="player-name">
+          {SYM[color]['K']} <strong>{color === 'w' ? 'White' : 'Black'}</strong>
+          {gs.turn === color && gameStatus === 'playing' && (
+            <span className="turn-dot" title="Active turn" />
+          )}
+        </span>
+        <span className="captured-pieces">
+          {[...captured]
+            .sort((a, b) => PIECE_VAL[b.type] - PIECE_VAL[a.type])
+            .map((p, i) => (
+              <span key={i} className="cap-piece">{SYM[p.color][p.type]}</span>
+            ))}
+          {adv > 0 && <span className="material-adv">+{adv}</span>}
+        </span>
+      </div>
+    );
+  };
+
+  /* ── JSX ─────────────────────────────────────────────────────────────────── */
   return (
     <div className="chess-page">
+      {/* ── Header ── */}
       <div className="chess-header">
-        <Title level={4}>Chess</Title>
+        <Title level={4} style={{ margin: 0 }}>Chess</Title>
         <div className="chess-controls">
-          <Text className="chess-turn">
-            Turn: <strong>{turn === 'w' ? 'White' : 'Black'}</strong>
-            {gameState.inCheck && (
-              <Text type="danger" className="ml-8">
-                (Check)
-              </Text>
+          <span className="chess-status-label">
+            {gameStatus === 'playing' ? (
+              <>
+                <Text>Turn: <strong>{gs.turn === 'w' ? 'White' : 'Black'}</strong></Text>
+                {inCheck && <Tag color="red" style={{ marginLeft: 8 }}>Check!</Tag>}
+              </>
+            ) : (
+              <Tag color={gameStatus === 'checkmate' ? 'volcano' : 'blue'} style={{ fontSize: 13 }}>
+                {gameStatus === 'checkmate' ? 'Checkmate' : 'Stalemate'}
+              </Tag>
             )}
-          </Text>
-          <Button
-            size="small"
-            onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}
-          >
-            Flip
-          </Button>
-          <Button size="small" onClick={restart}>
-            Restart
-          </Button>
-          <Button size="small" onClick={undo}>
-            Undo
-          </Button>
-          <Button size="small" onClick={redo}>
-            Redo
-          </Button>
-          <Button size="small" onClick={hint}>
-            Hint
-          </Button>
+          </span>
+          <Button size="small" onClick={() => setOrientation((o) => (o === 'w' ? 'b' : 'w'))}>⇅ Flip</Button>
+          <Button size="small" onClick={undo} disabled={!pastRef.current.length}>↩ Undo</Button>
+          <Button size="small" onClick={redo} disabled={!futureRef.current.length}>↪ Redo</Button>
+          <Button size="small" onClick={showHint} disabled={gameStatus !== 'playing'}>💡 Hint</Button>
+          <Button size="small" danger onClick={restart}>↺ Restart</Button>
         </div>
       </div>
 
       <div className="chess-content">
-        <div className="chess-board-wrapper">
-          <div className="chess-coordinates top">
-            {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((f) => (
-              <div key={f} className="coord">
-                {f}
-              </div>
-            ))}
-          </div>
+        {/* ── Board section ── */}
+        <div className="chess-board-section">
+          {renderPlayerBar(topColor)}
 
-          <div className="chess-row-with-coords">
-            <div className="chess-coordinates side">
-              {[8, 7, 6, 5, 4, 3, 2, 1].map((r) => (
-                <div key={r} className="coord">
-                  {r}
-                </div>
-              ))}
+          <div className="board-with-coords">
+            <div className="coord-row">
+              <div className="coord-corner" />
+              {visFiles.map((f) => <div key={f} className="coord-cell file">{f}</div>)}
             </div>
 
-            <div className="chess-board">
-              {Array.from({ length: 8 }).map((_, rr) => {
-                const r = orientation === 'white' ? rr : 7 - rr;
-                return (
-                  <div key={r} className="chess-row">
-                    {Array.from({ length: 8 }).map((_, cc) => {
-                      const c = orientation === 'white' ? cc : 7 - cc;
-                      const sq = board[r][c];
-                      const isSelected = selected && selected.r === r && selected.c === c;
-                      const isLegal = legalMoves.some((m) => m.r === r && m.c === c);
-                      const dark = (r + c) % 2 === 1;
-                      return (
-                        <div
-                          key={`${r}-${c}`}
-                          className={`chess-square ${dark ? 'dark' : 'light'} ${
-                            isSelected ? 'selected' : ''
-                          }`}
-                          onClick={() => handleSquareClick(r, c)}
-                        >
-                          {sq && <span className="chess-piece">{pieceSymbol(sq)}</span>}
-                          {isLegal && <div className="move-dot" />}
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
+            <div className="board-with-ranks">
+              <div className="coord-col">
+                {visRanks.map((r) => <div key={r} className="coord-cell rank">{r}</div>)}
+              </div>
+
+              <div className="chess-board">
+                {Array.from({ length: 8 }, (_, rr) => {
+                  const r = orientation === 'w' ? rr : 7 - rr;
+                  return (
+                    <div key={r} className="chess-row">
+                      {Array.from({ length: 8 }, (_, cc) => {
+                        const c = orientation === 'w' ? cc : 7 - cc;
+                        const sq = gs.board[r][c];
+                        const lm = selectedLegal.find((m) => m.to.r === r && m.to.c === c);
+                        const isCapture = !!lm?.captured || !!lm?.isEnPassant;
+                        const isTarget  = !!lm && !isCapture;
+
+                        return (
+                          <div
+                            key={`${r}-${c}`}
+                            className={squareClass(r, c)}
+                            onClick={() => handleSquareClick(r, c)}
+                          >
+                            {sq && <span className="chess-piece">{SYM[sq.color][sq.type]}</span>}
+                            {isTarget  && <div className="move-dot" />}
+                            {isCapture && <div className="capture-ring" />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="coord-row">
+              <div className="coord-corner" />
+              {visFiles.map((f) => <div key={f} className="coord-cell file">{f}</div>)}
             </div>
           </div>
 
-          <div className="chess-coordinates bottom">
-            {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((f) => (
-              <div key={f} className="coord">
-                {f}
-              </div>
-            ))}
-          </div>
+          {renderPlayerBar(bottomColor)}
         </div>
 
-        <Card className="move-history" title="Move History" size="small">
-          {history.length === 0 ? (
-            <Text type="secondary">No moves yet</Text>
-          ) : (
-            <List
-              size="small"
-              bordered
-              dataSource={history}
-              renderItem={(m) => (
-                <List.Item>
-                  {coordToAlg(m.from)} → {coordToAlg(m.to)}
-                  {m.captured ? ` × ${m.captured.type}` : ''}
-                  {m.promotion ? ` (=${m.promotion})` : ''}
-                </List.Item>
-              )}
-            />
-          )}
-          <div className="move-status">
-            <Text>
-              Status: <strong>{gameState.status}</strong>
+        {/* ── Move history ── */}
+        <Card className="move-history-card" title="Move History" size="small">
+          {movePairs.length === 0 ? (
+            <Text type="secondary" style={{ fontSize: 12, padding: '4px 0', display: 'block' }}>
+              No moves yet
             </Text>
-          </div>
+          ) : (
+            <div className="move-history-scroll">
+              <table className="move-table">
+                <tbody>
+                  {movePairs.map(([wm, bm], i) => (
+                    <tr key={i} className={i % 2 === 0 ? 'move-row even' : 'move-row odd'}>
+                      <td className="move-num">{i + 1}.</td>
+                      <td className="move-san">{wm.san}</td>
+                      <td className="move-san">{bm?.san ?? ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div ref={historyEndRef} />
+            </div>
+          )}
         </Card>
       </div>
 
-      <Card size="small" className="chess-notes">
-        <Text strong>Notes:</Text>
-        <ul>
-          <li>Local two-player game (alternate turns).</li>
-          <li>Auto-promotion to Queen when pawn reaches last rank.</li>
-          <li>Castling and en-passant are not supported in this version.</li>
-          <li>If you'd like AI opponent, castling, or en-passant, tell me and I’ll add them.</li>
-        </ul>
-      </Card>
+      {/* ── Promotion Modal ── */}
+      <Modal
+        open={!!pendingPromo}
+        title="Promote Pawn — choose a piece"
+        footer={null}
+        closable
+        onCancel={() => { setPendingPromo(null); setSelected(null); }}
+        width={340}
+        centered
+      >
+        <div className="promo-choices">
+          {PROMO_TYPES.map((pt) => (
+            <button key={pt} className="promo-btn" onClick={() => handlePromoChoice(pt)}>
+              <span className="promo-piece">{SYM[pendingPromo ? pendingPromo.piece.color : 'w'][pt]}</span>
+              <span className="promo-name">{PROMO_NAMES[pt]}</span>
+            </button>
+          ))}
+        </div>
+      </Modal>
+
+      {/* ── Game Over Modal ── */}
+      <Modal
+        open={!!gameOver}
+        title="Game Over"
+        footer={[
+          <Button key="close" onClick={() => setGameOver(null)}>Close</Button>,
+          <Button key="restart" type="primary" onClick={restart}>Play Again</Button>,
+        ]}
+        onCancel={() => setGameOver(null)}
+        centered
+      >
+        <p className="game-over-msg">{gameOver}</p>
+      </Modal>
     </div>
   );
 }
