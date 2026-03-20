@@ -13,6 +13,7 @@ import {
   TabletOutlined,
   ExportOutlined,
 } from '@ant-design/icons';
+import { SaveToDriveButton, LoadFromDriveButton } from '@/components/GoogleDrive/DriveButtons';
 import Editor from '@monaco-editor/react';
 import {
   Button,
@@ -270,6 +271,15 @@ const HtmlEditorPage: React.FC = () => {
             <Button icon={<DownloadOutlined />} onClick={handleDownload}>
               Download
             </Button>
+            <SaveToDriveButton
+              getContent={() => htmlContent}
+              fileName="index.html"
+              mimeType="text/html"
+            />
+            <LoadFromDriveButton
+              onLoad={(content) => setHtmlContent(content)}
+              accept={['text/html', 'text/plain']}
+            />
           </Space>
         </div>
 

@@ -12,6 +12,7 @@ import React, { useEffect, useState } from 'react';
 import type { TestConfig, TestPlan } from '../types';
 import { DEFAULT_CONFIG, deleteTestPlan, generateId, loadTestPlans, saveTestPlan } from '../types';
 import { parseJMX } from '../utils/parseJMX';
+import { SaveToDriveButton, LoadFromDriveButton } from '@/components/GoogleDrive/DriveButtons';
 
 const { Text } = Typography;
 
@@ -155,6 +156,28 @@ const TestPlanManager: React.FC<Props> = ({ config, onLoad, disabled }) => {
         <Button icon={<FileOutlined />} onClick={handleImportJMX} size="small">
           Import JMX
         </Button>
+        <SaveToDriveButton
+          getContent={() => JSON.stringify(config, null, 2)}
+          fileName={`stress-test-plan-${new Date().toISOString().slice(0, 10)}.json`}
+          mimeType="application/json"
+          buttonProps={{ size: 'small' }}
+        >
+          Save to Drive
+        </SaveToDriveButton>
+        <LoadFromDriveButton
+          onLoad={(content) => {
+            try {
+              const parsed = JSON.parse(content);
+              onLoad(parsed);
+            } catch {
+              message.error('Invalid JSON file');
+            }
+          }}
+          accept={['application/json', 'text/plain']}
+          buttonProps={{ size: 'small' }}
+        >
+          Load from Drive
+        </LoadFromDriveButton>
       </Space>
 
       <Modal

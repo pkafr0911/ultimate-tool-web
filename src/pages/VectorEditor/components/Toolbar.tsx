@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Tooltip, Space, Divider } from 'antd';
+import { Button, Tooltip, Space, Divider, message } from 'antd';
 import {
   DragOutlined,
   BorderOutlined,
@@ -16,6 +16,8 @@ import {
 import { Rect, Circle, IText, Path } from 'fabric';
 import { useVectorEditor } from '../context';
 import SettingsModal from './SettingsModal';
+import { SaveToDriveButton } from '@/components/GoogleDrive/DriveButtons';
+import { CloudUploadOutlined } from '@ant-design/icons';
 
 const Toolbar: React.FC = () => {
   const { canvas, activeTool, setActiveTool, history, pointEditor } = useVectorEditor();
@@ -228,6 +230,21 @@ const Toolbar: React.FC = () => {
       <Tooltip title="Export SVG">
         <Button icon={<DownloadOutlined />} onClick={exportSVG} />
       </Tooltip>
+
+      <SaveToDriveButton
+        getContent={() => {
+          if (!canvas) return '';
+          return canvas.toSVG();
+        }}
+        fileName="design.svg"
+        mimeType="image/svg+xml"
+        buttonProps={{
+          icon: <CloudUploadOutlined />,
+          style: { width: 32, height: 32, padding: 0 },
+        }}
+      >
+        {null}
+      </SaveToDriveButton>
 
       <Tooltip title="Settings">
         <Button icon={<SettingOutlined />} onClick={() => setSettingsOpen(true)} />

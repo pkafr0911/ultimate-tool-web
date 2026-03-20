@@ -18,6 +18,7 @@ import TurndownService from 'turndown';
 import hljs from 'highlight.js';
 import 'github-markdown-css/github-markdown-light.css';
 import 'highlight.js/styles/github.css';
+import { SaveToDriveButton, LoadFromDriveButton } from '@/components/GoogleDrive/DriveButtons';
 import './styles.less';
 
 const { Title } = Typography;
@@ -249,6 +250,17 @@ const ReadmeEditorPage: React.FC = () => {
               <Button icon={<DownloadOutlined />} onClick={handleDownload}>
                 Download
               </Button>
+              <SaveToDriveButton
+                getContent={() => markdownContent}
+                fileName="README.md"
+                mimeType="text/markdown"
+                buttonProps={{ size: 'middle' }}
+              />
+              <LoadFromDriveButton
+                onLoad={(content) => setMarkdownContent(content)}
+                accept={['text/markdown', 'text/plain']}
+                buttonProps={{ size: 'middle' }}
+              />
             </Space>
           </Splitter.Panel>
         </Splitter>

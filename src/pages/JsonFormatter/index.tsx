@@ -12,6 +12,7 @@ import {
   SwapOutlined,
   CodeOutlined,
 } from '@ant-design/icons';
+import { SaveToDriveButton, LoadFromDriveButton } from '@/components/GoogleDrive/DriveButtons';
 import Editor from '@monaco-editor/react';
 import {
   Button,
@@ -355,6 +356,17 @@ const JsonFormatterPage: React.FC = () => {
                   >
                     Download
                   </Button>
+                  <SaveToDriveButton
+                    getContent={() => output}
+                    fileName="formatted.json"
+                    mimeType="application/json"
+                    buttonProps={{ size: 'small' }}
+                  />
+                  <LoadFromDriveButton
+                    onLoad={(content) => setInput(content)}
+                    accept={['application/json', 'text/plain']}
+                    buttonProps={{ size: 'small' }}
+                  />
                 </Space>
               </div>
               <Editor

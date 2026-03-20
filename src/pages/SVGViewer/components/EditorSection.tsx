@@ -1,4 +1,5 @@
 import React, { Dispatch, useEffect, useRef, useState } from 'react';
+import { SaveToDriveButton, LoadFromDriveButton } from '@/components/GoogleDrive/DriveButtons';
 import { Button, Upload, Space, Typography, Input, Tooltip, message } from 'antd'; // Import Ant Design components
 import { Editor } from '@monaco-editor/react'; // Import Monaco Editor component
 import {
@@ -327,6 +328,24 @@ const EditorSection: React.FC<Props> = ({
         <Button size="small" onClick={handleOptimize} icon={<CompressOutlined />}>
           Optimize
         </Button>
+        <SaveToDriveButton
+          getContent={() => svgCode}
+          fileName="image.svg"
+          mimeType="image/svg+xml"
+          buttonProps={{ size: 'small' }}
+        />
+        <LoadFromDriveButton
+          onLoad={(content) => {
+            if (!content.includes('<svg')) {
+              message.error('Invalid SVG file');
+              return;
+            }
+            setSvgCode(content);
+            setPreview(content);
+          }}
+          accept={['image/svg+xml', 'text/plain']}
+          buttonProps={{ size: 'small' }}
+        />
       </Space>
 
       <Space direction="horizontal" size={'large'}>

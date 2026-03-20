@@ -26,6 +26,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import './styles.less';
 import DragOverlay from '@/components/DragOverlay';
 import DragDropWrapper from '@/components/DragDropWrapper';
+import { SaveToDriveButton } from '@/components/GoogleDrive/DriveButtons';
 
 const { Text } = Typography;
 
@@ -298,6 +299,19 @@ const TextArtPage: React.FC = () => {
               <Button danger icon={<DeleteOutlined />} onClick={handleRemoveAll}>
                 Remove All
               </Button>
+              <SaveToDriveButton
+                getContent={() =>
+                  images
+                    .filter((i) => i.asciiArt)
+                    .map((i, idx) => `--- text-art-${idx + 1} ---\n${i.asciiArt}`)
+                    .join('\n\n')
+                }
+                fileName="ascii-art.txt"
+                mimeType="text/plain"
+                buttonProps={{ disabled: !images.some((img) => img.asciiArt) }}
+              >
+                Save All to Drive
+              </SaveToDriveButton>
             </Space>
           )}
 

@@ -14,10 +14,13 @@ import {
   AppstoreOutlined,
   ZoomInOutlined,
   ZoomOutOutlined,
+  CloudUploadOutlined,
+  CloudDownloadOutlined,
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
 import { Button, Collapse, ColorPicker, message, Splitter, Tooltip, Typography } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { SaveToDriveButton, LoadFromDriveButton } from '@/components/GoogleDrive/DriveButtons';
 import { DEFAULT_CODE, DEFAULT_CONFIG, SAMPLE_DIAGRAMS } from './constants';
 import styles from './styles.less';
 import classNames from 'classnames';
@@ -452,6 +455,25 @@ const MermaidEditorPage: React.FC = () => {
           </Tooltip>
           <Tooltip title="Download PNG">
             <Button icon={<FileImageOutlined />} size="small" onClick={handleDownloadPng} />
+          </Tooltip>
+          <Tooltip title="Save to Google Drive">
+            <SaveToDriveButton
+              getContent={() => code}
+              fileName="mermaid-diagram.mmd"
+              mimeType="text/plain"
+              buttonProps={{ size: 'small', icon: <CloudUploadOutlined /> }}
+            >
+              {null}
+            </SaveToDriveButton>
+          </Tooltip>
+          <Tooltip title="Load from Google Drive">
+            <LoadFromDriveButton
+              onLoad={(content) => setCode(content)}
+              accept={['text/plain']}
+              buttonProps={{ size: 'small', icon: <CloudDownloadOutlined /> }}
+            >
+              {null}
+            </LoadFromDriveButton>
           </Tooltip>
           <Tooltip title="Fullscreen">
             <Button icon={<ExpandOutlined />} size="small" onClick={() => setIsFullscreen(true)} />

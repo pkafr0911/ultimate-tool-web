@@ -2,6 +2,7 @@ import React from 'react';
 import { Button, Input, Space, message } from 'antd';
 import { handleCopy } from '@/helpers';
 import { downloadText } from '../utils/helpers';
+import { SaveToDriveButton } from '@/components/GoogleDrive/DriveButtons';
 
 type Props = {
   text: string;
@@ -18,6 +19,12 @@ const TextOutput: React.FC<Props> = ({ text, setText }) => {
         <Button size="small" onClick={() => downloadText(text)}>
           Download
         </Button>
+        <SaveToDriveButton
+          getContent={() => text}
+          fileName="extracted-text.txt"
+          mimeType="text/plain"
+          buttonProps={{ size: 'small' }}
+        />
       </Space>
 
       <Input.TextArea
