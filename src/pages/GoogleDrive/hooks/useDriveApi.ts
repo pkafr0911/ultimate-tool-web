@@ -20,9 +20,10 @@ import { DriveFile, DriveListResponse } from '../types';
 
 export const useDriveApi = (accessToken: string | null) => {
   const list = useCallback(
-    async (folderId: string = 'root', pageToken?: string, orderBy?: string) => {
+    async (folderId: string = 'root', pageToken?: string, orderBy?: string, extraQ?: string) => {
       if (!accessToken) throw new Error('Not authenticated');
-      const q = `'${folderId}' in parents and trashed = false`;
+      const parts = [`'${folderId}' in parents`, 'trashed = false', extraQ].filter(Boolean);
+      const q = parts.join(' and ');
       const query = buildListQuery(q, 20, pageToken, orderBy);
       return listFiles(accessToken, query);
     },
@@ -30,10 +31,23 @@ export const useDriveApi = (accessToken: string | null) => {
   );
 
   const listSharedWithMe = useCallback(
-    async (pageToken?: string, orderBy?: string) => {
+    async (pageToken?: string, orderBy?: string, extraQ?: string) => {
       if (!accessToken) throw new Error('Not authenticated');
-      const q = 'sharedWithMe = true and trashed = false';
+      const parts = ['sharedWithMe = true', 'trashed = false', extraQ].filter(Boolean);
+      const q = parts.join(' and ');
       const query = buildListQuery(q, 20, pageToken, orderBy);
+      return listFiles(accessToken, query);
+    },
+    [accessToken],
+  );
+
+  const search = useCallback(
+    async (searchTerm: string, pageToken?: string, extraQ?: string) => {
+      if (!accessToken) throw new Error('Not authenticated');
+      const escaped = searchTerm.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      const parts = [`name contains '${escaped}'`, 'trashed = false', extraQ].filter(Boolean);
+      const q = parts.join(' and ');
+      const query = buildListQuery(q, 20, pageToken);
       return listFiles(accessToken, query);
     },
     [accessToken],
@@ -198,6 +212,7 @@ export const useDriveApi = (accessToken: string | null) => {
   return {
     list,
     listSharedWithMe,
+    search,
     getMetadata,
     download,
     upload,

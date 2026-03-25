@@ -11,6 +11,8 @@ import {
   Typography,
   Segmented,
   Tooltip,
+  Input,
+  Select,
 } from 'antd';
 import {
   GoogleOutlined,
@@ -20,6 +22,7 @@ import {
   FolderOutlined,
   AppstoreOutlined,
   UnorderedListOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import type { DisplayMode } from './DriveList';
 import { useGoogleAuth } from './hooks/useGoogleAuth';
@@ -39,9 +42,29 @@ import { DriveFile } from './types';
 
 type ViewMode = 'my-drive' | 'shared';
 
+const FILE_TYPE_OPTIONS = [
+  { label: 'All types', value: 'all', q: '' },
+  { label: 'Folders', value: 'folder', q: "mimeType = 'application/vnd.google-apps.folder'" },
+  { label: 'Documents', value: 'document', q: "mimeType = 'application/vnd.google-apps.document'" },
+  {
+    label: 'Spreadsheets',
+    value: 'spreadsheet',
+    q: "mimeType = 'application/vnd.google-apps.spreadsheet'",
+  },
+  {
+    label: 'Presentations',
+    value: 'presentation',
+    q: "mimeType = 'application/vnd.google-apps.presentation'",
+  },
+  { label: 'PDFs', value: 'pdf', q: "mimeType = 'application/pdf'" },
+  { label: 'Images', value: 'image', q: "mimeType contains 'image/'" },
+  { label: 'Videos', value: 'video', q: "mimeType contains 'video/'" },
+  { label: 'Audio', value: 'audio', q: "mimeType contains 'audio/'" },
+];
+
 const GoogleDrivePage: React.FC = () => {
   const { user, isSignedIn, accessToken, signIn, signOut } = useGoogleAuth();
-  const { list, listSharedWithMe } = useDriveApi(accessToken);
+  const { list, listSharedWithMe, search } = useDriveApi(accessToken);
 
   const [viewMode, setViewMode] = useState<ViewMode>('my-drive');
   const [currentFolderId, setCurrentFolderId] = useState<string>('root');
@@ -58,6 +81,8 @@ const GoogleDrivePage: React.FC = () => {
   const [previewFile, setPreviewFile] = useState<DriveFile | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('list');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [fileTypeFilter, setFileTypeFilter] = useState<string>('all');
 
   // Action modals state
   const [renameFile, setRenameFile] = useState<DriveFile | null>(null);
@@ -67,14 +92,14 @@ const GoogleDrivePage: React.FC = () => {
   const [deleteFile, setDeleteFile] = useState<DriveFile | null>(null);
 
   const loadFiles = useCallback(
-    async (folderId: string, token?: string) => {
+    async (folderId: string, token?: string, extraQ?: string) => {
       if (!isSignedIn || loadingRef.current) return;
       loadingRef.current = true;
       const isMore = !!token;
       if (isMore) setLoadingMore(true);
       else setInitialLoading(true);
       try {
-        const res = await list(folderId, token);
+        const res = await list(folderId, token, undefined, extraQ);
         setFiles((prev) => (isMore ? [...prev, ...res.files] : res.files));
         setNextPageToken(res.nextPageToken);
       } catch (e) {
@@ -89,14 +114,14 @@ const GoogleDrivePage: React.FC = () => {
   );
 
   const loadSharedFiles = useCallback(
-    async (token?: string) => {
+    async (token?: string, extraQ?: string) => {
       if (!isSignedIn || loadingRef.current) return;
       loadingRef.current = true;
       const isMore = !!token;
       if (isMore) setLoadingMore(true);
       else setInitialLoading(true);
       try {
-        const res = await listSharedWithMe(token);
+        const res = await listSharedWithMe(token, undefined, extraQ);
         setFiles((prev) => (isMore ? [...prev, ...res.files] : res.files));
         setNextPageToken(res.nextPageToken);
       } catch (e) {
@@ -110,25 +135,54 @@ const GoogleDrivePage: React.FC = () => {
     [isSignedIn, listSharedWithMe],
   );
 
+  const loadSearchResults = useCallback(
+    async (query: string, token?: string, extraQ?: string) => {
+      if (!isSignedIn || loadingRef.current || !query.trim()) return;
+      loadingRef.current = true;
+      const isMore = !!token;
+      if (isMore) setLoadingMore(true);
+      else setInitialLoading(true);
+      try {
+        const res = await search(query.trim(), token, extraQ);
+        setFiles((prev) => (isMore ? [...prev, ...res.files] : res.files));
+        setNextPageToken(res.nextPageToken);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        loadingRef.current = false;
+        if (isMore) setLoadingMore(false);
+        else setInitialLoading(false);
+      }
+    },
+    [isSignedIn, search],
+  );
+
+  const filterQ = FILE_TYPE_OPTIONS.find((o) => o.value === fileTypeFilter)?.q ?? '';
+
   const refreshCurrentView = () => {
-    if (viewMode === 'shared') {
-      loadSharedFiles();
+    if (searchQuery.trim()) {
+      loadSearchResults(searchQuery, undefined, filterQ);
+    } else if (viewMode === 'shared') {
+      loadSharedFiles(undefined, filterQ);
     } else {
-      loadFiles(currentFolderId);
+      loadFiles(currentFolderId, undefined, filterQ);
     }
   };
 
   useEffect(() => {
     if (isSignedIn) {
-      if (viewMode === 'shared') {
-        loadSharedFiles();
+      const q = FILE_TYPE_OPTIONS.find((o) => o.value === fileTypeFilter)?.q ?? '';
+      if (searchQuery.trim()) {
+        loadSearchResults(searchQuery, undefined, q);
+      } else if (viewMode === 'shared') {
+        loadSharedFiles(undefined, q);
       } else {
-        loadFiles(currentFolderId);
+        loadFiles(currentFolderId, undefined, q);
       }
     } else {
       setFiles([]);
     }
-  }, [isSignedIn, currentFolderId, viewMode]);
+  }, [isSignedIn, currentFolderId, viewMode, fileTypeFilter]);
 
   const handleFolderClick = (folder: DriveFile) => {
     setCurrentFolderId(folder.id);
@@ -148,10 +202,32 @@ const GoogleDrivePage: React.FC = () => {
   const handleViewChange = (value: string | number) => {
     const mode = value as ViewMode;
     setViewMode(mode);
+    setSearchQuery('');
     if (mode === 'my-drive') {
       setCurrentFolderId('root');
       setFolderPath([{ id: 'root', name: 'My Drive' }]);
     }
+    setFiles([]);
+    setNextPageToken(undefined);
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    setFiles([]);
+    setNextPageToken(undefined);
+    if (value.trim()) {
+      loadSearchResults(value, undefined, filterQ);
+    } else {
+      if (viewMode === 'shared') {
+        loadSharedFiles(undefined, filterQ);
+      } else {
+        loadFiles(currentFolderId, undefined, filterQ);
+      }
+    }
+  };
+
+  const handleFileTypeChange = (value: string) => {
+    setFileTypeFilter(value);
     setFiles([]);
     setNextPageToken(undefined);
   };
@@ -201,6 +277,21 @@ const GoogleDrivePage: React.FC = () => {
                   ]}
                 />
                 <Space>
+                  <Select
+                    value={fileTypeFilter}
+                    onChange={handleFileTypeChange}
+                    options={FILE_TYPE_OPTIONS}
+                    style={{ width: 150 }}
+                  />
+                  <Input.Search
+                    placeholder="Search files..."
+                    allowClear
+                    onSearch={handleSearch}
+                    onChange={(e) => {
+                      if (!e.target.value) handleSearch('');
+                    }}
+                    style={{ width: 250 }}
+                  />
                   <Tooltip title="List view">
                     <Button
                       type={displayMode === 'list' ? 'primary' : 'default'}
@@ -218,7 +309,7 @@ const GoogleDrivePage: React.FC = () => {
                 </Space>
               </Space>
 
-              {viewMode === 'my-drive' && (
+              {viewMode === 'my-drive' && !searchQuery.trim() && (
                 <Breadcrumb>
                   {folderPath.map((folder, index) => (
                     <Breadcrumb.Item
@@ -241,9 +332,11 @@ const GoogleDrivePage: React.FC = () => {
                 onPreview={(file) => setPreviewFile(file)}
                 onDetail={(file) => setSelectedFile(file)}
                 onLoadMore={() =>
-                  viewMode === 'shared'
-                    ? loadSharedFiles(nextPageToken)
-                    : loadFiles(currentFolderId, nextPageToken)
+                  searchQuery.trim()
+                    ? loadSearchResults(searchQuery, nextPageToken, filterQ)
+                    : viewMode === 'shared'
+                      ? loadSharedFiles(nextPageToken, filterQ)
+                      : loadFiles(currentFolderId, nextPageToken, filterQ)
                 }
                 hasMore={!!nextPageToken}
                 onRename={(file) => setRenameFile(file)}
