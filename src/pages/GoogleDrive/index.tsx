@@ -12,7 +12,7 @@ import {
   Segmented,
   Tooltip,
   Input,
-  Select,
+  Cascader,
 } from 'antd';
 import {
   GoogleOutlined,
@@ -42,24 +42,126 @@ import { DriveFile } from './types';
 
 type ViewMode = 'my-drive' | 'shared';
 
+/** Maps the leaf (or parent) value to a Google Drive API q clause */
+const MIME_Q_MAP: Record<string, string> = {
+  all: '',
+  folder: "mimeType = 'application/vnd.google-apps.folder'",
+  // Google Docs
+  gdocs: "mimeType contains 'application/vnd.google-apps.'",
+  gdoc: "mimeType = 'application/vnd.google-apps.document'",
+  gsheet: "mimeType = 'application/vnd.google-apps.spreadsheet'",
+  gslide: "mimeType = 'application/vnd.google-apps.presentation'",
+  gform: "mimeType = 'application/vnd.google-apps.form'",
+  // Images
+  image: "mimeType contains 'image/'",
+  jpeg: "mimeType = 'image/jpeg'",
+  png: "mimeType = 'image/png'",
+  gif: "mimeType = 'image/gif'",
+  webp: "mimeType = 'image/webp'",
+  svg: "mimeType = 'image/svg+xml'",
+  bmp: "mimeType = 'image/bmp'",
+  heic: "mimeType = 'image/heic'",
+  // Videos
+  video: "mimeType contains 'video/'",
+  mp4: "mimeType = 'video/mp4'",
+  avi: "mimeType = 'video/x-msvideo'",
+  mov: "mimeType = 'video/quicktime'",
+  mkv: "mimeType = 'video/x-matroska'",
+  webm: "mimeType = 'video/webm'",
+  wmv: "mimeType = 'video/x-ms-wmv'",
+  // Audio
+  audio: "mimeType contains 'audio/'",
+  mp3: "mimeType = 'audio/mpeg'",
+  wav: "mimeType = 'audio/wav'",
+  ogg: "mimeType = 'audio/ogg'",
+  flac: "mimeType = 'audio/flac'",
+  aac: "mimeType = 'audio/aac'",
+  m4a: "mimeType = 'audio/mp4'",
+  // Documents / misc
+  document:
+    "(mimeType = 'application/pdf' or mimeType = 'application/msword' or mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' or mimeType = 'text/plain' or mimeType = 'text/csv' or mimeType = 'application/json')",
+  pdf: "mimeType = 'application/pdf'",
+  doc: "mimeType = 'application/msword'",
+  docx: "mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'",
+  xls: "mimeType = 'application/vnd.ms-excel'",
+  xlsx: "mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'",
+  ppt: "mimeType = 'application/vnd.ms-powerpoint'",
+  pptx: "mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'",
+  txt: "mimeType = 'text/plain'",
+  csv: "mimeType = 'text/csv'",
+  json: "mimeType = 'application/json'",
+  xml: "(mimeType = 'text/xml' or mimeType = 'application/xml')",
+  zip: "(mimeType = 'application/zip' or mimeType = 'application/x-zip-compressed')",
+};
+
 const FILE_TYPE_OPTIONS = [
-  { label: 'All types', value: 'all', q: '' },
-  { label: 'Folders', value: 'folder', q: "mimeType = 'application/vnd.google-apps.folder'" },
-  { label: 'Documents', value: 'document', q: "mimeType = 'application/vnd.google-apps.document'" },
+  { label: 'All types', value: 'all' },
+  { label: 'Folders', value: 'folder' },
   {
-    label: 'Spreadsheets',
-    value: 'spreadsheet',
-    q: "mimeType = 'application/vnd.google-apps.spreadsheet'",
+    label: 'Google Docs',
+    value: 'gdocs',
+    children: [
+      { label: 'Document', value: 'gdoc' },
+      { label: 'Spreadsheet', value: 'gsheet' },
+      { label: 'Presentation', value: 'gslide' },
+      { label: 'Form', value: 'gform' },
+    ],
   },
   {
-    label: 'Presentations',
-    value: 'presentation',
-    q: "mimeType = 'application/vnd.google-apps.presentation'",
+    label: 'Images',
+    value: 'image',
+    children: [
+      { label: 'JPEG (.jpg / .jpeg)', value: 'jpeg' },
+      { label: 'PNG (.png)', value: 'png' },
+      { label: 'GIF (.gif)', value: 'gif' },
+      { label: 'WebP (.webp)', value: 'webp' },
+      { label: 'SVG (.svg)', value: 'svg' },
+      { label: 'BMP (.bmp)', value: 'bmp' },
+      { label: 'HEIC (.heic)', value: 'heic' },
+    ],
   },
-  { label: 'PDFs', value: 'pdf', q: "mimeType = 'application/pdf'" },
-  { label: 'Images', value: 'image', q: "mimeType contains 'image/'" },
-  { label: 'Videos', value: 'video', q: "mimeType contains 'video/'" },
-  { label: 'Audio', value: 'audio', q: "mimeType contains 'audio/'" },
+  {
+    label: 'Videos',
+    value: 'video',
+    children: [
+      { label: 'MP4 (.mp4)', value: 'mp4' },
+      { label: 'AVI (.avi)', value: 'avi' },
+      { label: 'MOV (.mov)', value: 'mov' },
+      { label: 'MKV (.mkv)', value: 'mkv' },
+      { label: 'WebM (.webm)', value: 'webm' },
+      { label: 'WMV (.wmv)', value: 'wmv' },
+    ],
+  },
+  {
+    label: 'Audio',
+    value: 'audio',
+    children: [
+      { label: 'MP3 (.mp3)', value: 'mp3' },
+      { label: 'WAV (.wav)', value: 'wav' },
+      { label: 'OGG (.ogg)', value: 'ogg' },
+      { label: 'FLAC (.flac)', value: 'flac' },
+      { label: 'AAC (.aac)', value: 'aac' },
+      { label: 'M4A (.m4a)', value: 'm4a' },
+    ],
+  },
+  {
+    label: 'Documents',
+    value: 'document',
+    children: [
+      { label: 'PDF (.pdf)', value: 'pdf' },
+      { label: 'Word (.doc)', value: 'doc' },
+      { label: 'Word (.docx)', value: 'docx' },
+      { label: 'Excel (.xls)', value: 'xls' },
+      { label: 'Excel (.xlsx)', value: 'xlsx' },
+      { label: 'PowerPoint (.ppt)', value: 'ppt' },
+      { label: 'PowerPoint (.pptx)', value: 'pptx' },
+      { label: 'Text (.txt)', value: 'txt' },
+      { label: 'CSV (.csv)', value: 'csv' },
+      { label: 'JSON (.json)', value: 'json' },
+      { label: 'XML (.xml)', value: 'xml' },
+      { label: 'ZIP (.zip)', value: 'zip' },
+    ],
+  },
 ];
 
 const GoogleDrivePage: React.FC = () => {
@@ -82,7 +184,7 @@ const GoogleDrivePage: React.FC = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('list');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [fileTypeFilter, setFileTypeFilter] = useState<string>('all');
+  const [fileTypeFilter, setFileTypeFilter] = useState<string[]>(['all']);
 
   // Action modals state
   const [renameFile, setRenameFile] = useState<DriveFile | null>(null);
@@ -157,7 +259,7 @@ const GoogleDrivePage: React.FC = () => {
     [isSignedIn, search],
   );
 
-  const filterQ = FILE_TYPE_OPTIONS.find((o) => o.value === fileTypeFilter)?.q ?? '';
+  const filterQ = MIME_Q_MAP[fileTypeFilter[fileTypeFilter.length - 1] ?? 'all'] ?? '';
 
   const refreshCurrentView = () => {
     if (searchQuery.trim()) {
@@ -171,7 +273,7 @@ const GoogleDrivePage: React.FC = () => {
 
   useEffect(() => {
     if (isSignedIn) {
-      const q = FILE_TYPE_OPTIONS.find((o) => o.value === fileTypeFilter)?.q ?? '';
+      const q = MIME_Q_MAP[fileTypeFilter[fileTypeFilter.length - 1] ?? 'all'] ?? '';
       if (searchQuery.trim()) {
         loadSearchResults(searchQuery, undefined, q);
       } else if (viewMode === 'shared') {
@@ -226,7 +328,7 @@ const GoogleDrivePage: React.FC = () => {
     }
   };
 
-  const handleFileTypeChange = (value: string) => {
+  const handleFileTypeChange = (value: string[]) => {
     setFileTypeFilter(value);
     setFiles([]);
     setNextPageToken(undefined);
@@ -277,11 +379,15 @@ const GoogleDrivePage: React.FC = () => {
                   ]}
                 />
                 <Space>
-                  <Select
+                  <Cascader
+                    options={FILE_TYPE_OPTIONS}
                     value={fileTypeFilter}
                     onChange={handleFileTypeChange}
-                    options={FILE_TYPE_OPTIONS}
-                    style={{ width: 150 }}
+                    changeOnSelect
+                    allowClear={false}
+                    showSearch
+                    placeholder="All types"
+                    style={{ width: 200 }}
                   />
                   <Input.Search
                     placeholder="Search files..."
