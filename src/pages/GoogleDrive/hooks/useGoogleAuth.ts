@@ -8,7 +8,8 @@ declare global {
 }
 
 const CLIENT_ID = envConfig.googleClientId;
-const SCOPES = 'openid profile email https://www.googleapis.com/auth/drive';
+const SCOPES =
+  'openid profile email https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/photoslibrary';
 
 const STORAGE_KEY = 'gd_session';
 // Refresh the token this many ms before it actually expires (5 minutes)
@@ -24,6 +25,7 @@ interface StoredSession {
   accessToken: string;
   expiresAt: number;
   user: GoogleUser;
+  scopes?: string;
 }
 
 function loadSession(): StoredSession | null {
@@ -31,7 +33,7 @@ function loadSession(): StoredSession | null {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const session: StoredSession = JSON.parse(raw);
-    if (Date.now() >= session.expiresAt) {
+    if (Date.now() >= session.expiresAt || session.scopes !== SCOPES) {
       localStorage.removeItem(STORAGE_KEY);
       return null;
     }
@@ -42,7 +44,10 @@ function loadSession(): StoredSession | null {
 }
 
 function saveSession(token: string, expiresAt: number, user: GoogleUser) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ accessToken: token, expiresAt, user }));
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ accessToken: token, expiresAt, user, scopes: SCOPES }),
+  );
 }
 
 function clearSession() {
@@ -130,7 +135,7 @@ export const useGoogleAuth = () => {
 
   const signIn = useCallback(() => {
     if (tokenClient) {
-      tokenClient.requestAccessToken();
+      tokenClient.requestAccessToken({ prompt: 'consent' });
     }
   }, [tokenClient]);
 

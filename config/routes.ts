@@ -210,6 +210,12 @@
         icon: 'cloud',
         component: './GoogleDrive',
       },
+      {
+        path: '/docs/google-photos',
+        name: 'google-photos',
+        icon: 'picture',
+        component: './GooglePhotos',
+      },
     ],
   },
 

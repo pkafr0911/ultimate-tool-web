@@ -55,4 +55,5 @@ export default {
   'menu.docs.commands': 'Commands',
   'menu.docs.emojis': 'Emojis /  Kaomojis',
   'menu.docs.google-drive': 'Google Drive',
+  'menu.docs.google-photos': 'Google Photos',
 };

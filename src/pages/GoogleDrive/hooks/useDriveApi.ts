@@ -53,6 +53,16 @@ export const useDriveApi = (accessToken: string | null) => {
     [accessToken],
   );
 
+  /** Raw query — pass a full Drive API `q` string. */
+  const queryFiles = useCallback(
+    async (q: string, pageSize: number = 50, pageToken?: string) => {
+      if (!accessToken) throw new Error('Not authenticated');
+      const query = buildListQuery(q, pageSize, pageToken, 'createdTime desc');
+      return listFiles(accessToken, query);
+    },
+    [accessToken],
+  );
+
   const getMetadata = useCallback(
     async (fileId: string) => {
       if (!accessToken) throw new Error('Not authenticated');
@@ -213,6 +223,7 @@ export const useDriveApi = (accessToken: string | null) => {
     list,
     listSharedWithMe,
     search,
+    queryFiles,
     getMetadata,
     download,
     upload,

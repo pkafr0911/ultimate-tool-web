@@ -1,0 +1,126 @@
+.gp-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.gp-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.gp-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+/* ── Date group ─────────────────────────────────────────── */
+.gp-date-group {
+  margin-bottom: 8px;
+}
+
+.gp-date-header {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 8px 4px 12px;
+  display: flex;
+  align-items: center;
+}
+
+/* ── Masonry grid  ──────────────────────────────────────── */
+.gp-masonry {
+  columns: 6 200px;
+  column-gap: 6px;
+}
+
+.gp-masonry-item {
+  break-inside: avoid;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  line-height: 0;
+  transition: transform 0.15s ease;
+
+  &:hover {
+    transform: scale(1.02);
+    z-index: 1;
+
+    .gp-item-overlay {
+      opacity: 1;
+    }
+  }
+
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+    background: #f0f0f0;
+    min-height: 100px;
+  }
+}
+
+.gp-video-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: #fff;
+  font-size: 22px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+  pointer-events: none;
+}
+
+.gp-item-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24px 8px 8px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  line-height: 1.4;
+}
+
+.gp-item-name {
+  color: #fff !important;
+  font-size: 12px;
+}
+
+/* ── Responsive tweaks ──────────────────────────────────── */
+@media (max-width: 1400px) {
+  .gp-masonry {
+    columns: 5 180px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .gp-masonry {
+    columns: 4 160px;
+  }
+}
+
+@media (max-width: 700px) {
+  .gp-masonry {
+    columns: 3 120px;
+  }
+
+  .gp-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 450px) {
+  .gp-masonry {
+    columns: 2 100px;
+  }
+}
