@@ -54,23 +54,23 @@ export const featureSections = [
   {
     id: 1,
     title: 'Code Playground',
-    desc: 'Write and execute code instantly in multiple languages. Real-time preview and output display with no setup required.',
+    desc: 'Write, run, and iterate on code instantly — JavaScript, TypeScript, Python and more. Real-time output, zero config, no IDE needed. Perfect for prototyping, debugging, and learning.',
     image:
-      'https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&w=800&q=80', // Coding image
+      'https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 2,
-    title: 'Image Processing',
-    desc: 'Extract text from images, convert formats, and generate text art. Powerful tools for designers and developers.',
+    title: 'Image & Visual Tools',
+    desc: 'A full creative suite in your browser. Edit photos like Photoshop, create vector art, extract text from images with OCR, generate ASCII art, and convert between formats — all without uploading anything.',
     image:
-      'https://images.unsplash.com/photo-1620674156044-52b714665d46?auto=format&fit=crop&w=800&q=80', // Digital art image
+      'https://images.unsplash.com/photo-1620674156044-52b714665d46?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 3,
-    title: 'Secure Utilities',
-    desc: 'Generate secure passwords, UUIDs, and handle JWT tokens. All client-side for maximum security.',
+    title: 'Security & Encoding',
+    desc: 'Generate unbreakable passwords, create UUIDs, encode/decode JWT and AES tokens, and handle Base64 conversions. Every operation runs entirely in your browser — nothing is ever sent to a server.',
     image:
-      'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80', // Security/Code image
+      'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80',
   },
 ];
 

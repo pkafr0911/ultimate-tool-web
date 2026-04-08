@@ -26,8 +26,21 @@ const FooterSection = () => {
         }}
       >
         <ToolsMarqueeSection />
-        <h2>Ready to get started?</h2>
-        <CatButton />
+        <motion.div
+          className={styles.footerCta}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+        >
+          <h2>Stop tab-hopping.</h2>
+          <p className={styles.footerSubtitle}>
+            Everything you need as a developer — converters, editors, generators, games — all in one
+            lightning-fast, private, browser-based toolkit.
+          </p>
+          <CatButton />
+          <p className={styles.footerNote}>Free &amp; open source. No account needed.</p>
+        </motion.div>
         <div style={{ marginBottom: 100 }}></div>
       </motion.div>
     </div>

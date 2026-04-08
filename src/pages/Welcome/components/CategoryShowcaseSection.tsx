@@ -13,7 +13,7 @@ const CategoryShowcaseSection: React.FC = () => {
   const isMobile = useIsMobile();
 
   return (
-    <div className={styles.categoryShowcaseSection}>
+    <div id="category-showcase" className={styles.categoryShowcaseSection}>
       {categories.map((category, i) => {
         const items = pages.filter((p) => category.keys.includes(p.name));
         const isReverse = i % 2 !== 0; // Alternate layout
