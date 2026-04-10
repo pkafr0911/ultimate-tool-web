@@ -22,15 +22,15 @@ export default {
   'menu.randomizer.wheel-of-names': 'Wheel of Names',
   'menu.randomizer.random': 'Random Generator',
 
-  // Image Converter
-  'menu.image-converter': 'Image Converter',
-  'menu.image-converter.image-to-text': 'Image To Text',
-  'menu.image-converter.svg-viewer': 'SVG Viewer',
-  'menu.image-converter.pics-editor': 'Pics Editor',
-  'menu.image-converter.vector-editor': 'Vector Editor',
-  'menu.image-converter.photo-editor': 'Photo Editor',
-  'menu.image-converter.base64': 'Base64 Converter',
-  'menu.image-converter.text-art': 'Text Art Generator',
+  // Visual Tools
+  'menu.visual-tools': 'Visual Tools',
+  'menu.visual-tools.image-to-text': 'Image To Text',
+  'menu.visual-tools.svg-viewer': 'SVG Viewer',
+  'menu.visual-tools.pics-editor': 'Pics Editor',
+  'menu.visual-tools.vector-editor': 'Vector Editor',
+  'menu.visual-tools.photo-editor': 'Photo Editor',
+  'menu.visual-tools.base64': 'Base64 Converter',
+  'menu.visual-tools.text-art': 'Text Art Generator',
 
   // Editor
   'menu.editor': 'Editor',

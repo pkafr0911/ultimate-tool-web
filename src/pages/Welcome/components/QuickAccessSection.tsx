@@ -7,7 +7,7 @@ import { stickyCards } from '../constants';
 const cardIcons: Record<string, string> = {
   Playground: '🚀',
   'Utility Tools': '🛠️',
-  'Image Converter': '🎨',
+  'Visual Tools': '🎨',
   Editor: '📝',
 };
 

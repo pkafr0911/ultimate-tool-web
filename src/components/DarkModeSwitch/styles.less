@@ -1,11 +1,33 @@
 .dark {
+  &.ant-switch {
+    background: linear-gradient(135deg, #2d2060, #1a1030);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+      0 0 0 2px rgba(196, 113, 245, 0.2),
+      inset 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+
   .ant-switch-inner {
-    background: #000;
+    background: transparent;
   }
 }
 
 .light {
+  &.ant-switch {
+    background: linear-gradient(135deg, #ffe082, #ffb300);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 4px rgba(255, 179, 0, 0.35);
+  }
+
   .ant-switch-inner {
-    background: #ffc107;
+    background: transparent;
+  }
+}
+
+.ant-switch {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  &:hover {
+    opacity: 0.88;
+    transform: scale(1.05);
   }
 }

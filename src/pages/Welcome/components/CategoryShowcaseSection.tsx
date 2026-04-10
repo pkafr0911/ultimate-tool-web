@@ -15,7 +15,7 @@ const CategoryShowcaseSection: React.FC = () => {
   return (
     <div id="category-showcase" className={styles.categoryShowcaseSection}>
       {categories.map((category, i) => {
-        const items = pages.filter((p) => category.keys.includes(p.name));
+        const items = pages.filter((p) => p.path.startsWith(category.pathPrefix));
         const isReverse = i % 2 !== 0; // Alternate layout
 
         // Special design for Playground

@@ -36,6 +36,26 @@ import {
  * All constants that will be used throughout the project will be here.
  */
 
+/**
+ * ADDING A NEW TOOL — LANDING PAGE AUTO-UPDATE RULE
+ * --------------------------------------------------
+ * Add a new entry to the `pages` array below. The landing page will
+ * automatically pick it up in the correct category, marquee, and stats.
+ *
+ * Use one of these path prefixes to land in the right category section:
+ *
+ *   /playground         → Playground
+ *   /utility/           → Utility Tools
+ *   /visual-tools/      → Visual Tools
+ *   /editor/            → Editor
+ *   /randomizer/        → Randomizer
+ *   /game/              → Game
+ *   /docs/              → Docs / Commands
+ *
+ * Example:
+ *   { name: 'My New Tool', path: '/utility/my-new-tool', icon: <MyIcon />, desc: '...' }
+ */
+
 export const GLOBAL_PREFIX = '/api';
 
 export const codeMessage = {
@@ -170,40 +190,40 @@ export const pages = [
     desc: 'Detect and test connected controllers in real time.',
   },
 
-  // Image Converter
+  // Visual Tools
   {
     name: 'Image To Text',
-    path: '/image-converter/image-to-text',
+    path: '/visual-tools/image-to-text',
     icon: <ImageToTextIcon />,
     desc: 'Extract text from images easily.',
   },
   {
     name: 'Text Art Generator',
-    path: '/image-converter/text-art',
+    path: '/visual-tools/text-art',
     icon: <TextArtIcon />,
     desc: 'Turn images into ASCII / text art.',
   },
   {
     name: 'SVG Viewer',
-    path: '/image-converter/svg-viewer',
+    path: '/visual-tools/svg-viewer',
     icon: <SVGIcon />,
     desc: 'View and inspect SVG files in the browser.',
   },
   {
     name: 'Photo Editor',
-    path: '/image-converter/photo-editor',
+    path: '/visual-tools/photo-editor',
     icon: <PicsEditorIcon />,
     desc: 'Just photoshop but faster.',
   },
   {
     name: 'Vector Editor',
-    path: '/image-converter/vector-editor',
+    path: '/visual-tools/vector-editor',
     icon: <VectorIcon />,
     desc: 'Create and edit vector graphics.',
   },
   {
     name: 'Image Base64 Converter',
-    path: '/image-converter/base64',
+    path: '/visual-tools/base64',
     icon: <Base64Icon />,
     desc: 'Encode images to Base64 and decode back.',
   },

@@ -1,40 +1,109 @@
 import { pages } from '@/constants';
 
-// --- Data Transformation for WelcomeNew ---
+// =============================================================================
+// LANDING PAGE AUTO-UPDATE RULE
+// =============================================================================
+// The landing page derives all tool listings from `src/constants.tsx`.
+// When you add a new tool to the `pages` array there, it will AUTOMATICALLY
+// appear on the landing page in the correct category section, marquee, and
+// stats counter — as long as you use the correct path prefix:
+//
+//   /playground         → "Playground" section
+//   /utility/           → "Utility Tools" section
+//   /visual-tools/      → "Visual Tools" section
+//   /editor/            → "Editor" section
+//   /randomizer/        → "Randomizer" section
+//   /game/              → "Game" section
+//   /docs/              → "Docs / Commands" section
+//
+// No changes to this file are needed when adding a new tool.
+// =============================================================================
 
-// 1. Sticky Cards (Vertical Scroll)
-// We will use the main categories from WelcomePage as the sticky cards.
-export const stickyCards = [
+// --- Categories with path-prefix based auto-grouping ---
+// `pathPrefix` is the single source of truth — the UI filters `pages` by this.
+export const categories = [
   {
-    id: 1,
     title: 'Playground',
-    description: 'Experiment, code, and create — directly in your browser.',
-    color: '#4353ff', // Blue
-    path: '/playground',
+    pathPrefix: '/playground',
+    desc: 'Experiment, code, and create — directly in your browser.',
+    tagline: 'Build amazing things',
+    testimonial: {
+      quote: 'The playground feature lets me prototype ideas instantly without any setup.',
+      author: 'Developer & Creator',
+      role: 'Full-stack Developer',
+    },
   },
   {
-    id: 2,
     title: 'Utility Tools',
-    description:
-      'From quick conversions to encryption — everything you need for everyday dev work.',
-    color: '#2d2d2d', // Dark
-    path: '/utility/qr',
+    pathPrefix: '/utility/',
+    desc: 'From quick conversions to encryption — everything you need for everyday dev work.',
+    tagline: 'Essential tools, instant access',
+    features: [
+      'Generate secure passwords and UUIDs instantly',
+      'Test regex patterns in real-time',
+      'Encode and decode JWT tokens with ease',
+    ],
   },
   {
-    id: 3,
-    title: 'Image Converter',
-    description: 'Convert, preview, and transform your images with a click.',
-    color: '#ff4081', // Pink
-    path: '/image-converter/image-to-text',
+    title: 'Visual Tools',
+    pathPrefix: '/visual-tools/',
+    desc: 'Edit photos, create vector art, extract text from images, and more — all in your browser.',
+    tagline: 'A creative suite at your fingertips',
+    testimonial: {
+      quote:
+        'Everything I need for visual work in one place — editing, viewing, converting. No installs.',
+      author: 'Design Professional',
+      role: 'UI/UX Designer',
+    },
   },
   {
-    id: 4,
     title: 'Editor',
-    description: 'Edit JSON, Markdown, or HTML instantly with built-in formatters.',
-    color: '#00c853', // Green
-    path: '/editor/json-formatter',
+    pathPrefix: '/editor/',
+    desc: 'Edit JSON, Markdown, HTML, or Mermaid diagrams instantly with built-in formatters.',
+    tagline: 'Edit and format with precision',
+    features: [
+      'Format JSON with syntax highlighting',
+      'Preview Markdown in real-time',
+      'Edit HTML with live preview',
+      'Create and edit Mermaid diagrams visually',
+    ],
+  },
+  {
+    title: 'Randomizer',
+    pathPrefix: '/randomizer/',
+    desc: 'Spin, randomize, and pick — perfect for quick ideas and fun experiments.',
+    tagline: 'Make decisions fun',
+  },
+  {
+    title: 'Game',
+    pathPrefix: '/game/',
+    desc: 'Relax and recharge with built-in classic games.',
+    tagline: 'Take a break, play smart',
+    testimonial: {
+      quote: 'Perfect for quick breaks. These games help me reset and come back more focused.',
+      author: 'Software Engineer',
+      role: 'Product Developer',
+    },
+  },
+  {
+    title: 'Docs / Commands',
+    pathPrefix: '/docs/',
+    desc: 'Quick access to useful documentation, cloud storage, and expressive emoji tools.',
+    tagline: 'Find what you need, fast',
   },
 ];
+
+// --- Sticky Cards: auto-derived from the first 4 categories ---
+// Navigates to the first tool found under each category's pathPrefix.
+const stickyCardAccents = ['#4353ff', '#2d2d2d', '#ff4081', '#00c853'];
+
+export const stickyCards = categories.slice(0, 4).map((cat, i) => ({
+  id: i + 1,
+  title: cat.title,
+  description: cat.desc,
+  color: stickyCardAccents[i],
+  path: pages.find((p) => p.path.startsWith(cat.pathPrefix))?.path || '/',
+}));
 
 // 2. Horizontal Scroll (Customize Cart -> Explore Tools)
 // We will list individual tools here.
@@ -233,91 +302,4 @@ export const heroVisuals: HeroVisualConfig[] = [
   },
 ];
 
-export const categories = [
-  {
-    title: 'Playground',
-    keys: ['Playground'],
-    desc: 'Experiment, code, and create — directly in your browser.',
-    tagline: 'Build amazing things',
-    testimonial: {
-      quote: 'The playground feature lets me prototype ideas instantly without any setup.',
-      author: 'Developer & Creator',
-      role: 'Full-stack Developer',
-    },
-  },
-  {
-    title: 'Utility Tools',
-    keys: [
-      'QR Generator',
-      'Password Generator',
-      'UUID Generator',
-      'Color Picker',
-      'Regex Tester',
-      'JWT Encrypt/Decrypt',
-      'Epoch Converter',
-      'Video Analyzer',
-      'Stress Test',
-      'System Info',
-    ],
-    desc: 'From quick conversions to encryption — everything you need for everyday dev work.',
-    tagline: 'Essential tools, instant access',
-    features: [
-      'Generate secure passwords and UUIDs instantly',
-      'Test regex patterns in real-time',
-      'Encode and decode JWT tokens with ease',
-    ],
-  },
-  {
-    title: 'Image Converter',
-    keys: [
-      'Photo Editor',
-      'Vector Editor',
-      'SVG Viewer',
-      'Image Base64 Converter',
-      'Text Art Generator',
-      'Image To Text',
-    ],
-    desc: 'Convert, preview, and transform your images with a click.',
-    tagline: 'Transform images effortlessly',
-    testimonial: {
-      quote: 'Image conversion has never been this simple. Everything I need in one place.',
-      author: 'Design Professional',
-      role: 'UI/UX Designer',
-    },
-  },
-  {
-    title: 'Editor',
-    keys: ['Json Formatter', 'Readme Editor', 'HTML Editor', 'Mermaid Editor'],
-    desc: 'Edit JSON, Markdown, HTML, or Mermaid diagrams instantly with built-in formatters.',
-    tagline: 'Edit and format with precision',
-    features: [
-      'Format JSON with syntax highlighting',
-      'Preview Markdown in real-time',
-      'Edit HTML with live preview',
-      'Create and edit Mermaid diagrams visually',
-    ],
-  },
-  {
-    title: 'Randomizer',
-    keys: ['🎡 Wheel of Names', 'Random Generator'],
-    desc: 'Spin, randomize, and pick — perfect for quick ideas and fun experiments.',
-    tagline: 'Make decisions fun',
-  },
-  {
-    title: 'Game',
-    keys: ['Chess', 'Sudoku', 'Tic-Tac-Toe', 'Minesweeper', 'Snake xenzia'],
-    desc: 'Relax and recharge with built-in classic games.',
-    tagline: 'Take a break, play smart',
-    testimonial: {
-      quote: 'Perfect for quick breaks. These games help me reset and come back more focused.',
-      author: 'Software Engineer',
-      role: 'Product Developer',
-    },
-  },
-  {
-    title: 'Docs / Commands',
-    keys: ['Commands', 'Emojis /  Kaomojis ', 'Google Drive'],
-    desc: 'Quick access to useful documentation, cloud storage, and expressive emoji tools.',
-    tagline: 'Find what you need, fast',
-  },
-];
+// --- Marquee rows: auto-derived from all pages ---
