@@ -89,7 +89,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
       const iconBorder = color + '44'; // ~27% opacity
 
       return (
-        <div className="mega-menu-item">
+        <div className="mega-menu-item" onClick={() => history.push(item.path!)}>
           <div
             className="mega-menu-icon-wrap"
             style={
