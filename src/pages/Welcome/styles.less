@@ -275,10 +275,9 @@
       .feature-eyebrow {
         display: inline-block;
         font-size: 0.9rem;
-        font-weight: 600;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        color: var(--welcome-text-secondary);
+        letter-spacing: 1.5px;
         margin-bottom: 16px;
       }
 
@@ -317,7 +316,7 @@
             left: 0;
             top: 0;
             font-weight: bold;
-            color: var(--welcome-text-primary);
+            color: var(--check-color, var(--welcome-text-primary));
             font-size: 1.2rem;
           }
         }
@@ -1180,27 +1179,37 @@
   display: inline-block;
   cursor: pointer;
   z-index: 10;
-  margin-top: 0px;
-
-  &:hover .catBtn {
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 #000;
-  }
+  /* Extra bottom padding so paw origin sits just under the button */
+  padding-bottom: 28px;
 }
 
-.catPaw {
+/* Shared base for both paws */
+.catPawLeft,
+.catPawRight {
   position: absolute;
-  top: -30px;
-  right: 20px;
-  width: 40px;
-  height: 40px;
-  z-index: -1;
+  bottom: 0;
+  width: 56px;
+  height: 72px;
   pointer-events: none;
+  /* Clip paw below the wrapper's bottom edge so it "emerges" from below */
+  overflow: hidden;
+  z-index: 2;
 
   svg {
     width: 100%;
     height: 100%;
+    display: block;
   }
+}
+
+.catPawLeft {
+  left: -12px;
+  transform-origin: bottom left;
+}
+
+.catPawRight {
+  right: -12px;
+  transform-origin: bottom right;
 }
 
 .catBtn {
@@ -1213,13 +1222,9 @@
   border-radius: 12px;
   border: 2px solid var(--welcome-btn-bg);
   box-shadow: 0 6px 0 #000;
-  transition: all 0.1s ease;
+  transition: box-shadow 0.1s ease;
   cursor: pointer;
-
-  &:active {
-    transform: translateY(6px);
-    box-shadow: 0 0 0 #000;
-  }
+  display: block;
 }
 
 .footer {
@@ -1279,6 +1284,238 @@
 .featureContent {
   width: 50%;
   padding: 100px 5%;
+}
+
+// --- Scroll Progress Bar ---
+.scrollProgress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ff718b, #4353ff, #41b3ff, #00c853);
+  background-size: 200% 100%;
+  animation: gradientShift 4s ease infinite;
+  transform-origin: left;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+// --- 3D Background Scene ---
+.scene3d {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 700px;
+  height: 700px;
+  max-width: 80vmin;
+  max-height: 80vmin;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.45;
+  filter: blur(0.5px);
+
+  :global(body.dark-mode) & {
+    opacity: 0.55;
+  }
+
+  @media (max-width: 768px) {
+    width: 340px;
+    height: 340px;
+    opacity: 0.25;
+  }
+}
+
+// --- Scroll Text Reveal ---
+.scrollRevealSection {
+  padding: 15vh 6vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+}
+
+.scrollRevealText {
+  font-size: clamp(2rem, 4.5vw, 4.5rem);
+  font-weight: 900;
+  letter-spacing: -2px;
+  line-height: 1.3;
+  max-width: 1100px;
+  text-align: center;
+  color: var(--welcome-text-primary);
+  margin: 0;
+}
+
+.scrollRevealWord {
+  display: inline-block;
+  margin-right: 0.25em;
+  will-change: opacity, transform;
+}
+
+// --- Velocity Text ---
+.velocitySection {
+  padding: 60px 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.velocityRow {
+  display: flex;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.velocityText {
+  font-size: clamp(3rem, 7vw, 7rem);
+  font-weight: 900;
+  letter-spacing: -3px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #ff718b 0%, #4353ff 50%, #41b3ff 100%);
+  background-size: 200% 100%;
+  animation: gradientShift 6s ease infinite;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  padding-right: 2rem;
+  flex-shrink: 0;
+}
+
+.velocityTextOutline {
+  background: none;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 1.5px var(--welcome-text-primary);
+  opacity: 0.3;
+}
+
+// --- Horizontal Showcase ---
+.horizontalSection {
+  height: 300vh;
+  position: relative;
+}
+
+.horizontalWrapper {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  padding-top: 60px;
+}
+
+.horizontalHeader {
+  text-align: center;
+  margin-bottom: 40px;
+  padding: 0 6vw;
+
+  h2 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--welcome-text-primary);
+    margin: 12px 0 0;
+  }
+}
+
+.horizontalTrack {
+  display: flex;
+  gap: 32px;
+  padding: 0 6vw;
+  will-change: transform;
+}
+
+.horizontalCard {
+  flex-shrink: 0;
+  width: 340px;
+  min-height: 400px;
+  border-radius: 24px;
+  padding: 40px 32px;
+  background: var(--welcome-card-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--welcome-card-border);
+  box-shadow: 0 8px 32px var(--welcome-card-shadow);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    background 0.3s ease;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      135deg,
+      var(--card-accent-10, rgba(255, 255, 255, 0)) 0%,
+      var(--card-accent-20, rgba(255, 255, 255, 0.3)) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+    pointer-events: none;
+  }
+
+  &:hover {
+    border-color: var(--card-accent, rgba(255, 255, 255, 0.6));
+    box-shadow: 0 20px 60px var(--card-accent-20, rgba(0, 0, 0, 0.12));
+
+    &::before {
+      transform: translateX(100%);
+    }
+  }
+}
+
+.horizontalCardAccentBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 24px 24px 0 0;
+}
+
+.horizontalCardIcon {
+  font-size: 4rem;
+  margin-bottom: 24px;
+}
+
+.horizontalCardName {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--welcome-text-primary);
+  margin: 0 0 12px;
+}
+
+.horizontalCardDesc {
+  font-size: 0.95rem;
+  color: var(--welcome-text-secondary);
+  line-height: 1.6;
+  flex: 1;
+}
+
+.horizontalCardArrow {
+  font-size: 1.5rem;
+  align-self: flex-end;
+  opacity: 0.5;
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
+
+  .horizontalCard:hover & {
+    transform: translateX(8px);
+    opacity: 1;
+  }
 }
 
 .ant-pro-layout .ant-pro-layout-content {

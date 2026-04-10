@@ -16,7 +16,9 @@ const CategoryShowcaseSection: React.FC = () => {
     <div id="category-showcase" className={styles.categoryShowcaseSection}>
       {categories.map((category, i) => {
         const items = pages.filter((p) => p.path.startsWith(category.pathPrefix));
-        const isReverse = i % 2 !== 0; // Alternate layout
+        const isReverse = i % 2 !== 0;
+        const accent = category.accent;
+        const accentStyle = { '--cat-accent': accent } as React.CSSProperties;
 
         // Special design for Playground
         if (category.title === 'Playground') {
@@ -24,6 +26,7 @@ const CategoryShowcaseSection: React.FC = () => {
             <motion.div
               key="playground-section"
               className="feature-section feature-hero"
+              style={accentStyle}
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-100px' }}
@@ -37,7 +40,9 @@ const CategoryShowcaseSection: React.FC = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.8, delay: 0.2 }}
                 >
-                  <Text className="feature-eyebrow">{category.tagline}</Text>
+                  <Text className="feature-eyebrow" style={{ color: accent }}>
+                    {category.tagline}
+                  </Text>
                   <Title level={2} className="feature-title">
                     {category.title}
                   </Title>
@@ -48,7 +53,7 @@ const CategoryShowcaseSection: React.FC = () => {
                     <li>No setup required — start coding immediately</li>
                   </ul>
                   {category.testimonial && (
-                    <div className="inline-testimonial">
+                    <div className="inline-testimonial" style={{ borderLeftColor: accent }}>
                       <blockquote>"{category.testimonial.quote}"</blockquote>
                       <div className="testimonial-author">
                         <strong>{category.testimonial.author}</strong>
@@ -56,7 +61,12 @@ const CategoryShowcaseSection: React.FC = () => {
                       </div>
                     </div>
                   )}
-                  <Button type="primary" size="large" onClick={() => history.push(items[0]?.path)}>
+                  <Button
+                    type="primary"
+                    size="large"
+                    style={{ background: accent, borderColor: accent }}
+                    onClick={() => history.push(items[0]?.path)}
+                  >
                     Try Playground
                   </Button>
                 </motion.div>
@@ -85,6 +95,7 @@ const CategoryShowcaseSection: React.FC = () => {
                           scale: 1.08,
                           y: -10,
                           zIndex: 10,
+                          boxShadow: `0 20px 60px ${accent}25`,
                           transition: { duration: 0.3 },
                         }}
                         onClick={() => history.push(item.path)}
@@ -97,6 +108,7 @@ const CategoryShowcaseSection: React.FC = () => {
                         }}
                         style={{
                           zIndex: items.length - idx,
+                          borderTop: `3px solid ${accent}`,
                         }}
                       >
                         <div className="showcase-icon">{item.icon}</div>
@@ -113,6 +125,7 @@ const CategoryShowcaseSection: React.FC = () => {
           <motion.section
             key={category.title}
             className={`feature-section ${isReverse ? 'reverse' : ''}`}
+            style={accentStyle}
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-100px' }}
@@ -126,7 +139,11 @@ const CategoryShowcaseSection: React.FC = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
-                {category.tagline && <Text className="feature-eyebrow">{category.tagline}</Text>}
+                {category.tagline && (
+                  <Text className="feature-eyebrow" style={{ color: accent }}>
+                    {category.tagline}
+                  </Text>
+                )}
                 <Title level={2} className="feature-title">
                   {category.title}
                 </Title>
@@ -134,12 +151,14 @@ const CategoryShowcaseSection: React.FC = () => {
                 {category.features && (
                   <ul className="feature-list">
                     {category.features.map((feature, idx) => (
-                      <li key={idx}>{feature}</li>
+                      <li key={idx} style={{ '--check-color': accent } as React.CSSProperties}>
+                        {feature}
+                      </li>
                     ))}
                   </ul>
                 )}
                 {category.testimonial && (
-                  <div className="inline-testimonial">
+                  <div className="inline-testimonial" style={{ borderLeftColor: accent }}>
                     <blockquote>"{category.testimonial.quote}"</blockquote>
                     <div className="testimonial-author">
                       <strong>{category.testimonial.author}</strong>
@@ -147,7 +166,12 @@ const CategoryShowcaseSection: React.FC = () => {
                     </div>
                   </div>
                 )}
-                <Button type="primary" size="large" onClick={() => history.push(items[0]?.path)}>
+                <Button
+                  type="primary"
+                  size="large"
+                  style={{ background: accent, borderColor: accent }}
+                  onClick={() => history.push(items[0]?.path)}
+                >
                   Explore {category.title}
                 </Button>
               </motion.div>
@@ -166,6 +190,7 @@ const CategoryShowcaseSection: React.FC = () => {
                         <motion.div
                           key={item.name}
                           className="tool-card"
+                          style={{ borderTop: `3px solid ${accent}` }}
                           initial={{ opacity: 0, y: 40, scale: 0.92 }}
                           whileInView={{ opacity: 1, y: 0, scale: 1 }}
                           viewport={{ once: true, amount: 0.4 }}
@@ -178,6 +203,7 @@ const CategoryShowcaseSection: React.FC = () => {
                             scale: 1.06,
                             y: -12,
                             zIndex: 20,
+                            boxShadow: `0 16px 48px ${accent}25`,
                             transition: { duration: 0.3 },
                           }}
                           onClick={() => history.push(item.path)}
@@ -203,6 +229,7 @@ const CategoryShowcaseSection: React.FC = () => {
                         <motion.div
                           key={item.name}
                           className="tool-card"
+                          style={{ borderTop: `3px solid ${accent}` }}
                           initial={{ opacity: 0, y: 30 }}
                           whileInView={{ opacity: 1, y: 0 }}
                           viewport={{ once: true, amount: 0.5 }}
@@ -214,6 +241,7 @@ const CategoryShowcaseSection: React.FC = () => {
                           whileHover={{
                             scale: 1.06,
                             y: -10,
+                            boxShadow: `0 16px 48px ${accent}25`,
                             transition: { duration: 0.3 },
                           }}
                           onClick={() => history.push(item.path)}

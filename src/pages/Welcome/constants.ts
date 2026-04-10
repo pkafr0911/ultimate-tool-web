@@ -25,6 +25,7 @@ export const categories = [
   {
     title: 'Playground',
     pathPrefix: '/playground',
+    accent: '#6366f1',
     desc: 'Experiment, code, and create — directly in your browser.',
     tagline: 'Build amazing things',
     testimonial: {
@@ -36,6 +37,7 @@ export const categories = [
   {
     title: 'Utility Tools',
     pathPrefix: '/utility/',
+    accent: '#f43f5e',
     desc: 'From quick conversions to encryption — everything you need for everyday dev work.',
     tagline: 'Essential tools, instant access',
     features: [
@@ -47,6 +49,7 @@ export const categories = [
   {
     title: 'Visual Tools',
     pathPrefix: '/visual-tools/',
+    accent: '#a855f7',
     desc: 'Edit photos, create vector art, extract text from images, and more — all in your browser.',
     tagline: 'A creative suite at your fingertips',
     testimonial: {
@@ -59,6 +62,7 @@ export const categories = [
   {
     title: 'Editor',
     pathPrefix: '/editor/',
+    accent: '#3b82f6',
     desc: 'Edit JSON, Markdown, HTML, or Mermaid diagrams instantly with built-in formatters.',
     tagline: 'Edit and format with precision',
     features: [
@@ -71,12 +75,14 @@ export const categories = [
   {
     title: 'Randomizer',
     pathPrefix: '/randomizer/',
+    accent: '#f59e0b',
     desc: 'Spin, randomize, and pick — perfect for quick ideas and fun experiments.',
     tagline: 'Make decisions fun',
   },
   {
     title: 'Game',
     pathPrefix: '/game/',
+    accent: '#10b981',
     desc: 'Relax and recharge with built-in classic games.',
     tagline: 'Take a break, play smart',
     testimonial: {
@@ -88,6 +94,7 @@ export const categories = [
   {
     title: 'Docs / Commands',
     pathPrefix: '/docs/',
+    accent: '#14b8a6',
     desc: 'Quick access to useful documentation, cloud storage, and expressive emoji tools.',
     tagline: 'Find what you need, fast',
   },
@@ -95,7 +102,7 @@ export const categories = [
 
 // --- Sticky Cards: auto-derived from the first 4 categories ---
 // Navigates to the first tool found under each category's pathPrefix.
-const stickyCardAccents = ['#4353ff', '#2d2d2d', '#ff4081', '#00c853'];
+const stickyCardAccents = ['#6366f1', '#f43f5e', '#a855f7', '#10b981'];
 
 export const stickyCards = categories.slice(0, 4).map((cat, i) => ({
   id: i + 1,
@@ -104,6 +111,18 @@ export const stickyCards = categories.slice(0, 4).map((cat, i) => ({
   color: stickyCardAccents[i],
   path: pages.find((p) => p.path.startsWith(cat.pathPrefix))?.path || '/',
 }));
+
+// Maps path prefix → accent color for per-card tinting
+export const prefixAccentMap: Record<string, string> = Object.fromEntries(
+  categories.map((c) => [c.pathPrefix, c.accent]),
+);
+
+export function getToolAccent(path: string): string {
+  for (const [prefix, color] of Object.entries(prefixAccentMap)) {
+    if (path.startsWith(prefix)) return color;
+  }
+  return '#6366f1';
+}
 
 // 2. Horizontal Scroll (Customize Cart -> Explore Tools)
 // We will list individual tools here.
