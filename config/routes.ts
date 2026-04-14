@@ -54,6 +54,7 @@
         name: 'device-test',
         icon: 'desktop',
         component: './DeviceTest',
+        hideChildrenInMenu: true,
         routes: [
           { path: '/utility/device-test', redirect: '/utility/device-test/keyboard' },
           { path: '/utility/device-test/keyboard', component: './DeviceTest' },

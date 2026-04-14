@@ -81,8 +81,21 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     menuItemRender: (item, defaultDom) => {
       // Only apply custom render for sub-menu items (e.g. /utility/qr, not /playground)
       const isSubItem = item.path && item.path.split('/').filter(Boolean).length > 1;
-      const page = pages.find((p) => p.path === item.path);
-      if (!isSubItem || !page) return defaultDom;
+      const page =
+        pages.find((p) => p.path === item.path) ??
+        pages.find((p) => item.path && p.path.startsWith(item.path + '/'));
+
+      // Top-level items (e.g. /playground): keep default look but restore navigation
+      if (!isSubItem) {
+        if (!item.path) return defaultDom;
+        return (
+          <div style={{ display: 'contents' }} onClick={() => history.push(item.path!)}>
+            {defaultDom}
+          </div>
+        );
+      }
+
+      if (!page) return defaultDom;
 
       const color = getCategoryColor(page.path);
       const iconBg = color + '22'; // ~13% opacity

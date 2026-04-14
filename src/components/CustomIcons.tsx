@@ -818,3 +818,74 @@ export const GoogleDriveIcon: React.FC<IconProps> = ({ color = '#4285F4', ...pro
     />
   </BaseIcon>
 );
+
+export const DeviceTestIcon: React.FC<IconProps> = ({ color = '#1677FF', ...props }) => (
+  <BaseIcon color={color} {...props}>
+    {/* monitor body */}
+    <rect
+      x="2"
+      y="3"
+      width="20"
+      height="14"
+      rx="2"
+      stroke={color}
+      strokeWidth="2"
+      fill={color}
+      fillOpacity="0.08"
+    />
+    {/* stand neck */}
+    <path d="M12 17v4" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    {/* stand base */}
+    <path d="M8 21h8" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    {/* diagnostic pulse line */}
+    <path
+      d="M3 10h3l2-4 2.5 8 2-5 1.5 3H21"
+      stroke={color}
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+  </BaseIcon>
+);
+
+export const MouseTestIcon: React.FC<IconProps> = ({ color = '#722ED1', ...props }) => (
+  <BaseIcon color={color} {...props}>
+    {/* mouse body */}
+    <rect
+      x="7"
+      y="4"
+      width="10"
+      height="14"
+      rx="5"
+      stroke={color}
+      strokeWidth="2"
+      fill={color}
+      fillOpacity="0.08"
+    />
+    {/* divider line */}
+    <line x1="12" y1="4" x2="12" y2="10" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    {/* scroll wheel */}
+    <rect x="11" y="10" width="2" height="4" rx="1" fill={color} opacity="0.7" />
+    {/* click highlight left */}
+    <path d="M7 9a5 5 0 015-5v6H7V9z" fill={color} fillOpacity="0.15" />
+  </BaseIcon>
+);
+
+export const GooglePhotosIcon: React.FC<IconProps> = ({ color = '#EA4335', ...props }) => (
+  <BaseIcon color={color} {...props}>
+    {/* 4-petal pinwheel — Google Photos logo */}
+    {/* red – top */}
+    <path d="M12 3a4.5 4.5 0 014.5 4.5H12V3z" fill="#EA4335" />
+    <path d="M12 3a4.5 4.5 0 00-4.5 4.5H12V3z" fill="#EA4335" fillOpacity="0.4" />
+    {/* blue – right */}
+    <path d="M21 12a4.5 4.5 0 01-4.5 4.5V12H21z" fill="#4285F4" />
+    <path d="M21 12a4.5 4.5 0 00-4.5-4.5V12H21z" fill="#4285F4" fillOpacity="0.4" />
+    {/* green – bottom */}
+    <path d="M12 21a4.5 4.5 0 01-4.5-4.5H12V21z" fill="#34A853" />
+    <path d="M12 21a4.5 4.5 0 004.5-4.5H12V21z" fill="#34A853" fillOpacity="0.4" />
+    {/* yellow – left */}
+    <path d="M3 12a4.5 4.5 0 014.5-4.5V12H3z" fill="#FBBC04" />
+    <path d="M3 12a4.5 4.5 0 004.5 4.5V12H3z" fill="#FBBC04" fillOpacity="0.4" />
+  </BaseIcon>
+);

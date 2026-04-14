@@ -4,15 +4,18 @@ import {
   ChessIcon,
   ColorPickerIcon,
   CommandIcon,
+  DeviceTestIcon,
   EmojiIcon,
   EpochIcon,
   GoogleDriveIcon,
+  GooglePhotosIcon,
   HtmlIcon,
   ImageToTextIcon,
   JsonIcon,
   JWTIcon,
   MermaidIcon,
   MinesweeperIcon,
+  MouseTestIcon,
   PasswordIcon,
   PicsEditorIcon,
   PlaygroundIcon,
@@ -160,6 +163,12 @@ export const pages = [
     desc: 'See what browser APIs expose about your system.',
   },
   {
+    name: 'Device Test',
+    path: '/utility/device-test/keyboard',
+    icon: <DeviceTestIcon />,
+    desc: 'Test keyboard, camera, mic, headphone, gamepad and mouse.',
+  },
+  {
     name: 'Keyboard Test',
     path: '/utility/device-test/keyboard',
     icon: <>⌨️</>,
@@ -188,6 +197,12 @@ export const pages = [
     path: '/utility/device-test/gamepad',
     icon: <>🎮</>,
     desc: 'Detect and test connected controllers in real time.',
+  },
+  {
+    name: 'Mouse Test',
+    path: '/utility/device-test/mouse',
+    icon: <MouseTestIcon />,
+    desc: 'Test mouse buttons, scroll wheel and pointer precision.',
   },
 
   // Visual Tools
@@ -318,5 +333,11 @@ export const pages = [
     path: '/docs/google-drive',
     icon: <GoogleDriveIcon />,
     desc: 'Browse and manage Google Drive files.',
+  },
+  {
+    name: 'Google Photos',
+    path: '/docs/google-photos',
+    icon: <GooglePhotosIcon />,
+    desc: 'Browse and view your Google Photos albums.',
   },
 ];
