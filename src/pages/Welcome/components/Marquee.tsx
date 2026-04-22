@@ -20,14 +20,24 @@ export const MarqueeCard = ({ item }: { item: any }) => {
   const accent = item.path ? getToolAccent(item.path) : '#6366f1';
   const label = item.path ? getCategoryLabel(item.path) : '';
 
+  const ariaLabel = item.path
+    ? `Open ${item.title}`
+    : item.title
+      ? `${item.title} preview`
+      : 'Tool preview';
+
   return (
     <motion.div
       className={styles.marqueeCard}
       onClick={handleClick}
-      role="button"
-      tabIndex={0}
+      role={item.path ? 'button' : 'img'}
+      tabIndex={item.path ? 0 : -1}
+      aria-label={ariaLabel}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') handleClick();
+        if (item.path && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          handleClick();
+        }
       }}
       style={{ '--card-accent': accent } as React.CSSProperties}
       whileHover={{ y: -6, transition: { duration: 0.22 } }}
@@ -77,6 +87,7 @@ export const MarqueeRow = ({
     <div className={styles.marqueeRow}>
       <motion.div
         className={styles.marqueeTrack}
+        initial={{ x: direction === 'left' ? '0%' : '-33.33%' }}
         animate={{ x: direction === 'left' ? ['0%', '-33.33%'] : ['-33.33%', '0%'] }}
         transition={{
           duration: speed,
@@ -95,7 +106,7 @@ export const MarqueeRow = ({
 
 export const ToolsMarqueeSection = () => {
   return (
-    <div className={styles.toolsMarqueeSection}>
+    <section className={styles.toolsMarqueeSection} aria-label="All tools">
       <div className={styles.marqueeHeader}>
         <span className={styles.sectionEyebrow}>Every tool, at a glance</span>
         <h2>Explore All Tools</h2>
@@ -104,6 +115,6 @@ export const ToolsMarqueeSection = () => {
       <MarqueeRow items={marqueeRows[0]} direction="left" speed={40} />
       <MarqueeRow items={marqueeRows[1]} direction="right" speed={50} />
       <MarqueeRow items={marqueeRows[2]} direction="left" speed={45} />
-    </div>
+    </section>
   );
 };

@@ -11,6 +11,10 @@ const useCounter = (end: number, duration: number = 2000, inView: boolean) => {
   useEffect(() => {
     if (!inView || started.current) return;
     started.current = true;
+    if (end === 0) {
+      setCount(0);
+      return;
+    }
     let start = 0;
     const step = end / (duration / 16);
     const timer = setInterval(() => {
@@ -26,6 +30,45 @@ const useCounter = (end: number, duration: number = 2000, inView: boolean) => {
   }, [inView, end, duration]);
 
   return count;
+};
+
+interface StatCardProps {
+  stat: {
+    value: number;
+    suffix: string;
+    label: string;
+    description: string;
+    gradient: string;
+  };
+  index: number;
+  inView: boolean;
+}
+
+const StatCard: React.FC<StatCardProps> = ({ stat, index, inView }) => {
+  const count = useCounter(stat.value, 2000, inView);
+  return (
+    <motion.div
+      className={styles.statCard}
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: index * 0.15, duration: 0.6 }}
+      whileHover={{ y: -8, transition: { duration: 0.3 } }}
+      style={{ willChange: 'transform, opacity' }}
+    >
+      <div
+        className={styles.statNumber}
+        style={{ backgroundImage: stat.gradient }}
+        aria-label={`${stat.value}${stat.suffix} ${stat.label}`}
+      >
+        {count}
+        {stat.suffix}
+      </div>
+      <div className={styles.statLabel}>{stat.label}</div>
+      <div className={styles.statDesc}>{stat.description}</div>
+      <div className={styles.statGlow} style={{ backgroundImage: stat.gradient }} />
+    </motion.div>
+  );
 };
 
 const stats = [
@@ -91,31 +134,9 @@ const StatsCounterSection: React.FC = () => {
         No signups. No downloads. No data collection. Just tools that work.
       </motion.p>
       <div className={styles.statsGrid}>
-        {stats.map((stat, i) => {
-          const count = useCounter(stat.value, 2000, isInView);
-          return (
-            <motion.div
-              key={stat.label}
-              className={styles.statCard}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.15, duration: 0.6 }}
-              whileHover={{
-                y: -8,
-                transition: { duration: 0.3 },
-              }}
-            >
-              <div className={styles.statNumber} style={{ backgroundImage: stat.gradient }}>
-                {count}
-                {stat.suffix}
-              </div>
-              <div className={styles.statLabel}>{stat.label}</div>
-              <div className={styles.statDesc}>{stat.description}</div>
-              <div className={styles.statGlow} style={{ backgroundImage: stat.gradient }} />
-            </motion.div>
-          );
-        })}
+        {stats.map((stat, i) => (
+          <StatCard key={stat.label} stat={stat} index={i} inView={isInView} />
+        ))}
       </div>
     </motion.div>
   );

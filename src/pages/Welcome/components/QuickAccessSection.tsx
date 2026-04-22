@@ -43,8 +43,10 @@ const QuickAccessSection = () => {
                 onClick={() => history.push(card.path)}
                 role="button"
                 tabIndex={0}
+                aria-label={`Open ${card.title} — ${card.description}`}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
                     history.push(card.path);
                   }
                 }}

@@ -5,6 +5,7 @@ import { cancelFrame, frame, motion, useScroll, useSpring, useTransform } from '
 import 'lenis/dist/lenis.css';
 import styles from './styles.less';
 import '../Welcome/styles.less'; // Import original styles for hero visuals
+import { pages } from '@/constants';
 
 // Components
 import HeroSection from './components/HeroSection';
@@ -52,7 +53,9 @@ const WelcomeNew: React.FC = () => {
       <div className={styles.container}>
         <HeroSection />
         <StatsCounterSection />
-        <ScrollTextReveal text="35+ powerful developer tools. Zero installs. 100% private. Built for developers who ship fast." />
+        <ScrollTextReveal
+          text={`${pages.length}+ powerful developer tools. Zero installs. 100% private. Built for developers who ship fast.`}
+        />
         <FeatureHighlightSection />
         <HowItWorksSection />
         <VelocityText />

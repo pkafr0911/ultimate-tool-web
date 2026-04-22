@@ -23,7 +23,7 @@ const FilterPreview: React.FC<{
   originalImage: HTMLImageElement | null;
   isActive: boolean;
   onClick: () => void;
-}> = ({ name, filterClass, originalImage, isActive, onClick }) => {
+}> = React.memo(({ name, filterClass, originalImage, isActive, onClick }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -62,6 +62,16 @@ const FilterPreview: React.FC<{
   return (
     <div
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      aria-label={`Apply ${name} filter`}
+      aria-pressed={isActive}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
       style={{
         cursor: 'pointer',
         display: 'flex',
@@ -90,7 +100,9 @@ const FilterPreview: React.FC<{
       </Typography.Text>
     </div>
   );
-};
+});
+
+FilterPreview.displayName = 'FilterPreview';
 
 const AdjustmentPanel: React.FC = () => {
   const { canvas, selectedObject, history } = usePhotoEditor();
@@ -102,13 +114,18 @@ const AdjustmentPanel: React.FC = () => {
       const src = img.getSrc();
       const image = new Image();
       image.crossOrigin = 'anonymous';
-      image.src = src;
+      let cancelled = false;
       image.onload = () => {
-        setOriginalImage(image);
+        if (!cancelled) setOriginalImage(image);
       };
-    } else {
-      setOriginalImage(null);
+      image.src = src;
+      return () => {
+        cancelled = true;
+        image.onload = null;
+      };
     }
+    setOriginalImage(null);
+    return undefined;
   }, [selectedObject]);
 
   const applyFilter = (index: number, filter: any) => {

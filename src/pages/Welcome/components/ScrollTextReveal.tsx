@@ -41,7 +41,7 @@ const ScrollTextReveal: React.FC<ScrollTextRevealProps> = ({ text }) => {
           const start = i / words.length;
           const end = start + 1 / words.length;
           return (
-            <Word key={i} progress={scrollYProgress} range={[start, end]}>
+            <Word key={`${i}-${word}`} progress={scrollYProgress} range={[start, end]}>
               {word}
             </Word>
           );

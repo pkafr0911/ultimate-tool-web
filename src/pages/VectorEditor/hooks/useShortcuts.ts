@@ -1,16 +1,25 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface ShortcutMap {
   [key: string]: (e: KeyboardEvent) => void;
 }
 
+/**
+ * Subscribe to a map of shortcut keystrings (e.g. 'v', 'ctrl+z', 'ctrl+shift+z').
+ * Ignores key events while typing into an input/textarea/contenteditable element.
+ */
 export const useShortcuts = (shortcuts: ShortcutMap) => {
+  // Keep latest map in a ref so we don't rebind the global listener on every render
+  const mapRef = useRef(shortcuts);
+  mapRef.current = shortcuts;
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if typing in an input or textarea
+      const active = document.activeElement;
       if (
-        document.activeElement instanceof HTMLInputElement ||
-        document.activeElement instanceof HTMLTextAreaElement
+        active instanceof HTMLInputElement ||
+        active instanceof HTMLTextAreaElement ||
+        (active instanceof HTMLElement && active.isContentEditable)
       ) {
         return;
       }
@@ -19,29 +28,26 @@ export const useShortcuts = (shortcuts: ShortcutMap) => {
       const ctrl = e.ctrlKey || e.metaKey;
       const shift = e.shiftKey;
 
-      // Construct key string like 'ctrl+z', 'ctrl+shift+z', 'v', 'delete'
       let keyString = '';
       if (ctrl) keyString += 'ctrl+';
       if (shift) keyString += 'shift+';
       keyString += key;
 
-      console.log('Key pressed:', { key, ctrl, shift, keyString });
-
-      if (shortcuts[keyString]) {
+      const shortcutFn = mapRef.current[keyString];
+      if (shortcutFn) {
         e.preventDefault();
-        shortcuts[keyString](e);
-      } else if (shortcuts[key]) {
-        // Fallback for single keys without modifiers if not explicitly defined with modifiers
-        // But be careful not to trigger 'v' when 'ctrl+v' is pressed if 'ctrl+v' is not defined but 'v' is.
-        // The logic above handles exact matches first.
-        if (!ctrl && !shift) {
-          e.preventDefault();
-          shortcuts[key](e);
-        }
+        shortcutFn(e);
+        return;
+      }
+
+      // Fallback to bare-key map only when no modifiers are held
+      if (!ctrl && !shift && mapRef.current[key]) {
+        e.preventDefault();
+        mapRef.current[key](e);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [shortcuts]);
+  }, []);
 };

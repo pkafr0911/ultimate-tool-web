@@ -88,12 +88,15 @@ const ExportModal: React.FC<ExportModalProps> = ({ visible, onCancel, canvas }) 
   };
 
   const downloadBlob = (blob: Blob, fileName: string) => {
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
+    link.href = url;
     link.download = fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    // Revoke on next tick so the browser has time to start the download
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   return (

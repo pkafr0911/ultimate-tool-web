@@ -30,6 +30,11 @@ interface PointEditor {
   }>;
 }
 
+interface CursorPos {
+  x: number;
+  y: number;
+}
+
 interface VectorEditorContextType {
   canvas: Canvas | null;
   setCanvas: (canvas: Canvas) => void;
@@ -37,6 +42,18 @@ interface VectorEditorContextType {
   setSelectedObject: (object: FabricObject | null) => void;
   activeTool: string;
   setActiveTool: (tool: string) => void;
+  /** Default fill colour applied when creating new shapes */
+  defaultFill: string;
+  setDefaultFill: (color: string) => void;
+  /** Default stroke colour applied when creating new shapes */
+  defaultStroke: string;
+  setDefaultStroke: (color: string) => void;
+  /** Live zoom value (1 = 100%) — driven by CanvasArea */
+  zoom: number;
+  setZoom: (z: number) => void;
+  /** Live cursor position in canvas (logical) coords */
+  cursor: CursorPos;
+  setCursor: (p: CursorPos) => void;
   history: {
     saveState: () => void;
     undo: () => void;
@@ -55,6 +72,10 @@ export const VectorEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
   const [activeTool, setActiveTool] = useState<string>('select');
   const [pointEditor, setPointEditor] = useState<PointEditor | null>(null);
+  const [defaultFill, setDefaultFill] = useState<string>('#4096ff');
+  const [defaultStroke, setDefaultStroke] = useState<string>('#1f1f1f');
+  const [zoom, setZoom] = useState<number>(1);
+  const [cursor, setCursor] = useState<CursorPos>({ x: 0, y: 0 });
 
   const history = useHistory(canvas);
 
@@ -67,6 +88,14 @@ export const VectorEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setSelectedObject,
         activeTool,
         setActiveTool,
+        defaultFill,
+        setDefaultFill,
+        defaultStroke,
+        setDefaultStroke,
+        zoom,
+        setZoom,
+        cursor,
+        setCursor,
         history,
         pointEditor,
         setPointEditor,

@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { history } from 'umi';
 import styles from '../styles.less';
 import { heroVisuals } from '../constants';
 import { pages } from '@/constants';
+import { categories } from '../constants';
 import CatButton from './CatButton';
 
 const phrases = [
@@ -24,8 +25,13 @@ const trustBadges = [
 const TerminalTyper = () => {
   const lines = [
     { prompt: '~', cmd: 'npx ultimate-tools --start', delay: 0 },
-    { prompt: '', cmd: '✓ 35+ tools loaded', delay: 1.2, isOutput: true },
-    { prompt: '', cmd: '✓ 7 categories ready', delay: 1.8, isOutput: true },
+    { prompt: '', cmd: `✓ ${pages.length}+ tools loaded`, delay: 1.2, isOutput: true },
+    {
+      prompt: '',
+      cmd: `✓ ${categories.length} categories ready`,
+      delay: 1.8,
+      isOutput: true,
+    },
     { prompt: '', cmd: '✓ All running in browser — no install needed', delay: 2.4, isOutput: true },
     { prompt: '~', cmd: 'echo "Ready to build something amazing?"', delay: 3.2 },
   ];
@@ -87,37 +93,47 @@ const HeroSection = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Memoize particles so random positions/durations aren't regenerated on every render
+  const particles = useMemo(() => {
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    return Array.from({ length: 20 }).map((_, i) => ({
+      id: i,
+      initialX: Math.random() * vw,
+      initialY: Math.random() * 600,
+      targetY: Math.random() * -200 - 100,
+      duration: Math.random() * 4 + 4,
+      delay: Math.random() * 3,
+    }));
+  }, []);
+
   return (
-    <motion.div
+    <motion.header
       ref={heroRef}
       className={`${styles.hero} welcome-container`}
-      style={{ opacity: heroOpacity, scale: heroScale }}
+      style={{ opacity: heroOpacity, scale: heroScale, willChange: 'transform, opacity' }}
+      role="banner"
     >
-      <div className={styles.blobContainer}>
+      <div className={styles.blobContainer} aria-hidden="true">
         <div className="blob blob1" />
         <div className="blob blob2" />
         <div className="blob blob3" />
       </div>
 
       {/* Floating particles */}
-      <div className={styles.particlesContainer}>
-        {Array.from({ length: 20 }).map((_, i) => (
+      <div className={styles.particlesContainer} aria-hidden="true">
+        {particles.map((p) => (
           <motion.div
-            key={i}
+            key={p.id}
             className={styles.particle}
-            initial={{
-              x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1200),
-              y: Math.random() * 600,
-              opacity: 0,
-            }}
+            initial={{ x: p.initialX, y: p.initialY, opacity: 0 }}
             animate={{
-              y: [null, Math.random() * -200 - 100],
+              y: [null, p.targetY],
               opacity: [0, 0.6, 0],
             }}
             transition={{
-              duration: Math.random() * 4 + 4,
+              duration: p.duration,
               repeat: Infinity,
-              delay: Math.random() * 3,
+              delay: p.delay,
               ease: 'easeOut',
             }}
           />
@@ -230,6 +246,7 @@ const HeroSection = () => {
                   onClick={handleClick}
                   role="button"
                   tabIndex={0}
+                  aria-label={`Open ${item.name}`}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       handleClick();
@@ -241,6 +258,7 @@ const HeroSection = () => {
                       className="visual-icon"
                       animate={visual.iconAnimate}
                       transition={visual.iconTransition}
+                      aria-hidden="true"
                     >
                       {item.icon}
                     </motion.div>
@@ -253,7 +271,7 @@ const HeroSection = () => {
           </div>
         </motion.div>
       </div>
-    </motion.div>
+    </motion.header>
   );
 };
 

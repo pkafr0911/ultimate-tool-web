@@ -2,31 +2,50 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { message } from 'antd';
 import { SavedProject } from '../types';
 
+// Hard cap to avoid freezing the tab on very large images (dataURL is ~4/3 of file size)
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 MB
+
 export const useImageUpload = () => {
   const [preview, setPreview] = useState<string | null>(null);
   const [initialProject, setInitialProject] = useState<SavedProject | null>(null);
   const [addOnFile, setAddOnFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
   const dragCounter = useRef(0);
+  // Mirror of `preview` in a ref so the paste listener can read the latest
+  // value without being re-bound on every preview change.
+  const previewRef = useRef<string | null>(null);
 
-  const handleUpload = useCallback(
-    (file: File) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (preview) {
-          setAddOnFile(file);
-        } else {
-          setPreview(e.target?.result as string);
-          setInitialProject(null);
-        }
-      };
-      reader.readAsDataURL(file);
-      setDragging(false);
-      dragCounter.current = 0;
+  useEffect(() => {
+    previewRef.current = preview;
+  }, [preview]);
+
+  const handleUpload = useCallback((file: File) => {
+    if (file.size > MAX_UPLOAD_BYTES) {
+      message.error(
+        `Image is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is ${
+          MAX_UPLOAD_BYTES / 1024 / 1024
+        } MB.`,
+      );
       return false;
-    },
-    [preview],
-  );
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (previewRef.current) {
+        setAddOnFile(file);
+      } else {
+        setPreview(e.target?.result as string);
+        setInitialProject(null);
+      }
+    };
+    reader.onerror = () => {
+      message.error('Failed to read image file.');
+    };
+    reader.readAsDataURL(file);
+    setDragging(false);
+    dragCounter.current = 0;
+    return false;
+  }, []);
 
   const loadProject = useCallback((project: SavedProject) => {
     setInitialProject(project);

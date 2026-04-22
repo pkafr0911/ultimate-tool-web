@@ -101,8 +101,10 @@ const CategoryShowcaseSection: React.FC = () => {
                         onClick={() => history.push(item.path)}
                         role="button"
                         tabIndex={0}
+                        aria-label={`Open ${item.name}`}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
                             history.push(item.path);
                           }
                         }}
@@ -209,8 +211,10 @@ const CategoryShowcaseSection: React.FC = () => {
                           onClick={() => history.push(item.path)}
                           role="button"
                           tabIndex={0}
+                          aria-label={`Open ${item.name}`}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
                               history.push(item.path);
                             }
                           }}
@@ -247,8 +251,10 @@ const CategoryShowcaseSection: React.FC = () => {
                           onClick={() => history.push(item.path)}
                           role="button"
                           tabIndex={0}
+                          aria-label={`Open ${item.name}`}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
                               history.push(item.path);
                             }
                           }}

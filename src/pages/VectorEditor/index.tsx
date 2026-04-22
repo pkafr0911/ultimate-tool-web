@@ -7,6 +7,7 @@ import CanvasArea from './components/CanvasArea';
 import PropertiesPanel from './components/PropertiesPanel';
 import LayersPanel from './components/LayersPanel';
 import AlignmentPanel from './components/AlignmentPanel';
+import StatusBar from './components/StatusBar';
 import styles from './styles.less';
 
 const { Sider, Content } = Layout;
@@ -16,13 +17,16 @@ const VectorEditor: React.FC = () => {
     <PageContainer title="Vector Editor">
       <VectorEditorProvider>
         <Card className={styles.editorContainer} bodyStyle={{ padding: 0, height: '100%' }}>
-          <Layout style={{ height: '80vh' }}>
+          <Layout style={{ height: '82vh' }}>
             <Sider theme="light" width={60} className={styles.toolbarSider}>
               <Toolbar />
             </Sider>
-            <Content className={styles.canvasContent}>
-              <CanvasArea />
-            </Content>
+            <Layout>
+              <Content className={styles.canvasContent}>
+                <CanvasArea />
+              </Content>
+              <StatusBar />
+            </Layout>
             <Sider theme="light" width={300} className={styles.propertiesSider}>
               <AlignmentPanel />
               <PropertiesPanel />
