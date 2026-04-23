@@ -104,65 +104,155 @@ const MermaidEditorPage: React.FC = () => {
 
   const previewRef = useRef<HTMLDivElement>(null);
   const fullscreenPreviewRef = useRef<HTMLDivElement>(null);
+  const mermaidOutputRef = useRef<HTMLDivElement>(null);
+  const fsMermaidOutputRef = useRef<HTMLDivElement>(null);
   const renderTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const renderIdRef = useRef(0);
 
-  // Pan & Zoom state
+  // Pan & Zoom state.
+  // `zoom` updates instantly during wheel/buttons -> driven via CSS transform for smoothness.
+  // `committedZoom` = the SVG's intrinsic rendered scale (width/height attrs). We commit
+  // after the user stops zooming for a moment, so foreignObject HTML labels stay crisp.
   const [zoom, setZoom] = useState(1);
+  const [committedZoom, setCommittedZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0 });
   const panOffsetRef = useRef({ x: 0, y: 0 });
+  const commitTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Fullscreen Pan & Zoom state
   const [fsZoom, setFsZoom] = useState(1);
+  const [fsCommittedZoom, setFsCommittedZoom] = useState(1);
   const [fsPan, setFsPan] = useState({ x: 0, y: 0 });
   const isFsPanningRef = useRef(false);
   const fsPanStartRef = useRef({ x: 0, y: 0 });
   const fsPanOffsetRef = useRef({ x: 0, y: 0 });
+  const fsCommitTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const ZOOM_MIN = 0.1;
   const ZOOM_MAX = 5;
   const ZOOM_STEP = 0.1;
+  const COMMIT_DELAY = 180;
 
   // Reset pan/zoom when diagram changes
   useEffect(() => {
     setZoom(1);
+    setCommittedZoom(1);
     setPan({ x: 0, y: 0 });
   }, [svgOutput]);
 
+  // Resize SVG element via attributes (vector-crisp, including foreignObject HTML labels).
+  const applySvgZoom = (container: HTMLDivElement | null, z: number) => {
+    if (!container) return;
+    const svg = container.querySelector('svg');
+    if (!svg) return;
+    const dataW = svg.getAttribute('data-base-width');
+    const dataH = svg.getAttribute('data-base-height');
+    let baseW = dataW ? parseFloat(dataW) : NaN;
+    let baseH = dataH ? parseFloat(dataH) : NaN;
+    if (!isFinite(baseW) || !isFinite(baseH)) {
+      const vb = svg.getAttribute('viewBox');
+      if (vb) {
+        const parts = vb.split(/[\s,]+/).map(Number);
+        if (parts.length === 4) {
+          baseW = parts[2];
+          baseH = parts[3];
+        }
+      }
+      if (!isFinite(baseW) || !isFinite(baseH)) {
+        const wAttr = parseFloat(svg.getAttribute('width') || '');
+        const hAttr = parseFloat(svg.getAttribute('height') || '');
+        if (isFinite(wAttr) && isFinite(hAttr)) {
+          baseW = wAttr;
+          baseH = hAttr;
+        } else {
+          const bbox = (svg as SVGSVGElement).getBBox?.();
+          if (bbox) {
+            baseW = bbox.width;
+            baseH = bbox.height;
+          }
+        }
+      }
+      if (isFinite(baseW) && isFinite(baseH)) {
+        svg.setAttribute('data-base-width', String(baseW));
+        svg.setAttribute('data-base-height', String(baseH));
+      }
+    }
+    if (isFinite(baseW) && isFinite(baseH)) {
+      svg.setAttribute('width', String(baseW * z));
+      svg.setAttribute('height', String(baseH * z));
+      (svg as SVGSVGElement).style.maxWidth = 'none';
+    }
+  };
+
+  useEffect(() => {
+    applySvgZoom(mermaidOutputRef.current, committedZoom);
+  }, [committedZoom, svgOutput]);
+
+  useEffect(() => {
+    applySvgZoom(fsMermaidOutputRef.current, fsCommittedZoom);
+  }, [fsCommittedZoom, svgOutput, isFullscreen]);
+
+  // Schedule commit (crisp SVG resize) after user stops zooming.
+  const scheduleCommit = useCallback((z: number) => {
+    if (commitTimeoutRef.current) clearTimeout(commitTimeoutRef.current);
+    commitTimeoutRef.current = setTimeout(() => setCommittedZoom(z), COMMIT_DELAY);
+  }, []);
+  const scheduleFsCommit = useCallback((z: number) => {
+    if (fsCommitTimeoutRef.current) clearTimeout(fsCommitTimeoutRef.current);
+    fsCommitTimeoutRef.current = setTimeout(() => setFsCommittedZoom(z), COMMIT_DELAY);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (commitTimeoutRef.current) clearTimeout(commitTimeoutRef.current);
+      if (fsCommitTimeoutRef.current) clearTimeout(fsCommitTimeoutRef.current);
+    },
+    [],
+  );
+
   const resetView = () => {
+    if (commitTimeoutRef.current) clearTimeout(commitTimeoutRef.current);
     setZoom(1);
+    setCommittedZoom(1);
     setPan({ x: 0, y: 0 });
   };
 
   const resetFsView = () => {
+    if (fsCommitTimeoutRef.current) clearTimeout(fsCommitTimeoutRef.current);
     setFsZoom(1);
+    setFsCommittedZoom(1);
     setFsPan({ x: 0, y: 0 });
   };
 
   // Wheel zoom handler for preview (zoom toward mouse position)
-  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
+  const handleWheel = useCallback(
+    (e: React.WheelEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const rect = e.currentTarget.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
 
-    setZoom((prevZoom) => {
-      const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
-      const newZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, prevZoom + delta));
-      const scale = newZoom / prevZoom;
+      setZoom((prevZoom) => {
+        // Exponential zoom feels smoother than additive steps
+        const factor = Math.exp(-e.deltaY * 0.0015);
+        const newZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, prevZoom * factor));
+        const scale = newZoom / prevZoom;
 
-      setPan((prevPan) => ({
-        x: mouseX - centerX - (mouseX - centerX - prevPan.x) * scale,
-        y: mouseY - centerY - (mouseY - centerY - prevPan.y) * scale,
-      }));
+        setPan((prevPan) => ({
+          x: mouseX - centerX - (mouseX - centerX - prevPan.x) * scale,
+          y: mouseY - centerY - (mouseY - centerY - prevPan.y) * scale,
+        }));
 
-      return newZoom;
-    });
-  }, []);
+        scheduleCommit(newZoom);
+        return newZoom;
+      });
+    },
+    [scheduleCommit],
+  );
 
   // Mouse pan handlers for preview
   const handleMouseDown = useCallback(
@@ -189,27 +279,31 @@ const MermaidEditorPage: React.FC = () => {
   }, []);
 
   // Wheel zoom handler for fullscreen (zoom toward mouse position)
-  const handleFsWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
+  const handleFsWheel = useCallback(
+    (e: React.WheelEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const rect = e.currentTarget.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
 
-    setFsZoom((prevZoom) => {
-      const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
-      const newZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, prevZoom + delta));
-      const scale = newZoom / prevZoom;
+      setFsZoom((prevZoom) => {
+        const factor = Math.exp(-e.deltaY * 0.0015);
+        const newZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, prevZoom * factor));
+        const scale = newZoom / prevZoom;
 
-      setFsPan((prevPan) => ({
-        x: mouseX - centerX - (mouseX - centerX - prevPan.x) * scale,
-        y: mouseY - centerY - (mouseY - centerY - prevPan.y) * scale,
-      }));
+        setFsPan((prevPan) => ({
+          x: mouseX - centerX - (mouseX - centerX - prevPan.x) * scale,
+          y: mouseY - centerY - (mouseY - centerY - prevPan.y) * scale,
+        }));
 
-      return newZoom;
-    });
-  }, []);
+        scheduleFsCommit(newZoom);
+        return newZoom;
+      });
+    },
+    [scheduleFsCommit],
+  );
 
   // Mouse pan handlers for fullscreen
   const handleFsMouseDown = useCallback(
@@ -599,7 +693,13 @@ const MermaidEditorPage: React.FC = () => {
                     type="text"
                     size="small"
                     icon={<ZoomInOutlined />}
-                    onClick={() => setZoom((z) => Math.min(ZOOM_MAX, z + ZOOM_STEP))}
+                    onClick={() =>
+                      setZoom((z) => {
+                        const nz = Math.min(ZOOM_MAX, z + ZOOM_STEP);
+                        scheduleCommit(nz);
+                        return nz;
+                      })
+                    }
                   />
                 </Tooltip>
                 <Tooltip title="Zoom Out">
@@ -607,7 +707,13 @@ const MermaidEditorPage: React.FC = () => {
                     type="text"
                     size="small"
                     icon={<ZoomOutOutlined />}
-                    onClick={() => setZoom((z) => Math.max(ZOOM_MIN, z - ZOOM_STEP))}
+                    onClick={() =>
+                      setZoom((z) => {
+                        const nz = Math.max(ZOOM_MIN, z - ZOOM_STEP);
+                        scheduleCommit(nz);
+                        return nz;
+                      })
+                    }
                   />
                 </Tooltip>
                 <Tooltip title="Reset View">
@@ -639,11 +745,12 @@ const MermaidEditorPage: React.FC = () => {
                 <div className={styles.errorMessage}>{error}</div>
               ) : svgOutput ? (
                 <div
+                  ref={mermaidOutputRef}
                   className={styles.mermaidOutput}
                   style={{
-                    transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                    transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / committedZoom})`,
                     transformOrigin: 'center center',
-                    transition: isPanningRef.current ? 'none' : 'transform 0.1s ease-out',
+                    willChange: 'transform',
                   }}
                   dangerouslySetInnerHTML={{ __html: svgOutput }}
                 />
@@ -670,14 +777,26 @@ const MermaidEditorPage: React.FC = () => {
                 <Button
                   size="small"
                   icon={<ZoomInOutlined />}
-                  onClick={() => setFsZoom((z) => Math.min(ZOOM_MAX, z + ZOOM_STEP))}
+                  onClick={() =>
+                    setFsZoom((z) => {
+                      const nz = Math.min(ZOOM_MAX, z + ZOOM_STEP);
+                      scheduleFsCommit(nz);
+                      return nz;
+                    })
+                  }
                 />
               </Tooltip>
               <Tooltip title="Zoom Out">
                 <Button
                   size="small"
                   icon={<ZoomOutOutlined />}
-                  onClick={() => setFsZoom((z) => Math.max(ZOOM_MIN, z - ZOOM_STEP))}
+                  onClick={() =>
+                    setFsZoom((z) => {
+                      const nz = Math.max(ZOOM_MIN, z - ZOOM_STEP);
+                      scheduleFsCommit(nz);
+                      return nz;
+                    })
+                  }
                 />
               </Tooltip>
               <Tooltip title="Reset View">
@@ -708,11 +827,14 @@ const MermaidEditorPage: React.FC = () => {
               <div className={styles.errorMessage}>{error}</div>
             ) : svgOutput ? (
               <div
+                ref={fsMermaidOutputRef}
                 className={styles.mermaidOutput}
                 style={{
-                  transform: `translate(${fsPan.x}px, ${fsPan.y}px) scale(${fsZoom})`,
+                  transform: `translate(${fsPan.x}px, ${fsPan.y}px) scale(${
+                    fsZoom / fsCommittedZoom
+                  })`,
                   transformOrigin: 'center center',
-                  transition: isFsPanningRef.current ? 'none' : 'transform 0.1s ease-out',
+                  willChange: 'transform',
                 }}
                 dangerouslySetInnerHTML={{ __html: svgOutput }}
               />
