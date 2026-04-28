@@ -33,6 +33,24 @@ const getCategoryColor = (path: string): string => {
 
 const isDev = process.env.NODE_ENV === 'development';
 
+// Intercept anchor clicks so left-click navigates via SPA router,
+// while middle-click / ctrl-click / cmd-click fall through to the browser
+// (opening in a new tab as expected).
+const handleSpaLinkClick = (path: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+  if (
+    e.defaultPrevented ||
+    e.button !== 0 || // not a left click (1 = middle, 2 = right)
+    e.metaKey ||
+    e.ctrlKey ||
+    e.shiftKey ||
+    e.altKey
+  ) {
+    return; // let the browser handle it (new tab / new window / etc.)
+  }
+  e.preventDefault();
+  history.push(path);
+};
+
 export async function getInitialState(): Promise<{
   settings?: Partial<LayoutSettings>;
   currentUser?: any;
@@ -60,15 +78,23 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
   return {
     footerRender: () => <Footer />,
     bgLayoutImgList: [],
-    menuHeaderRender: (logo, title, props) => (
-      <div
-        onClick={() => history.push('/')}
-        style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+    menuHeaderRender: (logo, title) => (
+      <a
+        href="/"
+        onClick={handleSpaLinkClick('/')}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          cursor: 'pointer',
+          color: 'inherit',
+          textDecoration: 'none',
+        }}
       >
         {logo}
         <span className="app-title">{title}</span>
         <span className="app-title-badge">✦</span>
-      </div>
+      </a>
     ),
     rightContentRender: () => (
       <div className="header-right-content">
@@ -89,9 +115,13 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
       if (!isSubItem) {
         if (!item.path) return defaultDom;
         return (
-          <div style={{ display: 'contents' }} onClick={() => history.push(item.path!)}>
+          <a
+            href={item.path}
+            onClick={handleSpaLinkClick(item.path!)}
+            style={{ display: 'contents', color: 'inherit', textDecoration: 'none' }}
+          >
             {defaultDom}
-          </div>
+          </a>
         );
       }
 
@@ -102,7 +132,12 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
       const iconBorder = color + '44'; // ~27% opacity
 
       return (
-        <div className="mega-menu-item" onClick={() => history.push(item.path!)}>
+        <a
+          href={item.path}
+          onClick={handleSpaLinkClick(item.path!)}
+          className="mega-menu-item"
+          style={{ color: 'inherit', textDecoration: 'none' }}
+        >
           <div
             className="mega-menu-icon-wrap"
             style={
@@ -117,7 +152,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
           </div>
           <div className="mega-menu-name">{page.name}</div>
           <div className="mega-menu-desc">{page.desc}</div>
-        </div>
+        </a>
       );
     },
 
