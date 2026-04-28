@@ -1,17 +1,20 @@
 import React, { Dispatch, useEffect, useRef, useState } from 'react';
 import { SaveToDriveButton, LoadFromDriveButton } from '@/components/GoogleDrive/DriveButtons';
-import { Button, Upload, Space, Typography, Input, Tooltip, message } from 'antd'; // Import Ant Design components
+import { Button, Upload, Typography, Input, Tooltip, message } from 'antd'; // Import Ant Design components
 import { Editor } from '@monaco-editor/react'; // Import Monaco Editor component
 import {
-  UploadOutlined,
-  HighlightOutlined,
-  CompressOutlined,
+  AlignLeftOutlined,
+  ClearOutlined,
+  ColumnHeightOutlined,
+  ColumnWidthOutlined,
   CopyOutlined,
-  DeleteOutlined,
-  SwapOutlined,
   LockOutlined,
-  UnlockOutlined,
+  RotateLeftOutlined,
   RotateRightOutlined,
+  SwapOutlined,
+  ThunderboltOutlined,
+  UnlockOutlined,
+  UploadOutlined,
 } from '@ant-design/icons'; // Import icons
 import styles from '../styles.less'; // Import CSS module
 import { handleCopy } from '@/helpers';
@@ -277,29 +280,32 @@ const EditorSection: React.FC<Props> = ({
     });
   };
 
-  // --- Rotate SVG by 90° ---
-  const handleRotate = () => {
+  // --- Rotate SVG by a delta (e.g. +90 or -90) while preserving any existing transform ---
+  const handleRotate = (delta: number) => {
     if (!svgCode.trim()) {
       message.warning('No SVG loaded.');
       return;
     }
 
-    const newRotation = (rotation + 90) % 360;
+    const newRotation = (((rotation + delta) % 360) + 360) % 360;
     setRotation(newRotation);
 
-    let updated = svgCode;
-    updated = updated.replace(/<svg([^>]*)>/, (match, attrs) => {
-      const transformValue = `rotate(${newRotation})`;
-      if (attrs.includes('transform=')) {
-        return `<svg${attrs.replace(/transform="([^"]*)"/, `transform="${transformValue}"`)}>`;
-      } else {
-        return `<svg${attrs} transform="${transformValue}">`;
+    const updated = svgCode.replace(/<svg([^>]*)>/, (match, attrs) => {
+      const rotateToken = `rotate(${newRotation})`;
+      if (/transform="[^"]*"/.test(attrs)) {
+        // Update existing transform: replace an existing rotate() token, otherwise append rotate.
+        return `<svg${attrs.replace(/transform="([^"]*)"/, (_m, t) => {
+          const cleaned = t.replace(/\brotate\([^)]*\)/, '').trim();
+          const combined = cleaned ? `${cleaned} ${rotateToken}` : rotateToken;
+          return `transform="${combined.replace(/\s+/g, ' ')}"`;
+        })}>`;
       }
+      return `<svg${attrs} transform="${rotateToken}">`;
     });
 
     setSvgCode(updated);
     setPreview(updated);
-    message.success(`Rotated SVG to ${newRotation}°!`);
+    message.success(`Rotated ${delta > 0 ? '+' : ''}${delta}° → ${newRotation}°`);
   };
 
   const onMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
@@ -316,58 +322,73 @@ const EditorSection: React.FC<Props> = ({
 
   return (
     <div className={styles.editorSection}>
-      <Space className={styles.topActions} style={{ marginTop: 12, marginBottom: 8 }} wrap>
-        <Upload beforeUpload={handleUpload} showUploadList={false} accept=".svg">
-          <Button size="small" icon={<UploadOutlined />}>
-            Upload SVG
-          </Button>
-        </Upload>
-        <Button size="small" onClick={prettifySVG} icon={<HighlightOutlined />}>
-          Prettify
-        </Button>
-        <Button size="small" onClick={handleOptimize} icon={<CompressOutlined />}>
-          Optimize
-        </Button>
-        <SaveToDriveButton
-          getContent={() => svgCode}
-          fileName="image.svg"
-          mimeType="image/svg+xml"
-          buttonProps={{ size: 'small' }}
-        />
-        <LoadFromDriveButton
-          onLoad={(content) => {
-            if (!content.includes('<svg')) {
-              message.error('Invalid SVG file');
-              return;
-            }
-            setSvgCode(content);
-            setPreview(content);
-          }}
-          accept={['image/svg+xml', 'text/plain']}
-          buttonProps={{ size: 'small' }}
-        />
-      </Space>
-
-      <Space direction="horizontal" size={'large'}>
-        {/* Show cursor position */}
-        <div
-          style={{
-            height: 28,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            borderBottom: '1px solid #ddd',
-          }}
-        >
-          <Text type="secondary">
-            Ln {cursorPos.line}, Col {cursorPos.column}
-          </Text>
+      {/* Grouped toolbar */}
+      <div className={styles.toolbar}>
+        <div className={styles.toolbarGroup}>
+          <Upload beforeUpload={handleUpload} showUploadList={false} accept=".svg">
+            <Tooltip title="Upload SVG">
+              <Button size="small" icon={<UploadOutlined />}>
+                Upload
+              </Button>
+            </Tooltip>
+          </Upload>
+          <Tooltip title="Prettify SVG">
+            <Button size="small" onClick={prettifySVG} icon={<AlignLeftOutlined />}>
+              Prettify
+            </Button>
+          </Tooltip>
+          <Tooltip title="Optimize with SVGO (minify)">
+            <Button size="small" onClick={handleOptimize} icon={<ThunderboltOutlined />}>
+              Optimize
+            </Button>
+          </Tooltip>
         </div>
 
-        {/* Show size info */}
+        <div className={styles.toolbarGroup}>
+          <SaveToDriveButton
+            getContent={() => svgCode}
+            fileName="image.svg"
+            mimeType="image/svg+xml"
+            buttonProps={{ size: 'small' }}
+          />
+          <LoadFromDriveButton
+            onLoad={(content) => {
+              if (!content.includes('<svg')) {
+                message.error('Invalid SVG file');
+                return;
+              }
+              setSvgCode(content);
+              setPreview(content);
+            }}
+            accept={['image/svg+xml', 'text/plain']}
+            buttonProps={{ size: 'small' }}
+          />
+        </div>
+
+        <div className={styles.spacer} />
+
+        <div className={styles.toolbarGroup}>
+          <Tooltip title="Copy SVG code">
+            <Button size="small" type="primary" onClick={handleCopyCode} icon={<CopyOutlined />}>
+              Copy
+            </Button>
+          </Tooltip>
+          <Tooltip title="Clear editor">
+            <Button size="small" danger onClick={handleClear} icon={<ClearOutlined />} />
+          </Tooltip>
+        </div>
+      </div>
+
+      {/* Status bar */}
+      <div className={styles.statusBar}>
+        <span>
+          <span className={styles.statusLabel}>Cursor</span>Ln {cursorPos.line}, Col{' '}
+          {cursorPos.column}
+        </span>
         {sizeInfo && (
-          <Text type="secondary" className="mb-2 block">
-            Size: <b>{(sizeInfo.before / 1024).toFixed(2)} KB</b>
+          <span>
+            <span className={styles.statusLabel}>Size</span>
+            <b>{(sizeInfo.before / 1024).toFixed(2)} KB</b>
             {sizeInfo.after && (
               <>
                 {' '}
@@ -376,9 +397,9 @@ const EditorSection: React.FC<Props> = ({
                 smaller)
               </>
             )}
-          </Text>
+          </span>
         )}
-      </Space>
+      </div>
 
       {/* Editor */}
       <div className={styles.editorBox}>
@@ -406,19 +427,11 @@ const EditorSection: React.FC<Props> = ({
         />
       </div>
 
-      {/* Editor actions */}
-      <Space className={styles.actions} wrap>
-        <Button size="small" type="primary" onClick={handleCopyCode} icon={<CopyOutlined />}>
-          Copy
-        </Button>
-        <Button size="small" danger onClick={handleClear} icon={<DeleteOutlined />}>
-          Clear
-        </Button>
-      </Space>
-      {/* Resize controls */}
-      <Space style={{ float: 'right', marginTop: 16 }}>
-        <Text strong>Resize:</Text>
-        {/* Lock Ratio Button */}
+      {/* Resize / transform row */}
+      <div className={styles.resizeRow}>
+        <Text strong style={{ fontSize: 12, marginRight: 4 }}>
+          Transform:
+        </Text>
         <Tooltip title={lockRatio ? 'Unlock aspect ratio' : 'Lock aspect ratio'}>
           <Button
             size="small"
@@ -427,39 +440,40 @@ const EditorSection: React.FC<Props> = ({
             onClick={() => setLockRatio((prev) => !prev)}
           />
         </Tooltip>
-        {/*Size Input*/}
         <Input
           size="small"
-          prefix={<CompressOutlined />}
+          prefix={<ColumnWidthOutlined />}
           placeholder="W"
-          style={{ width: 90 }}
+          style={{ width: 95 }}
           value={svgSize.width}
           onChange={(e) => handleSizeChange('width', e.target.value.trim())}
         />
-        x
+        <span className={styles.dim}>×</span>
         <Input
           size="small"
-          prefix={<CompressOutlined />}
+          prefix={<ColumnHeightOutlined />}
           placeholder="H"
-          style={{ width: 90 }}
+          style={{ width: 95 }}
           value={svgSize.height}
           onChange={(e) => handleSizeChange('height', e.target.value.trim())}
         />
-        {/* Flip buttons */}
-        <Tooltip title={'Flip H'}>
+        <Tooltip title="Flip horizontally">
           <Button size="small" onClick={flipHorizontal} icon={<SwapOutlined />} />
         </Tooltip>
-        <Tooltip title={'Flip V'}>
+        <Tooltip title="Flip vertically">
           <Button
             size="small"
             onClick={flipVertical}
             icon={<SwapOutlined style={{ transform: 'rotate(90deg)' }} />}
           />
         </Tooltip>
-        <Tooltip title="Rotate 90°">
-          <Button size="small" icon={<RotateRightOutlined />} onClick={handleRotate} />
+        <Tooltip title="Rotate 90° counter-clockwise">
+          <Button size="small" icon={<RotateLeftOutlined />} onClick={() => handleRotate(-90)} />
         </Tooltip>
-      </Space>
+        <Tooltip title="Rotate 90° clockwise">
+          <Button size="small" icon={<RotateRightOutlined />} onClick={() => handleRotate(90)} />
+        </Tooltip>
+      </div>
     </div>
   );
 };

@@ -1,16 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Tabs, Button, Space, Segmented, Tooltip, Typography, message } from 'antd';
 import {
+  AimOutlined,
+  BgColorsOutlined,
+  CopyOutlined,
+  DownloadOutlined,
+  DragOutlined,
+  ExportOutlined,
+  FileTextOutlined,
   MinusOutlined,
   PlusOutlined,
-  SyncOutlined,
-  DownloadOutlined,
-  CopyOutlined,
-  ColumnHeightOutlined,
-  BgColorsOutlined,
-  AimOutlined,
-  DragOutlined,
   SelectOutlined,
+  SyncOutlined,
 } from '@ant-design/icons';
 import styles from '../styles.less';
 import { ensureSvgSize } from '../utils/helpers';
@@ -53,6 +54,7 @@ const PreviewTabs: React.FC<Props> = ({
     height: number;
   } | null>(null);
   const [previousTool, setPreviousTool] = useState<ToolMode | null>(null);
+  const [pngScale, setPngScale] = useState<1 | 2 | 4>(2); // PNG export scale multiplier
   //#endregion
 
   //#region Drag / Pan
@@ -138,7 +140,23 @@ const PreviewTabs: React.FC<Props> = ({
 
   //#region Keyboard Shortcuts for Tools
   useEffect(() => {
+    // Skip shortcuts when user is typing in an input, textarea, contentEditable, or Monaco editor.
+    const isTypingContext = (target: EventTarget | null) => {
+      const el = target as HTMLElement | null;
+      if (!el) return false;
+      const tag = el.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return true;
+      if (el.isContentEditable) return true;
+      // Monaco/CodeMirror: their editable surfaces have role="textbox" or class monaco-editor.
+      if (el.closest?.('.monaco-editor, [role="textbox"]')) return true;
+      return false;
+    };
+
     const onKeyDown = (e: KeyboardEvent) => {
+      if (isTypingContext(e.target)) return;
+      // Ignore when modifier keys are held (let browser shortcuts work).
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
       // Temporarily switch to hand when holding space
       if (e.code === 'Space') {
         e.preventDefault(); // ❌ Prevent default scroll immediately
@@ -146,17 +164,19 @@ const PreviewTabs: React.FC<Props> = ({
           setPreviousTool(tool); // Save current tool
           setTool('hand'); // Switch to hand
         }
+        return;
       }
 
-      // Other shortcuts
-      // ⌨️ Listen for keyboard shortcuts to switch tools
-      if (['h', 'H'].includes(e.key)) setTool('hand'); // ✋ Press "H" → Hand tool (move/pan mode)
-      if (['c', 'C'].includes(e.key)) setTool('color'); // 🎨 Press "C" → Color picker mode
-      if (['r', 'R'].includes(e.key)) setTool('measure'); // 📏 Press "R" → Measure distance mode
-      if (['v', 'V'].includes(e.key) || e.key === 'Escape') setTool('select'); // 🖱️ Press "V" or "Esc" → Select mode (default)
+      // ⌨️ Single-letter tool shortcuts
+      const k = e.key.toLowerCase();
+      if (k === 'h') setTool('hand');
+      else if (k === 'c') setTool('color');
+      else if (k === 'r') setTool('measure');
+      else if (k === 'v' || e.key === 'Escape') setTool('select');
     };
 
     const onKeyUp = (e: KeyboardEvent) => {
+      if (isTypingContext(e.target)) return;
       // Restore previous tool when space released
       if (e.code === 'Space' && previousTool) {
         setTool(previousTool);
@@ -332,48 +352,72 @@ const PreviewTabs: React.FC<Props> = ({
 
   //#region Export / Download Handlers
 
-  // Convert SVG → Canvas → DataURL (used for PNG/ICO)
-  // --- Convert SVG to Canvas Data URL ---
-  const svgToCanvas = async (mimeType: string) =>
+  // Convert SVG → Canvas → DataURL (used for PNG/ICO) with optional scale factor.
+  const svgToCanvas = async (mimeType: string, scale = 1) =>
     new Promise<string>((resolve, reject) => {
-      const img = new Image(); // Create an Image element
+      const img = new Image();
       img.onload = () => {
-        const canvas = document.createElement('canvas'); // Create canvas
-        canvas.width = img.width; // Set canvas size to image size
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d', { willReadFrequently: true }); // Get 2D context
-        if (!ctx) return reject('Canvas missing'); // Safety check
-        ctx.drawImage(img, 0, 0); // Draw SVG image onto canvas
-        resolve(canvas.toDataURL(mimeType)); // Return as Data URL
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return reject('Canvas missing');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL(mimeType));
       };
-      img.onerror = reject; // Reject promise on load error
-      img.src = getDataURI(); // Use your SVG Data URI as source
+      img.onerror = reject;
+      img.src = getDataURI();
     });
 
-  // --- Download PNG file ---
+  // --- Download PNG file at the selected scale ---
   const handleDownloadPng = async () => {
     try {
-      const dataUrl = await svgToCanvas('image/png'); // Convert SVG → PNG
-      const link = document.createElement('a'); // Create anchor element
-      link.href = dataUrl; // Set href to image Data URL
-      link.download = 'image.png'; // Set filename
-      link.click(); // Trigger download
+      const dataUrl = await svgToCanvas('image/png', pngScale);
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `image@${pngScale}x.png`;
+      link.click();
     } catch {
-      message.error('Failed to convert to PNG.'); // Show error
+      message.error('Failed to convert to PNG.');
     }
   };
 
-  // --- Download ICO file ---
+  // --- Download ICO file (browser returns PNG-encoded data for .ico filename) ---
   const handleDownloadIco = async () => {
     try {
-      const dataUrl = await svgToCanvas('image/x-icon'); // Convert SVG → ICO
+      // Browsers don't truly encode ICO — we save a 128x128 PNG with .ico extension.
+      const dataUrl = await svgToCanvas('image/png', 1);
       const link = document.createElement('a');
       link.href = dataUrl;
       link.download = 'favicon.ico';
       link.click();
+      message.info('Saved as .ico (PNG-encoded). Use a dedicated converter for a multi-size ICO.');
     } catch {
       message.error('Failed to convert to ICO.');
     }
+  };
+
+  // --- Download a raw text file (Data URI / Base64) ---
+  const downloadText = (content: string, filename: string) => {
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  // --- Open raw SVG in a new tab ---
+  const handleOpenRaw = () => {
+    const blob = new Blob([svgCode], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    // Best-effort revoke after 30s (let browser fully load)
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
   };
   //#endregion
 
@@ -381,7 +425,7 @@ const PreviewTabs: React.FC<Props> = ({
     <div className={styles.previewWrapper}>
       <Tabs
         size="small"
-        style={{ marginTop: 17 }}
+        className={styles.previewTabs}
         activeKey={activeTab}
         onChange={setActiveTab}
         items={[
@@ -509,12 +553,20 @@ const PreviewTabs: React.FC<Props> = ({
           {
             key: 'png',
             label: 'PNG',
-            children: <img src={getDataURI()} style={{ maxWidth: '100%' }} />,
+            children: (
+              <div className={`${styles.previewSection} ${styles[bgMode]}`}>
+                <img src={getDataURI()} style={{ maxWidth: '100%', maxHeight: '100%' }} />
+              </div>
+            ),
           },
           {
             key: 'ico',
             label: 'ICO',
-            children: <img src={getDataURI()} style={{ maxWidth: '100%' }} />,
+            children: (
+              <div className={`${styles.previewSection} ${styles[bgMode]}`}>
+                <img src={getDataURI()} style={{ maxWidth: '100%', maxHeight: '100%' }} />
+              </div>
+            ),
           },
           {
             key: 'datauri',
@@ -664,35 +716,89 @@ const PreviewTabs: React.FC<Props> = ({
 
       {/* Right: Download/Copy actions */}
       <div className={styles.previewActions}>
-        {['svg', 'png', 'ico'].includes(activeTab) && (
+        {activeTab === 'png' && (
+          <Segmented
+            size="small"
+            options={[
+              { label: '1×', value: 1 },
+              { label: '2×', value: 2 },
+              { label: '4×', value: 4 },
+            ]}
+            value={pngScale}
+            onChange={(v) => setPngScale(v as 1 | 2 | 4)}
+          />
+        )}
+
+        {activeTab === 'svg' && (
+          <>
+            <Tooltip title="Open raw SVG in a new tab">
+              <Button size="small" icon={<ExportOutlined />} onClick={handleOpenRaw}>
+                View raw
+              </Button>
+            </Tooltip>
+            <Button
+              size="small"
+              type="primary"
+              icon={<DownloadOutlined />}
+              onClick={() => handleDownload(svgCode, 'image.svg', 'image/svg+xml')}
+            >
+              Download SVG
+            </Button>
+          </>
+        )}
+
+        {activeTab === 'png' && (
           <Button
             size="small"
             type="primary"
             icon={<DownloadOutlined />}
-            onClick={
-              activeTab === 'svg'
-                ? () => handleDownload(svgCode, 'image.svg', 'image/svg+xml')
-                : activeTab === 'png'
-                  ? handleDownloadPng
-                  : handleDownloadIco
-            }
+            onClick={handleDownloadPng}
           >
-            Download {activeTab.toUpperCase()}
+            Download PNG @{pngScale}×
           </Button>
         )}
-        {['datauri', 'base64'].includes(activeTab) && (
+
+        {activeTab === 'ico' && (
           <Button
             size="small"
-            icon={<CopyOutlined />}
-            onClick={() =>
-              handleCopy(
-                activeTab === 'datauri' ? getDataURI() : getBase64(),
-                `Copied ${activeTab.toUpperCase()}!`,
-              )
-            }
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={handleDownloadIco}
           >
-            Copy {activeTab.toUpperCase()}
+            Download ICO
           </Button>
+        )}
+
+        {['datauri', 'base64'].includes(activeTab) && (
+          <>
+            <Tooltip title="Download as .txt">
+              <Button
+                size="small"
+                icon={<FileTextOutlined />}
+                onClick={() =>
+                  downloadText(
+                    activeTab === 'datauri' ? getDataURI() : getBase64(),
+                    activeTab === 'datauri' ? 'image.datauri.txt' : 'image.base64.txt',
+                  )
+                }
+              >
+                Download
+              </Button>
+            </Tooltip>
+            <Button
+              size="small"
+              type="primary"
+              icon={<CopyOutlined />}
+              onClick={() =>
+                handleCopy(
+                  activeTab === 'datauri' ? getDataURI() : getBase64(),
+                  `Copied ${activeTab.toUpperCase()}!`,
+                )
+              }
+            >
+              Copy {activeTab.toUpperCase()}
+            </Button>
+          </>
         )}
       </div>
     </div>

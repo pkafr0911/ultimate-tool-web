@@ -1,0 +1,398 @@
+.commands-page {
+  min-height: 100vh;
+  padding: 32px 24px 64px;
+  background:
+    radial-gradient(1000px 500px at 90% -10%, rgba(24, 144, 255, 0.12), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(114, 46, 209, 0.12), transparent 60%),
+    linear-gradient(180deg, #f7f9fc 0%, #eef1f7 100%);
+
+  .commands-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .commands-hero {
+    position: relative;
+    padding: 36px 32px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #1f1c2c 0%, #4b2b7e 50%, #1890ff 100%);
+    color: #fff;
+    overflow: hidden;
+    box-shadow: 0 20px 60px -20px rgba(24, 26, 48, 0.45);
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(600px 200px at 20% 0%, rgba(255, 255, 255, 0.15), transparent 70%),
+        radial-gradient(400px 200px at 90% 100%, rgba(255, 255, 255, 0.1), transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.16);
+      backdrop-filter: blur(6px);
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      color: #fff;
+      margin: 0 0 10px;
+      font-size: 34px;
+      line-height: 1.15;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    p.hero-subtitle {
+      margin: 0;
+      font-size: 15px;
+      opacity: 0.85;
+      max-width: 640px;
+    }
+
+    .hero-stats {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+
+      .stat-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 12px;
+        font-size: 13px;
+
+        strong {
+          font-weight: 700;
+          font-size: 15px;
+        }
+
+        .stat-icon {
+          display: inline-flex;
+          width: 22px;
+          height: 22px;
+          align-items: center;
+          justify-content: center;
+          border-radius: 6px;
+          background: rgba(255, 255, 255, 0.2);
+          font-size: 13px;
+        }
+      }
+    }
+  }
+
+  .commands-toolbar {
+    position: sticky;
+    top: 12px;
+    z-index: 5;
+    margin: 24px 0;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 16px;
+    box-shadow: 0 6px 24px -10px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+
+    .commands-search {
+      flex: 1;
+      min-width: 260px;
+      max-width: 520px;
+
+      .ant-input-affix-wrapper {
+        border-radius: 10px;
+      }
+
+      .search-kbd {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.06);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        color: #595959;
+      }
+    }
+
+    .category-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+
+      .category-pill {
+        cursor: pointer;
+        user-select: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 500;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background: #fff;
+        transition: all 0.18s ease;
+
+        &:hover {
+          border-color: #1890ff;
+          color: #1890ff;
+        }
+
+        &.active {
+          background: #1890ff;
+          color: #fff;
+          border-color: #1890ff;
+          box-shadow: 0 6px 16px -8px rgba(24, 144, 255, 0.6);
+        }
+
+        .count {
+          font-size: 11px;
+          padding: 1px 7px;
+          border-radius: 999px;
+          background: rgba(0, 0, 0, 0.06);
+        }
+
+        &.active .count {
+          background: rgba(255, 255, 255, 0.25);
+        }
+      }
+    }
+  }
+
+  .search-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    margin: 0 0 18px;
+    background: rgba(24, 144, 255, 0.06);
+    border: 1px solid rgba(24, 144, 255, 0.15);
+    border-radius: 12px;
+    font-size: 13px;
+    color: #262626;
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .status-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .token-tag {
+      margin: 0 2px;
+      background: #fff;
+      border-color: rgba(24, 144, 255, 0.3);
+      color: #1890ff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+  }
+
+  .search-suggestions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 20px;
+    padding: 4px 4px;
+
+    .suggest-label {
+      font-size: 13px;
+      color: #8c8c8c;
+      margin-right: 4px;
+    }
+
+    .suggest-tag {
+      cursor: pointer;
+      user-select: none;
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      transition: all 0.15s ease;
+
+      &:hover {
+        border-color: #1890ff;
+        color: #1890ff;
+        transform: translateY(-1px);
+      }
+    }
+  }
+
+  .category-section {
+    margin-bottom: 28px;
+
+    .category-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+
+      .category-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 18px;
+        box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.35);
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      .category-count {
+        color: #8c8c8c;
+        font-size: 13px;
+      }
+    }
+
+    .command-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 12px;
+    }
+
+    .command-card {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 14px;
+      padding: 14px 14px 14px 16px;
+      transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        border-color 0.18s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 30px -18px rgba(0, 0, 0, 0.25);
+        border-color: rgba(24, 144, 255, 0.35);
+      }
+
+      .command-cmd {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+
+        code {
+          flex: 1;
+          font-family:
+            'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 13.5px;
+          padding: 8px 10px;
+          border-radius: 8px;
+          background: #0f172a;
+          color: #e2e8f0;
+          white-space: pre-wrap;
+          word-break: break-word;
+          line-height: 1.5;
+
+          mark {
+            background: #facc15;
+            color: #0f172a;
+            padding: 0 2px;
+            border-radius: 3px;
+          }
+        }
+
+        .copy-btn {
+          flex-shrink: 0;
+          border-radius: 8px;
+          height: 34px;
+        }
+      }
+
+      .command-desc {
+        color: #595959;
+        font-size: 13px;
+        line-height: 1.5;
+
+        mark {
+          background: #fff3bf;
+          padding: 0 2px;
+          border-radius: 3px;
+        }
+
+        &.inline {
+          display: inline;
+        }
+      }
+
+      .command-card-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+
+        .meta-category {
+          margin: 0;
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          background: rgba(24, 144, 255, 0.08);
+          border-color: rgba(24, 144, 255, 0.25);
+          color: #1890ff;
+        }
+      }
+    }
+  }
+
+  .empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    background: #fff;
+    border: 1px dashed rgba(0, 0, 0, 0.12);
+    border-radius: 16px;
+    color: #8c8c8c;
+
+    .empty-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+  }
+}
+
+// Dark mode tweaks (darkreader handles most, but make sticky toolbar readable)
+body.dark-mode .commands-page .commands-toolbar {
+  background: rgba(20, 20, 28, 0.7);
+}

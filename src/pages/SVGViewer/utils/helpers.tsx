@@ -72,6 +72,25 @@ export const extractSize = (
   });
 };
 
+// --- Ensure the <svg> root has required xmlns attributes so the markup ---
+// is valid standalone (required for <img src="data:image/svg+xml"> rasterizing
+// and for the file to open in browsers/image viewers).
+export const ensureSvgNamespace = (svg: string): string => {
+  const svgTagMatch = svg.match(/<svg[^>]*>/i);
+  if (!svgTagMatch) return svg;
+  const svgTag = svgTagMatch[0];
+
+  let updated = svgTag;
+  if (!/\bxmlns\s*=/.test(updated)) {
+    updated = updated.replace(/^<svg\b/i, '<svg xmlns="http://www.w3.org/2000/svg"');
+  }
+  // Add xlink namespace if the SVG uses xlink:href but doesn't declare it.
+  if (/xlink:href/i.test(svg) && !/xmlns:xlink\s*=/.test(updated)) {
+    updated = updated.replace(/^<svg\b/i, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+  }
+  return svg.replace(svgTag, updated);
+};
+
 export const ensureSvgSize = (svg: string, width = 128, height = 128) => {
   // Match the <svg ...> tag only (even if there's XML header above)
   const svgTagMatch = svg.match(/<svg[^>]*>/i);
