@@ -1,3 +1,271 @@
+/* === Page background === */
+.container.stressTestPage {
+  width: 100%;
+  min-height: 100%;
+  padding: 16px 24px 28px;
+  background:
+    radial-gradient(900px 420px at 95% -5%, rgba(250, 84, 28, 0.1), transparent 60%),
+    radial-gradient(900px 420px at -5% 0%, rgba(250, 173, 20, 0.1), transparent 60%),
+    linear-gradient(180deg, #f7f9fc 0%, #eef1f7 100%);
+}
+.container.stressTestPage .shell {
+  max-width: 1480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* === Hero === */
+.container.stressTestPage .hero {
+  position: relative;
+  padding: 12px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1f1147 0%, #c2410c 60%, #fa541c 100%);
+  color: #fff;
+  overflow: hidden;
+  box-shadow: 0 14px 36px -20px rgba(31, 17, 71, 0.55);
+}
+.container.stressTestPage .heroOverlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(420px 140px at 15% 0%, rgba(255, 255, 255, 0.18), transparent 70%),
+    radial-gradient(360px 160px at 95% 100%, rgba(250, 173, 20, 0.28), transparent 70%);
+  pointer-events: none;
+}
+.container.stressTestPage .heroRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.container.stressTestPage .heroTitleBlock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.container.stressTestPage .heroBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 20px;
+}
+.container.stressTestPage .heroEyebrow {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.container.stressTestPage .heroActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.container.stressTestPage .primaryAction {
+  background: #fff !important;
+  color: #c2410c !important;
+  border-color: #fff !important;
+  font-weight: 600;
+}
+.container.stressTestPage .primaryAction:hover {
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+
+/* Hero status pill */
+.container.stressTestPage .heroStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+.container.stressTestPage .heroStatusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+}
+.container.stressTestPage .heroStatus-running {
+  background: rgba(82, 196, 26, 0.25);
+  border-color: rgba(82, 196, 26, 0.5);
+}
+.container.stressTestPage .heroStatus-running .heroStatusDot {
+  background: #b7eb8f;
+  animation: stressDot 1.2s infinite;
+}
+.container.stressTestPage .heroStatus-paused {
+  background: rgba(250, 173, 20, 0.25);
+  border-color: rgba(250, 173, 20, 0.5);
+}
+.container.stressTestPage .heroStatus-paused .heroStatusDot {
+  background: #ffd591;
+}
+.container.stressTestPage .heroStatus-success {
+  background: rgba(82, 196, 26, 0.18);
+  border-color: rgba(82, 196, 26, 0.4);
+}
+.container.stressTestPage .heroStatus-success .heroStatusDot {
+  background: #b7eb8f;
+}
+.container.stressTestPage .heroStatus-danger {
+  background: rgba(255, 77, 79, 0.25);
+  border-color: rgba(255, 77, 79, 0.5);
+}
+.container.stressTestPage .heroStatus-danger .heroStatusDot {
+  background: #ffa39e;
+}
+@keyframes stressDot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.7);
+  }
+}
+
+/* === Stat strip === */
+.container.stressTestPage .statStrip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+.container.stressTestPage .statChip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(31, 17, 71, 0.08);
+  box-shadow: 0 8px 24px -12px rgba(31, 17, 71, 0.18);
+}
+.container.stressTestPage .statChip .statIcon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(250, 84, 28, 0.12);
+  color: #fa541c;
+  font-size: 18px;
+}
+.container.stressTestPage .statChip.success .statIcon {
+  background: rgba(82, 196, 26, 0.14);
+  color: #52c41a;
+}
+.container.stressTestPage .statChip.danger .statIcon {
+  background: rgba(255, 77, 79, 0.14);
+  color: #ff4d4f;
+}
+.container.stressTestPage .statChip .statBody {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+.container.stressTestPage .statChip .statLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8c8c8c;
+}
+.container.stressTestPage .statChip .statValue {
+  font-weight: 600;
+  color: #1f1f1f;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.container.stressTestPage .statChip .statSub {
+  font-weight: 400;
+  font-size: 11px;
+  color: #8c8c8c;
+}
+
+/* === Panels === */
+.container.stressTestPage .panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(31, 17, 71, 0.08);
+  border-radius: 16px;
+  padding: 14px 18px;
+  box-shadow: 0 14px 40px -22px rgba(31, 17, 71, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.container.stressTestPage .panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.container.stressTestPage .panelTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #1f1f1f;
+}
+.container.stressTestPage .panelTitle :global(.anticon) {
+  color: #fa541c;
+}
+
+/* Collapse polish inside config panel */
+.container.stressTestPage .configCollapse {
+  background: transparent;
+  border: none;
+}
+.container.stressTestPage .configCollapse :global(.ant-collapse-item) {
+  border-radius: 12px !important;
+  border: 1px solid rgba(31, 17, 71, 0.06) !important;
+  background: #fafbfc;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.container.stressTestPage .configCollapse :global(.ant-collapse-item:last-child) {
+  margin-bottom: 0;
+}
+.container.stressTestPage .configCollapse :global(.ant-collapse-header) {
+  padding: 12px 16px !important;
+  font-weight: 500;
+}
+
+.container.stressTestPage .limitationsAlert {
+  border-radius: 12px;
+}
+
 .stressTestPage {
   .configCard {
     margin-bottom: 16px;
@@ -228,5 +496,36 @@
     .timeSeriesChart .timeSeriesBar {
       background: linear-gradient(180deg, #177ddc 0%, #3c9ae8 100%);
     }
+  }
+}
+
+/* === Dark mode for shell/hero === */
+:global([data-prefers-color-scheme='dark']) .container.stressTestPage,
+:global(.dark) .container.stressTestPage {
+  background:
+    radial-gradient(900px 420px at 95% -5%, rgba(250, 84, 28, 0.18), transparent 60%),
+    radial-gradient(900px 420px at -5% 0%, rgba(250, 173, 20, 0.16), transparent 60%),
+    linear-gradient(180deg, #14181f 0%, #0d1015 100%);
+
+  .panel {
+    background: rgba(28, 32, 40, 0.85);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .panelTitle {
+    color: #f5f5f5;
+  }
+  .panelTitle :global(.anticon) {
+    color: #ff9c6e;
+  }
+  .statChip {
+    background: rgba(28, 32, 40, 0.85);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .statChip .statValue {
+    color: #f5f5f5;
+  }
+  .configCollapse :global(.ant-collapse-item) {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06) !important;
   }
 }
