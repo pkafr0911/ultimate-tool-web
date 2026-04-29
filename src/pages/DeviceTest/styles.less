@@ -1,3 +1,306 @@
+/* === Page background === */
+.container.deviceTestPage {
+  width: 100%;
+  min-height: 100%;
+  padding: 16px 24px 28px;
+  background:
+    radial-gradient(900px 420px at 95% -5%, rgba(114, 46, 209, 0.12), transparent 60%),
+    radial-gradient(900px 420px at -5% 0%, rgba(19, 194, 194, 0.12), transparent 60%),
+    linear-gradient(180deg, #f6f7fc 0%, #eef0f8 100%);
+}
+.container.deviceTestPage .shell {
+  max-width: 1480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* === Hero === */
+.container.deviceTestPage .hero {
+  position: relative;
+  padding: 12px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1a1340 0%, #722ed1 55%, #13c2c2 100%);
+  color: #fff;
+  overflow: hidden;
+  box-shadow: 0 14px 36px -20px rgba(26, 19, 64, 0.55);
+}
+.container.deviceTestPage .heroOverlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(420px 140px at 15% 0%, rgba(255, 255, 255, 0.18), transparent 70%),
+    radial-gradient(360px 160px at 95% 100%, rgba(19, 194, 194, 0.32), transparent 70%);
+  pointer-events: none;
+}
+.container.deviceTestPage .heroRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.container.deviceTestPage .heroTitleBlock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.container.deviceTestPage .heroBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 20px;
+}
+.container.deviceTestPage .heroEyebrow {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.container.deviceTestPage .heroActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.container.deviceTestPage .heroHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 12px;
+}
+.container.deviceTestPage .heroStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+.container.deviceTestPage .heroStatusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #b7eb8f;
+  animation: deviceDot 1.8s infinite;
+}
+@keyframes deviceDot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.75);
+  }
+}
+
+/* === Device chip strip (clickable tab selector) === */
+.container.deviceTestPage .statStrip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.container.deviceTestPage .statChip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(26, 19, 64, 0.08);
+  box-shadow: 0 8px 24px -12px rgba(26, 19, 64, 0.18);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+.container.deviceTestPage .statChip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px -16px rgba(26, 19, 64, 0.3);
+}
+.container.deviceTestPage .statChip.active {
+  border-color: #722ed1;
+  box-shadow: 0 0 0 2px rgba(114, 46, 209, 0.18);
+}
+.container.deviceTestPage .statChip.no {
+  opacity: 0.78;
+}
+.container.deviceTestPage .statChip .statIcon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(114, 46, 209, 0.1);
+  color: #722ed1;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.container.deviceTestPage .statChip .statBody {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+.container.deviceTestPage .statChip .statLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f1f1f;
+}
+.container.deviceTestPage .statChip .statSub {
+  font-size: 11px;
+  color: #595959;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* === Context bar === */
+.container.deviceTestPage .contextBar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(26, 19, 64, 0.08);
+  flex-wrap: wrap;
+}
+.container.deviceTestPage .contextEmoji {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+.container.deviceTestPage .contextText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.container.deviceTestPage .contextText strong {
+  color: #1f1f1f;
+}
+.container.deviceTestPage .contextText span {
+  color: #595959;
+  font-size: 12px;
+}
+.container.deviceTestPage .contextHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #722ed1;
+  background: rgba(114, 46, 209, 0.08);
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* === Tester panel === */
+.container.deviceTestPage .panel {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(26, 19, 64, 0.08);
+  border-radius: 16px;
+  padding: 14px 18px;
+  box-shadow: 0 14px 40px -22px rgba(26, 19, 64, 0.25);
+}
+.container.deviceTestPage .testerTabLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.container.deviceTestPage .testerTabEmoji {
+  font-size: 16px;
+}
+.container.deviceTestPage .testerTabLabel.unavailable {
+  opacity: 0.5;
+}
+
+.container.deviceTestPage .footerHint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(250, 173, 20, 0.08);
+  border: 1px solid rgba(250, 173, 20, 0.25);
+  color: #874d00;
+  font-size: 12px;
+}
+.container.deviceTestPage .footerHint .anticon {
+  color: #faad14;
+}
+
+/* === Dark mode === */
+:global([data-prefers-color-scheme='dark']) .container.deviceTestPage,
+:global(.dark) .container.deviceTestPage {
+  background:
+    radial-gradient(900px 420px at 95% -5%, rgba(114, 46, 209, 0.2), transparent 60%),
+    radial-gradient(900px 420px at -5% 0%, rgba(19, 194, 194, 0.16), transparent 60%),
+    linear-gradient(180deg, #14181f 0%, #0d1015 100%);
+
+  .panel,
+  .statChip,
+  .contextBar {
+    background: rgba(28, 32, 40, 0.85);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .statChip .statLabel,
+  .contextText strong {
+    color: #f5f5f5;
+  }
+  .statChip .statSub,
+  .contextText span {
+    color: #a6adb8;
+  }
+  .statChip.active {
+    border-color: #b37feb;
+    box-shadow: 0 0 0 2px rgba(179, 127, 235, 0.25);
+  }
+  .footerHint {
+    background: rgba(250, 173, 20, 0.12);
+    color: #ffd591;
+  }
+  .contextHint {
+    background: rgba(179, 127, 235, 0.18);
+    color: #d3adf7;
+  }
+}
+
 .device-test-page {
   .ant-tabs-nav {
     margin-bottom: 16px;

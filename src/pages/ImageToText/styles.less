@@ -1,198 +1,501 @@
-.container {
-  padding: 10px;
+/* === Page background === */
+.container.imageToTextPage {
+  width: 100%;
+  min-height: 100%;
+  padding: 16px 24px 28px;
+  background:
+    radial-gradient(900px 420px at 95% -5%, rgba(82, 196, 26, 0.12), transparent 60%),
+    radial-gradient(900px 420px at -5% 0%, rgba(114, 46, 209, 0.12), transparent 60%),
+    linear-gradient(180deg, #f6f9fc 0%, #eef2f8 100%);
+}
+.container.imageToTextPage .shell {
+  max-width: 1480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.content {
-  margin-top: 20px;
+/* === Hero === */
+.container.imageToTextPage .hero {
+  position: relative;
+  padding: 12px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1a0f3d 0%, #531dab 50%, #389e0d 100%);
+  color: #fff;
+  overflow: hidden;
+  box-shadow: 0 14px 36px -20px rgba(26, 15, 61, 0.55);
 }
-
-.image-to-text-guide {
-  margin-top: 16px;
-  padding: 16px;
-  text-align: left;
-  background: #f9f9ff;
-  border: 1px solid #e6f0ff;
-  border-top: 1px solid #f0f0f0;
-  border-radius: 12px;
-
-  h4,
-  h5 {
-    margin-bottom: 8px;
-  }
-
-  ul {
-    margin: 8px 0 16px 20px;
-    padding: 0;
-    list-style-type: disc;
-
-    li {
-      margin-bottom: 4px;
-    }
-  }
-
-  p {
-    color: #666;
-    font-size: 13px;
-  }
+.container.imageToTextPage .heroOverlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(420px 140px at 15% 0%, rgba(255, 255, 255, 0.2), transparent 70%),
+    radial-gradient(360px 160px at 95% 100%, rgba(82, 196, 26, 0.32), transparent 70%);
+  pointer-events: none;
 }
-
-.ocr-container {
+.container.imageToTextPage .heroRow {
+  position: relative;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.container.imageToTextPage .heroTitleBlock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.container.imageToTextPage .heroBadge {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 60px);
-  padding: 24px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-}
-
-.ocr-card {
-  width: 100%;
-  max-width: 1400px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 24px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.16);
   backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 20px;
+}
+.container.imageToTextPage .heroEyebrow {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.container.imageToTextPage .heroActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.container.imageToTextPage .primaryAction {
+  background: #fff !important;
+  color: #531dab !important;
+  border-color: #fff !important;
+  font-weight: 600;
+}
+.container.imageToTextPage .primaryAction:hover {
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+.container.imageToTextPage .primaryAction[disabled] {
+  background: rgba(255, 255, 255, 0.4) !important;
+  color: rgba(83, 29, 171, 0.6) !important;
+}
 
-  .ant-card-body {
-    padding: 40px;
-
-    @media (max-width: 768px) {
-      padding: 24px;
-    }
+/* Hero status pill */
+.container.imageToTextPage .heroStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+.container.imageToTextPage .heroStatusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+}
+.container.imageToTextPage .heroStatus-running {
+  background: rgba(22, 119, 255, 0.25);
+  border-color: rgba(22, 119, 255, 0.5);
+}
+.container.imageToTextPage .heroStatus-running .heroStatusDot {
+  background: #91caff;
+  animation: ocrDot 1.2s infinite;
+}
+.container.imageToTextPage .heroStatus-success {
+  background: rgba(82, 196, 26, 0.22);
+  border-color: rgba(82, 196, 26, 0.45);
+}
+.container.imageToTextPage .heroStatus-success .heroStatusDot {
+  background: #b7eb8f;
+}
+.container.imageToTextPage .heroStatus-danger {
+  background: rgba(255, 77, 79, 0.25);
+  border-color: rgba(255, 77, 79, 0.5);
+}
+.container.imageToTextPage .heroStatus-danger .heroStatusDot {
+  background: #ffa39e;
+}
+@keyframes ocrDot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.7);
   }
 }
 
-.header-section {
-  margin-bottom: 32px;
-  text-align: center;
+/* === Stat strip === */
+.container.imageToTextPage .statStrip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+.container.imageToTextPage .statChip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(26, 15, 61, 0.08);
+  box-shadow: 0 8px 24px -12px rgba(26, 15, 61, 0.18);
+  min-width: 0;
+}
+.container.imageToTextPage .statChip .statIcon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(83, 29, 171, 0.12);
+  color: #531dab;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.container.imageToTextPage .statChip.success .statIcon {
+  background: rgba(82, 196, 26, 0.14);
+  color: #52c41a;
+}
+.container.imageToTextPage .statChip.danger .statIcon {
+  background: rgba(255, 77, 79, 0.14);
+  color: #ff4d4f;
+}
+.container.imageToTextPage .statChip .statBody {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+.container.imageToTextPage .statChip .statLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8c8c8c;
+}
+.container.imageToTextPage .statChip .statValue {
+  font-weight: 600;
+  color: #1f1f1f;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.container.imageToTextPage .statChip .statSub {
+  font-weight: 400;
+  font-size: 11px;
+  color: #8c8c8c;
 }
 
-.main-content {
-  align-items: stretch;
+/* === Tabs / panels === */
+.container.imageToTextPage .ant-tabs-nav {
+  margin-bottom: 6px;
 }
-
-.inner-card {
-  height: 100%;
-  background: #fff;
-  border: 1px solid #f0f0f0;
+.container.imageToTextPage .tabBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.container.imageToTextPage .panel {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(26, 15, 61, 0.08);
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
-
-  .ant-card-head {
-    border-bottom: 1px solid #f0f0f0;
-  }
+  padding: 14px 18px;
+  box-shadow: 0 14px 40px -22px rgba(26, 15, 61, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.container.imageToTextPage .panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.container.imageToTextPage .panelTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #1f1f1f;
+}
+.container.imageToTextPage .panelTitle .anticon {
+  color: #531dab;
 }
 
-.custom-dragger {
-  background: #fafafa !important;
-  border: 2px dashed #d9d9d9 !important;
+/* === Workspace 2 columns === */
+.container.imageToTextPage .workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+@media (max-width: 1100px) {
+  .container.imageToTextPage .workspace {
+    grid-template-columns: 1fr;
+  }
+}
+.container.imageToTextPage .sourcePanel {
+  border-left: 4px solid #531dab;
+}
+.container.imageToTextPage .outputPanel {
+  border-left: 4px solid #389e0d;
+}
+
+/* Dragger */
+.container.imageToTextPage .customDragger {
+  background: rgba(83, 29, 171, 0.04) !important;
+  border: 2px dashed #d3adf7 !important;
   border-radius: 12px !important;
-  transition: all 0.3s;
-
-  &:hover {
-    border-color: #1890ff !important;
-    background: #f0f5ff !important;
-  }
-
-  .ant-upload-drag-icon {
-    color: #1890ff;
-  }
+  transition: all 0.2s;
+}
+.container.imageToTextPage .customDragger:hover {
+  border-color: #531dab !important;
+  background: rgba(83, 29, 171, 0.08) !important;
+}
+.container.imageToTextPage .customDragger .ant-upload-drag-icon {
+  color: #531dab !important;
+}
+.container.imageToTextPage .customDragger .ant-upload-drag-icon .anticon {
+  font-size: 36px;
 }
 
-.image-preview-wrapper {
+/* Image preview */
+.container.imageToTextPage .imagePreviewWrapper {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
-  padding: 16px;
-  background: #fafafa;
+  min-height: 220px;
+  padding: 12px;
+  background: repeating-conic-gradient(#f0f0f0 0% 25%, #fafafa 0% 50%) 0 0 / 16px 16px;
   border-radius: 12px;
   overflow: hidden;
 }
-
-.preview-image {
+.container.imageToTextPage .previewImage {
   max-width: 100%;
-  max-height: 400px;
+  max-height: 360px;
   object-fit: contain;
   border-radius: 8px;
 }
-
-.image-actions {
+.container.imageToTextPage .imageActions {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 10;
+  top: 8px;
+  right: 8px;
 }
 
-.setting-row {
+/* Settings */
+.container.imageToTextPage .settingsBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(83, 29, 171, 0.04);
+  border: 1px solid rgba(83, 29, 171, 0.1);
+}
+.container.imageToTextPage .settingsHeader {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #531dab;
+  font-size: 13px;
+}
+.container.imageToTextPage .settingRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px;
-  background: #f9f9f9;
-  border-radius: 8px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
-
-.process-btn {
-  height: 50px !important;
+.container.imageToTextPage .processBtn {
+  background: linear-gradient(135deg, #531dab 0%, #389e0d 100%) !important;
+  border: none !important;
   font-weight: 600;
-  font-size: 16px !important;
-  background: linear-gradient(90deg, #1890ff, #096dd9);
-  border: none;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(24, 144, 255, 0.3);
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(24, 144, 255, 0.4);
-  }
 }
 
-.loading-state {
+/* Output area */
+.container.imageToTextPage .outputArea {
+  min-height: 320px;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+.container.imageToTextPage .loadingState {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 300px;
+  width: 100%;
+  padding: 40px 20px;
+  gap: 8px;
+}
+.container.imageToTextPage .textContent {
+  flex: 1;
+  width: 100%;
+  margin: 0;
+  padding: 14px 16px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 480px;
+  overflow: auto;
+  color: #1f1f1f;
+}
+.container.imageToTextPage .confidenceMeter {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(83, 29, 171, 0.04);
+  border: 1px solid rgba(83, 29, 171, 0.1);
+}
+.container.imageToTextPage .outputFooter {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
-.result-container {
+/* Debug step grid */
+.container.imageToTextPage .stepGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.container.imageToTextPage .stepTile {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 12px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+}
+.container.imageToTextPage .stepIndex {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #531dab;
+}
+.container.imageToTextPage .stepImage {
+  width: 100% !important;
+  height: 140px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 6px;
 }
 
-.confidence-meter {
-  margin-bottom: 16px;
+/* Guide */
+.container.imageToTextPage .guideGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
 }
-
-.text-content {
-  flex: 1;
-  min-height: 300px;
-  padding: 16px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+.container.imageToTextPage .guideItem {
+  gap: 6px;
+}
+.container.imageToTextPage .guideTitle {
+  font-weight: 600;
+  color: #531dab;
   font-size: 14px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  background: #f9f9f9;
-  border-radius: 8px;
-  border: 1px solid #eee;
 }
 
-// Responsive tweak for mobile
-@media (max-width: 768px) {
-  .stepsPreview {
-    gap: 12px;
+/* === Dark mode === */
+:global([data-prefers-color-scheme='dark']) .container.imageToTextPage,
+:global(.dark) .container.imageToTextPage {
+  background:
+    radial-gradient(900px 420px at 95% -5%, rgba(82, 196, 26, 0.16), transparent 60%),
+    radial-gradient(900px 420px at -5% 0%, rgba(114, 46, 209, 0.18), transparent 60%),
+    linear-gradient(180deg, #14181f 0%, #0d1015 100%);
 
-    .stepImageWrapper {
-      max-width: 140px;
-
-      .stepCaption {
-        font-size: 10px;
-        padding: 2px 4px;
-      }
-    }
+  .panel,
+  .statChip {
+    background: rgba(28, 32, 40, 0.85);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .panelTitle {
+    color: #f5f5f5;
+  }
+  .panelTitle .anticon {
+    color: #b37feb;
+  }
+  .statChip .statValue {
+    color: #f5f5f5;
+  }
+  .statChip .statSub,
+  .statChip .statLabel {
+    color: #a6adb8;
+  }
+  .customDragger {
+    background: rgba(83, 29, 171, 0.1) !important;
+    border-color: rgba(179, 127, 235, 0.5) !important;
+  }
+  .customDragger .ant-upload-text,
+  .customDragger .ant-upload-hint {
+    color: #d6d6d6 !important;
+  }
+  .imagePreviewWrapper {
+    background: repeating-conic-gradient(#1f1f1f 0% 25%, #2a2a2a 0% 50%) 0 0 / 16px 16px;
+  }
+  .settingsBlock {
+    background: rgba(83, 29, 171, 0.12);
+    border-color: rgba(179, 127, 235, 0.25);
+  }
+  .settingsHeader {
+    color: #b37feb;
+  }
+  .textContent {
+    background: #14181f;
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #f5f5f5;
+  }
+  .stepTile {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .stepImage {
+    background: #14181f;
+  }
+  .confidenceMeter {
+    background: rgba(83, 29, 171, 0.16);
+    border-color: rgba(179, 127, 235, 0.25);
+  }
+  .guideTitle {
+    color: #b37feb;
+  }
+  .sourcePanel {
+    border-left-color: #9254de;
+  }
+  .outputPanel {
+    border-left-color: #73d13d;
   }
 }
