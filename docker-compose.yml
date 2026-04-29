@@ -1,8 +1,8 @@
 version: '3.9'
 services:
-  # docker build --no-cache -f Dockerfile -t new-edu-web .
+  # docker build --no-cache -f Dockerfile -t ultimate-tool-web .
   new-edu:
-    image: new-edu-web
+    image: ultimate-tool-web
     # restart: always
     environment:
       - NGINX_ENVSUBST_TEMPLATE_SUFFIX=.template

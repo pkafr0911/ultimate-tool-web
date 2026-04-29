@@ -1,395 +1,679 @@
+import { handleCopy } from '@/helpers';
 import {
+  ApartmentOutlined,
+  BookOutlined,
+  CheckCircleFilled,
+  ClearOutlined,
+  CloseCircleFilled,
+  CodeOutlined,
+  CompassOutlined,
+  CopyOutlined,
+  EyeOutlined,
+  FieldTimeOutlined,
+  FunctionOutlined,
+  KeyOutlined,
+  LockOutlined,
+  NumberOutlined,
+  SafetyCertificateOutlined,
+  SwapOutlined,
+  ThunderboltOutlined,
+  UnlockOutlined,
+} from '@ant-design/icons';
+import {
+  Alert,
   Button,
-  Card,
-  Col,
-  Divider,
+  Empty,
   Input,
-  Row,
+  Segmented,
   Select,
   Space,
   Tabs,
+  Tag,
+  Tooltip,
   Typography,
   message,
-  Tooltip,
 } from 'antd';
 import {
   SignJWT,
   decodeJwt,
   decodeProtectedHeader,
-  jwtVerify,
   importPKCS8,
   importSPKI,
+  jwtVerify,
 } from 'jose';
-import React, { useState, useMemo } from 'react';
-import {
-  ArrowRightOutlined,
-  ArrowLeftOutlined,
-  EyeOutlined,
-  CopyOutlined,
-  LockOutlined,
-  UnlockOutlined,
-} from '@ant-design/icons';
+import React, { useEffect, useMemo, useState } from 'react';
 import './styles.less';
 
 const { TextArea } = Input;
-const { Title, Text, Paragraph } = Typography;
-const { Option } = Select;
+const { Text, Paragraph } = Typography;
 
-const JWTTool: React.FC = () => {
-  // --- State ---
+const ALG_GROUPS = [
+  {
+    label: 'HMAC (symmetric)',
+    options: ['HS256', 'HS384', 'HS512'],
+    color: '#13c2c2',
+  },
+  {
+    label: 'RSA',
+    options: ['RS256', 'RS384', 'RS512'],
+    color: '#1890ff',
+  },
+  {
+    label: 'RSA-PSS',
+    options: ['PS256', 'PS384', 'PS512'],
+    color: '#722ed1',
+  },
+  {
+    label: 'ECDSA',
+    options: ['ES256', 'ES384', 'ES512'],
+    color: '#fa8c16',
+  },
+];
+
+const SAMPLE_HEADER = '{\n  "alg": "HS256",\n  "typ": "JWT"\n}';
+const SAMPLE_PAYLOAD =
+  '{\n  "sub": "1234567890",\n  "name": "Jane Doe",\n  "role": "admin",\n  "iat": 1700000000\n}';
+const SAMPLE_SECRET = 'your-256-bit-secret';
+
+const formatJSON = (obj: any) => JSON.stringify(obj, null, 2);
+const parseJSON = (text: string, label: string) => {
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Invalid JSON in ${label}`);
+  }
+};
+
+const formatTimestamp = (n: unknown) => {
+  if (typeof n !== 'number' || !Number.isFinite(n)) return null;
+  const ms = n < 1e12 ? n * 1000 : n;
+  try {
+    return new Date(ms).toUTCString();
+  } catch {
+    return null;
+  }
+};
+
+const JWTPage: React.FC = () => {
   const [algorithm, setAlgorithm] = useState('HS256');
-  const [headerStr, setHeaderStr] = useState('{\n  "alg": "HS256",\n  "typ": "JWT"\n}');
-  const [payloadStr, setPayloadStr] = useState(
-    '{\n  "sub": "1234567890",\n  "name": "John Doe",\n  "iat": 1516239022\n}',
-  );
-  const [secret, setSecret] = useState('secret');
+  const [headerStr, setHeaderStr] = useState(SAMPLE_HEADER);
+  const [payloadStr, setPayloadStr] = useState(SAMPLE_PAYLOAD);
+  const [secret, setSecret] = useState(SAMPLE_SECRET);
   const [privateKey, setPrivateKey] = useState('');
   const [publicKey, setPublicKey] = useState('');
   const [token, setToken] = useState('');
   const [expiration, setExpiration] = useState('2h');
+  const [verifyState, setVerifyState] = useState<'idle' | 'valid' | 'invalid'>('idle');
+  const [verifyError, setVerifyError] = useState<string>('');
 
-  const encoder = new TextEncoder();
+  const isSymmetric = useMemo(() => algorithm.startsWith('HS'), [algorithm]);
+  const algGroup = useMemo(
+    () => ALG_GROUPS.find((g) => g.options.includes(algorithm)) ?? ALG_GROUPS[0],
+    [algorithm],
+  );
 
-  // Determine if algorithm is symmetric (HMAC) or asymmetric (RSA/ECDSA/PS)
-  const isSymmetric = useMemo(() => {
-    return algorithm.startsWith('HS');
+  // Parse current token (live decode)
+  const tokenParts = useMemo(() => {
+    if (!token) return null;
+    const parts = token.split('.');
+    if (parts.length !== 3) return { error: 'Token must have 3 parts separated by "."' };
+    try {
+      return {
+        header: decodeProtectedHeader(token),
+        payload: decodeJwt(token),
+        raw: parts,
+      };
+    } catch (e: any) {
+      return { error: e?.message || 'Failed to decode' };
+    }
+  }, [token]);
+
+  const tokenStats = useMemo(() => {
+    if (!token || !tokenParts || 'error' in tokenParts) return null;
+    const exp = (tokenParts.payload as any)?.exp as number | undefined;
+    const iat = (tokenParts.payload as any)?.iat as number | undefined;
+    const now = Math.floor(Date.now() / 1000);
+    const expired = typeof exp === 'number' ? exp < now : null;
+    return {
+      length: token.length,
+      claims: Object.keys(tokenParts.payload || {}).length,
+      expired,
+      expIn: typeof exp === 'number' ? exp - now : null,
+      iat,
+      exp,
+    };
+  }, [token, tokenParts]);
+
+  // Sync header.alg whenever algorithm changes
+  useEffect(() => {
+    try {
+      const h = JSON.parse(headerStr);
+      if (h.alg !== algorithm) {
+        h.alg = algorithm;
+        setHeaderStr(formatJSON(h));
+      }
+    } catch {
+      // ignore
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [algorithm]);
 
-  // --- Helpers ---
-  const parseJSON = (text: string, label: string) => {
-    try {
-      return JSON.parse(text);
-    } catch (e) {
-      throw new Error(`Invalid JSON in ${label}`);
-    }
-  };
-
-  const formatJSON = (obj: any) => JSON.stringify(obj, null, 2);
-
-  // --- Actions ---
-
-  const handleEncrypt = async () => {
+  const handleSign = async () => {
     try {
       const header = parseJSON(headerStr, 'Header');
       const payload = parseJSON(payloadStr, 'Payload');
-
-      // Ensure algorithm in header matches selected algorithm
       header.alg = algorithm;
       setHeaderStr(formatJSON(header));
 
       let cryptoKey: Uint8Array | CryptoKey;
-
       if (isSymmetric) {
-        // Use secret for HMAC algorithms
-        cryptoKey = encoder.encode(secret);
+        cryptoKey = new TextEncoder().encode(secret);
       } else {
-        // Use private key for asymmetric algorithms
         if (!privateKey) {
-          message.error('Private key is required for asymmetric algorithms');
+          message.error('Private key is required for asymmetric algorithms.');
           return;
         }
         try {
           cryptoKey = await importPKCS8(privateKey, algorithm);
-        } catch (err: any) {
-          message.error('Invalid private key format. Expected PKCS8 PEM format.');
+        } catch {
+          message.error('Invalid private key — expected PKCS8 PEM.');
           return;
         }
       }
 
-      let jwtBuilder = new SignJWT(payload).setProtectedHeader(header).setIssuedAt();
+      let builder = new SignJWT(payload).setProtectedHeader(header);
+      if (!('iat' in payload)) builder = builder.setIssuedAt();
+      if (expiration) builder = builder.setExpirationTime(expiration);
 
-      if (expiration) {
-        jwtBuilder = jwtBuilder.setExpirationTime(expiration);
-      }
-
-      const jwt = await jwtBuilder.sign(cryptoKey);
-
+      const jwt = await builder.sign(cryptoKey);
       setToken(jwt);
-      message.success('Token generated successfully!');
+      setVerifyState('valid');
+      setVerifyError('');
+      message.success('Token signed.');
     } catch (err: any) {
-      message.error(err.message || 'Error generating token');
+      message.error(err?.message || 'Failed to sign token');
     }
   };
 
   const handleVerify = async () => {
-    if (!token) return;
+    if (!token) {
+      message.warning('No token to verify.');
+      return;
+    }
     try {
       let cryptoKey: Uint8Array | CryptoKey;
-
       if (isSymmetric) {
-        // Use secret for HMAC algorithms
-        cryptoKey = encoder.encode(secret);
+        cryptoKey = new TextEncoder().encode(secret);
       } else {
-        // Use public key for asymmetric algorithms
         if (!publicKey) {
-          message.warning('Public key not provided. Decoding without verification...');
+          message.warning('Public key not provided. Decoding without verification.');
           handleDecodeOnly();
           return;
         }
         try {
           cryptoKey = await importSPKI(publicKey, algorithm);
-        } catch (err: any) {
-          message.warning('Invalid public key. Decoding without verification...');
+        } catch {
+          message.warning('Invalid public key. Decoding without verification.');
           handleDecodeOnly();
           return;
         }
       }
-
       const { payload, protectedHeader } = await jwtVerify(token, cryptoKey, {
         algorithms: [algorithm],
       });
-
       setHeaderStr(formatJSON(protectedHeader));
       setPayloadStr(formatJSON(payload));
-      message.success('Token verified successfully!');
+      setVerifyState('valid');
+      setVerifyError('');
+      message.success('Signature verified.');
     } catch (err: any) {
-      message.warning(`Verification failed: ${err.message}. Decoding without verification...`);
-      handleDecodeOnly();
+      setVerifyState('invalid');
+      setVerifyError(err?.message || 'Verification failed');
+      handleDecodeOnly(true);
     }
   };
 
-  const handleDecodeOnly = () => {
+  const handleDecodeOnly = (silent = false) => {
     if (!token) return;
     try {
       const header = decodeProtectedHeader(token);
       const payload = decodeJwt(token);
-
       setHeaderStr(formatJSON(header));
       setPayloadStr(formatJSON(payload));
-
-      if (header.alg) {
-        setAlgorithm(header.alg);
-      }
-
-      message.info('Token decoded (signature not verified)');
+      if (header.alg && typeof header.alg === 'string') setAlgorithm(header.alg);
+      if (!silent) message.info('Token decoded (signature not verified).');
     } catch (err: any) {
-      message.error(`Decoding failed: ${err.message}`);
+      message.error(`Decode failed: ${err?.message}`);
     }
   };
 
-  // --- Render Helpers ---
+  const loadSample = () => {
+    setAlgorithm('HS256');
+    setHeaderStr(SAMPLE_HEADER);
+    setPayloadStr(SAMPLE_PAYLOAD);
+    setSecret(SAMPLE_SECRET);
+    setExpiration('2h');
+    setToken('');
+    setVerifyState('idle');
+  };
 
-  // Color-coded token visualizer
-  const renderTokenVisualizer = () => {
-    if (!token) return null;
-    const parts = token.split('.');
-    if (parts.length !== 3) return <Text type="secondary">Invalid token format</Text>;
+  const clearAll = () => {
+    setToken('');
+    setHeaderStr('{}');
+    setPayloadStr('{}');
+    setVerifyState('idle');
+    setVerifyError('');
+  };
 
+  // ─── Hero actions ──────────────────────────────────────────────
+  const heroActions = (
+    <Space wrap>
+      <Button icon={<BookOutlined />} onClick={loadSample} ghost>
+        Sample
+      </Button>
+      <Button icon={<ClearOutlined />} onClick={clearAll} ghost>
+        Clear
+      </Button>
+      <Button
+        type="primary"
+        icon={<ThunderboltOutlined />}
+        onClick={handleSign}
+        className="primaryAction"
+      >
+        Sign token
+      </Button>
+    </Space>
+  );
+
+  const stats = [
+    {
+      icon: <FunctionOutlined />,
+      label: 'Algorithm',
+      value: algorithm,
+    },
+    {
+      icon: <NumberOutlined />,
+      label: 'Token length',
+      value: token ? `${token.length} chars` : '—',
+    },
+    {
+      icon:
+        verifyState === 'valid' ? (
+          <CheckCircleFilled style={{ color: '#52c41a' }} />
+        ) : verifyState === 'invalid' ? (
+          <CloseCircleFilled style={{ color: '#ff4d4f' }} />
+        ) : (
+          <SafetyCertificateOutlined />
+        ),
+      label: 'Signature',
+      value:
+        verifyState === 'valid'
+          ? 'Verified'
+          : verifyState === 'invalid'
+            ? 'Invalid'
+            : 'Not verified',
+      tone: verifyState === 'valid' ? 'success' : verifyState === 'invalid' ? 'danger' : undefined,
+    },
+    {
+      icon: <FieldTimeOutlined />,
+      label: 'Status',
+      value:
+        tokenStats?.expired === true ? 'Expired' : tokenStats?.expired === false ? 'Active' : '—',
+      tone:
+        tokenStats?.expired === true
+          ? 'danger'
+          : tokenStats?.expired === false
+            ? 'success'
+            : undefined,
+    },
+  ];
+
+  // ─── Render token visualizer ───────────────────────────────────
+  const renderVisualizer = () => {
+    if (!token) {
+      return (
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description="Sign a token or paste one to visualise its parts"
+        />
+      );
+    }
+    if (tokenParts && 'error' in tokenParts) {
+      return <Alert type="error" showIcon message={tokenParts.error} />;
+    }
+    const [h, p, s] = tokenParts!.raw;
     return (
-      <div className="token-visualizer">
-        <span className="token-part-header">{parts[0]}</span>
-        <span className="token-dot">.</span>
-        <span className="token-part-payload">{parts[1]}</span>
-        <span className="token-dot">.</span>
-        <span className="token-part-signature">{parts[2]}</span>
+      <div className="visualizer">
+        <span className="t-header">{h}</span>
+        <span className="t-dot">.</span>
+        <span className="t-payload">{p}</span>
+        <span className="t-dot">.</span>
+        <span className="t-signature">{s}</span>
       </div>
     );
   };
 
   return (
-    <div className="jwt-container">
-      <Card bordered={false} className="jwt-main-card">
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <Title level={2}>🔐 JWT Debugger</Title>
-          <Paragraph type="secondary">
-            Encode and Decode JSON Web Tokens. Verify signatures with secrets.
-          </Paragraph>
+    <div className="container">
+      <div className="shell">
+        {/* ───── HERO ───── */}
+        <div className="hero">
+          <div className="heroRow">
+            <div className="heroTitleBlock">
+              <div className="heroBadge">
+                <SafetyCertificateOutlined />
+              </div>
+              <div>
+                <span className="heroEyebrow">JWT Studio</span>
+                <Typography.Title
+                  level={4}
+                  style={{ color: '#fff', margin: '2px 0 0', lineHeight: 1.25 }}
+                >
+                  Sign, decode & verify JSON Web Tokens
+                </Typography.Title>
+                <Text style={{ color: 'rgba(255,255,255,0.72)', fontSize: 12 }}>
+                  HS / RS / PS / ES algorithms with live header & payload editing.
+                </Text>
+              </div>
+            </div>
+            <div className="heroActions">{heroActions}</div>
+          </div>
         </div>
 
-        <Row gutter={[32, 32]}>
-          {/* --- Left Column: Decoded --- */}
-          <Col xs={24} lg={12}>
-            <Card title="Decoded" className="section-card" bordered={false}>
-              {/* Algorithm & Secret */}
-              <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>
-                <Row gutter={16}>
-                  <Col span={12}>
-                    <Text strong>Algorithm</Text>
-                    <Select
-                      value={algorithm}
-                      onChange={(val) => {
-                        setAlgorithm(val);
-                        // Update header JSON automatically
-                        try {
-                          const h = JSON.parse(headerStr);
-                          h.alg = val;
-                          setHeaderStr(formatJSON(h));
-                        } catch {}
-                      }}
-                      style={{ width: '100%' }}
-                    >
-                      <Option value="HS256">HS256</Option>
-                      <Option value="HS384">HS384</Option>
-                      <Option value="HS512">HS512</Option>
-                      <Option value="RS256">RS256</Option>
-                      <Option value="RS384">RS384</Option>
-                      <Option value="RS512">RS512</Option>
-                      <Option value="ES256">ES256</Option>
-                      <Option value="ES384">ES384</Option>
-                      <Option value="ES512">ES512</Option>
-                      <Option value="PS256">PS256</Option>
-                      <Option value="PS384">PS384</Option>
-                      <Option value="PS512">PS512</Option>
-                    </Select>
-                  </Col>
-                  <Col span={12}>
-                    <Text strong>Expiration</Text>
-                    <Input
-                      value={expiration}
-                      onChange={(e) => setExpiration(e.target.value)}
-                      placeholder="e.g. 2h, 10m, 7d"
-                    />
-                  </Col>
-                </Row>
+        {/* ───── STAT STRIP ───── */}
+        <div className="statStrip">
+          {stats.map((s, i) => (
+            <div
+              key={i}
+              className={`statChip ${s.tone === 'success' ? 'success' : ''} ${
+                s.tone === 'danger' ? 'danger' : ''
+              }`}
+            >
+              <span className="statIcon">{s.icon}</span>
+              <span className="statBody">
+                <span className="statLabel">{s.label}</span>
+                <span className="statValue">{s.value}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* ───── WORKSPACE ───── */}
+        <div className="workspace">
+          {/* LEFT: Decoded editor */}
+          <div className="panel mainPanel">
+            <div className="panelHeader">
+              <span className="panelTitle">
+                <CodeOutlined /> Decoded
+              </span>
+              <Space wrap>
+                <Select
+                  className="algSelect"
+                  value={algorithm}
+                  onChange={setAlgorithm}
+                  options={ALG_GROUPS.map((g) => ({
+                    label: g.label,
+                    options: g.options.map((o) => ({ label: o, value: o })),
+                  }))}
+                  style={{ width: 200 }}
+                />
+                <Tooltip title="Token expiration (e.g. 2h, 30m, 7d). Leave empty to omit.">
+                  <Input
+                    prefix={<FieldTimeOutlined />}
+                    value={expiration}
+                    onChange={(e) => setExpiration(e.target.value)}
+                    placeholder="Expiration"
+                    style={{ width: 140 }}
+                  />
+                </Tooltip>
               </Space>
+            </div>
 
-              {/* Header & Payload Tabs */}
-              <Tabs
-                defaultActiveKey="payload"
-                items={[
-                  {
-                    key: 'header',
-                    label: 'Header',
-                    children: (
-                      <div className="json-editor-container header-editor">
-                        <TextArea
-                          value={headerStr}
-                          onChange={(e) => setHeaderStr(e.target.value)}
-                          autoSize={{ minRows: 4, maxRows: 8 }}
-                          className="code-font"
-                        />
-                      </div>
-                    ),
-                  },
-                  {
-                    key: 'payload',
-                    label: 'Payload',
-                    children: (
-                      <div className="json-editor-container payload-editor">
-                        <TextArea
-                          value={payloadStr}
-                          onChange={(e) => setPayloadStr(e.target.value)}
-                          autoSize={{ minRows: 8, maxRows: 16 }}
-                          className="code-font"
-                        />
-                      </div>
-                    ),
-                  },
-                ]}
-              />
-
-              {/* Secret Key */}
-              <div style={{ marginTop: 16 }}>
-                {isSymmetric ? (
-                  <>
-                    <Text strong>Secret Key</Text>
-                    <Input.Password
-                      value={secret}
-                      onChange={(e) => setSecret(e.target.value)}
-                      placeholder="your-256-bit-secret"
-                      iconRender={(visible) => (visible ? <UnlockOutlined /> : <LockOutlined />)}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <Text strong>Private Key (PKCS8 PEM)</Text>
+            <Tabs
+              defaultActiveKey="payload"
+              items={[
+                {
+                  key: 'header',
+                  label: (
+                    <span>
+                      <ApartmentOutlined /> Header
+                    </span>
+                  ),
+                  children: (
                     <TextArea
+                      className="codeArea headerArea"
+                      value={headerStr}
+                      onChange={(e) => setHeaderStr(e.target.value)}
+                      autoSize={{ minRows: 5, maxRows: 10 }}
+                    />
+                  ),
+                },
+                {
+                  key: 'payload',
+                  label: (
+                    <span>
+                      <CodeOutlined /> Payload
+                    </span>
+                  ),
+                  children: (
+                    <TextArea
+                      className="codeArea payloadArea"
+                      value={payloadStr}
+                      onChange={(e) => setPayloadStr(e.target.value)}
+                      autoSize={{ minRows: 8, maxRows: 18 }}
+                    />
+                  ),
+                },
+              ]}
+            />
+
+            <div className="keyBox">
+              <div className="keyBoxHeader">
+                <span className="panelTitle">
+                  <KeyOutlined /> {isSymmetric ? 'Secret key' : 'Key pair (PEM)'}
+                </span>
+                <Tag color={algGroup.color}>{algGroup.label}</Tag>
+              </div>
+
+              {isSymmetric ? (
+                <Input.Password
+                  value={secret}
+                  onChange={(e) => setSecret(e.target.value)}
+                  placeholder="your-256-bit-secret"
+                  iconRender={(visible) => (visible ? <UnlockOutlined /> : <LockOutlined />)}
+                  className="secretInput"
+                />
+              ) : (
+                <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                  <div>
+                    <Text type="secondary" className="keyLabel">
+                      Private key (PKCS8 PEM)
+                    </Text>
+                    <TextArea
+                      className="codeArea"
                       value={privateKey}
                       onChange={(e) => setPrivateKey(e.target.value)}
-                      placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
+                      placeholder={'-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----'}
                       autoSize={{ minRows: 4, maxRows: 8 }}
-                      className="code-font"
-                      style={{ marginBottom: 16 }}
                     />
-                    <Text strong>Public Key (SPKI PEM) - for verification</Text>
+                  </div>
+                  <div>
+                    <Text type="secondary" className="keyLabel">
+                      Public key (SPKI PEM) — for verification
+                    </Text>
                     <TextArea
+                      className="codeArea"
                       value={publicKey}
                       onChange={(e) => setPublicKey(e.target.value)}
-                      placeholder="-----BEGIN PUBLIC KEY-----&#10;...&#10;-----END PUBLIC KEY-----"
+                      placeholder={'-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----'}
                       autoSize={{ minRows: 4, maxRows: 8 }}
-                      className="code-font"
                     />
-                  </>
-                )}
-              </div>
+                  </div>
+                </Space>
+              )}
+            </div>
+          </div>
 
-              {/* Action: Encode */}
-              <div style={{ marginTop: 24, textAlign: 'right' }}>
-                <Button
-                  type="primary"
-                  icon={<ArrowRightOutlined />}
-                  onClick={handleEncrypt}
-                  size="large"
-                >
-                  Sign / Encode
-                </Button>
-              </div>
-            </Card>
-          </Col>
-
-          {/* --- Right Column: Encoded --- */}
-          <Col xs={24} lg={12}>
-            <Card title="Encoded" className="section-card" bordered={false}>
-              <div className="encoded-container">
-                <TextArea
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  placeholder="Paste a JWT here..."
-                  autoSize={{ minRows: 8, maxRows: 12 }}
-                  className="code-font token-input"
-                />
-
-                <Space style={{ marginTop: 16, width: '100%', justifyContent: 'space-between' }}>
-                  <Space>
-                    <Button icon={<EyeOutlined />} onClick={handleDecodeOnly}>
-                      Decode Only
-                    </Button>
-                    <Tooltip title="Copy Token">
-                      <Button
-                        icon={<CopyOutlined />}
-                        onClick={() => {
-                          navigator.clipboard.writeText(token);
-                          message.success('Copied!');
-                        }}
-                      />
-                    </Tooltip>
-                  </Space>
+          {/* RIGHT: Encoded + tabs */}
+          <div className="panel sidePanel">
+            <div className="panelHeader">
+              <span className="panelTitle">
+                <SwapOutlined /> Encoded token
+              </span>
+              <Space>
+                <Tooltip title="Copy">
                   <Button
-                    type="primary"
-                    icon={<ArrowLeftOutlined />}
-                    onClick={handleVerify}
-                    size="large"
-                  >
-                    Verify / Decode
-                  </Button>
-                </Space>
-              </div>
+                    icon={<CopyOutlined />}
+                    onClick={() => token && handleCopy(token, 'Token copied')}
+                    disabled={!token}
+                  />
+                </Tooltip>
+                <Button icon={<EyeOutlined />} onClick={() => handleDecodeOnly()}>
+                  Decode
+                </Button>
+                <Button type="primary" icon={<SafetyCertificateOutlined />} onClick={handleVerify}>
+                  Verify
+                </Button>
+              </Space>
+            </div>
 
-              <Divider orientation="left">Visualizer</Divider>
-              <div className="visualizer-container">{renderTokenVisualizer()}</div>
+            <TextArea
+              className="tokenInput"
+              value={token}
+              onChange={(e) => {
+                setToken(e.target.value);
+                setVerifyState('idle');
+              }}
+              placeholder="Paste a JWT here, or click Sign to generate one…"
+              autoSize={{ minRows: 6, maxRows: 12 }}
+            />
 
-              <div className="legend" style={{ marginTop: 16 }}>
-                <Space size="large">
-                  <Space>
-                    <div className="dot header-dot" />
-                    <Text type="secondary">Header</Text>
-                  </Space>
-                  <Space>
-                    <div className="dot payload-dot" />
-                    <Text type="secondary">Payload</Text>
-                  </Space>
-                  <Space>
-                    <div className="dot signature-dot" />
-                    <Text type="secondary">Signature</Text>
-                  </Space>
-                </Space>
-              </div>
-            </Card>
-          </Col>
-        </Row>
-      </Card>
+            {verifyState === 'invalid' && verifyError && (
+              <Alert type="error" showIcon message="Signature invalid" description={verifyError} />
+            )}
+
+            <Tabs
+              defaultActiveKey="visualizer"
+              items={[
+                {
+                  key: 'visualizer',
+                  label: (
+                    <span>
+                      <ApartmentOutlined /> Visualizer
+                    </span>
+                  ),
+                  children: (
+                    <>
+                      <div className="visualizerCard">{renderVisualizer()}</div>
+                      <div className="legend">
+                        <span className="legItem">
+                          <span className="dot dotHeader" /> Header
+                        </span>
+                        <span className="legItem">
+                          <span className="dot dotPayload" /> Payload
+                        </span>
+                        <span className="legItem">
+                          <span className="dot dotSignature" /> Signature
+                        </span>
+                      </div>
+                    </>
+                  ),
+                },
+                {
+                  key: 'claims',
+                  label: (
+                    <span>
+                      <BookOutlined /> Claims
+                    </span>
+                  ),
+                  children:
+                    tokenParts && !('error' in tokenParts) ? (
+                      <div className="claimsList">
+                        {Object.entries(tokenParts.payload as Record<string, unknown>).map(
+                          ([k, v]) => {
+                            const ts =
+                              ['exp', 'iat', 'nbf'].includes(k) && typeof v === 'number'
+                                ? formatTimestamp(v)
+                                : null;
+                            return (
+                              <div key={k} className="claimRow">
+                                <Tag color="geekblue" className="claimKey">
+                                  {k}
+                                </Tag>
+                                <code className="claimVal">
+                                  {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                                </code>
+                                {ts && <span className="claimMeta">{ts}</span>}
+                              </div>
+                            );
+                          },
+                        )}
+                      </div>
+                    ) : (
+                      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No decoded claims" />
+                    ),
+                },
+                {
+                  key: 'guide',
+                  label: (
+                    <span>
+                      <CompassOutlined /> Guide
+                    </span>
+                  ),
+                  children: (
+                    <div className="guideList">
+                      <div className="guideItem">
+                        <SafetyCertificateOutlined />
+                        <div>
+                          <strong>What is a JWT?</strong>
+                          <Paragraph type="secondary" style={{ margin: 0 }}>
+                            A compact, URL-safe token with three Base64URL parts:{' '}
+                            <code>header</code>.<code>payload</code>.<code>signature</code>.
+                          </Paragraph>
+                        </div>
+                      </div>
+                      <div className="guideItem">
+                        <KeyOutlined />
+                        <div>
+                          <strong>Symmetric vs asymmetric</strong>
+                          <Paragraph type="secondary" style={{ margin: 0 }}>
+                            <strong>HS*</strong> uses a shared secret. <strong>RS*</strong>,{' '}
+                            <strong>PS*</strong>, <strong>ES*</strong> use a private key to sign and
+                            a public key to verify.
+                          </Paragraph>
+                        </div>
+                      </div>
+                      <div className="guideItem">
+                        <FieldTimeOutlined />
+                        <div>
+                          <strong>Standard claims</strong>
+                          <Paragraph type="secondary" style={{ margin: 0 }}>
+                            <code>iat</code> issued-at, <code>exp</code> expiration,{' '}
+                            <code>nbf</code> not-before, <code>iss</code> issuer, <code>aud</code>{' '}
+                            audience, <code>sub</code> subject.
+                          </Paragraph>
+                        </div>
+                      </div>
+                      <div className="guideItem">
+                        <LockOutlined />
+                        <div>
+                          <strong>Security tip</strong>
+                          <Paragraph type="secondary" style={{ margin: 0 }}>
+                            Never put secrets in the payload — it is only Base64-encoded, not
+                            encrypted. JWTs are signed, not confidential.
+                          </Paragraph>
+                        </div>
+                      </div>
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default JWTTool;
+export default JWTPage;
