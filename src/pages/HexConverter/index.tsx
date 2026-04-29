@@ -432,8 +432,8 @@ const HexConverterPage: React.FC = () => {
                       <div>
                         <strong>Hex dump</strong>
                         <Paragraph type="secondary" style={{ margin: 0 }}>
-                          Toggle <em>Hex dump</em> to see a classic <code>xxd</code>-style view
-                          with offsets and ASCII sidebar.
+                          Toggle <em>Hex dump</em> to see a classic <code>xxd</code>-style view with
+                          offsets and ASCII sidebar.
                         </Paragraph>
                       </div>
                     </div>

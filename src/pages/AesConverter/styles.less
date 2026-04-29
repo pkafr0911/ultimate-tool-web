@@ -1,0 +1,429 @@
+/* === Page background === */
+.container {
+  width: 100%;
+  min-height: 100%;
+  padding: 16px 24px 28px;
+  background:
+    radial-gradient(900px 420px at 95% -5%, rgba(114, 46, 209, 0.1), transparent 60%),
+    radial-gradient(900px 420px at -5% 0%, rgba(255, 77, 79, 0.08), transparent 60%),
+    linear-gradient(180deg, #f7f9fc 0%, #eef1f7 100%);
+}
+
+.shell {
+  max-width: 1480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* === Hero === */
+.hero {
+  position: relative;
+  padding: 12px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #2b1055 0%, #4b1d83 45%, #c2185b 100%);
+  color: #fff;
+  overflow: hidden;
+  box-shadow: 0 14px 36px -20px rgba(43, 16, 85, 0.55);
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(420px 140px at 15% 0%, rgba(255, 255, 255, 0.16), transparent 70%),
+    radial-gradient(360px 160px at 95% 100%, rgba(250, 84, 28, 0.22), transparent 70%);
+  pointer-events: none;
+}
+.heroRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.heroTitleBlock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.heroBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #fff;
+  font-size: 20px;
+}
+.heroEyebrow {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.heroActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.primaryAction {
+  background: #fff !important;
+  color: #2b1055 !important;
+  border-color: #fff !important;
+  font-weight: 600;
+}
+.primaryAction:hover {
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+
+/* === Stat strip === */
+.statStrip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.statChip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(43, 16, 85, 0.08);
+  box-shadow: 0 8px 24px -12px rgba(43, 16, 85, 0.2);
+}
+.statChip .statIcon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(114, 46, 209, 0.12);
+  color: #722ed1;
+  font-size: 18px;
+}
+.statChip.success .statIcon {
+  background: rgba(82, 196, 26, 0.14);
+  color: #52c41a;
+}
+.statChip.danger .statIcon {
+  background: rgba(255, 77, 79, 0.14);
+  color: #ff4d4f;
+}
+.statChip .statBody {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.statChip .statLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8c8c8c;
+}
+.statChip .statValue {
+  font-weight: 600;
+  color: #1f1f1f;
+  font-size: 14px;
+}
+
+/* === Panels === */
+.panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(43, 16, 85, 0.08);
+  border-radius: 16px;
+  padding: 16px 18px;
+  box-shadow: 0 14px 40px -22px rgba(43, 16, 85, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* === Options bar === */
+.optionsBar {
+  flex-direction: row;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+}
+.optGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.optLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8c8c8c;
+}
+
+/* === Workspace === */
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+@media (max-width: 1100px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.panelTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #1f1f1f;
+}
+.panelTitle :global(.anticon) {
+  color: #722ed1;
+}
+
+/* === Code areas === */
+.codeArea {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace !important;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+  background: #fafbfc !important;
+  border-color: rgba(43, 16, 85, 0.08) !important;
+}
+.codeArea:focus,
+.codeArea:hover {
+  background: #fff !important;
+}
+.inputArea {
+  border-left: 3px solid #722ed1 !important;
+}
+.outputArea {
+  border-left: 3px solid #c2185b !important;
+}
+
+.passwordInput {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+.passwordInput :global(input) {
+  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+  letter-spacing: 0.02em;
+}
+
+/* === Strength chip === */
+.strengthChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid transparent;
+}
+.strengthChip .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4);
+}
+.strengthChip.strength-danger {
+  color: #cf1322;
+  background: rgba(255, 77, 79, 0.12);
+  border-color: rgba(255, 77, 79, 0.3);
+}
+.strengthChip.strength-warning {
+  color: #d48806;
+  background: rgba(250, 173, 20, 0.12);
+  border-color: rgba(250, 173, 20, 0.3);
+}
+.strengthChip.strength-success {
+  color: #389e0d;
+  background: rgba(82, 196, 26, 0.12);
+  border-color: rgba(82, 196, 26, 0.3);
+}
+
+/* === Error box === */
+.errorBox {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 77, 79, 0.08);
+  border: 1px solid rgba(255, 77, 79, 0.3);
+  color: #cf1322;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* === Format viz === */
+.formatGrid {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.formatBlock {
+  flex: 1 1 200px;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(114, 46, 209, 0.08), rgba(194, 24, 91, 0.08));
+  border: 1px solid rgba(114, 46, 209, 0.18);
+}
+.formatLabel {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 700;
+  color: #722ed1;
+  font-size: 14px;
+}
+.formatHint {
+  font-size: 12px;
+  color: #595959;
+}
+.formatSep {
+  display: flex;
+  align-items: center;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 24px;
+  font-weight: 700;
+  color: rgba(43, 16, 85, 0.4);
+  padding: 0 4px;
+}
+
+/* === Guide === */
+.guideList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.guideItem {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fafbfc;
+  border: 1px solid rgba(43, 16, 85, 0.06);
+}
+.guideItem :global(.anticon) {
+  font-size: 20px;
+  color: #722ed1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.guideItem strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #1f1f1f;
+}
+.guideItem code {
+  background: rgba(114, 46, 209, 0.1);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* === Dark mode === */
+:global([data-prefers-color-scheme='dark']),
+:global(.dark) {
+  .container {
+    background:
+      radial-gradient(900px 420px at 95% -5%, rgba(114, 46, 209, 0.22), transparent 60%),
+      radial-gradient(900px 420px at -5% 0%, rgba(194, 24, 91, 0.18), transparent 60%),
+      linear-gradient(180deg, #14181f 0%, #0d1015 100%);
+  }
+  .panel {
+    background: rgba(28, 32, 40, 0.85);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .panelTitle {
+    color: #f5f5f5;
+  }
+  .panelTitle :global(.anticon) {
+    color: #b37feb;
+  }
+  .statChip {
+    background: rgba(28, 32, 40, 0.85);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .statChip .statValue {
+    color: #f5f5f5;
+  }
+  .statChip .statIcon {
+    background: rgba(114, 46, 209, 0.18);
+    color: #b37feb;
+  }
+  .codeArea {
+    background: #14181f !important;
+    color: #e6e6e6 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+  .codeArea:focus,
+  .codeArea:hover {
+    background: #1a1f28 !important;
+  }
+  .errorBox {
+    background: rgba(255, 77, 79, 0.12);
+    color: #ff7875;
+    border-color: rgba(255, 77, 79, 0.4);
+  }
+  .formatBlock {
+    background: linear-gradient(135deg, rgba(179, 127, 235, 0.1), rgba(255, 133, 192, 0.08));
+    border-color: rgba(179, 127, 235, 0.25);
+  }
+  .formatLabel {
+    color: #d3adf7;
+  }
+  .formatHint {
+    color: #bfbfbf;
+  }
+  .formatSep {
+    color: rgba(255, 255, 255, 0.3);
+  }
+  .guideItem {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+  .guideItem strong {
+    color: #f5f5f5;
+  }
+  .guideItem :global(.anticon) {
+    color: #b37feb;
+  }
+  .guideItem code {
+    background: rgba(179, 127, 235, 0.18);
+    color: #efdbff;
+  }
+}
