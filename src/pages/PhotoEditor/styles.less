@@ -1,5 +1,405 @@
+/* === Page background === */
+.container.photoEditorPage {
+  width: 100%;
+  min-height: 100%;
+  padding: 16px 24px 28px;
+  background:
+    radial-gradient(900px 420px at 95% -5%, rgba(19, 194, 194, 0.14), transparent 60%),
+    radial-gradient(900px 420px at -5% 0%, rgba(82, 0, 175, 0.14), transparent 60%),
+    linear-gradient(180deg, #f4f7fb 0%, #eaeef6 100%);
+}
+.container.photoEditorPage .shell {
+  max-width: 1680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Fullscreen overlay (works even if browser fullscreen API is denied).
+   Maximizes editor real-estate by hiding the hero + stat strip and letting
+   the editor panel fill the entire viewport. */
+.container.photoEditorPage.fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  padding: 0;
+  overflow: hidden;
+  background: #0d1015;
+}
+.container.photoEditorPage.fullscreen .shell {
+  max-width: none;
+  height: 100vh;
+  width: 100vw;
+  gap: 0;
+}
+.container.photoEditorPage.fullscreen .hero,
+.container.photoEditorPage.fullscreen .statStrip,
+.container.photoEditorPage.fullscreen .workspacePanel {
+  display: none;
+}
+.container.photoEditorPage.fullscreen .editorPanel {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100vh;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+}
+.container.photoEditorPage.fullscreen .editorPanel .editorContainer {
+  border-radius: 0;
+}
+
+/* Floating exit button shown only in fullscreen mode */
+.container.photoEditorPage .fullscreenExit {
+  display: none;
+}
+.container.photoEditorPage.fullscreen .fullscreenExit {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 10000;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(13, 16, 21, 0.78);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(10px);
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+.container.photoEditorPage.fullscreen .fullscreenExit:hover {
+  background: rgba(13, 16, 21, 0.92);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+/* When browser :fullscreen pseudo-class is active */
+.container.photoEditorPage:fullscreen {
+  background: #0d1015;
+  padding: 0;
+}
+.container.photoEditorPage:fullscreen .shell {
+  max-width: none;
+  height: 100vh;
+  gap: 0;
+}
+
+/* === Hero === */
+.container.photoEditorPage .hero {
+  position: relative;
+  padding: 12px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #0a1f44 0%, #1677ff 50%, #13c2c2 100%);
+  color: #fff;
+  overflow: hidden;
+  box-shadow: 0 14px 36px -20px rgba(10, 31, 68, 0.55);
+}
+.container.photoEditorPage .heroOverlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(420px 140px at 15% 0%, rgba(255, 255, 255, 0.2), transparent 70%),
+    radial-gradient(360px 160px at 95% 100%, rgba(19, 194, 194, 0.32), transparent 70%);
+  pointer-events: none;
+}
+.container.photoEditorPage .heroRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.container.photoEditorPage .heroTitleBlock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.container.photoEditorPage .heroBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 20px;
+}
+.container.photoEditorPage .heroEyebrow {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.container.photoEditorPage .heroTitle {
+  margin: 4px 0 2px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #fff;
+}
+.container.photoEditorPage .heroSubtitle {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.82);
+}
+.container.photoEditorPage .heroActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Hero status pill */
+.container.photoEditorPage .heroStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+.container.photoEditorPage .heroStatusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+}
+.container.photoEditorPage .heroStatus-running {
+  background: rgba(22, 119, 255, 0.3);
+  border-color: rgba(22, 119, 255, 0.55);
+}
+.container.photoEditorPage .heroStatus-running .heroStatusDot {
+  background: #91caff;
+  animation: photoDot 1.2s infinite;
+}
+.container.photoEditorPage .heroStatus-success {
+  background: rgba(19, 194, 194, 0.28);
+  border-color: rgba(19, 194, 194, 0.5);
+}
+.container.photoEditorPage .heroStatus-success .heroStatusDot {
+  background: #87e8de;
+}
+@keyframes photoDot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.7);
+  }
+}
+
+/* === Stat strip === */
+.container.photoEditorPage .statStrip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+.container.photoEditorPage .statChip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(10, 31, 68, 0.08);
+  box-shadow: 0 8px 24px -12px rgba(10, 31, 68, 0.18);
+  min-width: 0;
+}
+.container.photoEditorPage .statChip .statIcon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(22, 119, 255, 0.12);
+  color: #1677ff;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.container.photoEditorPage .statChip.success .statIcon {
+  background: rgba(19, 194, 194, 0.14);
+  color: #08979c;
+}
+.container.photoEditorPage .statChip .statBody {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+.container.photoEditorPage .statChip .statLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8c8c8c;
+}
+.container.photoEditorPage .statChip .statValue {
+  font-weight: 600;
+  color: #1f1f1f;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.container.photoEditorPage .statChip .statSub {
+  font-weight: 400;
+  font-size: 11px;
+  color: #8c8c8c;
+}
+
+/* === Panels === */
+.container.photoEditorPage .panel {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(10, 31, 68, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 14px 40px -22px rgba(10, 31, 68, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+.container.photoEditorPage .workspacePanel {
+  padding: 8px 16px 16px;
+}
+.container.photoEditorPage .editorPanel {
+  padding: 0;
+  overflow: hidden;
+  height: calc(100vh - 220px);
+  min-height: 720px;
+}
+.container.photoEditorPage.fullscreen .editorPanel {
+  height: 100%;
+}
+.container.photoEditorPage .editorPanel .editorContainer {
+  height: 100%;
+  border-radius: 16px;
+}
+
+/* Upload tab */
+.container.photoEditorPage .uploadTab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0;
+}
+.container.photoEditorPage .uploadHint {
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+  color: #8c8c8c;
+}
+.container.photoEditorPage .uploadHint kbd {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f0f2f5;
+  border: 1px solid #d9d9d9;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+/* Guide grid */
+.container.photoEditorPage .guideGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+  padding: 8px 0;
+}
+.container.photoEditorPage .guideItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: rgba(22, 119, 255, 0.04);
+  border: 1px solid rgba(22, 119, 255, 0.12);
+  border-radius: 12px;
+}
+.container.photoEditorPage .guideTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #1677ff;
+  font-size: 14px;
+}
+.container.photoEditorPage .guideItem kbd {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f0f2f5;
+  border: 1px solid #d9d9d9;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  margin: 0 2px;
+}
+
+/* === Dark mode === */
+:global([data-prefers-color-scheme='dark']) .container.photoEditorPage,
+:global(.dark) .container.photoEditorPage {
+  background:
+    radial-gradient(900px 420px at 95% -5%, rgba(19, 194, 194, 0.18), transparent 60%),
+    radial-gradient(900px 420px at -5% 0%, rgba(82, 0, 175, 0.18), transparent 60%),
+    linear-gradient(180deg, #14181f 0%, #0d1015 100%);
+
+  .panel,
+  .statChip {
+    background: rgba(28, 32, 40, 0.85);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .statChip .statValue {
+    color: #f5f5f5;
+  }
+  .statChip .statSub,
+  .statChip .statLabel {
+    color: #a6adb8;
+  }
+  .guideItem {
+    background: rgba(22, 119, 255, 0.1);
+    border-color: rgba(22, 119, 255, 0.25);
+  }
+  .guideTitle {
+    color: #69c0ff;
+  }
+  .guideItem kbd,
+  .uploadHint kbd {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #d6d6d6;
+  }
+  .uploadHint {
+    color: #a6adb8;
+  }
+}
+
+/* === Original embedded editor styles === */
 .editorContainer {
-  height: calc(100vh);
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
