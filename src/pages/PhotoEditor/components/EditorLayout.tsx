@@ -7,7 +7,6 @@ import LayersPanel from './LayersPanel';
 import PropertiesPanel from './PropertiesPanel';
 import HistoryPanel from './HistoryPanel';
 import PhotoEditorErrorBoundary from './PhotoEditorErrorBoundary';
-import styles from '../styles.less';
 
 const { Sider, Content } = Layout;
 const { Panel } = Collapse;
@@ -17,18 +16,19 @@ const EditorLayout: React.FC = () => {
 
   return (
     <PhotoEditorErrorBoundary>
-      <Layout style={{ height: '100%' }}>
-        <Sider theme="light" width={60} className={styles.toolbarSider}>
+      <Layout className="peEditorLayout" style={{ height: '100%' }}>
+        <Sider theme="light" width={60} className="peToolbarSider">
           <Toolbar />
         </Sider>
-        <Content className={styles.canvasContent}>
+        <Content className="peCanvasContent">
           <CanvasArea />
         </Content>
-        <Sider theme="light" width={300} className={styles.propertiesSider}>
+        <Sider theme="light" width={300} className="pePropertiesSider">
           <PropertiesPanel />
           <Collapse
             defaultActiveKey={['layers']}
             bordered={false}
+            className="pePanelCollapse"
             style={{ background: 'transparent' }}
           >
             <Panel header="Layers" key="layers" style={{ padding: 0 }}>
