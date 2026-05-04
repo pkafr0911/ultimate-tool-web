@@ -1,138 +1,585 @@
-.readme-card {
-  height: calc(100vh - 120px);
+/* === Page background === */
+.container.readmeEditorPage {
+  width: 100%;
+  min-height: 100%;
+  padding: 16px 24px 28px;
+  background:
+    radial-gradient(900px 420px at 95% -5%, rgba(82, 196, 26, 0.12), transparent 60%),
+    radial-gradient(900px 420px at -5% 0%, rgba(87, 75, 126, 0.16), transparent 60%),
+    linear-gradient(180deg, #f7f6fb 0%, #eef0f7 100%);
+}
+.container.readmeEditorPage .shell {
+  max-width: 1680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 
-  .ant-card-body {
-    height: calc(100% - 60px);
-    padding: 16px;
+/* Page-level fullscreen */
+.container.readmeEditorPage.fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  padding: 0;
+  overflow: hidden;
+  background: #0d1015;
+}
+.container.readmeEditorPage.fullscreen .shell {
+  max-width: none;
+  height: 100vh;
+  width: 100vw;
+  gap: 0;
+}
+.container.readmeEditorPage.fullscreen .hero,
+.container.readmeEditorPage.fullscreen .statStrip,
+.container.readmeEditorPage.fullscreen .guidePanel {
+  display: none;
+}
+.container.readmeEditorPage.fullscreen .workspacePanel {
+  flex: 1 1 auto;
+  height: 100vh;
+  min-height: 0;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  background: rgba(20, 24, 31, 0.96);
+}
+.container.readmeEditorPage:fullscreen {
+  background: #0d1015;
+  padding: 0;
+}
+.container.readmeEditorPage:fullscreen .shell {
+  max-width: none;
+  height: 100vh;
+  gap: 0;
+}
+
+/* Floating exit button only in fullscreen */
+.container.readmeEditorPage .fullscreenExit {
+  display: none;
+}
+.container.readmeEditorPage.fullscreen .fullscreenExit {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 10000;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(13, 16, 21, 0.78);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(10px);
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+.container.readmeEditorPage.fullscreen .fullscreenExit:hover {
+  background: rgba(13, 16, 21, 0.92);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+/* === Hero === */
+.container.readmeEditorPage .hero {
+  position: relative;
+  padding: 12px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1f1147 0%, #574b7e 50%, #237804 100%);
+  color: #fff;
+  overflow: hidden;
+  box-shadow: 0 14px 36px -20px rgba(31, 17, 71, 0.55);
+}
+.container.readmeEditorPage .heroOverlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(420px 140px at 15% 0%, rgba(255, 255, 255, 0.2), transparent 70%),
+    radial-gradient(360px 160px at 95% 100%, rgba(82, 196, 26, 0.32), transparent 70%);
+  pointer-events: none;
+}
+.container.readmeEditorPage .heroRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.container.readmeEditorPage .heroTitleBlock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.container.readmeEditorPage .heroBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 20px;
+}
+.container.readmeEditorPage .heroEyebrow {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.container.readmeEditorPage .heroTitle {
+  margin: 4px 0 2px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #fff;
+}
+.container.readmeEditorPage .heroSubtitle {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.82);
+}
+.container.readmeEditorPage .heroActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.container.readmeEditorPage .heroStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+.container.readmeEditorPage .heroStatusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+}
+.container.readmeEditorPage .heroStatus-success {
+  background: rgba(82, 196, 26, 0.28);
+  border-color: rgba(82, 196, 26, 0.5);
+}
+.container.readmeEditorPage .heroStatus-success .heroStatusDot {
+  background: #b7eb8f;
+}
+
+/* === Stat strip === */
+.container.readmeEditorPage .statStrip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+.container.readmeEditorPage .statChip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(31, 17, 71, 0.08);
+  box-shadow: 0 8px 24px -12px rgba(31, 17, 71, 0.18);
+  min-width: 0;
+}
+.container.readmeEditorPage .statChip .statIcon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(87, 75, 126, 0.14);
+  color: #574b7e;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.container.readmeEditorPage .statChip.success .statIcon {
+  background: rgba(82, 196, 26, 0.14);
+  color: #389e0d;
+}
+.container.readmeEditorPage .statChip .statBody {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+.container.readmeEditorPage .statChip .statLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8c8c8c;
+}
+.container.readmeEditorPage .statChip .statValue {
+  font-weight: 600;
+  color: #1f1f1f;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.container.readmeEditorPage .statChip .statSub {
+  font-weight: 400;
+  font-size: 11px;
+  color: #8c8c8c;
+}
+
+/* === Panels === */
+.container.readmeEditorPage .panel {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(31, 17, 71, 0.08);
+  border-radius: 16px;
+  padding: 14px 18px;
+  box-shadow: 0 14px 40px -22px rgba(31, 17, 71, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.container.readmeEditorPage .panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.container.readmeEditorPage .panelTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #1f1f1f;
+}
+.container.readmeEditorPage .panelTitle .anticon {
+  color: #574b7e;
+}
+
+/* Workspace panel — embedded editor */
+.container.readmeEditorPage .workspacePanel {
+  height: calc(100vh - 240px);
+  min-height: 600px;
+  padding: 12px 14px 14px;
+}
+.container.readmeEditorPage.fullscreen .workspacePanel {
+  height: 100vh;
+  padding: 12px 14px 14px;
+}
+.container.readmeEditorPage .workspaceToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed rgba(31, 17, 71, 0.08);
+}
+.container.readmeEditorPage .toolbarLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #595959;
+}
+.container.readmeEditorPage .splitWrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.container.readmeEditorPage .splitWrapper .ant-splitter,
+.container.readmeEditorPage .splitWrapper .ant-splitter-panel {
+  height: 100%;
+}
+
+/* Pane layout */
+.container.readmeEditorPage .paneShell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: flex 0.3s ease;
+}
+.container.readmeEditorPage .paneShell.fullscreen {
+  flex: 1 !important;
+  max-width: 100% !important;
+}
+.container.readmeEditorPage .paneShell.hidden {
+  flex: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  overflow: hidden;
+}
+.container.readmeEditorPage .editorPane {
+  padding-right: 8px;
+}
+.container.readmeEditorPage .previewPane {
+  padding-left: 8px;
+}
+.container.readmeEditorPage .paneHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(31, 17, 71, 0.06);
+}
+.container.readmeEditorPage .paneTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #595959;
+}
+.container.readmeEditorPage .paneTitle .anticon {
+  color: #574b7e;
+}
+.container.readmeEditorPage .paneBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(31, 17, 71, 0.08);
+  background: #fff;
+}
+
+/* Quill */
+.container.readmeEditorPage .quillEditor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: none !important;
+}
+.container.readmeEditorPage .quillEditor .ql-toolbar.ql-snow {
+  border: none;
+  border-bottom: 1px solid #f0f0f0;
+}
+.container.readmeEditorPage .quillEditor .ql-container.ql-snow {
+  border: none;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Markdown preview (kept compatible with original styles) */
+.container.readmeEditorPage .markdownPreview {
+  flex: 1;
+  overflow-y: auto;
+  border-radius: 0;
+  padding: 24px;
+  background: #fff;
+  transition: background 0.3s ease;
+
+  &.markdown-body {
+    font-size: 15px;
+    line-height: 1.6;
   }
 
-  .readme-container {
-    height: 100%;
+  pre {
+    border-radius: 6px;
+    padding: 12px;
+    overflow-x: auto;
+  }
 
-    .ant-splitter {
-      height: 100%;
+  code {
+    border-radius: 4px;
+    padding: 2px 4px;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+
+    th,
+    td {
+      border: 1px solid #dfe2e5;
+      padding: 6px 13px;
     }
 
-    .editor-pane,
-    .preview-pane {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      transition: all 0.3s ease;
-
-      &.fullscreen {
-        flex: 1 !important;
-        max-width: 100% !important;
-      }
-
-      &.hidden {
-        flex: 0 !important;
-        min-width: 0 !important;
-        max-width: 0 !important;
-        overflow: hidden;
-      }
-
-      .pane-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-
-        h5 {
-          margin: 0;
-        }
-      }
+    th {
+      background: #f6f8fa;
     }
+  }
 
-    .quill-editor {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      border: 1px solid #f0f0f0;
-      border-radius: 8px;
+  blockquote {
+    border-left: 4px solid #dfe2e5;
+    color: #6a737d;
+    padding-left: 16px;
+  }
 
-      .ql-container {
-        flex: 1;
-        overflow-y: auto;
-      }
+  .mermaid-block {
+    text-align: center;
+    padding: 16px;
+    margin: 16px 0;
+    border-radius: 6px;
+    background: #f6f8fa;
+    overflow-x: auto;
+
+    svg {
+      max-width: 100%;
+      height: auto;
     }
+  }
 
-    .markdown-preview {
-      flex: 1;
-      overflow-y: auto;
-      border-radius: 8px;
-      padding: 24px;
-      background: #fff;
-      transition: background 0.3s ease;
+  .mermaid-error {
+    color: #d32f2f;
+    text-align: left;
+  }
 
-      &.markdown-body {
-        font-size: 15px;
-        line-height: 1.6;
-      }
+  &.markdown-dark {
+    background: #0d1117;
+    color: #c9d1d9;
 
-      pre {
-        border-radius: 6px;
-        padding: 12px;
-        overflow-x: auto;
-      }
-
-      code {
-        border-radius: 4px;
-        padding: 2px 4px;
-      }
-
-      table {
-        border-collapse: collapse;
-        width: 100%;
-
-        th,
-        td {
-          border: 1px solid #dfe2e5;
-          padding: 6px 13px;
-        }
-
-        th {
-          background: #f6f8fa;
-        }
-      }
-
-      blockquote {
-        border-left: 4px solid #dfe2e5;
-        color: #6a737d;
-        padding-left: 16px;
-      }
-
-      .mermaid-block {
-        text-align: center;
-        padding: 16px;
-        margin: 16px 0;
-        border-radius: 6px;
-        background: #f6f8fa;
-        overflow-x: auto;
-
-        svg {
-          max-width: 100%;
-          height: auto;
-        }
-      }
-
-      .mermaid-error {
-        color: #d32f2f;
-        text-align: left;
-      }
-
-      &.markdown-dark {
-        background: #0d1117;
-        color: #c9d1d9;
-
-        .mermaid-block {
-          background: #161b22;
-        }
-      }
+    .mermaid-block {
+      background: #161b22;
     }
+  }
+}
 
-    .button-group {
-      margin-top: 12px;
+/* Guide */
+.container.readmeEditorPage .guidePanel .guideGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+}
+.container.readmeEditorPage .guideItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: rgba(87, 75, 126, 0.05);
+  border: 1px solid rgba(87, 75, 126, 0.14);
+  border-radius: 12px;
+}
+.container.readmeEditorPage .guideTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #574b7e;
+  font-size: 14px;
+}
+.container.readmeEditorPage .guideItem kbd,
+.container.readmeEditorPage .guideItem code {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f0f2f5;
+  border: 1px solid #d9d9d9;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  margin: 0 2px;
+}
+
+/* Mobile */
+@media (max-width: 900px) {
+  .container.readmeEditorPage .workspacePanel {
+    height: auto;
+    min-height: 540px;
+  }
+  .container.readmeEditorPage .splitWrapper .ant-splitter {
+    flex-direction: column !important;
+  }
+}
+
+/* === Dark mode === */
+:global([data-prefers-color-scheme='dark']) .container.readmeEditorPage,
+:global(.dark) .container.readmeEditorPage {
+  background:
+    radial-gradient(900px 420px at 95% -5%, rgba(82, 196, 26, 0.18), transparent 60%),
+    radial-gradient(900px 420px at -5% 0%, rgba(140, 100, 200, 0.2), transparent 60%),
+    linear-gradient(180deg, #14181f 0%, #0d1015 100%);
+
+  .panel,
+  .statChip {
+    background: rgba(28, 32, 40, 0.85);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .panelTitle,
+  .paneTitle {
+    color: #f5f5f5;
+  }
+  .panelTitle .anticon,
+  .paneTitle .anticon {
+    color: #c4a3ff;
+  }
+  .toolbarLabel {
+    color: #d6d6d6;
+  }
+  .statChip .statValue {
+    color: #f5f5f5;
+  }
+  .statChip .statSub,
+  .statChip .statLabel {
+    color: #a6adb8;
+  }
+  .paneBody {
+    background: #14181f;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .quillEditor .ql-toolbar.ql-snow {
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+    .ql-stroke {
+      stroke: #d6d6d6;
     }
+    .ql-fill {
+      fill: #d6d6d6;
+    }
+    .ql-picker-label {
+      color: #d6d6d6;
+    }
+  }
+  .quillEditor .ql-container.ql-snow {
+    background: #14181f;
+    color: #f5f5f5;
+  }
+  .markdownPreview {
+    background: #0d1117;
+    color: #c9d1d9;
+  }
+  .workspaceToolbar {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+  .paneHeader {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+  }
+  .guideItem {
+    background: rgba(140, 100, 200, 0.12);
+    border-color: rgba(140, 100, 200, 0.25);
+  }
+  .guideTitle {
+    color: #c4a3ff;
+  }
+  .guideItem kbd,
+  .guideItem code {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #d6d6d6;
   }
 }
