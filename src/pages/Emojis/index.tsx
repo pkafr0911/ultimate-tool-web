@@ -1,20 +1,21 @@
 import { handleCopy as helperCopy } from '@/helpers';
 import {
+  AppstoreOutlined,
   FireOutlined,
   FontSizeOutlined,
   GiftOutlined,
   HeartOutlined,
   PictureOutlined,
+  SearchOutlined,
   SmileOutlined,
+  ThunderboltFilled,
 } from '@ant-design/icons';
-import { Button, Card, Col, Input, message, Row, Tabs, Tag, Tooltip } from 'antd';
+import { Button, Input, message, Segmented, Tag, Tooltip } from 'antd';
 import React, { useEffect, useMemo, useState } from 'react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeGrid } from 'react-window';
 import { EmojiEntry, loadEmojiData } from './fetchUnicodeEmoji';
 import './styles.less';
-
-const { Search } = Input;
 
 const categoryIconMap: Record<string, React.ReactNode> = {
   Smileys: <SmileOutlined />,
@@ -40,9 +41,11 @@ const safeCopy = async (text: string) => {
 
 const EmojisPage: React.FC = () => {
   const [query, setQuery] = useState('');
+  const [tab, setTab] = useState<'emoji' | 'kaomoji'>('emoji');
   const [emojiData, setEmojiData] = useState<Record<string, EmojiEntry[]>>({});
   const [kaomojiData, setKaomojiData] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
+  const [recent, setRecent] = useState<string[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -51,9 +54,25 @@ const EmojisPage: React.FC = () => {
       setKaomojiData(kaomoji);
       setLoading(false);
     })();
+    try {
+      const r = JSON.parse(localStorage.getItem('emoji-recent') || '[]');
+      if (Array.isArray(r)) setRecent(r.slice(0, 24));
+    } catch {
+      // noop
+    }
   }, []);
 
-  // 🔍 Filter Emojis by search query
+  const pickEmoji = (txt: string) => {
+    safeCopy(txt);
+    const next = [txt, ...recent.filter((x) => x !== txt)].slice(0, 24);
+    setRecent(next);
+    try {
+      localStorage.setItem('emoji-recent', JSON.stringify(next));
+    } catch {
+      // noop
+    }
+  };
+
   const filteredEmojis = useMemo(() => {
     if (!query.trim()) return emojiData;
     const q = query.toLowerCase();
@@ -65,118 +84,208 @@ const EmojisPage: React.FC = () => {
     return out;
   }, [query, emojiData]);
 
-  // 🧮 Count totals
-  const totalEmojis = Object.values(filteredEmojis).reduce((sum, arr) => sum + arr.length, 0);
-  const totalKaomoji = Object.values(kaomojiData).reduce((sum, arr) => sum + arr.length, 0);
+  const filteredKaomoji = useMemo(() => {
+    if (!query.trim()) return kaomojiData;
+    const q = query.toLowerCase();
+    const out: Record<string, string[]> = {};
+    for (const [k, arr] of Object.entries(kaomojiData)) {
+      const f = arr.filter((e) => e.toLowerCase().includes(q));
+      if (f.length) out[k] = f;
+    }
+    return out;
+  }, [query, kaomojiData]);
 
-  if (loading)
-    return <div style={{ textAlign: 'center', marginTop: 50 }}>Loading emoji dataset…</div>;
+  const totalEmojis = Object.values(filteredEmojis).reduce((s, a) => s + a.length, 0);
+  const totalKaomoji = Object.values(filteredKaomoji).reduce((s, a) => s + a.length, 0);
+  const allEmojiCount = Object.values(emojiData).reduce((s, a) => s + a.length, 0);
+  const allKaomojiCount = Object.values(kaomojiData).reduce((s, a) => s + a.length, 0);
 
-  const renderCategory = (category: string, items: EmojiEntry[]) => (
-    <div key={category} className="category-block">
-      <div className="category-header">
-        <span className="category-icon">{categoryIconMap[category]}</span>
-        <span className="category-title">{category}</span>
-        <Tag color="blue" style={{ marginLeft: 8 }}>
-          {items.length}
-        </Tag>
-      </div>
-
-      <div style={{ height: 200 }}>
-        <AutoSizer>
-          {({ height, width }) => {
-            const columnCount = Math.floor(width / 60);
-            const rowCount = Math.ceil(items.length / columnCount);
-            return (
-              <FixedSizeGrid
-                columnCount={columnCount}
-                columnWidth={60}
-                height={height}
-                rowCount={rowCount}
-                rowHeight={60}
-                width={width}
-              >
-                {({ columnIndex, rowIndex, style }) => {
-                  const index = rowIndex * columnCount + columnIndex;
-                  const item = items[index];
-                  if (!item) return null;
-                  return (
-                    <div style={style} className="emoji-cell">
-                      <Tooltip title={`${item.name} (Click to copy)`}>
-                        <Button className="emoji-btn" onClick={() => safeCopy(item.emoji)}>
-                          {item.emoji}
-                        </Button>
-                      </Tooltip>
-                    </div>
-                  );
-                }}
-              </FixedSizeGrid>
-            );
-          }}
-        </AutoSizer>
-      </div>
+  const renderEmojiGrid = (items: EmojiEntry[]) => (
+    <div className="virtualGridWrap">
+      <AutoSizer>
+        {({ height, width }) => {
+          const cellSize = 64;
+          const columnCount = Math.max(4, Math.floor(width / cellSize));
+          const rowCount = Math.ceil(items.length / columnCount);
+          return (
+            <FixedSizeGrid
+              columnCount={columnCount}
+              columnWidth={cellSize}
+              height={height}
+              rowCount={rowCount}
+              rowHeight={cellSize}
+              width={width}
+            >
+              {({ columnIndex, rowIndex, style }) => {
+                const idx = rowIndex * columnCount + columnIndex;
+                const item = items[idx];
+                if (!item) return null;
+                return (
+                  <div style={style} className="emojiCell">
+                    <Tooltip title={`${item.name} · click to copy`}>
+                      <button className="emojiBtn" onClick={() => pickEmoji(item.emoji)}>
+                        {item.emoji}
+                      </button>
+                    </Tooltip>
+                  </div>
+                );
+              }}
+            </FixedSizeGrid>
+          );
+        }}
+      </AutoSizer>
     </div>
   );
 
   return (
-    <div className="emoji-page-container">
-      <Card title="✨ Emoji & Kaomoji Picker" variant={'borderless'} className="emoji-card-root">
-        <div className="controls">
-          <Search
-            placeholder="Search emoji or kaomoji..."
-            allowClear
-            onChange={(e) => setQuery(e.target.value)}
-            style={{ maxWidth: 520 }}
-          />
-        </div>
+    <div className="container emojisPage">
+      <div className="shell">
+        {/* Hero */}
+        <section className="hero">
+          <div className="heroOverlay" />
+          <div className="heroRow">
+            <div className="heroTitleBlock">
+              <span className="heroBadge">
+                <SmileOutlined />
+              </span>
+              <div>
+                <span className="heroEyebrow">Emoji &amp; Kaomoji Picker</span>
+                <h1 className="heroTitle">Find the perfect ✨ vibe ✨ in milliseconds</h1>
+                <p className="heroSubtitle">
+                  Search across {allEmojiCount.toLocaleString()} Unicode emojis and{' '}
+                  {allKaomojiCount}+ kaomoji. Click any tile to copy — your recent picks are
+                  remembered.
+                </p>
+              </div>
+            </div>
+            <div className="heroActions">
+              <Segmented
+                size="large"
+                value={tab}
+                onChange={(v) => setTab(v as 'emoji' | 'kaomoji')}
+                options={[
+                  {
+                    label: `Emoji · ${totalEmojis}`,
+                    value: 'emoji',
+                    icon: <SmileOutlined />,
+                  },
+                  {
+                    label: `Kaomoji · ${totalKaomoji}`,
+                    value: 'kaomoji',
+                    icon: <FontSizeOutlined />,
+                  },
+                ]}
+              />
+            </div>
+          </div>
+        </section>
 
-        <Tabs
-          defaultActiveKey="emoji"
-          items={[
-            {
-              key: 'emoji',
-              label: (
-                <span>
-                  <SmileOutlined /> Emoji <Tag color="blue">{totalEmojis}</Tag>
-                </span>
-              ),
-              children: (
-                <div className="tab-content">
-                  {Object.entries(filteredEmojis).map(([cat, items]) => renderCategory(cat, items))}
+        {/* Search bar */}
+        <section className="panel searchPanel">
+          <Input
+            size="large"
+            allowClear
+            prefix={<SearchOutlined className="searchIcon" />}
+            placeholder="Search emoji name or paste an emoji to find variants…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="searchInput"
+          />
+          <div className="searchStats">
+            <Tag className="statTag" color="processing">
+              <AppstoreOutlined /> {tab === 'emoji' ? totalEmojis : totalKaomoji} matches
+            </Tag>
+            {query && (
+              <Tag className="statTag" color="purple">
+                Filtering “{query}”
+              </Tag>
+            )}
+          </div>
+        </section>
+
+        {/* Recent */}
+        {recent.length > 0 && tab === 'emoji' && !query && (
+          <section className="panel recentPanel">
+            <div className="panelHeader">
+              <div className="panelTitle">
+                <ThunderboltFilled /> Recently used
+              </div>
+              <Button
+                type="text"
+                size="small"
+                onClick={() => {
+                  setRecent([]);
+                  try {
+                    localStorage.removeItem('emoji-recent');
+                  } catch {
+                    // noop
+                  }
+                }}
+              >
+                Clear
+              </Button>
+            </div>
+            <div className="recentRow">
+              {recent.map((e, i) => (
+                <Tooltip key={`${e}-${i}`} title="Click to copy again">
+                  <button className="emojiBtn small" onClick={() => safeCopy(e)}>
+                    {e}
+                  </button>
+                </Tooltip>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Workspace */}
+        <section className="panel workspacePanel">
+          {loading ? (
+            <div className="loadingState">Loading emoji dataset…</div>
+          ) : tab === 'emoji' ? (
+            <div className="categoryList">
+              {Object.entries(filteredEmojis).map(([cat, items]) => (
+                <div key={cat} className="categoryBlock">
+                  <div className="categoryHeader">
+                    <span className="categoryIcon">{categoryIconMap[cat]}</span>
+                    <span className="categoryTitle">{cat}</span>
+                    <Tag color="blue" className="catTag">
+                      {items.length}
+                    </Tag>
+                  </div>
+                  {renderEmojiGrid(items)}
                 </div>
-              ),
-            },
-            {
-              key: 'kaomoji',
-              label: (
-                <span>
-                  <FontSizeOutlined /> Kaomoji <Tag color="purple">{totalKaomoji}</Tag>
-                </span>
-              ),
-              children: (
-                <div className="tab-content">
-                  {Object.entries(kaomojiData).map(([k, v]) => (
-                    <Row gutter={[8, 8]} key={k}>
-                      <Col span={24}>
-                        <div className="category-header">
-                          {k} <Tag color="purple">{v.length}</Tag>
-                        </div>
-                      </Col>
-                      {v.map((txt) => (
-                        <Col key={txt} xs={6} sm={4} md={3} lg={2}>
-                          <Button className="kaomoji-btn" onClick={() => safeCopy(txt)}>
-                            {txt}
-                          </Button>
-                        </Col>
-                      ))}
-                    </Row>
-                  ))}
+              ))}
+              {totalEmojis === 0 && <div className="emptyState">No emoji matches “{query}”</div>}
+            </div>
+          ) : (
+            <div className="categoryList">
+              {Object.entries(filteredKaomoji).map(([cat, items]) => (
+                <div key={cat} className="categoryBlock">
+                  <div className="categoryHeader">
+                    <span className="categoryIcon">
+                      <FontSizeOutlined />
+                    </span>
+                    <span className="categoryTitle">{cat}</span>
+                    <Tag color="purple" className="catTag">
+                      {items.length}
+                    </Tag>
+                  </div>
+                  <div className="kaomojiGrid">
+                    {items.map((txt) => (
+                      <Tooltip key={txt} title="Click to copy">
+                        <button className="kaomojiBtn" onClick={() => safeCopy(txt)}>
+                          {txt}
+                        </button>
+                      </Tooltip>
+                    ))}
+                  </div>
                 </div>
-              ),
-            },
-          ]}
-        />
-      </Card>
+              ))}
+              {totalKaomoji === 0 && <div className="emptyState">No kaomoji matches “{query}”</div>}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 };
