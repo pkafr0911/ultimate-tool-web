@@ -179,7 +179,7 @@ const CreditsPage: React.FC = () => {
                   size="large"
                   className="socialBtn"
                   icon={<GithubOutlined />}
-                  href="https://github.com/"
+                  href="https://github.com/pkafr0911"
                   target="_blank"
                 />
               </Tooltip>
