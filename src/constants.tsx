@@ -323,6 +323,12 @@ export const pages = [
     desc: 'View all available commands and usage.',
   },
   {
+    name: 'Credits',
+    path: '/docs/credits',
+    icon: <>❤️</>,
+    desc: 'Meet the maker, the projects and the open-source giants behind this app.',
+  },
+  {
     name: 'Emojis /  Kaomojis ',
     path: '/docs/emojis',
     icon: <EmojiIcon />,

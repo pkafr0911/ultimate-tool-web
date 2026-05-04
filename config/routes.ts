@@ -204,6 +204,7 @@
     icon: 'fileText',
     routes: [
       { path: '/docs/commands', name: 'commands', icon: 'fileText', component: './Commands' },
+      { path: '/docs/credits', name: 'credits', icon: 'heart', component: './Credits' },
       { path: '/docs/emojis', name: 'emojis', icon: 'smile', component: './Emojis' },
       {
         path: '/docs/google-drive',

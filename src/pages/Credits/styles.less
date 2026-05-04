@@ -1,0 +1,867 @@
+/* ============================================================
+   Credits / Portfolio page
+   Theme: deep navy → purple → pink
+   ============================================================ */
+
+@accent-1: #1677ff;
+@accent-2: #722ed1;
+@accent-3: #eb2f96;
+
+.container.creditsPage {
+  width: 100%;
+  min-height: 100%;
+  padding: 16px 24px 40px;
+  background:
+    radial-gradient(900px 480px at 90% -10%, rgba(235, 47, 150, 0.14), transparent 60%),
+    radial-gradient(900px 480px at 0% 10%, rgba(114, 46, 209, 0.18), transparent 60%),
+    radial-gradient(700px 420px at 50% 110%, rgba(22, 119, 255, 0.14), transparent 65%),
+    linear-gradient(180deg, #f7f6fb 0%, #eef0f7 100%);
+  overflow-x: hidden;
+}
+.container.creditsPage .shell {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* ───────── Animations ───────── */
+@keyframes floatOrb {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(20px, -30px, 0) scale(1.08);
+  }
+}
+@keyframes floatOrbAlt {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-30px, 20px, 0) scale(1.12);
+  }
+}
+@keyframes gradientShift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+@keyframes heartbeat {
+  0%,
+  28%,
+  70%,
+  100% {
+    transform: scale(1);
+  }
+  14%,
+  42% {
+    transform: scale(1.18);
+  }
+}
+@keyframes pulseDot {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  50% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+
+.fadeInUp {
+  opacity: 0;
+  animation: fadeInUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ───────── Hero ───────── */
+.container.creditsPage .hero {
+  position: relative;
+  padding: 56px 36px 60px;
+  border-radius: 24px;
+  color: #fff;
+  overflow: hidden;
+  background: linear-gradient(120deg, #0b1437 0%, #2c1466 35%, #531dab 65%, #eb2f96 100%);
+  background-size: 220% 220%;
+  animation: gradientShift 18s ease-in-out infinite;
+  box-shadow: 0 28px 70px -34px rgba(11, 20, 55, 0.65);
+}
+.container.creditsPage .heroOrbs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.container.creditsPage .orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.55;
+}
+.container.creditsPage .orb1 {
+  width: 360px;
+  height: 360px;
+  top: -120px;
+  left: -80px;
+  background: radial-gradient(circle, #5b8def 0%, transparent 70%);
+  animation: floatOrb 12s ease-in-out infinite;
+}
+.container.creditsPage .orb2 {
+  width: 320px;
+  height: 320px;
+  bottom: -120px;
+  right: -60px;
+  background: radial-gradient(circle, #ff5fa2 0%, transparent 70%);
+  animation: floatOrbAlt 14s ease-in-out infinite;
+}
+.container.creditsPage .orb3 {
+  width: 240px;
+  height: 240px;
+  top: 30%;
+  right: 30%;
+  background: radial-gradient(circle, #a366ff 0%, transparent 70%);
+  animation: floatOrb 16s ease-in-out infinite reverse;
+}
+.container.creditsPage .heroOverlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(800px 200px at 20% 0%, rgba(255, 255, 255, 0.18), transparent 70%),
+    radial-gradient(600px 220px at 90% 100%, rgba(255, 255, 255, 0.08), transparent 70%);
+  pointer-events: none;
+}
+.container.creditsPage .heroInner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  max-width: 880px;
+  margin: 0 auto;
+  animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.container.creditsPage .heroEyebrow {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  backdrop-filter: blur(12px);
+}
+.container.creditsPage .heroTitle {
+  margin: 6px 0 0;
+  font-size: 48px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 14px;
+  color: #fff;
+}
+.container.creditsPage .heroTitle .grad {
+  background: linear-gradient(90deg, #fff 0%, #ffd6f1 50%, #b3d4ff 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradientShift 6s ease-in-out infinite;
+}
+.container.creditsPage .heroTitle .heroTitleDot {
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 400;
+  font-size: 36px;
+}
+.container.creditsPage .heroTitle .heroTitleSub {
+  font-size: 22px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.88);
+  letter-spacing: 0;
+}
+.container.creditsPage .heroSubtitle {
+  margin: 6px 0 12px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 720px;
+}
+.container.creditsPage .heroActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 6px;
+}
+.container.creditsPage .socialBtn {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.32) !important;
+  color: #fff !important;
+  backdrop-filter: blur(10px);
+  transition:
+    transform 0.25s,
+    background 0.25s,
+    border-color 0.25s;
+}
+.container.creditsPage .socialBtn:hover {
+  transform: translateY(-3px) scale(1.05);
+  background: rgba(255, 255, 255, 0.26) !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
+}
+.container.creditsPage .primaryAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: #fff;
+  color: #531dab;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  transition:
+    transform 0.25s,
+    box-shadow 0.25s,
+    color 0.25s;
+  box-shadow: 0 10px 28px -10px rgba(0, 0, 0, 0.35);
+}
+.container.creditsPage .primaryAction:hover {
+  transform: translateY(-3px);
+  color: #eb2f96;
+  box-shadow: 0 16px 34px -10px rgba(235, 47, 150, 0.5);
+}
+
+/* ───────── Stat strip ───────── */
+.container.creditsPage .statStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.container.creditsPage .statChip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 10px 28px -22px rgba(11, 20, 55, 0.5);
+  transition:
+    transform 0.25s,
+    box-shadow 0.25s;
+}
+.container.creditsPage .statChip:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 38px -22px rgba(11, 20, 55, 0.55);
+}
+.container.creditsPage .statChip .statIcon {
+  font-size: 22px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, #1677ff, #722ed1);
+  flex: none;
+}
+.container.creditsPage .statChip:nth-child(2) .statIcon {
+  background: linear-gradient(135deg, #722ed1, #eb2f96);
+}
+.container.creditsPage .statChip:nth-child(3) .statIcon {
+  background: linear-gradient(135deg, #13c2c2, #1677ff);
+}
+.container.creditsPage .statChip:nth-child(4) .statIcon {
+  background: linear-gradient(135deg, #fa8c16, #eb2f96);
+}
+.container.creditsPage .statValue {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  color: #1f2940;
+  letter-spacing: -0.02em;
+}
+.container.creditsPage .statLabel {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+  letter-spacing: 0.02em;
+}
+
+/* ───────── Panels (shared) ───────── */
+.container.creditsPage .panel {
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 20px;
+  padding: 26px 28px;
+  box-shadow: 0 14px 36px -28px rgba(11, 20, 55, 0.4);
+}
+.container.creditsPage .panelHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.container.creditsPage .panelEyebrow {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #722ed1;
+}
+.container.creditsPage .panelTitle {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #1f2940;
+}
+.container.creditsPage .panelSubtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+  max-width: 720px;
+}
+
+/* ───────── Featured projects ───────── */
+.container.creditsPage .projectGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+.container.creditsPage .projectCard {
+  position: relative;
+  padding: 22px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s,
+    border-color 0.3s;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.container.creditsPage .projectCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--accent-soft), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.container.creditsPage .projectCard:hover {
+  transform: translateY(-6px);
+  border-color: var(--accent);
+  box-shadow: 0 24px 50px -28px var(--accent);
+}
+.container.creditsPage .projectCard:hover::before {
+  opacity: 1;
+}
+.container.creditsPage .projectGlow {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+  opacity: 0.18;
+  filter: blur(20px);
+  pointer-events: none;
+}
+.container.creditsPage .projectHead {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.container.creditsPage .projectIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 22px;
+  flex: none;
+  box-shadow: 0 10px 24px -10px var(--accent);
+}
+.container.creditsPage .projectName {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1f2940;
+  letter-spacing: -0.01em;
+}
+.container.creditsPage .projectRole {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: 2px;
+}
+.container.creditsPage .projectRole .dot {
+  margin: 0 4px;
+  color: rgba(15, 23, 42, 0.3);
+}
+.container.creditsPage .projectSummary {
+  position: relative;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #4b5563;
+  margin: 0;
+}
+.container.creditsPage .projectHighlights {
+  position: relative;
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.container.creditsPage .projectHighlights li {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #1f2940;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.container.creditsPage .checkIcon {
+  color: var(--accent);
+  margin-top: 2px;
+  font-size: 13px;
+  flex: none;
+}
+.container.creditsPage .projectStack {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.container.creditsPage .stackChip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid transparent;
+  transition:
+    transform 0.2s,
+    border-color 0.2s;
+}
+.container.creditsPage .stackChip:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
+/* ───────── Tech ticker ───────── */
+.container.creditsPage .techTicker {
+  position: relative;
+  background: linear-gradient(135deg, #0b1437 0%, #2c1466 50%, #531dab 100%);
+  border-radius: 18px;
+  padding: 18px 0 18px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px -24px rgba(11, 20, 55, 0.6);
+}
+.container.creditsPage .techTicker::before,
+.container.creditsPage .techTicker::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  z-index: 2;
+  pointer-events: none;
+}
+.container.creditsPage .techTicker::before {
+  left: 0;
+  background: linear-gradient(90deg, #0b1437, transparent);
+}
+.container.creditsPage .techTicker::after {
+  right: 0;
+  background: linear-gradient(-90deg, #531dab, transparent);
+}
+.container.creditsPage .tickerLabel {
+  position: relative;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 24px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+.container.creditsPage .tickerTrack {
+  width: 100%;
+  overflow: hidden;
+}
+.container.creditsPage .tickerRow {
+  display: flex;
+  gap: 10px;
+  width: max-content;
+  animation: marquee 36s linear infinite;
+  padding: 0 12px;
+}
+.container.creditsPage .techTicker:hover .tickerRow {
+  animation-play-state: paused;
+}
+.container.creditsPage .tickerChip {
+  flex: none;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+  position: relative;
+  transition:
+    transform 0.25s,
+    background 0.25s,
+    border-color 0.25s;
+}
+.container.creditsPage .tickerChip::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c, #fff);
+  box-shadow: 0 0 12px var(--c, #fff);
+  margin-right: 8px;
+  display: inline-block;
+  vertical-align: middle;
+}
+.container.creditsPage .tickerChip:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* ───────── Tools grid ───────── */
+.container.creditsPage .toolGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+.container.creditsPage .toolCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fafbff;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  color: #1f2940;
+  transition:
+    transform 0.22s,
+    border-color 0.22s,
+    background 0.22s,
+    box-shadow 0.22s;
+  position: relative;
+  overflow: hidden;
+}
+.container.creditsPage .toolCard:hover {
+  transform: translateY(-3px);
+  border-color: #722ed1;
+  background: #fff;
+  box-shadow: 0 14px 30px -22px rgba(114, 46, 209, 0.7);
+  color: #1f2940;
+}
+.container.creditsPage .toolIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(22, 119, 255, 0.12), rgba(235, 47, 150, 0.12));
+  font-size: 18px;
+  flex: none;
+}
+.container.creditsPage .toolBody {
+  flex: 1;
+  min-width: 0;
+}
+.container.creditsPage .toolName {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1f2940;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.container.creditsPage .toolDesc {
+  font-size: 11.5px;
+  color: #6b7280;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.container.creditsPage .toolArrow {
+  font-size: 16px;
+  color: #722ed1;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.22s,
+    transform 0.22s;
+}
+.container.creditsPage .toolCard:hover .toolArrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ───────── Acknowledgements ───────── */
+.container.creditsPage .ackChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.container.creditsPage .ackChip {
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: linear-gradient(135deg, rgba(22, 119, 255, 0.1), rgba(235, 47, 150, 0.1));
+  border: 1px solid rgba(114, 46, 209, 0.18);
+  color: #531dab;
+  transition:
+    transform 0.22s,
+    background 0.22s,
+    color 0.22s,
+    border-color 0.22s;
+}
+.container.creditsPage .ackChip:hover {
+  transform: translateY(-3px);
+  background: linear-gradient(135deg, #1677ff, #eb2f96);
+  border-color: transparent;
+  color: #fff;
+}
+
+/* ───────── CTA ───────── */
+.container.creditsPage .ctaPanel {
+  position: relative;
+  border-radius: 24px;
+  padding: 44px 28px;
+  text-align: center;
+  background: linear-gradient(135deg, #0b1437 0%, #2c1466 40%, #531dab 75%, #eb2f96 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 16s ease-in-out infinite;
+  color: #fff;
+  overflow: hidden;
+  box-shadow: 0 24px 60px -30px rgba(11, 20, 55, 0.7);
+}
+.container.creditsPage .ctaPanel::before,
+.container.creditsPage .ctaPanel::after {
+  content: '';
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.container.creditsPage .ctaPanel::before {
+  top: -100px;
+  left: -80px;
+  background: radial-gradient(circle, #5b8def, transparent 70%);
+  animation: floatOrb 14s ease-in-out infinite;
+}
+.container.creditsPage .ctaPanel::after {
+  bottom: -100px;
+  right: -80px;
+  background: radial-gradient(circle, #ff5fa2, transparent 70%);
+  animation: floatOrbAlt 16s ease-in-out infinite;
+}
+.container.creditsPage .ctaContent {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.container.creditsPage .ctaTitle {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.container.creditsPage .ctaHeart {
+  color: #ff5fa2;
+  animation: heartbeat 1.6s ease-in-out infinite;
+}
+.container.creditsPage .ctaSubtitle {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 560px;
+}
+.container.creditsPage .ctaActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 6px;
+}
+.container.creditsPage .ctaCopyright {
+  margin-top: 12px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+}
+
+/* ───────── Responsive ───────── */
+@media (max-width: 900px) {
+  .container.creditsPage {
+    padding: 12px 14px 30px;
+  }
+  .container.creditsPage .hero {
+    padding: 38px 20px 42px;
+  }
+  .container.creditsPage .heroTitle {
+    font-size: 32px;
+    gap: 8px;
+  }
+  .container.creditsPage .heroTitle .heroTitleSub {
+    font-size: 16px;
+  }
+  .container.creditsPage .heroTitle .heroTitleDot {
+    display: none;
+  }
+  .container.creditsPage .statStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .container.creditsPage .panel {
+    padding: 20px 18px;
+  }
+  .container.creditsPage .panelTitle {
+    font-size: 20px;
+  }
+  .container.creditsPage .ctaPanel {
+    padding: 32px 18px;
+  }
+  .container.creditsPage .ctaTitle {
+    font-size: 22px;
+  }
+}
+
+/* ───────── Dark mode ───────── */
+:global([data-prefers-color-scheme='dark']) .container.creditsPage,
+:global(.dark) .container.creditsPage {
+  background:
+    radial-gradient(900px 480px at 90% -10%, rgba(235, 47, 150, 0.18), transparent 60%),
+    radial-gradient(900px 480px at 0% 10%, rgba(114, 46, 209, 0.22), transparent 60%),
+    linear-gradient(180deg, #0a0d1a 0%, #11132a 100%);
+}
+:global([data-prefers-color-scheme='dark']) .container.creditsPage .panel,
+:global(.dark) .container.creditsPage .panel {
+  background: rgba(20, 24, 40, 0.85);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+:global([data-prefers-color-scheme='dark']) .container.creditsPage .statChip,
+:global(.dark) .container.creditsPage .statChip {
+  background: rgba(20, 24, 40, 0.85);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+:global([data-prefers-color-scheme='dark']) .container.creditsPage .statValue,
+:global(.dark) .container.creditsPage .statValue,
+:global([data-prefers-color-scheme='dark']) .container.creditsPage .panelTitle,
+:global(.dark) .container.creditsPage .panelTitle,
+:global([data-prefers-color-scheme='dark']) .container.creditsPage .projectName,
+:global(.dark) .container.creditsPage .projectName,
+:global([data-prefers-color-scheme='dark']) .container.creditsPage .projectHighlights li,
+:global(.dark) .container.creditsPage .projectHighlights li,
+:global([data-prefers-color-scheme='dark']) .container.creditsPage .toolName,
+:global(.dark) .container.creditsPage .toolName {
+  color: #f1f3f9;
+}
+:global([data-prefers-color-scheme='dark']) .container.creditsPage .panelSubtitle,
+:global(.dark) .container.creditsPage .panelSubtitle,
+:global([data-prefers-color-scheme='dark']) .container.creditsPage .statLabel,
+:global(.dark) .container.creditsPage .statLabel,
+:global([data-prefers-color-scheme='dark']) .container.creditsPage .projectSummary,
+:global(.dark) .container.creditsPage .projectSummary,
+:global([data-prefers-color-scheme='dark']) .container.creditsPage .toolDesc,
+:global(.dark) .container.creditsPage .toolDesc {
+  color: #9aa3b8;
+}
+:global([data-prefers-color-scheme='dark']) .container.creditsPage .projectCard,
+:global(.dark) .container.creditsPage .projectCard {
+  background: rgba(28, 32, 52, 0.9);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+:global([data-prefers-color-scheme='dark']) .container.creditsPage .toolCard,
+:global(.dark) .container.creditsPage .toolCard {
+  background: rgba(28, 32, 52, 0.7);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f1f3f9;
+}
+:global([data-prefers-color-scheme='dark']) .container.creditsPage .toolCard:hover,
+:global(.dark) .container.creditsPage .toolCard:hover {
+  background: rgba(40, 44, 68, 0.95);
+  color: #f1f3f9;
+}
+:global([data-prefers-color-scheme='dark']) .container.creditsPage .ackChip,
+:global(.dark) .container.creditsPage .ackChip {
+  background: rgba(114, 46, 209, 0.18);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #d6c0ff;
+}

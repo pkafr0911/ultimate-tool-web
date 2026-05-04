@@ -53,6 +53,7 @@ export default {
   // Docs / Commands
   'menu.docs': 'Documentation',
   'menu.docs.commands': 'Commands',
+  'menu.docs.credits': 'Credits',
   'menu.docs.emojis': 'Emojis /  Kaomojis',
   'menu.docs.google-drive': 'Google Drive',
   'menu.docs.google-photos': 'Google Photos',
