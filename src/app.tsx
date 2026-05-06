@@ -80,7 +80,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     bgLayoutImgList: [],
     menuHeaderRender: (logo, title) => (
       <a
-        href="/"
+        href={`/${REPO_NAME}`}
         onClick={handleSpaLinkClick('/')}
         style={{
           display: 'flex',
@@ -133,7 +133,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
 
       return (
         <a
-          href={item.path}
+          href={`/${REPO_NAME}${item.path}`}
           onClick={handleSpaLinkClick(item.path!)}
           className="mega-menu-item"
           style={{ color: 'inherit', textDecoration: 'none' }}
