@@ -61,6 +61,9 @@ import {
 
 export const GLOBAL_PREFIX = '/api';
 
+export const REPO_NAME = 'ultimate-tool-web';
+export const APP_NAME = 'Ultimate Tool';
+
 export const codeMessage = {
   200: 'The server successfully returns the requested data.  ',
   201: 'Create or modify data successfully.  ',

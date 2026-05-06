@@ -1,7 +1,7 @@
 import { Footer } from '@/components';
 
 import UnauthorizedPage from '@/pages/403';
-import { pages } from '@/constants';
+import { pages, REPO_NAME } from '@/constants';
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
 import type { RunTimeLayoutConfig } from '@umijs/max';
@@ -116,7 +116,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
         if (!item.path) return defaultDom;
         return (
           <a
-            href={item.path}
+            href={`/${REPO_NAME}${item.path}`}
             onClick={handleSpaLinkClick(item.path!)}
             style={{ display: 'contents', color: 'inherit', textDecoration: 'none' }}
           >

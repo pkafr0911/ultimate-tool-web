@@ -1,4 +1,4 @@
-import { pages } from '@/constants';
+import { APP_NAME, pages } from '@/constants';
 import {
   ApiOutlined,
   CloudServerOutlined,
@@ -75,7 +75,7 @@ const FEATURED_PROJECTS = [
     ],
   },
   {
-    name: 'Ultimate Tool Web',
+    name: `${APP_NAME} Web`,
     role: 'Solo Project · You are here',
     period: '2024 — Present',
     accent: '#eb2f96',

@@ -1,4 +1,5 @@
 import type { ProLayoutProps } from '@ant-design/pro-components';
+import { REPO_NAME } from '../src/constants';
 
 /**
  * Application settings configuration for Pro Layout
@@ -6,7 +7,6 @@ import type { ProLayoutProps } from '@ant-design/pro-components';
 
 const { REACT_APP_ENV = 'dev' } = process.env;
 
-const REPO_NAME = 'ultimate-tool-web';
 
 const Settings: ProLayoutProps & {
   pwa?: boolean;
