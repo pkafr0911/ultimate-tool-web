@@ -16,6 +16,7 @@ import {
   ZoomOutOutlined,
   CloudUploadOutlined,
   CloudDownloadOutlined,
+  ShareAltOutlined,
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
 import { Button, Collapse, ColorPicker, message, Splitter, Tooltip, Typography } from 'antd';
@@ -25,8 +26,32 @@ import { DEFAULT_CODE, DEFAULT_CONFIG, SAMPLE_DIAGRAMS } from './constants';
 import styles from './styles.less';
 import classNames from 'classnames';
 import mermaid from 'mermaid';
+import { deflate, inflate } from 'pako';
 
 const { Title, Text } = Typography;
+
+// --- Share helpers (same encoding as mermaid.live) ---
+const encodeForShare = (code: string): string => {
+  const compressed = deflate(new TextEncoder().encode(code), { level: 9 });
+  const b64 = btoa(String.fromCharCode(...compressed))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+  return `pako:${b64}`;
+};
+
+const decodeFromShare = (hash: string): string | null => {
+  try {
+    const encoded = hash.startsWith('#') ? hash.slice(1) : hash;
+    if (!encoded.startsWith('pako:')) return null;
+    const b64 = encoded.slice(5).replace(/-/g, '+').replace(/_/g, '/');
+    const bin = atob(b64);
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    return new TextDecoder().decode(inflate(bytes));
+  } catch {
+    return null;
+  }
+};
 
 type EditorTab = 'code' | 'config';
 
@@ -69,7 +94,13 @@ const MermaidEditorPage: React.FC = () => {
 
   const saved = useRef(loadFromStorage()).current;
 
-  const [code, setCode] = useState<string>(saved?.code ?? DEFAULT_CODE);
+  // Load from URL hash if present (shared link), else fall back to localStorage / default
+  const initialCode = (() => {
+    const decoded = decodeFromShare(window.location.hash);
+    return decoded ?? saved?.code ?? DEFAULT_CODE;
+  })();
+
+  const [code, setCode] = useState<string>(initialCode);
   const [config, setConfig] = useState<string>(saved?.config ?? DEFAULT_CONFIG);
   const [activeTab, setActiveTab] = useState<EditorTab>('code');
   const [svgOutput, setSvgOutput] = useState<string>('');
@@ -414,6 +445,19 @@ const MermaidEditorPage: React.FC = () => {
     };
   }, [code, config, renderDiagram]);
 
+  // Share: compress code → URL hash → copy to clipboard
+  const handleShare = async () => {
+    try {
+      const hash = encodeForShare(code);
+      const url = `${window.location.origin}${window.location.pathname}#${hash}`;
+      window.history.replaceState(null, '', `#${hash}`);
+      await navigator.clipboard.writeText(url);
+      message.success('Share link copied to clipboard!');
+    } catch {
+      message.error('Failed to copy share link');
+    }
+  };
+
   // Copy SVG to clipboard
   const handleCopySvg = async () => {
     if (!svgOutput) {
@@ -559,6 +603,9 @@ const MermaidEditorPage: React.FC = () => {
           ) : null}
         </div>
         <div className={styles.toolbarRight}>
+          <Tooltip title="Share (copy link)">
+            <Button icon={<ShareAltOutlined />} size="small" onClick={handleShare} />
+          </Tooltip>
           <Tooltip title="Copy Code">
             <Button icon={<CopyOutlined />} size="small" onClick={handleCopyCode} />
           </Tooltip>
