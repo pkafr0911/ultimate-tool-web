@@ -391,11 +391,7 @@ const MermaidEditorPage: React.FC = () => {
           const { svg } = await mermaid.render(uniqueId, mermaidCode);
 
           if (currentId === renderIdRef.current) {
-            // Remove inline max-width from SVG to prevent text clipping
-            const cleanedSvg = svg
-              .replace(/max-width:\s*[\d.]+px;?/gi, '')
-              .replace(/style="/i, 'style="max-width:none!important;');
-            setSvgOutput(cleanedSvg);
+            setSvgOutput(svg);
             setError('');
           }
         } catch (err: any) {
@@ -469,6 +465,31 @@ const MermaidEditorPage: React.FC = () => {
     svgEl.innerHTML = svgOutput;
     const svgNode = svgEl.querySelector('svg');
     if (!svgNode) return;
+
+    // Get dimension from viewBox or attributes to avoid relative % sizes in Image loader
+    const viewBox = svgNode.getAttribute('viewBox');
+    let width = 0;
+    let height = 0;
+    if (viewBox) {
+      const parts = viewBox.split(/[\s,]+/).map(Number);
+      if (parts.length === 4) {
+        width = parts[2];
+        height = parts[3];
+      }
+    }
+    if (!width || !height) {
+      const wAttr = svgNode.getAttribute('width');
+      const hAttr = svgNode.getAttribute('height');
+      if (wAttr && hAttr) {
+        width = parseFloat(wAttr);
+        height = parseFloat(hAttr);
+      }
+    }
+
+    if (width && height && !isNaN(width) && !isNaN(height)) {
+      svgNode.setAttribute('width', width.toString());
+      svgNode.setAttribute('height', height.toString());
+    }
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
