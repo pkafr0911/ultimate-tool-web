@@ -1,0 +1,2 @@
+(("undefined"!=typeof globalThis?globalThis:self)["makoChunk_ultimate-tool-web"]=("undefined"!=typeof globalThis?globalThis:self)["makoChunk_ultimate-tool-web"]||[]).push([["617fb9d7"],{"617fb9d7":function(e,t,u){"use strict";u.d(t,"__esModule",{value:!0}),u.e(t,{ArchitectureModule:function(){return i.ArchitectureModule;},createArchitectureServices:function(){return i.createArchitectureServices;}});var i=u("5abb02a3");u("f98e85fd");}}]);
+//# sourceMappingURL=617fb9d7-async.badedf24.js.map

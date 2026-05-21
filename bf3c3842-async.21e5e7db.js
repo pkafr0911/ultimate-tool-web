@@ -1,0 +1,2 @@
+(("undefined"!=typeof globalThis?globalThis:self)["makoChunk_ultimate-tool-web"]=("undefined"!=typeof globalThis?globalThis:self)["makoChunk_ultimate-tool-web"]||[]).push([["bf3c3842"],{bf3c3842:function(e,t,l){"use strict";l.d(t,"__esModule",{value:!0}),l.e(t,{PacketModule:function(){return o.PacketModule;},createPacketServices:function(){return o.createPacketServices;}});var o=l("8d62fa3c");l("f98e85fd");}}]);
+//# sourceMappingURL=bf3c3842-async.21e5e7db.js.map
