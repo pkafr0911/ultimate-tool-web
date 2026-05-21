@@ -535,13 +535,30 @@ const MermaidEditorPage: React.FC = () => {
       svgNode.setAttribute('height', height.toString());
     }
 
+    // Strip external resources that taint the canvas:
+    // - @import font rules in <style> blocks
+    // - external <use> references (e.g. FontAwesome icon sprites)
+    // - external <image> elements
+    svgNode.querySelectorAll('style').forEach((styleEl) => {
+      styleEl.textContent = (styleEl.textContent ?? '').replace(/@import[^;]+;/g, '');
+    });
+    svgNode.querySelectorAll('use').forEach((useEl) => {
+      const href = useEl.getAttribute('href') || useEl.getAttribute('xlink:href') || '';
+      if (/^https?:\/\/|^\/\//.test(href)) useEl.remove();
+    });
+    svgNode.querySelectorAll('image').forEach((imgEl) => {
+      const href = imgEl.getAttribute('href') || imgEl.getAttribute('xlink:href') || '';
+      if (/^https?:\/\/|^\/\//.test(href)) imgEl.remove();
+    });
+
+    // Encode as base64 data URL to avoid cross-origin tainting from blob URLs
+    const svgData = new XMLSerializer().serializeToString(svgNode);
+    const dataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgData)))}`;
+
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const svgData = new XMLSerializer().serializeToString(svgNode);
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
     const img = new Image();
 
     img.onload = () => {
@@ -562,10 +579,9 @@ const MermaidEditorPage: React.FC = () => {
         URL.revokeObjectURL(pngUrl);
         message.success('PNG downloaded');
       });
-      URL.revokeObjectURL(url);
     };
 
-    img.src = url;
+    img.src = dataUrl;
   };
 
   // Load sample diagram
