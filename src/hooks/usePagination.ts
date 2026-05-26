@@ -1,4 +1,4 @@
-import { getPrams } from '@/helpers';
+import { getParams } from '@/helpers';
 import querystring from 'query-string';
 import { useEffect, useState } from 'react';
 import { history, useLocation } from 'umi';
@@ -15,7 +15,7 @@ export default function usePagination() {
 
   const savePageList = (page = 1, pageSize = 10) => {
     history.replace(
-      `${location.pathname}?page=${page}&pageSize=${pageSize}${getPrams(['page', 'pageSize'])}`,
+      `${location.pathname}?page=${page}&pageSize=${pageSize}${getParams(['page', 'pageSize'])}`,
     );
   };
 

@@ -934,3 +934,59 @@ export const GooglePhotosIcon: React.FC<IconProps> = ({ ...props }) => (
     <path d="M2.5 12a5 5 0 005 5V12h-5z" fill="#FBBC04" fillOpacity="0.55" />
   </BaseIcon>
 );
+
+/* ─────────────────────────  AES ENCRYPT/DECRYPT  ───────────────────────── */
+export const AesIcon: React.FC<IconProps> = ({ color = '#2F54EB', ...props }) => (
+  <BaseIcon color={color} {...props}>
+    <rect
+      x="4"
+      y="10"
+      width="16"
+      height="11"
+      rx="2.5"
+      stroke={color}
+      strokeWidth={SW}
+      fill={color}
+      fillOpacity="0.12"
+    />
+    <path d="M8 10V7a4 4 0 018 0v3" stroke={color} strokeWidth={SW} fill="none" />
+    <circle cx="12" cy="15.5" r="2" stroke={color} strokeWidth={SW} fill={color} fillOpacity="0.25" />
+    <path d="M12 17.5V19" stroke={color} strokeWidth={SW} />
+    <path
+      d="M3 12.5L5 14.5L3 16.5"
+      stroke={color}
+      strokeWidth={SW}
+      opacity="0.4"
+      fill="none"
+    />
+    <path
+      d="M21 12.5L19 14.5L21 16.5"
+      stroke={color}
+      strokeWidth={SW}
+      opacity="0.4"
+      fill="none"
+    />
+  </BaseIcon>
+);
+
+/* ─────────────────────────  SYSTEM INFO  ───────────────────────── */
+export const SystemInfoIcon: React.FC<IconProps> = ({ color = '#1890FF', ...props }) => (
+  <BaseIcon color={color} {...props}>
+    <rect
+      x="2.5"
+      y="3.5"
+      width="19"
+      height="13"
+      rx="2.5"
+      stroke={color}
+      strokeWidth={SW}
+      fill={color}
+      fillOpacity="0.1"
+    />
+    <path d="M9 20H15" stroke={color} strokeWidth={SW} />
+    <path d="M12 16.5V20" stroke={color} strokeWidth={SW} />
+    <circle cx="12" cy="7.5" r="1.2" fill={color} />
+    <path d="M12 9.5V14" stroke={color} strokeWidth={SW} />
+    <path d="M10.5 14H13.5" stroke={color} strokeWidth={SW} opacity="0.6" />
+  </BaseIcon>
+);

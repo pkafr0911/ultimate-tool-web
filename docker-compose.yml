@@ -1,7 +1,7 @@
 version: '3.9'
 services:
   # docker build --no-cache -f Dockerfile -t ultimate-tool-web .
-  new-edu:
+  ultimate-tool-web:
     image: ultimate-tool-web
     # restart: always
     environment:
@@ -12,6 +12,6 @@ services:
       - 8000:8000
     volumes:
       # - ./nginx/nginx_template.conf:/etc/nginx/templates/default.conf.template
-      - ./public/scripts/env.js:/usr/local/new-edu/scripts/env.js
-      - ./public/scripts/embed.js:/usr/local/new-edu/scripts/embed.js
+      - ./public/scripts/env.js:/usr/local/ultimate-tool-web/scripts/env.js
+      - ./public/scripts/embed.js:/usr/local/ultimate-tool-web/scripts/embed.js
       - ./nginx/logs:/var/log/nginx

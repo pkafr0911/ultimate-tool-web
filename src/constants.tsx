@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  AesIcon,
   Base64Icon,
   ChessIcon,
   ColorPickerIcon,
@@ -27,6 +28,7 @@ import {
   StressTestIcon,
   SudokuIcon,
   SVGIcon,
+  SystemInfoIcon,
   TextArtIcon,
   TicTacToeIcon,
   UUIDIcon,
@@ -149,7 +151,7 @@ export const pages = [
   {
     name: 'AES Encrypt/Decrypt',
     path: '/utility/aes',
-    icon: <JWTIcon />,
+    icon: <AesIcon />,
     desc: 'Encrypt and decrypt text using AES (GCM/CBC/CTR).',
   },
 
@@ -162,7 +164,7 @@ export const pages = [
   {
     name: 'System Info',
     path: '/utility/system-info',
-    icon: <EpochIcon />,
+    icon: <SystemInfoIcon />,
     desc: 'See what browser APIs expose about your system.',
   },
   {

@@ -2,7 +2,7 @@ import { message } from 'antd';
 import querystring from 'query-string';
 
 //get curent params in url
-export const getPrams = (ignore: string[] = []) => {
+export const getParams = (ignore: string[] = []) => {
   const { ...res } = querystring.parse(location.search);
   const filtered = Object.keys(res)
     .filter((key) => !ignore.includes(key))
