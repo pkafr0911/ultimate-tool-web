@@ -990,3 +990,36 @@ export const SystemInfoIcon: React.FC<IconProps> = ({ color = '#1890FF', ...prop
     <path d="M10.5 14H13.5" stroke={color} strokeWidth={SW} opacity="0.6" />
   </BaseIcon>
 );
+
+/* ─────────────────────────  PDF TOOLS  ───────────────────────── */
+export const PdfToolsIcon: React.FC<IconProps> = ({ color = '#E8453C', ...props }) => (
+  <BaseIcon color={color} {...props}>
+    <defs>
+      <linearGradient id="pdf-grad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+        <stop offset="100%" stopColor={color} stopOpacity="0.04" />
+      </linearGradient>
+    </defs>
+    <path
+      d="M6 2h8l5 5v13a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z"
+      fill="url(#pdf-grad)"
+      stroke={color}
+      strokeWidth={SW}
+    />
+    <path d="M14 2v5h5" stroke={color} strokeWidth={SW} />
+    <text
+      x="10"
+      y="15"
+      fontSize="5.5"
+      fontWeight="800"
+      textAnchor="middle"
+      fill={color}
+      fontFamily="ui-sans-serif, system-ui, sans-serif"
+    >
+      PDF
+    </text>
+    <circle cx="18" cy="18" r="4.5" fill="#fff" stroke={color} strokeWidth={SW} />
+    <path d="M18 16V20" stroke={color} strokeWidth={SW} />
+    <path d="M16 18H20" stroke={color} strokeWidth={SW} />
+  </BaseIcon>
+);

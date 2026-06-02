@@ -1,4 +1,4 @@
-﻿export default [
+export default [
   {
     path: '/',
     name: 'welcome',
@@ -42,6 +42,12 @@
         name: 'stress-test',
         icon: 'thunderbolt',
         component: './StressTest',
+      },
+      {
+        path: '/utility/pdf-tools',
+        name: 'pdf-tools',
+        icon: 'filePdf',
+        component: './PdfTools',
       },
       {
         path: '/utility/system-info',

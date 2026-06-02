@@ -35,6 +35,7 @@ import {
   VectorIcon,
   VideoIcon,
   WheelIcon,
+  PdfToolsIcon,
 } from './components/CustomIcons';
 
 /**
@@ -160,6 +161,12 @@ export const pages = [
     path: '/utility/stress-test',
     icon: <StressTestIcon />,
     desc: 'Run stress tests to evaluate performance.',
+  },
+  {
+    name: 'PDF Tools',
+    path: '/utility/pdf-tools',
+    icon: <PdfToolsIcon />,
+    desc: 'Convert, merge, split, compress, watermark and OCR PDF files.',
   },
   {
     name: 'System Info',
