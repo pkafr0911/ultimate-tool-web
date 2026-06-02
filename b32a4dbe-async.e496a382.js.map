@@ -1,0 +1,1 @@
+{"version":3,"sources":["node_modules/pdf-lib/es/index.js"],"sourcesContent":["export * from \"./api/index\";\nexport * from \"./core/index\";\nexport * from \"./types/index\";\nexport * from \"./utils/index\";\n//# sourceMappingURL=index.js.map"],"names":[],"mappings":"yRAAc,qBACA,qBACA,qBACA"}
