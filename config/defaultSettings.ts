@@ -7,7 +7,6 @@ import { REPO_NAME } from '../src/constants';
 
 const { REACT_APP_ENV = 'dev' } = process.env;
 
-
 const Settings: ProLayoutProps & {
   pwa?: boolean;
   logo?: string;
@@ -26,10 +25,7 @@ const Settings: ProLayoutProps & {
   colorWeak: false, // Whether to enable color weakness mode
   title: 'Ultimate tool', // Application title
   pwa: true, // Enable Progressive Web App (PWA) support
-  logo:
-    REACT_APP_ENV === 'pre'
-      ? `https://pkafr0911.github.io/${REPO_NAME}/logo.svg`
-      : '/logo.svg', // Local path for development
+  logo: `https://pkafr0911.github.io/${REPO_NAME}/logo.svg`,
   iconfontUrl: '', // Custom icon font URL (empty for default)
   token: {
     // Token configuration for theme customization

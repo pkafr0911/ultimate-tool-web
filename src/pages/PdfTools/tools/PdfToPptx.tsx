@@ -6,6 +6,7 @@ import {
   DownloadOutlined,
   DeleteOutlined,
 } from '@ant-design/icons';
+import FilePreview from './FilePreview';
 
 interface ToolProps {
   droppedFile?: File | File[] | null;
@@ -157,6 +158,8 @@ const PdfToPptx: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
         </div>
       )}
 
+      {file && <FilePreview file={file} type="source" />}
+
       {loadingFile && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '30px 0' }}>
           <Spin tip="Rendering PDF pages to slide snapshots..." />
@@ -167,6 +170,14 @@ const PdfToPptx: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
         <div className="progressArea">
           <Progress percent={progress} status="active" strokeColor="#d04423" />
         </div>
+      )}
+
+      {resultBlob && (
+        <FilePreview
+          blob={resultBlob}
+          fileName={(file?.name.replace(/\.pdf$/, '') || 'presentation') + '.pptx'}
+          type="result"
+        />
       )}
 
       <Space style={{ marginTop: 16 }}>

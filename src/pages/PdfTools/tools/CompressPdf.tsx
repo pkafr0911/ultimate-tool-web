@@ -6,6 +6,7 @@ import {
   CompressOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
+import FilePreview from './FilePreview';
 
 const formatBytes = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
@@ -136,6 +137,8 @@ const CompressPdf: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => 
         </div>
       )}
 
+      {file && <FilePreview file={file} type="source" />}
+
       {stats && (
         <div className="resultArea" style={{ margin: '16px 0' }}>
           <div className="resultTitle">
@@ -157,6 +160,14 @@ const CompressPdf: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '30px 0' }}>
           <Spin tip="Compressing resources, stripping redundant metadata & streams..." />
         </div>
+      )}
+
+      {resultBlob && (
+        <FilePreview
+          blob={resultBlob}
+          fileName={(file?.name.replace(/\.pdf$/, '') || 'compressed') + '_compressed.pdf'}
+          type="result"
+        />
       )}
 
       <Space style={{ marginTop: 16 }}>

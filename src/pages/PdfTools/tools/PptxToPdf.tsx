@@ -6,6 +6,7 @@ import {
   DownloadOutlined,
   DeleteOutlined,
 } from '@ant-design/icons';
+import FilePreview from './FilePreview';
 
 const ACCEPTED = '.pptx,.ppt,.odp';
 
@@ -372,6 +373,8 @@ const PptxToPdf: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
         </div>
       )}
 
+      {file && <FilePreview file={file} type="source" />}
+
       {loading && (
         <div
           style={{
@@ -390,6 +393,14 @@ const PptxToPdf: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
         <div className="progressArea">
           <Progress percent={progress} status="active" strokeColor="#d04423" />
         </div>
+      )}
+
+      {resultBlob && (
+        <FilePreview
+          blob={resultBlob}
+          fileName={(file?.name.replace(/\.[^.]+$/, '') || 'presentation') + '.pdf'}
+          type="result"
+        />
       )}
 
       <Space>

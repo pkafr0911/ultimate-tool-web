@@ -6,6 +6,7 @@ import {
   DownloadOutlined,
   DeleteOutlined,
 } from '@ant-design/icons';
+import FilePreview from './FilePreview';
 
 type OutputFormat = 'xlsx' | 'ods' | 'csv';
 
@@ -231,6 +232,8 @@ const PdfToExcel: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
         </div>
       )}
 
+      {file && <FilePreview file={file} type="source" />}
+
       {file && (
         <div className="settingsRow">
           <label>Output format:</label>
@@ -266,6 +269,14 @@ const PdfToExcel: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
         <div className="progressArea">
           <Progress percent={progress} status="active" strokeColor="#217346" />
         </div>
+      )}
+
+      {resultBlob && (
+        <FilePreview
+          blob={resultBlob}
+          fileName={(file?.name.replace(/\.pdf$/, '') || 'spreadsheet') + '.' + outputFormat}
+          type="result"
+        />
       )}
 
       <Space style={{ marginTop: 16 }}>

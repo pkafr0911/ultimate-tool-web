@@ -6,6 +6,7 @@ import {
   DownloadOutlined,
   DeleteOutlined,
 } from '@ant-design/icons';
+import FilePreview from './FilePreview';
 
 const ACCEPTED_TYPES = '.docx,.doc,.txt,.html,.htm,.rtf,.odt';
 const FORMAT_LABELS: Record<string, { label: string; color: string }> = {
@@ -423,6 +424,8 @@ const WordToPdf: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
         </div>
       )}
 
+      {file && <FilePreview file={file} type="source" />}
+
       {loading && (
         <div
           style={{
@@ -441,6 +444,14 @@ const WordToPdf: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
         <div className="progressArea">
           <Progress percent={progress} status="active" strokeColor="#2f54eb" />
         </div>
+      )}
+
+      {resultBlob && (
+        <FilePreview
+          blob={resultBlob}
+          fileName={(file?.name.replace(/\.[^.]+$/, '') || 'document') + '.pdf'}
+          type="result"
+        />
       )}
 
       <Space>

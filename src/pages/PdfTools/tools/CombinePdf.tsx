@@ -8,6 +8,7 @@ import {
   MergeCellsOutlined,
   MenuOutlined,
 } from '@ant-design/icons';
+import FilePreview from './FilePreview';
 
 interface ToolProps {
   droppedFile?: File | File[] | null;
@@ -166,6 +167,14 @@ const CombinePdf: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
         <div className="progressArea">
           <Progress percent={progress} status="active" strokeColor="#2f54eb" />
         </div>
+      )}
+
+      {resultBlob && (
+        <FilePreview
+          blob={resultBlob}
+          fileName="merged.pdf"
+          type="result"
+        />
       )}
 
       <Space style={{ marginTop: 16 }}>

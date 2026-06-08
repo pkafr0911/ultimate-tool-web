@@ -494,6 +494,209 @@
   resize: vertical;
 }
 
+/* === Preview panel === */
+.container.pdfToolsPage .previewPanel {
+  border-radius: 12px;
+  border: 1px solid rgba(47, 84, 235, 0.12);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+.container.pdfToolsPage .previewPanel:hover {
+  border-color: rgba(47, 84, 235, 0.22);
+}
+.container.pdfToolsPage .previewPanelResult {
+  border-color: rgba(82, 196, 26, 0.2);
+}
+.container.pdfToolsPage .previewPanelResult:hover {
+  border-color: rgba(82, 196, 26, 0.35);
+}
+.container.pdfToolsPage .previewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+.container.pdfToolsPage .previewHeader:hover {
+  background: rgba(47, 84, 235, 0.04);
+}
+.container.pdfToolsPage .previewPanelResult .previewHeader:hover {
+  background: rgba(82, 196, 26, 0.04);
+}
+.container.pdfToolsPage .previewHeaderTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2f54eb;
+}
+.container.pdfToolsPage .previewPanelResult .previewHeaderTitle {
+  color: #52c41a;
+}
+.container.pdfToolsPage .previewHeaderToggle {
+  font-size: 11px;
+  color: #8c8c8c;
+  transition: transform 0.2s ease;
+}
+.container.pdfToolsPage .previewBody {
+  padding: 12px 14px 14px;
+  border-top: 1px solid rgba(47, 84, 235, 0.08);
+  max-height: 520px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.container.pdfToolsPage .previewPanelResult .previewBody {
+  border-top-color: rgba(82, 196, 26, 0.1);
+}
+.container.pdfToolsPage .previewLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 0;
+}
+.container.pdfToolsPage .previewInfo {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8c8c8c;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+
+/* Preview thumbnails grid */
+.container.pdfToolsPage .previewThumbnails {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+.container.pdfToolsPage .previewThumb {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fafafa;
+  aspect-ratio: 210 / 297;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.container.pdfToolsPage .previewThumb:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px -8px rgba(0, 0, 0, 0.18);
+}
+.container.pdfToolsPage .previewThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.container.pdfToolsPage .previewThumbLabel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 3px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 10px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Preview image */
+.container.pdfToolsPage .previewImageContainer {
+  display: flex;
+  justify-content: center;
+  padding: 8px;
+  background: repeating-conic-gradient(#f0f0f0 0% 25%, #fafafa 0% 50%) 0 0 / 14px 14px;
+  border-radius: 8px;
+}
+.container.pdfToolsPage .previewImage {
+  max-width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+/* Preview text area */
+.container.pdfToolsPage .previewTextWrap {
+  max-height: 420px;
+  overflow: auto;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.container.pdfToolsPage .previewText {
+  margin: 0;
+  padding: 12px 14px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #333;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.container.pdfToolsPage .previewHtmlFrame {
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #333;
+}
+.container.pdfToolsPage .previewHtmlFrame h1,
+.container.pdfToolsPage .previewHtmlFrame h2,
+.container.pdfToolsPage .previewHtmlFrame h3 {
+  margin: 12px 0 6px;
+}
+.container.pdfToolsPage .previewHtmlFrame p {
+  margin: 6px 0;
+}
+.container.pdfToolsPage .previewHtmlFrame img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Preview table (spreadsheet) */
+.container.pdfToolsPage .previewTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.container.pdfToolsPage .previewTable th,
+.container.pdfToolsPage .previewTable td {
+  border: 1px solid #e8e8e8;
+  padding: 5px 8px;
+  text-align: left;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.container.pdfToolsPage .previewTable th {
+  background: #f0f5ff;
+  font-weight: 600;
+  color: #1d39c4;
+}
+.container.pdfToolsPage .previewTable tr:nth-child(even) {
+  background: rgba(47, 84, 235, 0.02);
+}
+
+/* Preview fallback */
+.container.pdfToolsPage .previewFallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px 16px;
+  text-align: center;
+}
+.container.pdfToolsPage .previewFallbackText {
+  font-size: 13px;
+  color: #595959;
+}
+
 /* === Responsive === */
 @media (max-width: 768px) {
   .container.pdfToolsPage {
@@ -513,6 +716,9 @@
   }
   .container.pdfToolsPage .thumbnailGrid {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+  .container.pdfToolsPage .previewThumbnails {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   }
 }
 
@@ -604,6 +810,67 @@
     background: repeating-conic-gradient(#1a1f2e 0% 25%, #222838 0% 50%) 0 0 / 16px 16px;
   }
   .settingsRow label {
+    color: #d6d6d6;
+  }
+
+  /* Preview panel dark mode */
+  .previewPanel {
+    background: rgba(22, 27, 38, 0.75);
+    border-color: rgba(89, 126, 247, 0.15);
+  }
+  .previewPanel:hover {
+    border-color: rgba(89, 126, 247, 0.28);
+  }
+  .previewPanelResult {
+    border-color: rgba(82, 196, 26, 0.18);
+  }
+  .previewPanelResult:hover {
+    border-color: rgba(82, 196, 26, 0.32);
+  }
+  .previewHeader:hover {
+    background: rgba(89, 126, 247, 0.06);
+  }
+  .previewPanelResult .previewHeader:hover {
+    background: rgba(82, 196, 26, 0.06);
+  }
+  .previewHeaderTitle {
+    color: #597ef7;
+  }
+  .previewPanelResult .previewHeaderTitle {
+    color: #73d13d;
+  }
+  .previewBody {
+    border-top-color: rgba(255, 255, 255, 0.06);
+  }
+  .previewThumb {
+    background: #1a1f2e;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .previewImageContainer {
+    background: repeating-conic-gradient(#1a1f2e 0% 25%, #222838 0% 50%) 0 0 / 14px 14px;
+  }
+  .previewTextWrap {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+  .previewText {
+    color: #d6d6d6;
+  }
+  .previewHtmlFrame {
+    color: #d6d6d6;
+  }
+  .previewTable th {
+    background: rgba(47, 84, 235, 0.12);
+    color: #597ef7;
+  }
+  .previewTable th,
+  .previewTable td {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .previewTable tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .previewFallbackText {
     color: #d6d6d6;
   }
 }

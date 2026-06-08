@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Upload, message, Space, Input, Spin } from 'antd';
 import { UnlockOutlined, DownloadOutlined, LockOutlined } from '@ant-design/icons';
+import FilePreview from './FilePreview';
 
 interface ToolProps {
   droppedFile?: File | File[] | null;
@@ -113,6 +114,14 @@ const UnlockPdf: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '30px 0' }}>
               <Spin tip="Decrypting and stripping PDF protection parameters..." />
             </div>
+          )}
+
+          {resultBlob && (
+            <FilePreview
+              blob={resultBlob}
+              fileName={(file?.name.replace(/\.pdf$/, '') || 'unlocked') + '_unlocked.pdf'}
+              type="result"
+            />
           )}
 
           <Space style={{ marginTop: 16 }}>

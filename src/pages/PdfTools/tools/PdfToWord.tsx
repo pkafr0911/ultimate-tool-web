@@ -6,6 +6,7 @@ import {
   DeleteOutlined,
   SwapOutlined,
 } from '@ant-design/icons';
+import FilePreview from './FilePreview';
 
 type OutputFormat = 'docx' | 'txt' | 'html' | 'rtf' | 'odt';
 
@@ -29,12 +30,14 @@ interface TextItem {
   bold: boolean;
   italic: boolean;
   fontSize: number;
+  fontFamily: string;
 }
 
 type DocBlock =
-  | { type: 'heading'; text: string; level: number; bold: boolean; fontSize: number }
-  | { type: 'paragraph'; text: string; bold: boolean; italic: boolean; fontSize: number }
-  | { type: 'table'; rows: string[][] };
+  | { type: 'heading'; text: string; level: number; bold: boolean; fontSize: number; fontFamily: string }
+  | { type: 'paragraph'; text: string; bold: boolean; italic: boolean; fontSize: number; fontFamily: string }
+  | { type: 'table'; rows: string[][] }
+  | { type: 'image'; dataUrl: string; width: number; height: number; imgId: string };
 
 interface PageData {
   blocks: DocBlock[];
@@ -80,10 +83,123 @@ const PdfToWord: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       const pages: PageData[] = [];
 
+      // Helper to multiply 2D affine matrices
+      const multiplyMatrices = (m1: number[], m2: number[]) => {
+        return [
+          m1[0] * m2[0] + m1[2] * m2[1],
+          m1[1] * m2[0] + m1[3] * m2[1],
+          m1[0] * m2[2] + m1[2] * m2[3],
+          m1[1] * m2[2] + m1[3] * m2[3],
+          m1[0] * m2[4] + m1[2] * m2[5] + m1[4],
+          m1[1] * m2[4] + m1[3] * m2[5] + m1[5],
+        ];
+      };
+
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
+        const operatorList = await page.getOperatorList();
 
+        // 1. Extract Images by tracking Current Transformation Matrix (CTM)
+        const extractedImages: {
+          x: number;
+          y: number;
+          width: number;
+          height: number;
+          dataUrl: string;
+        }[] = [];
+
+        let ctm = [1, 0, 0, 1, 0, 0];
+        const ctmStack: number[][] = [];
+
+        for (let j = 0; j < operatorList.fnArray.length; j++) {
+          const fn = operatorList.fnArray[j];
+          const args = operatorList.argsArray[j];
+
+          if (fn === pdfjsLib.OPS.transform) {
+            ctm = multiplyMatrices(ctm, args);
+          } else if (fn === pdfjsLib.OPS.save) {
+            ctmStack.push([...ctm]);
+          } else if (fn === pdfjsLib.OPS.restore) {
+            if (ctmStack.length > 0) {
+              ctm = ctmStack.pop()!;
+            }
+          } else if (
+            fn === pdfjsLib.OPS.paintImageXObject ||
+            fn === pdfjsLib.OPS.paintInlineImageXObject
+          ) {
+            let imgObj: any = null;
+            if (fn === pdfjsLib.OPS.paintInlineImageXObject) {
+              imgObj = args[0];
+            } else {
+              const imgName = args[0];
+              try {
+                imgObj = page.objs.get(imgName) || page.commonObjs.get(imgName);
+              } catch (e) {
+                console.warn('Failed to retrieve image object:', imgName, e);
+              }
+            }
+
+            if (imgObj && imgObj.width && imgObj.height) {
+              const width = Math.abs(ctm[0]);
+              const height = Math.abs(ctm[3]);
+              const x = ctm[4];
+              const y = ctm[5];
+
+              // Render raw PDF image data onto canvas
+              const canvas = document.createElement('canvas');
+              canvas.width = imgObj.width;
+              canvas.height = imgObj.height;
+              const ctx = canvas.getContext('2d');
+
+              if (ctx) {
+                const rgbaData = new Uint8ClampedArray(imgObj.width * imgObj.height * 4);
+                const data = imgObj.data;
+
+                if (data) {
+                  if (data.length === imgObj.width * imgObj.height * 3) {
+                    // RGB format
+                    for (let k = 0, l = 0; k < data.length; k += 3, l += 4) {
+                      rgbaData[l] = data[k];
+                      rgbaData[l + 1] = data[k + 1];
+                      rgbaData[l + 2] = data[k + 2];
+                      rgbaData[l + 3] = 255;
+                    }
+                  } else if (data.length === imgObj.width * imgObj.height * 4) {
+                    // RGBA format
+                    rgbaData.set(data);
+                  } else {
+                    // Grayscale or other formats
+                    for (let k = 0, l = 0; k < data.length; k++, l += 4) {
+                      rgbaData[l] = data[k];
+                      rgbaData[l + 1] = data[k];
+                      rgbaData[l + 2] = data[k];
+                      rgbaData[l + 3] = 255;
+                    }
+                  }
+
+                  const imgDataObj = new ImageData(rgbaData, imgObj.width, imgObj.height);
+                  ctx.putImageData(imgDataObj, 0, 0);
+
+                  try {
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                    extractedImages.push({
+                      x,
+                      y,
+                      width,
+                      height,
+                      dataUrl,
+                    });
+                  } catch (e) {
+                    console.error('Failed to encode image to data URL:', e);
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // 2. Extract Text Items and map styles
         const lineMap = new Map<number, TextItem[]>();
         for (const item of textContent.items) {
           const t = item as any;
@@ -99,6 +215,15 @@ const PdfToWord: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
           const italic = fontName.includes('italic') || fontName.includes('oblique');
           const fontSize = Math.abs(t.transform[3] || 10);
 
+          // Retrieve font family
+          let fontFamily = 'Arial';
+          if (t.fontName && textContent.styles[t.fontName]) {
+            const rawFamily = textContent.styles[t.fontName].fontFamily;
+            if (rawFamily) {
+              fontFamily = rawFamily.replace(/,.*?$/, '').trim();
+            }
+          }
+
           lineMap.get(y)!.push({
             x: t.transform[4],
             str: t.str ?? '',
@@ -106,70 +231,47 @@ const PdfToWord: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
             bold,
             italic,
             fontSize,
+            fontFamily,
           });
         }
 
-        // Sort lines top-to-bottom (descending Y)
-        const sortedLines = Array.from(lineMap.entries())
-          .sort((a, b) => b[0] - a[0])
-          .map(([, items]) => {
-            // Sort items inside each line left-to-right
-            items.sort((a, b) => a.x - b.x);
-            return items;
-          })
-          .filter((items) => items.length > 0);
-
-        const classifiedLines: {
-          type: 'table' | 'text';
-          cellsOrText: string[] | TextItem[];
-          fontSize: number;
-          bold: boolean;
-          italic: boolean;
-        }[] = [];
-
-        for (const items of sortedLines) {
-          // Detect table row: large gaps between elements on the same Y line
-          const cells: string[] = [];
-          let currentCell = '';
-          let prevEnd = -Infinity;
-
-          for (const item of items) {
-            // If the horizontal gap is larger than 25px, separate into column cells
-            if (prevEnd !== -Infinity && item.x - prevEnd > 25) {
-              cells.push(currentCell.trim());
-              currentCell = '';
-            }
-            currentCell += (currentCell ? ' ' : '') + item.str;
-            prevEnd = item.x + item.width;
-          }
-          if (currentCell) cells.push(currentCell.trim());
-
-          const filledCells = cells.filter(Boolean);
-          const maxFontSize = Math.max(...items.map((it) => it.fontSize));
-          const hasBold = items.some((it) => it.bold);
-          const hasItalic = items.some((it) => it.italic);
-
-          // If a line is split into 2+ cells with gaps, treat it as a table row
-          if (filledCells.length >= 2 && items.length >= 2) {
-            classifiedLines.push({
-              type: 'table',
-              cellsOrText: cells,
-              fontSize: maxFontSize,
-              bold: hasBold,
-              italic: hasItalic,
-            });
-          } else {
-            classifiedLines.push({
-              type: 'text',
-              cellsOrText: items,
-              fontSize: maxFontSize,
-              bold: hasBold,
-              italic: hasItalic,
-            });
+        // 3. Combine Text Lines and Images into sorted flow
+        const textLines: { y: number; items: TextItem[] }[] = [];
+        for (const [y, items] of lineMap.entries()) {
+          items.sort((a, b) => a.x - b.x);
+          if (items.length > 0) {
+            textLines.push({ y, items });
           }
         }
 
-        // Coalesce consecutive table rows into single table blocks
+        type PageElement =
+          | { type: 'text'; y: number; items: TextItem[] }
+          | { type: 'image'; y: number; dataUrl: string; width: number; height: number };
+
+        const pageElements: PageElement[] = [];
+
+        for (const line of textLines) {
+          pageElements.push({
+            type: 'text',
+            y: line.y,
+            items: line.items,
+          });
+        }
+
+        for (const img of extractedImages) {
+          pageElements.push({
+            type: 'image',
+            y: img.y + img.height, // Sort by top boundary
+            dataUrl: img.dataUrl,
+            width: img.width,
+            height: img.height,
+          });
+        }
+
+        // Sort elements top-to-bottom
+        pageElements.sort((a, b) => b.y - a.y);
+
+        // 4. Classify and reconstruct into document blocks (tables, paragraphs, headings, images)
         const blocks: DocBlock[] = [];
         let currentTableRows: string[][] = [];
 
@@ -185,42 +287,76 @@ const PdfToWord: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
           }
         };
 
-        for (const line of classifiedLines) {
-          if (line.type === 'table') {
-            currentTableRows.push(line.cellsOrText as string[]);
-          } else {
+        for (const element of pageElements) {
+          if (element.type === 'image') {
             flushTable();
-
-            const items = line.cellsOrText as TextItem[];
-            let lineText = '';
+            blocks.push({
+              type: 'image',
+              dataUrl: element.dataUrl,
+              width: element.width,
+              height: element.height,
+              imgId: Math.random().toString(36).substring(2, 11),
+            });
+          } else {
+            const items = element.items;
+            const cells: string[] = [];
+            let currentCell = '';
             let prevEnd = -Infinity;
+
             for (const item of items) {
-              if (prevEnd !== -Infinity && item.x - prevEnd > 2) {
-                lineText += ' ';
+              if (prevEnd !== -Infinity && item.x - prevEnd > 25) {
+                cells.push(currentCell.trim());
+                currentCell = '';
               }
-              lineText += item.str;
+              currentCell += (currentCell ? ' ' : '') + item.str;
               prevEnd = item.x + item.width;
             }
+            if (currentCell) cells.push(currentCell.trim());
 
-            const trimmed = lineText.trim();
-            if (!trimmed) continue;
+            const filledCells = cells.filter(Boolean);
+            const maxFontSize = Math.max(...items.map((it) => it.fontSize));
+            const hasBold = items.some((it) => it.bold);
+            const hasItalic = items.some((it) => it.italic);
+            const firstFontFamily = items[0]?.fontFamily || 'Arial';
 
-            if (line.fontSize > 14) {
-              blocks.push({
-                type: 'heading',
-                text: trimmed,
-                level: line.fontSize > 20 ? 1 : 2,
-                bold: line.bold || line.fontSize > 16,
-                fontSize: line.fontSize,
-              });
+            // Classify multi-cell rows as tables
+            if (filledCells.length >= 2 && items.length >= 2) {
+              currentTableRows.push(cells);
             } else {
-              blocks.push({
-                type: 'paragraph',
-                text: trimmed,
-                bold: line.bold,
-                italic: line.italic,
-                fontSize: line.fontSize,
-              });
+              flushTable();
+
+              let lineText = '';
+              let prevTextEnd = -Infinity;
+              for (const item of items) {
+                if (prevTextEnd !== -Infinity && item.x - prevTextEnd > 2) {
+                  lineText += ' ';
+                }
+                lineText += item.str;
+                prevTextEnd = item.x + item.width;
+              }
+
+              const trimmed = lineText.trim();
+              if (!trimmed) continue;
+
+              if (maxFontSize > 14) {
+                blocks.push({
+                  type: 'heading',
+                  text: trimmed,
+                  level: maxFontSize > 20 ? 1 : 2,
+                  bold: hasBold || maxFontSize > 16,
+                  fontSize: maxFontSize,
+                  fontFamily: firstFontFamily,
+                });
+              } else {
+                blocks.push({
+                  type: 'paragraph',
+                  text: trimmed,
+                  bold: hasBold,
+                  italic: hasItalic,
+                  fontSize: maxFontSize,
+                  fontFamily: firstFontFamily,
+                });
+              }
             }
           }
         }
@@ -259,6 +395,9 @@ const PdfToWord: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
                 if (b.type === 'table') {
                   return b.rows.map((row) => row.join('\t')).join('\n');
                 }
+                if (b.type === 'image') {
+                  return `[Image: ${b.width.toFixed(0)}x${b.height.toFixed(0)}]`;
+                }
                 return b.text;
               })
               .join('\n\n');
@@ -296,7 +435,8 @@ const PdfToWord: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
         .map((b) => {
           if (b.type === 'heading') {
             const tag = b.level === 1 ? 'h2' : 'h3';
-            return `<${tag} class="heading-${b.level}">${b.text}</${tag}>`;
+            const fontStyle = `font-family: "${b.fontFamily}", sans-serif;`;
+            return `<${tag} class="heading-${b.level}" style="${fontStyle}">${b.text}</${tag}>`;
           } else if (b.type === 'table') {
             const rowsHtml = b.rows
               .map((row, rIdx) => {
@@ -306,10 +446,13 @@ const PdfToWord: React.FC<ToolProps> = ({ droppedFile, clearDroppedFile }) => {
               })
               .join('\n');
             return `<table>${rowsHtml}</table>`;
+          } else if (b.type === 'image') {
+            return `<div style="text-align: center; margin: 16px 0;"><img src="${b.dataUrl}" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; padding: 4px;" alt="Extracted Image" /></div>`;
           } else {
             const boldStyle = b.bold ? 'font-weight:bold;' : '';
             const italicStyle = b.italic ? 'font-style:italic;' : '';
-            const style = boldStyle || italicStyle ? ` style="${boldStyle}${italicStyle}"` : '';
+            const fontStyle = `font-family: "${b.fontFamily}", sans-serif; font-size: ${b.fontSize}px;`;
+            const style = ` style="${boldStyle}${italicStyle}${fontStyle}"`;
             return `<p${style}>${b.text}</p>`;
           }
         })
@@ -334,6 +477,8 @@ ${pages
           return `\\par\\pard\\cf2\\b\\fs${Math.round(b.fontSize * 2)} ${b.text}\\b0\\cf1\\par`;
         } else if (b.type === 'table') {
           return b.rows.map((row) => `\\par\\pard ` + row.join(' \\tab ') + `\\par`).join('\n');
+        } else if (b.type === 'image') {
+          return `\\par\\pard [Image: ${b.width.toFixed(0)}x${b.height.toFixed(0)}]\\par`;
         } else {
           const bPrefix = b.bold ? '\\b ' : '';
           const bSuffix = b.bold ? '\\b0 ' : '';
@@ -390,6 +535,8 @@ ${pages
                   return `<table:table table:name="Table_${Math.random()
                     .toString(36)
                     .substr(2, 5)}">${rowsOdt}</table:table>`;
+                } else if (b.type === 'image') {
+                  return `<text:p text:style-name="TextBody">[Image: ${b.width.toFixed(0)}x${b.height.toFixed(0)}]</text:p>`;
                 } else {
                   const styleName = b.bold ? 'BoldText' : 'TextBody';
                   return `<text:p text:style-name="${styleName}">${b.text
@@ -423,9 +570,14 @@ ${paragraphs}
         blob = new Blob([buf], { type: 'application/vnd.oasis.opendocument.text' });
         ext = 'odt';
       } else {
+        // Docx Word 2003 XML generation with VML support
         const docxContent = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <?mso-application progid="Word.Document"?>
-<w:wordDocument xmlns:w="http://schemas.microsoft.com/office/word/2003/wordml">
+<w:wordDocument 
+  xmlns:w="http://schemas.microsoft.com/office/word/2003/wordml"
+  xmlns:v="urn:schemas-microsoft-com:vml"
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+  xmlns:sl="http://schemas.microsoft.com/schemaLibrary/2003/core">
 <w:body>
 ${pages!
   .map((p, i) => {
@@ -434,8 +586,9 @@ ${pages!
     const blocksDocx = p.blocks
       .map((b) => {
         if (b.type === 'heading') {
-          const sz = b.level === 1 ? '36' : '28';
-          return `<w:p><w:pPr><w:pStyle w:val="Heading${b.level}"/></w:pPr><w:r><w:rPr><w:sz w:val="${sz}"/><w:b/></w:rPr><w:t>${b.text
+          const sz = Math.round(b.fontSize * 2);
+          const fontFamily = b.fontFamily || 'Arial';
+          return `<w:p><w:pPr><w:pStyle w:val="Heading${b.level}"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="${fontFamily}" w:hAnsi="${fontFamily}"/><w:sz w:val="${sz}"/><w:b/></w:rPr><w:t>${b.text
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')}</w:t></w:r></w:p>`;
@@ -450,6 +603,10 @@ ${pages!
               </w:tcPr>
               <w:p>
                 <w:r>
+                  <w:rPr>
+                    <w:rFonts w:ascii="Arial" w:hAnsi="Arial"/>
+                    <w:sz w:val="20"/>
+                  </w:rPr>
                   <w:t>${cell.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</w:t>
                 </w:r>
               </w:p>
@@ -474,10 +631,38 @@ ${pages!
           </w:tblPr>
           ${rowsDocx}
         </w:tbl>`;
+        } else if (b.type === 'image') {
+          let w = b.width;
+          let h = b.height;
+          const maxPageWidth = 468; // pt (Word standard margins)
+          if (w > maxPageWidth) {
+            h = (maxPageWidth / w) * h;
+            w = maxPageWidth;
+          }
+          const base64Data = b.dataUrl.split(',')[1];
+          const imgName = `wordml://image_${b.imgId}.jpg`;
+
+          return `<w:p>
+            <w:pPr>
+              <w:jc w:val="center"/>
+            </w:pPr>
+            <w:r>
+              <w:pict>
+                <w:binData w:name="${imgName}">
+${base64Data}
+                </w:binData>
+                <v:shape id="img_${b.imgId}" style="width:${w.toFixed(1)}pt;height:${h.toFixed(1)}pt">
+                  <v:imagedata src="${imgName}"/>
+                </v:shape>
+              </w:pict>
+            </w:r>
+          </w:p>`;
         } else {
+          const sz = Math.round(b.fontSize * 2);
+          const fontFamily = b.fontFamily || 'Arial';
           const boldPr = b.bold ? '<w:b/>' : '';
           const italicPr = b.italic ? '<w:i/>' : '';
-          const runPr = boldPr || italicPr ? `<w:rPr>${boldPr}${italicPr}</w:rPr>` : '';
+          const runPr = `<w:rPr><w:rFonts w:ascii="${fontFamily}" w:hAnsi="${fontFamily}"/><w:sz w:val="${sz}"/>${boldPr}${italicPr}</w:rPr>`;
           return `<w:p><w:r>${runPr}<w:t>${b.text
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
@@ -564,6 +749,8 @@ ${pages!
         </div>
       )}
 
+      {file && <FilePreview file={file} type="source" />}
+
       {file && (
         <div className="settingsRow">
           <label>Output format:</label>
@@ -621,6 +808,14 @@ ${pages!
         >
           <Spin tip="Reconstructing document layout, fonts, grids, and style nodes..." />
         </div>
+      )}
+
+      {resultBlob && (
+        <FilePreview
+          blob={resultBlob}
+          fileName={(file?.name.replace(/\.pdf$/, '') || 'document') + '.' + outputFormat}
+          type="result"
+        />
       )}
 
       <Space style={{ marginTop: 16 }}>
