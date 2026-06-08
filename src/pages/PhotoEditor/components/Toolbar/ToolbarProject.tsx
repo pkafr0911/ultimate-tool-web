@@ -417,6 +417,10 @@ const ToolbarProject: React.FC<ToolbarProjectProps> = ({
         confirmLoading={driveSaving}
         okText="Save"
         destroyOnClose
+        getContainer={() =>
+          (typeof document !== 'undefined' && (document.fullscreenElement as HTMLElement)) ||
+          document.body
+        }
       >
         <Input
           value={driveSaveName}
@@ -434,6 +438,10 @@ const ToolbarProject: React.FC<ToolbarProjectProps> = ({
         footer={null}
         destroyOnClose
         width={520}
+        getContainer={() =>
+          (typeof document !== 'undefined' && (document.fullscreenElement as HTMLElement)) ||
+          document.body
+        }
       >
         <Input.Search
           placeholder="Search files..."

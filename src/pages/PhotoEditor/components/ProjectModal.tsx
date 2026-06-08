@@ -19,7 +19,14 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
   onDelete,
 }) => {
   return (
-    <Modal title="Saved Projects" open={visible} onCancel={onCancel} footer={null} width={800}>
+    <Modal
+      title="Saved Projects"
+      open={visible}
+      onCancel={onCancel}
+      footer={null}
+      width={800}
+      getContainer={() => (typeof document !== 'undefined' && document.fullscreenElement as HTMLElement) || document.body}
+    >
       <SavedProjectsList projects={projects} onLoad={onLoad} onDelete={onDelete} />
     </Modal>
   );

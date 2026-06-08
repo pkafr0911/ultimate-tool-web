@@ -346,6 +346,7 @@ const BlurBrushModal: React.FC<BlurBrushModalProps> = ({ visible, onCancel, canv
       width={1000}
       footer={null}
       destroyOnClose
+      getContainer={() => (typeof document !== 'undefined' && document.fullscreenElement as HTMLElement) || document.body}
     >
       <div style={{ display: 'flex', gap: 16 }}>
         {/* Left: Canvas Area */}

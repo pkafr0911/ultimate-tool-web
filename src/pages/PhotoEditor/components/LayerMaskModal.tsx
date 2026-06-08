@@ -416,6 +416,7 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
       width={1000}
       style={{ top: 20 }}
       maskClosable={false}
+      getContainer={() => (typeof document !== 'undefined' && document.fullscreenElement as HTMLElement) || document.body}
     >
       <div style={{ display: 'flex', gap: 16 }}>
         <div style={{ width: 300 }}>

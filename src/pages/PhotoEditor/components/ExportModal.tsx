@@ -104,6 +104,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ visible, onCancel, canvas }) 
       title="Export Image"
       open={visible}
       onCancel={onCancel}
+      getContainer={() => (typeof document !== 'undefined' && document.fullscreenElement as HTMLElement) || document.body}
       footer={[
         <Button key="cancel" onClick={onCancel}>
           Cancel

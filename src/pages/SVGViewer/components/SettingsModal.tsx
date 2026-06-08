@@ -19,6 +19,10 @@ const SettingsModal: React.FC<Props> = ({ open, onClose }) => {
       onCancel={onClose}
       onOk={onClose}
       footer={<></>}
+      getContainer={() =>
+        (typeof document !== 'undefined' && (document.fullscreenElement as HTMLElement)) ||
+        document.body
+      }
     >
       <Space direction="vertical" style={{ width: '100%' }}>
         <Space align="center" style={{ justifyContent: 'space-between', width: '100%' }}>

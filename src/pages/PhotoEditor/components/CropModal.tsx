@@ -355,6 +355,7 @@ const CropModal: React.FC<CropModalProps> = ({ visible, onCancel, canvas, histor
       open={visible}
       onCancel={onCancel}
       width={Math.min(canvas?.getWidth() || 800, 1200) + 100}
+      getContainer={() => (typeof document !== 'undefined' && document.fullscreenElement as HTMLElement) || document.body}
       footer={[
         <Button key="cancel" onClick={onCancel}>
           Cancel

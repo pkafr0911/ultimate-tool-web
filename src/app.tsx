@@ -7,6 +7,7 @@ import { SettingDrawer } from '@ant-design/pro-components';
 import type { RunTimeLayoutConfig } from '@umijs/max';
 import { setLocale, history } from '@umijs/max';
 import { isPlainObject } from 'lodash';
+import { ConfigProvider } from 'antd';
 import defaultSettings from '../config/defaultSettings';
 import DarkModeSwitch from './components/DarkModeSwitch';
 import GlobalSearchBar from './components/GlobalSearchBar';
@@ -159,7 +160,14 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     // Custom 403 page if necessary
     unAccessible: <UnauthorizedPage />,
     childrenRender: (children) => (
-      <>
+      <ConfigProvider
+        getPopupContainer={(node) => {
+          if (typeof document !== 'undefined' && document.fullscreenElement) {
+            return (node?.parentNode as HTMLElement) || document.fullscreenElement;
+          }
+          return document.body;
+        }}
+      >
         {children}
         {isDev && (
           <SettingDrawer
@@ -174,7 +182,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
             }}
           />
         )}
-      </>
+      </ConfigProvider>
     ),
 
     ...initialState?.settings,

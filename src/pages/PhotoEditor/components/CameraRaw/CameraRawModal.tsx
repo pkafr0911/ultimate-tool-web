@@ -293,6 +293,10 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
       confirmLoading={loading}
       okText="Apply"
       style={{ top: 20 }}
+      getContainer={() =>
+        (typeof document !== 'undefined' && (document.fullscreenElement as HTMLElement)) ||
+        document.body
+      }
     >
       <Row gutter={24}>
         <Col

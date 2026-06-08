@@ -1,8 +1,19 @@
 import { Button, message, notification } from 'antd';
 import defaultSettings from '../config/defaultSettings';
 
+// Configure global container for message and notification to work in native fullscreen mode
+if (typeof window !== 'undefined') {
+  message.config({
+    getContainer: () => (typeof document !== 'undefined' && document.fullscreenElement as HTMLElement) || document.body,
+  });
+
+  notification.config({
+    getContainer: () => (typeof document !== 'undefined' && document.fullscreenElement as HTMLElement) || document.body,
+  });
+}
+
 const { pwa } = defaultSettings;
-const isHttps = document.location.protocol === 'https:';
+const isHttps = typeof window !== 'undefined' && document.location.protocol === 'https:';
 
 const clearCache = () => {
   // remove all caches
