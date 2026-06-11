@@ -211,11 +211,69 @@ const JsonFormatterPage: React.FC = () => {
           result = JSON.stringify(YAML.parse(convertInput), null, 2);
           break;
         case 'str2json': {
-          const cleaned = convertInput
-            .replace(/^["']|["']$/g, '')
-            .replace(/\\n/g, '\n')
-            .replace(/\\"/g, '"');
-          result = JSON.stringify(JSON.parse(cleaned), null, 2);
+          // Single-level JSON unescape: removes exactly one layer of escaping
+          const jsonUnescape = (str: string): string => {
+            let s = str.trim();
+            // Strip surrounding quotes if present
+            if (
+              (s.startsWith('"') && s.endsWith('"')) ||
+              (s.startsWith("'") && s.endsWith("'"))
+            ) {
+              s = s.slice(1, -1);
+            }
+            // Single-pass unescape of JSON escape sequences
+            return s.replace(/\\(["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, (_: string, seq: string) => {
+              switch (seq[0]) {
+                case '"': return '"';
+                case '\\': return '\\';
+                case '/': return '/';
+                case 'b': return '\b';
+                case 'f': return '\f';
+                case 'n': return '\n';
+                case 'r': return '\r';
+                case 't': return '\t';
+                case 'u': return String.fromCharCode(parseInt(seq.slice(1), 16));
+                default: return seq;
+              }
+            });
+          };
+
+          // Recursively walk parsed JSON and try to parse string leaves as JSON
+          const deepParseStrings = (val: any): any => {
+            if (typeof val === 'string') {
+              const trimmed = val.trim();
+              if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                try {
+                  return deepParseStrings(JSON.parse(trimmed));
+                } catch {
+                  return val;
+                }
+              }
+              return val;
+            }
+            if (Array.isArray(val)) return val.map(deepParseStrings);
+            if (val && typeof val === 'object') {
+              const out: Record<string, any> = {};
+              for (const k of Object.keys(val)) {
+                out[k] = deepParseStrings(val[k]);
+              }
+              return out;
+            }
+            return val;
+          };
+
+          // Try parsing as-is first (handles already-valid JSON input)
+          let parsed: any;
+          try {
+            parsed = JSON.parse(convertInput);
+          } catch {
+            // If direct parse fails, unescape one level and try again
+            const cleaned = jsonUnescape(convertInput);
+            parsed = JSON.parse(cleaned);
+          }
+          // Recursively parse any stringified JSON values within the tree
+          parsed = deepParseStrings(parsed);
+          result = JSON.stringify(parsed, null, 2);
           break;
         }
         case 'json2str': {
@@ -548,3 +606,4 @@ const JsonFormatterPage: React.FC = () => {
 };
 
 export default JsonFormatterPage;
+
