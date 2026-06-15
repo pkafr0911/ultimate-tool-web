@@ -21,6 +21,8 @@ export default defineConfig({
    */
   hash: true,
 
+  favicons: [defaultSettings.publicPath + 'favicon.ico'],
+
   /**
    * @name Base Path
    * @description All routes will automatically be prefixed with /path
