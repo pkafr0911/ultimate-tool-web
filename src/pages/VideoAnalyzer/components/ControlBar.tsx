@@ -1,4 +1,4 @@
-import { Button, Card, Input, Space, Switch, Typography } from 'antd';
+import { Button, Card, Col, Input, Row, Select, Space, Switch, Typography } from 'antd';
 import { ReloadOutlined, VideoCameraOutlined, WifiOutlined } from '@ant-design/icons';
 import React from 'react';
 
@@ -11,6 +11,14 @@ interface ControlBarProps {
   onReset: () => void;
   enableCustomControls: boolean;
   setEnableCustomControls: (enable: boolean) => void;
+  drmEnabled: boolean;
+  setDrmEnabled: (enable: boolean) => void;
+  drmSystem: string;
+  setDrmSystem: (system: string) => void;
+  licenseUrl: string;
+  setLicenseUrl: (url: string) => void;
+  drmHeaders: string;
+  setDrmHeaders: (headers: string) => void;
 }
 
 const ControlBar: React.FC<ControlBarProps> = ({
@@ -20,16 +28,30 @@ const ControlBar: React.FC<ControlBarProps> = ({
   onReset,
   enableCustomControls,
   setEnableCustomControls,
+  drmEnabled,
+  setDrmEnabled,
+  drmSystem,
+  setDrmSystem,
+  licenseUrl,
+  setLicenseUrl,
+  drmHeaders,
+  setDrmHeaders,
 }) => {
   return (
     <Card bordered={false} className="control-bar">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Title level={4} style={{ marginTop: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+        <Title level={4} style={{ margin: 0 }}>
           <VideoCameraOutlined /> Video Stream Analyzer
         </Title>
-        <Space>
-          <Text>Custom Controls</Text>
-          <Switch checked={enableCustomControls} onChange={setEnableCustomControls} />
+        <Space wrap>
+          <Space>
+            <Text>Custom Controls</Text>
+            <Switch checked={enableCustomControls} onChange={setEnableCustomControls} />
+          </Space>
+          <Space style={{ marginLeft: 16 }}>
+            <Text>DRM Decryption</Text>
+            <Switch checked={drmEnabled} onChange={setDrmEnabled} />
+          </Space>
         </Space>
       </div>
       <Space.Compact style={{ width: '100%' }}>
@@ -47,6 +69,44 @@ const ControlBar: React.FC<ControlBarProps> = ({
           Reset
         </Button>
       </Space.Compact>
+
+      {drmEnabled && (
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px dashed #f0f0f0' }}>
+          <Row gutter={[16, 16]} align="middle">
+            <Col xs={24} sm={6}>
+              <Text strong>DRM System</Text>
+              <Select
+                value={drmSystem}
+                onChange={setDrmSystem}
+                style={{ width: '100%', marginTop: 8 }}
+                options={[
+                  { label: 'Widevine', value: 'com.widevine.alpha' },
+                  { label: 'PlayReady', value: 'com.microsoft.playready' },
+                  { label: 'ClearKey', value: 'org.w3.clearkey' },
+                ]}
+              />
+            </Col>
+            <Col xs={24} sm={10}>
+              <Text strong>License Server URL</Text>
+              <Input
+                placeholder="Enter license server URL"
+                value={licenseUrl}
+                onChange={(e) => setLicenseUrl(e.target.value)}
+                style={{ width: '100%', marginTop: 8 }}
+              />
+            </Col>
+            <Col xs={24} sm={8}>
+              <Text strong>Custom Headers (JSON)</Text>
+              <Input
+                placeholder='e.g. {"Authorization": "Bearer Token"}'
+                value={drmHeaders}
+                onChange={(e) => setDrmHeaders(e.target.value)}
+                style={{ width: '100%', marginTop: 8 }}
+              />
+            </Col>
+          </Row>
+        </div>
+      )}
     </Card>
   );
 };

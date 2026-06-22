@@ -47,6 +47,12 @@ const VideoAnalyzer: React.FC = () => {
   const [bitrateHistory, setBitrateHistory] = useState<{ timestamp: number; bitrate: number }[]>(
     [],
   );
+  
+  // --- DRM States ---
+  const [drmEnabled, setDrmEnabled] = useState(false);
+  const [drmSystem, setDrmSystem] = useState('com.widevine.alpha');
+  const [licenseUrl, setLicenseUrl] = useState('');
+  const [drmHeaders, setDrmHeaders] = useState('');
 
   // --- Thumbnails ---
   const [thumbnails, setThumbnails] = useState<{ src: string; time: string; timestamp: number }[]>(
@@ -148,10 +154,35 @@ const VideoAnalyzer: React.FC = () => {
 
     // --- HLS ---
     if (isHls && Hls.isSupported()) {
-      const hls = new Hls({
+      const hlsConfig: any = {
         maxBufferLength: 30,
         maxMaxBufferLength: 600,
-      });
+      };
+
+      if (drmEnabled && licenseUrl) {
+        hlsConfig.emeEnabled = true;
+        hlsConfig.drmSystems = {
+          [drmSystem]: {
+            licenseUrl: licenseUrl,
+          },
+        };
+        if (drmHeaders) {
+          hlsConfig.licenseXhrSetup = (xhr: XMLHttpRequest, xhrUrl: string) => {
+            try {
+              const headers = JSON.parse(drmHeaders);
+              xhr.open('POST', xhrUrl, true);
+              Object.entries(headers).forEach(([key, val]) => {
+                xhr.setRequestHeader(key, val as string);
+              });
+            } catch (e) {
+              console.error('Error parsing HLS DRM headers:', e);
+            }
+          };
+        }
+        addLog(`DRM Configured for HLS. System: ${drmSystem}, License: ${licenseUrl}`);
+      }
+
+      const hls = new Hls(hlsConfig);
       hlsInstance = hls;
       hls.loadSource(url);
       hls.attachMedia(videoRef.current!);
@@ -235,6 +266,23 @@ const VideoAnalyzer: React.FC = () => {
     // --- DASH ---
     else if (isDash) {
       dashPlayer = dashjs.MediaPlayer().create();
+
+      if (drmEnabled && licenseUrl) {
+        const protectionData: any = {};
+        protectionData[drmSystem] = {
+          serverURL: licenseUrl,
+        };
+        if (drmHeaders) {
+          try {
+            protectionData[drmSystem].httpRequestHeaders = JSON.parse(drmHeaders);
+          } catch (e) {
+            addLog('Error parsing DASH DRM headers: ' + (e as Error).message);
+          }
+        }
+        dashPlayer.setProtectionData(protectionData);
+        addLog(`DRM Configured for DASH. System: ${drmSystem}, License: ${licenseUrl}`);
+      }
+
       dashPlayer.initialize(videoRef.current!, url, true);
       setType('DASH');
       addLog('Initializing DASH player...');
@@ -298,7 +346,7 @@ const VideoAnalyzer: React.FC = () => {
       if (hlsInstance) hlsInstance.destroy();
       if (dashPlayer) dashPlayer.reset();
     };
-  }, [url]);
+  }, [url, drmEnabled, drmSystem, licenseUrl, drmHeaders]);
 
   // --- Clear function ---
   const handleClear = () => {
@@ -336,6 +384,14 @@ const VideoAnalyzer: React.FC = () => {
             onReset={handleClear}
             enableCustomControls={enableCustomControls}
             setEnableCustomControls={setEnableCustomControls}
+            drmEnabled={drmEnabled}
+            setDrmEnabled={setDrmEnabled}
+            drmSystem={drmSystem}
+            setDrmSystem={setDrmSystem}
+            licenseUrl={licenseUrl}
+            setLicenseUrl={setLicenseUrl}
+            drmHeaders={drmHeaders}
+            setDrmHeaders={setDrmHeaders}
           />
         </Col>
 
