@@ -10,6 +10,7 @@ import {
   Select,
   Slider,
   Space,
+  Switch,
   Tag,
   Typography,
 } from 'antd';
@@ -33,8 +34,10 @@ const MicrophoneTest: React.FC = () => {
   const [recordedUrl, setRecordedUrl] = useState<string>('');
   const [micInfo, setMicInfo] = useState<Record<string, string>>({});
   const [sensitivity, setSensitivity] = useState(1);
+  const [loopback, setLoopback] = useState(false);
 
   // ── Refs for all audio objects ────────────────────────────────────────────
+  const loopbackGainRef = useRef<GainNode | null>(null); // loopback gain node to hear own voice
   // We use refs (not state) for the audio pipeline objects so the rAF draw loop
   // always reads the latest values without stale-closure issues.
   // If these were state, every setState call inside the loop would re-render the
@@ -57,6 +60,14 @@ const MicrophoneTest: React.FC = () => {
   useEffect(() => {
     sensitivityRef.current = sensitivity;
   }, [sensitivity]);
+
+  // Dynamically toggle loopback gain when loopback state changes
+  useEffect(() => {
+    if (loopbackGainRef.current && audioCtxRef.current) {
+      const targetGain = loopback ? 1 : 0;
+      loopbackGainRef.current.gain.setValueAtTime(targetGain, audioCtxRef.current.currentTime);
+    }
+  }, [loopback]);
 
   // ── Draw loop ─────────────────────────────────────────────────────────────
   // This effect starts the requestAnimationFrame loop when the mic becomes active
@@ -242,6 +253,13 @@ const MicrophoneTest: React.FC = () => {
       // so audio is analysed silently — you won't hear yourself)
       source.connect(analyser);
 
+      // Loopback voice node
+      const loopbackGain = audioCtx.createGain();
+      loopbackGain.gain.setValueAtTime(loopback ? 1 : 0, audioCtx.currentTime);
+      source.connect(loopbackGain);
+      loopbackGain.connect(audioCtx.destination);
+      loopbackGainRef.current = loopbackGain;
+
       audioCtxRef.current = audioCtx;
       analyserRef.current = analyser;
 
@@ -276,6 +294,7 @@ const MicrophoneTest: React.FC = () => {
     audioCtxRef.current?.close();
     streamRef.current = null;
     analyserRef.current = null;
+    loopbackGainRef.current = null;
     setIsActive(false);
     setVolume(0);
     setPeakVolume(0);
@@ -397,7 +416,7 @@ const MicrophoneTest: React.FC = () => {
             </div>
 
             <div style={{ marginTop: 16 }}>
-              <Space wrap>
+              <Space wrap align="center">
                 <Select
                   style={{ width: 300 }}
                   placeholder="Select microphone"
@@ -437,8 +456,27 @@ const MicrophoneTest: React.FC = () => {
                     <audio controls src={recordedUrl} style={{ height: 32 }} />
                   </>
                 )}
+                <Space style={{ marginLeft: 8 }}>
+                  <Text>Hear own voice:</Text>
+                  <Switch
+                    checked={loopback}
+                    onChange={setLoopback}
+                    checkedChildren="On"
+                    unCheckedChildren="Off"
+                  />
+                </Space>
               </Space>
             </div>
+
+            {loopback && (
+              <div style={{ marginTop: 12 }}>
+                <Alert
+                  message="Use headphones to prevent high-pitched audio feedback (howling)."
+                  type="warning"
+                  showIcon
+                />
+              </div>
+            )}
           </Card>
         </Col>
 
