@@ -54,6 +54,10 @@ const VideoAnalyzer: React.FC = () => {
   const [licenseUrl, setLicenseUrl] = useState('');
   const [drmHeaders, setDrmHeaders] = useState('');
 
+  // --- Proxy States ---
+  const [useProxy, setUseProxy] = useState(false);
+  const [proxyUrl, setProxyUrl] = useState('');
+
   // --- Thumbnails ---
   const [thumbnails, setThumbnails] = useState<{ src: string; time: string; timestamp: number }[]>(
     [],
@@ -146,6 +150,11 @@ const VideoAnalyzer: React.FC = () => {
     setDroppedFrames(0);
     setBitrateHistory([]);
 
+    const playUrl = useProxy && proxyUrl ? proxyUrl + url : url;
+    if (useProxy && proxyUrl) {
+      addLog(`Proxying stream through: ${proxyUrl}`);
+    }
+
     const isHls = url.includes('.m3u8');
     const isDash = url.includes('.mpd');
 
@@ -157,34 +166,38 @@ const VideoAnalyzer: React.FC = () => {
       const hlsConfig: any = {
         maxBufferLength: 30,
         maxMaxBufferLength: 600,
+        emeEnabled: true,
       };
 
-      if (drmEnabled && licenseUrl) {
-        hlsConfig.emeEnabled = true;
-        hlsConfig.drmSystems = {
-          [drmSystem]: {
-            licenseUrl: licenseUrl,
-          },
-        };
-        if (drmHeaders) {
-          hlsConfig.licenseXhrSetup = (xhr: XMLHttpRequest, xhrUrl: string) => {
-            try {
-              const headers = JSON.parse(drmHeaders);
-              xhr.open('POST', xhrUrl, true);
-              Object.entries(headers).forEach(([key, val]) => {
-                xhr.setRequestHeader(key, val as string);
-              });
-            } catch (e) {
-              console.error('Error parsing HLS DRM headers:', e);
-            }
+      if (drmEnabled) {
+        if (licenseUrl) {
+          hlsConfig.drmSystems = {
+            [drmSystem]: {
+              licenseUrl: licenseUrl,
+            },
           };
+          if (drmHeaders) {
+            hlsConfig.licenseXhrSetup = (xhr: XMLHttpRequest, xhrUrl: string) => {
+              try {
+                const headers = JSON.parse(drmHeaders);
+                xhr.open('POST', xhrUrl, true);
+                Object.entries(headers).forEach(([key, val]) => {
+                  xhr.setRequestHeader(key, val as string);
+                });
+              } catch (e) {
+                console.error('Error parsing HLS DRM headers:', e);
+              }
+            };
+          }
+          addLog(`DRM Configured for HLS. System: ${drmSystem}, License: ${licenseUrl}`);
+        } else {
+          addLog(`DRM/EME Enabled for HLS. System: ${drmSystem} (relying on manifest URLs)`);
         }
-        addLog(`DRM Configured for HLS. System: ${drmSystem}, License: ${licenseUrl}`);
       }
 
       const hls = new Hls(hlsConfig);
       hlsInstance = hls;
-      hls.loadSource(url);
+      hls.loadSource(playUrl);
       hls.attachMedia(videoRef.current!);
       setType('HLS');
       addLog('Initializing HLS player...');
@@ -283,7 +296,7 @@ const VideoAnalyzer: React.FC = () => {
         addLog(`DRM Configured for DASH. System: ${drmSystem}, License: ${licenseUrl}`);
       }
 
-      dashPlayer.initialize(videoRef.current!, url, true);
+      dashPlayer.initialize(videoRef.current!, playUrl, true);
       setType('DASH');
       addLog('Initializing DASH player...');
 
@@ -336,7 +349,7 @@ const VideoAnalyzer: React.FC = () => {
 
     // --- Native fallback ---
     else {
-      videoRef.current.src = url;
+      videoRef.current.src = playUrl;
       setType('Native');
       addLog('Using native video player fallback');
       videoRef.current.play().catch(() => addLog('Autoplay blocked by browser'));
@@ -346,7 +359,7 @@ const VideoAnalyzer: React.FC = () => {
       if (hlsInstance) hlsInstance.destroy();
       if (dashPlayer) dashPlayer.reset();
     };
-  }, [url, drmEnabled, drmSystem, licenseUrl, drmHeaders]);
+  }, [url, drmEnabled, drmSystem, licenseUrl, drmHeaders, useProxy, proxyUrl]);
 
   // --- Clear function ---
   const handleClear = () => {
@@ -392,6 +405,10 @@ const VideoAnalyzer: React.FC = () => {
             setLicenseUrl={setLicenseUrl}
             drmHeaders={drmHeaders}
             setDrmHeaders={setDrmHeaders}
+            useProxy={useProxy}
+            setUseProxy={setUseProxy}
+            proxyUrl={proxyUrl}
+            setProxyUrl={setProxyUrl}
           />
         </Col>
 

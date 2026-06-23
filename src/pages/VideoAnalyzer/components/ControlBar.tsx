@@ -19,6 +19,10 @@ interface ControlBarProps {
   setLicenseUrl: (url: string) => void;
   drmHeaders: string;
   setDrmHeaders: (headers: string) => void;
+  useProxy: boolean;
+  setUseProxy: (use: boolean) => void;
+  proxyUrl: string;
+  setProxyUrl: (url: string) => void;
 }
 
 const ControlBar: React.FC<ControlBarProps> = ({
@@ -36,6 +40,10 @@ const ControlBar: React.FC<ControlBarProps> = ({
   setLicenseUrl,
   drmHeaders,
   setDrmHeaders,
+  useProxy,
+  setUseProxy,
+  proxyUrl,
+  setProxyUrl,
 }) => {
   return (
     <Card bordered={false} className="control-bar">
@@ -51,6 +59,10 @@ const ControlBar: React.FC<ControlBarProps> = ({
           <Space style={{ marginLeft: 16 }}>
             <Text>DRM Decryption</Text>
             <Switch checked={drmEnabled} onChange={setDrmEnabled} />
+          </Space>
+          <Space style={{ marginLeft: 16 }}>
+            <Text>CORS Proxy</Text>
+            <Switch checked={useProxy} onChange={setUseProxy} />
           </Space>
         </Space>
       </div>
@@ -69,6 +81,17 @@ const ControlBar: React.FC<ControlBarProps> = ({
           Reset
         </Button>
       </Space.Compact>
+
+      {useProxy && (
+        <div style={{ marginTop: 12 }}>
+          <Input
+            placeholder="Proxy URL prefix (e.g. https://cors-anywhere.herokuapp.com/ or http://localhost:8010/)"
+            value={proxyUrl}
+            onChange={(e) => setProxyUrl(e.target.value)}
+            addonBefore="Proxy URL"
+          />
+        </div>
+      )}
 
       {drmEnabled && (
         <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px dashed #f0f0f0' }}>
