@@ -12,7 +12,7 @@ import {
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
-import { Button, message, Segmented, Space, Splitter, Tag, Tooltip, Typography } from 'antd';
+import { Button, Dropdown, MenuProps, message, Segmented, Space, Splitter, Tag, Tooltip, Typography } from 'antd';
 import classNames from 'classnames';
 import hljs from 'highlight.js';
 import MarkdownIt from 'markdown-it';
@@ -219,7 +219,55 @@ const ReadmeEditorPage: React.FC = () => {
     link.href = URL.createObjectURL(blob);
     link.download = 'README.md';
     link.click();
+    URL.revokeObjectURL(link.href);
   };
+
+  const handleDownloadDocx = async () => {
+    const hideMessage = message.loading('Converting Markdown to DOCX...', 0);
+    try {
+      const HTMLtoDOCXModule = await import('@turbodocx/html-to-docx');
+      const HTMLtoDOCX = HTMLtoDOCXModule.default || HTMLtoDOCXModule;
+      
+      const docxResult = await HTMLtoDOCX(htmlContent, null, {
+        table: {
+          row: {
+            cantSplit: true,
+          },
+        },
+      });
+
+      const docxBlob = docxResult instanceof Blob 
+        ? docxResult 
+        : new Blob([docxResult], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(docxBlob);
+      link.download = 'README.docx';
+      link.click();
+      URL.revokeObjectURL(link.href);
+      hideMessage();
+      message.success('Downloaded as README.docx successfully!');
+    } catch (e: any) {
+      console.error(e);
+      hideMessage();
+      message.error('Failed to convert and download as DOCX: ' + e.message);
+    }
+  };
+
+  const downloadItems: MenuProps['items'] = [
+    {
+      key: 'md',
+      label: 'Download Markdown (.md)',
+      icon: <FileMarkdownOutlined />,
+      onClick: handleDownload,
+    },
+    {
+      key: 'docx',
+      label: 'Download Word (.docx)',
+      icon: <DownloadOutlined />,
+      onClick: handleDownloadDocx,
+    },
+  ];
 
   const togglePane = (target: 'editor' | 'preview') => {
     setPaneFullscreen((prev) => (prev === target ? 'none' : target));
@@ -370,11 +418,11 @@ const ReadmeEditorPage: React.FC = () => {
                   Copy
                 </Button>
               </Tooltip>
-              <Tooltip title="Download as README.md">
-                <Button ghost icon={<DownloadOutlined />} onClick={handleDownload}>
+              <Dropdown menu={{ items: downloadItems }} placement="bottomRight">
+                <Button ghost icon={<DownloadOutlined />}>
                   Download
                 </Button>
-              </Tooltip>
+              </Dropdown>
             </div>
           </div>
         </div>
