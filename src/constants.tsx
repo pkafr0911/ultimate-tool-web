@@ -36,6 +36,7 @@ import {
   VideoIcon,
   WheelIcon,
   PdfToolsIcon,
+  CsgoCaseIcon,
 } from './components/CustomIcons';
 
 /**
@@ -293,6 +294,12 @@ export const pages = [
     path: '/randomizer/random',
     icon: <RandomIcon />,
     desc: 'Generate random numbers, items, or selections.',
+  },
+  {
+    name: '🔫 CS:GO Case Opener',
+    path: '/randomizer/csgo-case',
+    icon: <CsgoCaseIcon />,
+    desc: 'Unbox 1:1 CS:GO cases with authentic reel animation, sound effects, presets & custom randomizer lists.',
   },
 
   // Game

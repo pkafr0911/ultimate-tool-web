@@ -21,6 +21,7 @@ export default {
   'menu.randomizer': 'Randomizer',
   'menu.randomizer.wheel-of-names': 'Wheel of Names',
   'menu.randomizer.random': 'Random Generator',
+  'menu.randomizer.csgo-case': 'CS:GO Case Opener',
 
   // Visual Tools
   'menu.visual-tools': 'Visual Tools',

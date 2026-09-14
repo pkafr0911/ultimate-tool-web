@@ -165,6 +165,12 @@ export default [
         icon: 'questionCircle',
         component: './Random',
       },
+      {
+        path: '/randomizer/csgo-case',
+        name: 'csgo-case',
+        icon: 'gift',
+        component: './CsgoCase',
+      },
     ],
   },
   {

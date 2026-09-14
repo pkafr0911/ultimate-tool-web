@@ -1023,3 +1023,23 @@ export const PdfToolsIcon: React.FC<IconProps> = ({ color = '#E8453C', ...props 
     <path d="M16 18H20" stroke={color} strokeWidth={SW} />
   </BaseIcon>
 );
+
+/* ─────────────────────────  CSGO CASE OPENER  ───────────────────────── */
+export const CsgoCaseIcon: React.FC<IconProps> = ({ color = '#FAAD14', ...props }) => (
+  <BaseIcon color={color} {...props}>
+    <rect
+      x="3"
+      y="6"
+      width="18"
+      height="14"
+      rx="2"
+      stroke={color}
+      strokeWidth={SW}
+      fill={color}
+      fillOpacity="0.12"
+    />
+    <path d="M3 10H21" stroke={color} strokeWidth={SW} />
+    <path d="M12 6V10" stroke={color} strokeWidth={SW} />
+    <polygon points="12,12 13.2,14.5 16,14.8 14,16.7 14.5,19.5 12,18 9.5,19.5 10,16.7 8,14.8 10.8,14.5" fill={color} />
+  </BaseIcon>
+);
