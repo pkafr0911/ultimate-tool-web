@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { isEditable } from '../../utils/document';
 import { Button, Tooltip, Divider } from 'antd';
 import {
   ScissorOutlined,
@@ -48,7 +49,7 @@ const ToolbarFilters: React.FC<ToolbarFiltersProps> = ({
   blurBrushVisible,
   setBlurBrushVisible,
 }) => {
-  const isImageSelected = selectedObject instanceof FabricImage;
+  const isImageSelected = selectedObject instanceof FabricImage && isEditable(selectedObject);
 
   const getSelectedImageCanvas = (): HTMLCanvasElement | null => {
     if (!selectedObject || !(selectedObject instanceof FabricImage)) return null;
@@ -73,34 +74,18 @@ const ToolbarFilters: React.FC<ToolbarFiltersProps> = ({
   const handleApplyCameraRaw = (processedCanvas: HTMLCanvasElement) => {
     if (!canvas || !selectedObject || !(selectedObject instanceof FabricImage)) return;
 
-    const newImg = new FabricImage(processedCanvas);
-
-    newImg.set({
-      left: selectedObject.left,
-      top: selectedObject.top,
-      scaleX: selectedObject.scaleX,
-      scaleY: selectedObject.scaleY,
-      angle: selectedObject.angle,
-      skewX: selectedObject.skewX,
-      skewY: selectedObject.skewY,
-      flipX: selectedObject.flipX,
-      flipY: selectedObject.flipY,
-      originX: selectedObject.originX,
-      originY: selectedObject.originY,
-      opacity: selectedObject.opacity,
-    });
-
-    const index = canvas.getObjects().indexOf(selectedObject);
-    canvas.discardActiveObject();
-    canvas.remove(selectedObject);
-    canvas.add(newImg);
-    canvas.moveObjectTo(newImg, index);
-
-    canvas.setActiveObject(newImg);
+    if (!isEditable(selectedObject)) return;
+    // Camera Raw is an explicit raster operation. Keep identity/transforms/mask.
+    selectedObject.set('originalSource' as any, (selectedObject as any).originalSource || selectedObject.getSrc());
+    selectedObject.filters = [];
+    selectedObject.setElement(processedCanvas);
+    selectedObject.setCoords();
     canvas.requestRenderAll();
     saveState();
     setCameraRawVisible(false);
   };
+
+  const sourceCanvas = useMemo(getSelectedImageCanvas, [selectedObject, maskModalVisible, cameraRawVisible]);
 
   return (
     <>
@@ -132,7 +117,7 @@ const ToolbarFilters: React.FC<ToolbarFiltersProps> = ({
           open={maskModalVisible}
           onCancel={() => setMaskModalVisible(false)}
           onApply={handleApplyMask}
-          sourceCanvas={getSelectedImageCanvas()}
+          sourceCanvas={sourceCanvas}
           selectedColor={null}
         />
       )}
@@ -142,7 +127,7 @@ const ToolbarFilters: React.FC<ToolbarFiltersProps> = ({
           visible={cameraRawVisible}
           onCancel={() => setCameraRawVisible(false)}
           onApply={handleApplyCameraRaw}
-          sourceCanvas={getSelectedImageCanvas()}
+          sourceCanvas={sourceCanvas}
         />
       )}
 

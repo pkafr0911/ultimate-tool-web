@@ -1,0 +1,63 @@
+# Photo editor control and regression matrix
+
+Date: 2026-10-13. Status labels describe behavior, not merely presence of handlers. **WORKING** means the stated path has automated behavioral evidence; **PARTIALLY WORKING** means implemented but incomplete or not exhaustively verified; **BROKEN** means a known failing path; **NOT IMPLEMENTED** means absent/unmounted. Controls grouped in a row share implementation, but coverage limits remain explicit.
+
+Tests: `U` = `document.test.ts` geometry/persistence/color tests; `H` = `history.test.tsx` React hook integration; `B` = `tests/photo-editor/browser.cjs`, real headless Chrome at DPR 2 against a production build. Browser tests use actual file inputs, keys, sliders, pointer strokes, dialogs and exports. Scene reads and selected setup operations use the live Fabric instance via a test-only React fiber traversal; no debug API is added to production. Downloads are intercepted at anchor activation, decoded and checked; the OS download destination is not tested.
+
+| Visible feature / controls | Expected behavior | Original status | Change | Coverage / final verification | Limits |
+|---|---|---|---|---|---|
+| Upload image / upload tab | Decode image, retain native dimensions | PARTIALLY WORKING | Decode validation, queue, original size | B: WORKING PNG 320×180 | EXIF/ICC formats and 64MP allocations unverified |
+| Drag/drop / clipboard image | Open or add image | PARTIALLY WORKING | Shared guarded import queue | PARTIALLY WORKING; source reviewed | Drop and native clipboard permissions not automated |
+| More → Upload Image | Add editable image layer | PARTIALLY WORKING | Same import queue and limits; document-centered placement | PARTIALLY WORKING | Rapid imports and corrupt files need browser tests |
+| Close / fullscreen / exit | Clear or resize viewport safely | PARTIALLY WORKING | Async cancellation, ResizeObserver | PARTIALLY WORKING | Unsaved navigation recovery and actual fullscreen not tested |
+| Saved Projects tab / card / delete confirmation | Persist, resume, delete local projects | PARTIALLY WORKING | Refresh events; committed writes; close connections | PARTIALLY WORKING | IndexedDB quota and full landing-card reload not automated |
+| Hand H / hold Space / release | Pan view without editing document | PARTIALLY WORKING | Viewport point math; preserve locks/events; blur reset | B coordinate setup only; PARTIALLY WORKING | Physical touch and outside-window release unverified |
+| Select V / drag / Fabric handles / multiselect | Transform editable objects | PARTIALLY WORKING | Lock persistence and shared scene state | B transforms/history; PARTIALLY WORKING | Full pointer handle/multi-select matrix pending |
+| Ctrl-wheel zoom | Anchor zoom to viewport pointer | BROKEN after existing zoom | Correct Fabric pointer space | B drawing at zoom/pan; PARTIALLY WORKING | Automated wheel-anchor test pending |
+| Brush B / color picker / palette / tone swatches / size slider and number / opacity / shadow | Create styled vector strokes | PARTIALLY WORKING | Alpha consistency, persistent subtype/shadow, scaled preview | B pencil stroke coordinates; PARTIALLY WORKING | Every style/opacity/shadow combination unverified |
+| Brush subtype: Pencil, Circle, Spray, Pattern, Dashed, Dotted, Dash-Dot, Marker | Use selected brush | PARTIALLY WORKING | Persist settings across panel unmounts | PARTIALLY WORKING; Pencil verified | Other brush subtypes need pixel tests |
+| Brackets / Alt-pick / Alt-right-drag | Brush size/color updates | PARTIALLY WORKING | Context size updates; DPR-aware sample | U coordinates; PARTIALLY WORKING | Real eyedropper and resize gesture pending |
+| Rectangle R / Circle / Triangle / Polygon | Create editable shapes | PARTIALLY WORKING | Implement missing R shortcut | PARTIALLY WORKING | Shape-menu creation not individually automated |
+| Text T / click / double-click edit | Editable positioned text | BROKEN when zoomed | Scene point placement and editing reset | B: WORKING text at 200%, typing and Backspace | Double-click and all fonts not exercised |
+| Text font, size, bold, italic, underline, color, left/center/right alignment | Edit text styles | PARTIALLY WORKING | Lock guard; rotated alignment offsets | PARTIALLY WORKING | Per-control values and font rendering unverified |
+| Layer fill, border color, border width slider/number | Update editable object style | PARTIALLY WORKING | Lock guard; coordinate refresh | PARTIALLY WORKING | Continuous gestures may create multiple history entries |
+| H Left/Center/Right, V Top/Middle/Bottom | Align rendered bounds | BROKEN for rotated/non-left-origin objects | Apply origin-relative bounding delta | U geometry only; PARTIALLY WORKING | Full alignment UI matrix pending |
+| Brightness / Contrast / Saturation / Vibrance / Gamma / Hue Rotation | Non-cumulative image adjustments | PARTIALLY WORKING | Type-based filters and controlled values | B brightness+save/reload: WORKING; remaining PARTIALLY WORKING | All ranges/interactions not pixel-tested |
+| Blur / Noise / Pixelate sliders | Apply corresponding Fabric filter | PARTIALLY WORKING | Same type-safe update pipeline | PARTIALLY WORKING | Noise is nondeterministic; GPU backend differences |
+| Grayscale / Invert / Sepia / Black&White / Brownie / Vintage / Kodachrome / Technicolor / Polaroid buttons | Toggle independent presets | BROKEN toggling/UI after changes | Refresh UI; named filter identity survives JSON | PARTIALLY WORKING | Individual preset pixel expectations pending |
+| Crop C / preview drag / eight handles / X/Y/Width/Height | Crop in document coordinates | BROKEN | Shared crop geometry, CSS mapping, retain objects | U+B numeric crop: WORKING | All handle/aspect combinations need UI tests |
+| Crop Free / 16:9 / 4:3 / 3:2 / 1:1 / 9:16 / 3:4 / 2:3 / Lock / Cancel / Confirm | Constrain crop and commit once | PARTIALLY WORKING | Document bounds; lock current ratio; atomic commit | B confirm/undo/redo: WORKING; presets PARTIALLY WORKING | Extreme-ratio drag cases pending |
+| Mask M / target color / tolerance / feather / invert / preview normal-mask | Non-destructive image alpha mask | BROKEN source/alpha handling | Image clipPath and mask-only payload | B source and undo/redo: WORKING | Color-removal edges require pixel suite |
+| Mask Remove/Keep / size/opacity/hard-soft / undo/redo / OK/Cancel | Paint and retain mask semantics | PARTIALLY WORKING | Neutral manual mask allows Keep to override auto-removal | U combine semantics; PARTIALLY WORKING | Existing stroke reopening explicitly unsupported in UI |
+| Camera Raw / HSL color tabs and Hue/Saturation/Luminance / reset channel | Selective color adjustment | PARTIALLY WORKING | Shared pipeline and stable source | U neutral pipeline; PARTIALLY WORKING | Every channel/range not tested |
+| Curves Master/R/G/B / add-drag-delete point / reset | Finite curve LUTs | BROKEN duplicate/empty points | Normalize/deduplicate LUT inputs | U: WORKING LUT cases | Every curve gesture not automated |
+| Grading Shadows/Midtones/Highlights H/S/L / Blending/Balance/Temperature/Tint / reset | Apply tonal adjustments | PARTIALLY WORKING | Worker shares main implementation | U neutral settings; PARTIALLY WORKING | Nonzero parameter reference pixels pending |
+| Camera Raw before/after / picker / Alt-pick / histogram / Apply / Cancel | Preview and bake selected layer once | PARTIALLY WORKING | Stable source, identity preservation, async cleanup/error handling | B Apply scenario in browser suite | Main-thread large apply; no persistent adjustment parameters |
+| Blur Brush size / amount / feather / draw / undo mask / clear / Preview / Apply / Cancel | Recompute blur from original each time | BROKEN Apply-without-Preview | Fresh processing for Apply and Preview | B Apply scenario in browser suite | Kernel parity and touch pending |
+| Blur composite snapshot / flatten modes | Preserve lower layers or explicitly flatten | PARTIALLY WORKING | Snapshot uses copy compositing to avoid doubling source alpha | PARTIALLY WORKING | Snapshot reordering/transform semantics and alpha regressions pending |
+| Layer row / Ctrl/Shift selection / drag reorder | Select and stack correct objects | PARTIALLY WORKING | Lock-aware ranges and stable IDs | B imported order + reorder undo: WORKING | Dnd-kit pointer/keyboard gestures pending |
+| Layer eye / lock / delete | Show/hide, protect, remove | PARTIALLY WORKING | Preserve flags; protect delete; no auto-lock first object | B saved flags + locked keyboard: WORKING | Every row button not individually exercised |
+| Layer opacity number/label drag / 16 blend modes | Correct canvas composition | PARTIALLY WORKING | Numeric history and UI refresh | B transform opacity restoration; PARTIALLY WORKING | Per-blend-mode pixels and coalescing pending |
+| Merge Layers (group) / Ungroup Layers | Editable grouping without drift | BROKEN ungroup | Fabric 6 group exit and insertion order | B ungroup rotated/scaled fixture: WORKING | Grouping noncontiguous layers may alter stacking; documented scope |
+| Undo/Redo toolbar / history panel buttons / click history entry / Ctrl-Z/Shift-Z/Y | Exact snapshot navigation | BROKEN | Bounded snapshots, synchronous guard, event coalescing | U+H+B: WORKING tested sequences | History panel click path and all style gestures not exhaustive |
+| Copy/Paste menu / Ctrl-C/V | Clone editable objects | PARTIALLY WORKING | One clipboard, fresh layer IDs, focus guards | PARTIALLY WORKING | Multi-selection paste needs more tests |
+| New Project / Ctrl-N | Clear editable scene | PARTIALLY WORKING | Reapply document bounds; history captures clear | PARTIALLY WORKING | No new-document size dialog |
+| Save / Ctrl-S / Load Project modal | Save/resume editable composition | PARTIALLY WORKING | Shared schema and awaited loader, commit success | PARTIALLY WORKING | Local card UI cycle and quota failure pending |
+| Import JSON / Export JSON | Portable editable document | BROKEN callback/dimensions | Versioned schema and promise-based loader | B: WORKING IDs/filters/transforms/dimensions | Invalid/unavailable-asset cases need expanded B coverage |
+| Save to Drive / filename / cancel / load/search/load-more | Authenticated external project transport | PARTIALLY WORKING | Await load completion, shared serialization | PARTIALLY WORKING / NOT VERIFIED | Requires user-authenticated Google environment |
+| Export / Ctrl-Shift-S / PNG / scale / trim / cancel | Native composition, optional explicit resample | BROKEN zoom/dimensions | Unzoomed document render, visible-only trim | U+B: WORKING PNG pixel+dimension case | Trim UI, all multipliers, download destination pending |
+| JPEG / quality / WebP / SVG | Correct format output | PARTIALLY WORKING; WebP NOT IMPLEMENTED | JPEG white matte; WebP option; SVG document viewBox | PARTIALLY WORKING | Per-format decoding and SVG filter behavior not certified |
+| Error boundary Retry/Reload / messages | Recover/report failures | PARTIALLY WORKING | Additional import/export/apply errors and busy guard | No uncaught errors in covered B scenarios | Intentional error-boundary crash test pending |
+| Eraser E | Pixel erasing | NOT IMPLEMENTED | Incorrect tip replaced with explicit unsupported notice | NOT IMPLEMENTED | No silent fake eraser |
+| Marquee, ellipse, lasso, polygonal selection, feather/add/subtract/invert/select-all/delete selected pixels | Document pixel selections | NOT IMPLEMENTED on route | Standalone source inventoried, not newly advertised | NOT IMPLEMENTED | Requires selection model and constrained editing |
+| Clone/heal, perspective, resize image/canvas UI, rename/duplicate UI, mask thumbnail/re-edit, adjustment layers, PSD | Advanced workflows | NOT IMPLEMENTED | Roadmap only | NOT IMPLEMENTED | No fabricated support |
+
+## Commands and interpretation
+
+- `npm run test:photo-editor`: focused Jest geometry/state/color suite, independent of Umi setup. Raster APIs are not mocked into a false success claim.
+- `npm run tsc`: repository TypeScript check.
+- `npm run build` and `npm run build-pre`: ordinary and GitHub Pages production builds.
+- `PORT=8124 node tests/photo-editor/serve.cjs`, then `EDITOR_URL=http://127.0.0.1:8124/ultimate-tool-web/visual-tools/photo-editor npm run test:photo-editor:browser`.
+- Browser executable defaults to `/usr/bin/google-chrome`; override `CHROME_PATH`. The repository already carried Puppeteer Core 1.12.2 transitively; it is now an explicit test dependency. A future test-runner update is recommended separately.
+
+See `../reports/PHOTO_EDITOR_ENGINEERING_REPORT.md` for the final commands/results. Test coverage is representative rather than certification of every control above.

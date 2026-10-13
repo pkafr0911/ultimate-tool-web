@@ -10,8 +10,9 @@ import {
   GroupOutlined,
   UngroupOutlined,
 } from '@ant-design/icons';
+import { isEditable } from '../utils/document';
 import { usePhotoEditor } from '../context';
-import { FabricObject, ActiveSelection, Group, util } from 'fabric';
+import { FabricObject, ActiveSelection, Group } from 'fabric';
 import {
   DndContext,
   closestCenter,
@@ -107,16 +108,17 @@ const LayersPanel: React.FC = () => {
 
   const handleMerge = () => {
     if (!canvas) return;
-    const activeObjects = [...canvas.getActiveObjects()];
+    const activeObjects = canvas.getActiveObjects().filter(isEditable);
     if (activeObjects.length <= 1) return;
 
     canvas.discardActiveObject();
 
+    const index = Math.max(...activeObjects.map(obj => canvas.getObjects().indexOf(obj)));
     const group = new Group(activeObjects);
     if (!(group as any).uid) (group as any).uid = Math.random().toString(36).substr(2, 9);
 
     activeObjects.forEach((obj) => canvas.remove(obj));
-    canvas.add(group);
+    canvas.insertAt(Math.max(0, index - activeObjects.length + 1), group);
 
     canvas.setActiveObject(group);
     canvas.requestRenderAll();
@@ -135,37 +137,12 @@ const LayersPanel: React.FC = () => {
 
     if (activeObject.type === 'group' || activeObject instanceof Group) {
       const group = activeObject as Group;
-      const items = group.getObjects();
-
-      // In Fabric.js v6, toActiveSelection might be missing or behave differently.
-      // We manually ungroup by calculating the absolute transform of each object.
-      const restoredItems = items.map((item) => {
-        const matrix = item.calcTransformMatrix();
-        const options = util.qrDecompose(matrix);
-
-        // Apply the absolute transform options to the item
-        item.set({
-          ...options,
-          left: options.translateX,
-          top: options.translateY,
-          angle: options.angle,
-          scaleX: options.scaleX,
-          scaleY: options.scaleY,
-          skewX: options.skewX,
-          skewY: options.skewY,
-        });
-        // Remove from group (this might be redundant if we remove group, but safe)
-        // group.remove(item);
-        return item;
-      });
-
-      // Remove the group from canvas
+      const index = canvas.getObjects().indexOf(group);
+      canvas.discardActiveObject();
+      const restoredItems = group.removeAll();
       canvas.remove(group);
-
-      // Add items back to canvas
-      restoredItems.forEach((item) => {
-        canvas.add(item);
-      });
+      canvas.insertAt(index, ...restoredItems);
+      restoredItems.forEach(item => item.setCoords());
 
       // Create selection
       const activeSelection = new ActiveSelection(restoredItems, { canvas });
@@ -191,19 +168,6 @@ const LayersPanel: React.FC = () => {
     };
 
     const handleObjectAdded = () => {
-      const objs = canvas.getObjects();
-      if (objs.length === 1) {
-        const obj = objs[0];
-        obj.set({
-          lockMovementX: true,
-          lockMovementY: true,
-          lockRotation: true,
-          lockScalingX: true,
-          lockScalingY: true,
-          selectable: false,
-          hoverCursor: 'default',
-        });
-      }
       debouncedUpdate();
     };
 
@@ -276,11 +240,8 @@ const LayersPanel: React.FC = () => {
 
   const toggleLock = (obj: FabricObject, e: React.MouseEvent) => {
     e.stopPropagation();
-    obj.lockMovementX = !obj.lockMovementX;
-    obj.lockMovementY = !obj.lockMovementY;
-    obj.lockRotation = !obj.lockRotation;
-    obj.lockScalingX = !obj.lockScalingX;
-    obj.lockScalingY = !obj.lockScalingY;
+    const locked = !obj.lockMovementX;
+    obj.set({ lockMovementX: locked, lockMovementY: locked, lockRotation: locked, lockScalingX: locked, lockScalingY: locked, evented: !locked });
     obj.selectable = !obj.lockMovementX;
 
     if (!obj.selectable) {
@@ -329,7 +290,7 @@ const LayersPanel: React.FC = () => {
     if (isShift && lastClickedIndex.current !== null) {
       const start = Math.min(lastClickedIndex.current, idx);
       const end = Math.max(lastClickedIndex.current, idx);
-      const range = objects.slice(start, end + 1).map((o: any) => o) as any[];
+      const range = objects.slice(start, end + 1).filter(isEditable) as any[];
       if (range.length === 1) {
         canvas.setActiveObject(range[0]);
         setSelectedObject(range[0]);
@@ -351,23 +312,28 @@ const LayersPanel: React.FC = () => {
 
   const deleteObject = (obj: FabricObject, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isEditable(obj)) return;
+    canvas?.discardActiveObject();
     canvas?.remove(obj);
     canvas?.requestRenderAll();
     history.saveState();
   };
 
   const handleOpacityChange = (value: number) => {
-    if (!canvas || !selectedObject) return;
+    if (!canvas || !isEditable(selectedObject) || !selectedObject) return;
     selectedObject.set('opacity', value);
     canvas.requestRenderAll();
+    setObjects([...objects]);
     // history.saveState(); // Maybe debounce this or save onAfterChange
   };
 
   const handleOpacityNumberChange = (v: number | undefined | null) => {
-    if (!canvas || !selectedObject) return;
+    if (!canvas || !isEditable(selectedObject) || !selectedObject) return;
     const value = Number(v || 0);
     selectedObject.set('opacity', Math.max(0, Math.min(100, value)) / 100);
     canvas.requestRenderAll();
+    setObjects([...objects]);
+    history.saveState();
   };
 
   const handleOpacityLabelMouseDown = (e: React.MouseEvent) => {
@@ -410,7 +376,7 @@ const LayersPanel: React.FC = () => {
   };
 
   const handleBlendModeChange = (value: string) => {
-    if (!canvas || !selectedObject) return;
+    if (!canvas || !isEditable(selectedObject) || !selectedObject) return;
     selectedObject.set('globalCompositeOperation', value);
     canvas.requestRenderAll();
     history.saveState();

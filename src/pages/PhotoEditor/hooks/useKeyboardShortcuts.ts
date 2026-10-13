@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { Canvas, FabricObject } from 'fabric';
+import { usePhotoEditor } from '../context';
+import { isTypingTarget, isEditable, isDocumentLoading } from '../utils/document';
+import { Canvas, FabricObject, ActiveSelection } from 'fabric';
 
 // Arrow key smooth movement via rAF loop
 const ACCEL_DELAY = 300; // ms before acceleration kicks in
@@ -9,7 +11,7 @@ const ACCEL_RAMP = 1500; // ms to ramp from base → max
 const SHIFT_SPEED = 400; // px per second when holding Shift
 
 export const useKeyboardShortcuts = (canvas: Canvas | null) => {
-  const clipboard = useRef<FabricObject | null>(null);
+  const { isBusy, clipboard, setClipboard, setBrushSize, brushSize } = usePhotoEditor();
   // Track which arrow keys are currently held
   const arrowKeysRef = useRef<Set<string>>(new Set());
   const arrowShiftRef = useRef(false);
@@ -36,7 +38,7 @@ export const useKeyboardShortcuts = (canvas: Canvas | null) => {
       const activeObject = canvas.getActiveObject();
       const keys = arrowKeysRef.current;
 
-      if (!activeObject || keys.size === 0) {
+      if (!isEditable(activeObject) || !activeObject || keys.size === 0) {
         rafIdRef.current = 0;
         lastFrameRef.current = 0;
         return;
@@ -105,31 +107,34 @@ export const useKeyboardShortcuts = (canvas: Canvas | null) => {
     };
 
     const handleKeyDown = async (e: KeyboardEvent) => {
+      if (isBusy || isTypingTarget(e.target) || (e.target as HTMLElement)?.closest('.ant-modal') || (canvas.getActiveObject() as any)?.isEditing || isDocumentLoading(canvas)) return;
       // Copy
       if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
         const activeObject = canvas.getActiveObject();
         if (activeObject) {
           const cloned = await activeObject.clone();
-          clipboard.current = cloned;
+          setClipboard(cloned);
         }
       }
 
       // Paste
       if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
-        if (clipboard.current) {
-          const clonedObj = await clipboard.current.clone();
+        if (clipboard) {
+          const clonedObj = await clipboard.clone();
           canvas.discardActiveObject();
 
           clonedObj.set({
             left: (clonedObj.left || 0) + 10,
             top: (clonedObj.top || 0) + 10,
             evented: true,
+            uid: crypto.randomUUID(),
           });
 
-          if (clonedObj.type === 'activeSelection') {
+          if (clonedObj instanceof ActiveSelection) {
             // active selection needs a reference to the canvas.
             clonedObj.canvas = canvas;
             (clonedObj as any).forEachObject((obj: any) => {
+              obj.set('uid', crypto.randomUUID());
               canvas.add(obj);
             });
             clonedObj.setCoords();
@@ -137,7 +142,7 @@ export const useKeyboardShortcuts = (canvas: Canvas | null) => {
             canvas.add(clonedObj);
           }
 
-          clipboard.current = clonedObj; // Update clipboard to allow multiple pastes with offset
+          setClipboard(clonedObj); // Update clipboard to allow multiple pastes with offset
           canvas.setActiveObject(clonedObj);
           canvas.requestRenderAll();
         }
@@ -146,16 +151,16 @@ export const useKeyboardShortcuts = (canvas: Canvas | null) => {
       // Brush Size
       if (canvas.isDrawingMode && canvas.freeDrawingBrush) {
         if (e.key === '[') {
-          canvas.freeDrawingBrush.width = Math.max(1, canvas.freeDrawingBrush.width - 5);
+          setBrushSize(Math.max(1, brushSize - 5));
         } else if (e.key === ']') {
-          canvas.freeDrawingBrush.width += 5;
+          setBrushSize(brushSize + 5);
         }
       }
 
       // Move selected layer with arrow keys (smooth rAF loop)
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         const activeObject = canvas.getActiveObject();
-        if (activeObject) {
+        if (isEditable(activeObject)) {
           e.preventDefault();
           arrowShiftRef.current = e.shiftKey;
           if (!arrowKeysRef.current.has(e.key)) {
@@ -167,12 +172,16 @@ export const useKeyboardShortcuts = (canvas: Canvas | null) => {
       }
     };
 
+    const stop = () => { arrowKeysRef.current.clear(); if (rafIdRef.current) { cancelAnimationFrame(rafIdRef.current); rafIdRef.current = 0; const obj = canvas.getActiveObject(); if (obj) canvas.fire('object:modified', { target: obj }); } };
+    window.addEventListener('blur', stop);
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     return () => {
+      stop();
+      window.removeEventListener('blur', stop);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
     };
-  }, [canvas]);
+  }, [canvas, isBusy, clipboard, setClipboard, brushSize, setBrushSize]);
 };

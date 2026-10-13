@@ -1,9 +1,11 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Canvas, FabricObject } from 'fabric';
 import { useHistoryOptimized, HistoryEntry } from './hooks/useHistoryOptimized';
 
 interface PhotoEditorContextType {
   canvas: Canvas | null;
+  isBusy: boolean;
+  importFile?: (file: File) => void;
   setCanvas: (canvas: Canvas) => void;
   activeTool: string;
   setActiveTool: (tool: string) => void;
@@ -26,6 +28,10 @@ interface PhotoEditorContextType {
   initialProject?: any;
   addOnFile?: File | null;
   setAddOnFile?: (file: File | null) => void;
+  brushType: string;
+  setBrushType: (type: string) => void;
+  brushShadow: number;
+  setBrushShadow: (value: number) => void;
   brushSize: number;
   setBrushSize: (size: number) => void;
   brushColor: string;
@@ -38,18 +44,31 @@ const PhotoEditorContext = createContext<PhotoEditorContextType | undefined>(und
 
 export const PhotoEditorProvider: React.FC<{
   children: React.ReactNode;
+  importFile?: (file: File) => void;
   imageUrl?: string | null;
   initialProject?: any;
   addOnFile?: File | null;
   setAddOnFile?: (file: File | null) => void;
-}> = ({ children, imageUrl, initialProject, addOnFile, setAddOnFile }) => {
+}> = ({ children, importFile, imageUrl, initialProject, addOnFile, setAddOnFile }) => {
   const [canvas, setCanvas] = useState<Canvas | null>(null);
+  const [documentLoading, setDocumentLoading] = useState(false);
+  useEffect(() => {
+    if (!canvas) return;
+    return (canvas as any).on('document:loading', (event: { loading: boolean }) => setDocumentLoading(event.loading));
+  }, [canvas]);
   const [activeTool, setActiveTool] = useState<string>('select');
   const [selectedObject, setSelectedObject] = useState<FabricObject | null>(null);
   const [clipboard, setClipboard] = useState<FabricObject | null>(null);
+  const [brushType, setBrushType] = useState('Pencil');
+  const [brushShadow, setBrushShadow] = useState(0);
   const [brushSize, setBrushSize] = useState<number>(5);
   const [brushColor, setBrushColor] = useState<string>('#000000');
   const [brushOpacity, setBrushOpacity] = useState<number>(1);
+
+  useEffect(() => {
+    if (!canvas) return;
+    return canvas.on('object:added', ({ target }) => { if (!(target as any).uid) target.set('uid' as any, crypto.randomUUID()); });
+  }, [canvas]);
 
   const history = useHistoryOptimized(canvas, {
     maxEntries: 50,
@@ -62,6 +81,8 @@ export const PhotoEditorProvider: React.FC<{
     <PhotoEditorContext.Provider
       value={{
         canvas,
+        importFile,
+        isBusy: documentLoading || history.isProcessing,
         setCanvas,
         activeTool,
         setActiveTool,
@@ -74,6 +95,7 @@ export const PhotoEditorProvider: React.FC<{
         initialProject,
         addOnFile,
         setAddOnFile,
+        brushType, setBrushType, brushShadow, setBrushShadow,
         brushSize,
         setBrushSize,
         brushColor,

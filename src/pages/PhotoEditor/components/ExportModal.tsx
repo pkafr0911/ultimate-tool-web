@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Modal, Form, Select, InputNumber, Button, Checkbox } from 'antd';
+import { Modal, Form, Select, InputNumber, Button, Checkbox, message } from 'antd';
+import { renderDocument, serializeDocument, documentSize, isDocumentLoading } from '../utils/document';
 import { Canvas } from 'fabric';
 import { photoEditorMessages } from '../hooks/useNotification';
 
@@ -10,72 +11,34 @@ interface ExportModalProps {
 }
 
 const ExportModal: React.FC<ExportModalProps> = ({ visible, onCancel, canvas }) => {
-  const [format, setFormat] = useState<'png' | 'jpeg' | 'json' | 'svg'>('png');
+  const [format, setFormat] = useState<'png' | 'jpeg' | 'json' | 'svg' | 'webp'>('png');
   const [quality, setQuality] = useState<number>(1);
   const [multiplier, setMultiplier] = useState<number>(1);
-  const [trimWhitespace, setTrimWhitespace] = useState<boolean>(true);
+  const [trimWhitespace, setTrimWhitespace] = useState<boolean>(false);
 
-  const handleExport = () => {
-    if (!canvas) return;
+  const handleExport = async () => {
+    if (!canvas || isDocumentLoading(canvas)) return;
+    try {
+    await document.fonts.ready;
 
     if (format === 'json') {
-      const json = canvas.toJSON();
+      const json = serializeDocument(canvas);
       const blob = new Blob([JSON.stringify(json)], { type: 'application/json' });
       downloadBlob(blob, 'project.json');
     } else if (format === 'svg') {
-      const svg = canvas.toSVG();
+      const { width, height } = documentSize(canvas);
+      const svg = canvas.toSVG({ width: String(width), height: String(height), viewBox: { x: 0, y: 0, width, height } });
       const blob = new Blob([svg], { type: 'image/svg+xml' });
       downloadBlob(blob, 'image.svg');
     } else {
-      let options: any = {
-        format,
-        quality,
-        multiplier,
-      };
-
-      let savedBackgroundColor: any = null;
-      let savedBackgroundImage: any = null;
-
-      if (trimWhitespace) {
-        const objects = canvas.getObjects();
-        if (objects.length > 0) {
-          let minX = Infinity;
-          let minY = Infinity;
-          let maxX = -Infinity;
-          let maxY = -Infinity;
-
-          objects.forEach((obj) => {
-            const bound = obj.getBoundingRect();
-            if (bound.left < minX) minX = bound.left;
-            if (bound.top < minY) minY = bound.top;
-            if (bound.left + bound.width > maxX) maxX = bound.left + bound.width;
-            if (bound.top + bound.height > maxY) maxY = bound.top + bound.height;
-          });
-
-          options = {
-            ...options,
-            left: minX,
-            top: minY,
-            width: maxX - minX,
-            height: maxY - minY,
-          };
-
-          // Save and remove background
-          savedBackgroundColor = canvas.backgroundColor;
-          savedBackgroundImage = canvas.backgroundImage;
-          canvas.backgroundColor = null as any;
-          canvas.backgroundImage = null as any;
-        }
+      const output = renderDocument(canvas, multiplier, trimWhitespace);
+      if (format === 'jpeg') {
+        const ctx = output.getContext('2d')!;
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, output.width, output.height);
       }
-
-      const dataURL = canvas.toDataURL(options);
-
-      // Restore background
-      if (trimWhitespace) {
-        canvas.backgroundColor = savedBackgroundColor;
-        canvas.backgroundImage = savedBackgroundImage;
-      }
-
+      const dataURL = output.toDataURL(`image/${format}`, quality);
       const link = document.createElement('a');
       link.download = `image.${format}`;
       link.href = dataURL;
@@ -85,6 +48,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ visible, onCancel, canvas }) 
     }
     photoEditorMessages.projectExported(format);
     onCancel();
+    } catch (error) { message.error(error instanceof Error ? error.message : 'Export failed'); }
   };
 
   const downloadBlob = (blob: Blob, fileName: string) => {
@@ -119,6 +83,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ visible, onCancel, canvas }) 
           <Select value={format} onChange={(v) => setFormat(v)}>
             <Select.Option value="png">PNG</Select.Option>
             <Select.Option value="jpeg">JPEG</Select.Option>
+            <Select.Option value="webp">WebP</Select.Option>
             <Select.Option value="svg">SVG</Select.Option>
             <Select.Option value="json">JSON (Project)</Select.Option>
           </Select>

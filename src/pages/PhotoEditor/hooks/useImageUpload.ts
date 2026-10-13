@@ -1,88 +1,111 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { message } from 'antd';
 import { SavedProject } from '../types';
+import { isTypingTarget } from '../utils/document';
 
-// Hard cap to avoid freezing the tab on very large images (dataURL is ~4/3 of file size)
-const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 MB
-
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 export const useImageUpload = () => {
   const [preview, setPreview] = useState<string | null>(null);
   const [initialProject, setInitialProject] = useState<SavedProject | null>(null);
-  const [addOnFile, setAddOnFile] = useState<File | null>(null);
+  const [addOnFile, updateAddOnFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
   const dragCounter = useRef(0);
-  // Mirror of `preview` in a ref so the paste listener can read the latest
-  // value without being re-bound on every preview change.
   const previewRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    previewRef.current = preview;
-  }, [preview]);
-
-  const handleUpload = useCallback((file: File) => {
-    if (file.size > MAX_UPLOAD_BYTES) {
-      message.error(
-        `Image is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is ${
-          MAX_UPLOAD_BYTES / 1024 / 1024
-        } MB.`,
-      );
-      return false;
+  const queue = useRef<File[]>([]);
+  const chain = useRef(Promise.resolve());
+  const epoch = useRef(0);
+  const setAddOnFile = useCallback((file: File | null) => {
+    if (file) {
+      queue.current.push(file);
+      if (queue.current.length === 1) updateAddOnFile(file);
+    } else {
+      queue.current.shift();
+      updateAddOnFile(queue.current[0] || null);
     }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (previewRef.current) {
-        setAddOnFile(file);
-      } else {
-        setPreview(e.target?.result as string);
-        setInitialProject(null);
-      }
-    };
-    reader.onerror = () => {
-      message.error('Failed to read image file.');
-    };
-    reader.readAsDataURL(file);
-    setDragging(false);
-    dragCounter.current = 0;
-    return false;
   }, []);
-
+  useEffect(
+    () => () => {
+      epoch.current++;
+    },
+    [],
+  );
+  const handleUpload = useCallback(
+    (file: File) => {
+      if (!file.type.startsWith('image/')) {
+        message.error('Choose a supported image file.');
+        return false;
+      }
+      if (file.size > MAX_UPLOAD_BYTES) {
+        message.error('Image exceeds the 50 MB file limit.');
+        return false;
+      }
+      const generation = epoch.current;
+      chain.current = chain.current
+        .then(async () => {
+          if (generation !== epoch.current) return;
+          const data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => reject(new Error('Unable to read image.'));
+            reader.readAsDataURL(file);
+          });
+          const img = new Image();
+          img.src = data;
+          await img.decode();
+          if (img.naturalWidth * img.naturalHeight > 64_000_000)
+            throw new Error('Image exceeds the 64 megapixel document limit.');
+          if (generation !== epoch.current) return;
+          if (previewRef.current) setAddOnFile(file);
+          else {
+            previewRef.current = data;
+            setPreview(data);
+            setInitialProject(null);
+          }
+        })
+        .catch((error) => {
+          if (generation === epoch.current)
+            message.error(error.message || 'Unable to decode image.');
+        });
+      setDragging(false);
+      dragCounter.current = 0;
+      return false;
+    },
+    [setAddOnFile],
+  );
   const loadProject = useCallback((project: SavedProject) => {
+    epoch.current++;
+    queue.current = [];
+    updateAddOnFile(null);
     setInitialProject(project);
+    previewRef.current = project.thumbnail;
     setPreview(project.thumbnail);
   }, []);
-
   const handleClear = useCallback(() => {
+    epoch.current++;
+    queue.current = [];
+    previewRef.current = null;
     setPreview(null);
-    setAddOnFile(null);
+    updateAddOnFile(null);
     setInitialProject(null);
     message.info('Image cleared.');
   }, []);
-
-  // --- Clipboard paste support ---
   useEffect(() => {
-    const handlePaste = (e: ClipboardEvent) => {
-      const items = e.clipboardData?.items;
-      if (!items) return;
-
-      const imageItem = Array.from(items).find((item) => item.type.includes('image'));
-      if (imageItem) {
-        const blob = imageItem.getAsFile();
-        if (blob) {
-          handleUpload(blob);
-          message.success('Image pasted from clipboard!');
-          e.preventDefault();
-        }
+    const paste = (e: ClipboardEvent) => {
+      if (isTypingTarget(e.target)) return;
+      const image = Array.from(e.clipboardData?.items || [])
+        .find((item) => item.type.startsWith('image/'))
+        ?.getAsFile();
+      if (image) {
+        handleUpload(image);
+        e.preventDefault();
       }
     };
-
-    window.addEventListener('paste', handlePaste);
-    return () => window.removeEventListener('paste', handlePaste);
+    window.addEventListener('paste', paste);
+    return () => window.removeEventListener('paste', paste);
   }, [handleUpload]);
-
   return {
     preview,
-    setPreview, // Exposed if needed
+    setPreview,
     addOnFile,
     setAddOnFile,
     dragging,

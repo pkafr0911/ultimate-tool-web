@@ -9,6 +9,7 @@ import {
   AlignRightOutlined,
 } from '@ant-design/icons';
 import { usePhotoEditor } from '../context';
+import { isEditable } from '../utils/document';
 import { IText } from 'fabric';
 
 const fonts = ['Arial', 'Helvetica', 'Times New Roman', 'Georgia', 'Courier New', 'Verdana'];
@@ -37,7 +38,7 @@ const TextStylePanel: React.FC = () => {
   }, [selectedObject]);
 
   const apply = (patch: Record<string, any>, save = true) => {
-    if (!selectedObject) return;
+    if (!selectedObject || !isEditable(selectedObject)) return;
     selectedObject.set(patch);
     selectedObject.setCoords && selectedObject.setCoords();
     canvas && canvas.requestRenderAll();
@@ -71,7 +72,7 @@ const TextStylePanel: React.FC = () => {
       left = target.left + target.width - objRect.width;
     }
 
-    apply({ left }, true);
+    apply({ left: selectedObject.left + left - objRect.left }, true);
   };
 
   const alignVerticalToFirst = (mode: 'top' | 'middle' | 'bottom') => {
@@ -89,7 +90,7 @@ const TextStylePanel: React.FC = () => {
       top = target.top + target.height - objRect.height;
     }
 
-    apply({ top }, true);
+    apply({ top: selectedObject.top + top - objRect.top }, true);
   };
 
   return (

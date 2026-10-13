@@ -12,11 +12,11 @@ const { Sider, Content } = Layout;
 const { Panel } = Collapse;
 
 const EditorLayout: React.FC = () => {
-  const { history } = usePhotoEditor();
+  const { history, isBusy } = usePhotoEditor();
 
   return (
     <PhotoEditorErrorBoundary>
-      <Layout className="peEditorLayout" style={{ height: '100%' }}>
+      <Layout className="peEditorLayout" aria-busy={isBusy} style={{ height: '100%', pointerEvents: isBusy ? 'none' : undefined, opacity: isBusy ? 0.7 : 1 }}>
         <Sider theme="light" width={60} className="peToolbarSider">
           <Toolbar />
         </Sider>

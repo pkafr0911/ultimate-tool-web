@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { documentSize, isRenderingDocument } from '../utils/document';
 import { Canvas, FabricObject } from 'fabric';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -636,8 +637,8 @@ export const useSnappingGuides = (canvas: Canvas | null) => {
 
       // 2. Compute snap from the raw position (just like Photoshop/Canva).
       const allObjects = canvas.getObjects();
-      const canvasWidth = canvas.getWidth();
-      const canvasHeight = canvas.getHeight();
+      const canvasWidth = documentSize(canvas).width;
+      const canvasHeight = documentSize(canvas).height;
       const { dx, dy, guides, gaps } = computeSnap(target, allObjects, canvasWidth, canvasHeight);
 
       // 3. Hysteresis — once locked to a snap line, stay locked until the
@@ -732,6 +733,7 @@ export const useSnappingGuides = (canvas: Canvas | null) => {
     };
 
     const afterRender = (e: any) => {
+      if (isRenderingDocument(canvas)) return;
       const guides = activeGuidesRef.current;
       const gaps = activeGapsRef.current;
       if (guides.length === 0 && gaps.length === 0) return;

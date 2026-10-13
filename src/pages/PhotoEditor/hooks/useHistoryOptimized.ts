@@ -1,407 +1,158 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Canvas } from 'fabric';
+import { message } from 'antd';
+import {
+  isDocumentLoading,
+  loadDocument,
+  serializeDocument,
+  renderDocument,
+} from '../utils/document';
 
 export interface HistoryEntry {
   id: string;
   timestamp: number;
-  snapshot: string; // Full JSON for key frames
-  delta?: string; // Delta from previous state (for optimization)
+  snapshot: string;
   description?: string;
   thumbnail?: string;
 }
-
 export interface HistoryState {
   entries: HistoryEntry[];
   currentIndex: number;
   isProcessing: boolean;
 }
-
-interface UseHistoryOptimizedOptions {
+interface Options {
   maxEntries?: number;
-  keyFrameInterval?: number; // Save full snapshot every N changes
+  keyFrameInterval?: number;
   enableThumbnails?: boolean;
   thumbnailSize?: number;
 }
 
-const DEFAULT_OPTIONS: UseHistoryOptimizedOptions = {
-  maxEntries: 50,
-  keyFrameInterval: 10,
-  enableThumbnails: true,
-  thumbnailSize: 64,
-};
-
-/**
- * Calculate a simple delta between two JSON strings
- * Returns the new state if delta would be larger than original
- */
-const calculateDelta = (
-  oldState: string,
-  newState: string,
-): { delta: string; isKeyFrame: boolean } => {
-  // For simplicity, we compare lengths - if new state is significantly different,
-  // it's more efficient to store the full state
-  const oldLength = oldState.length;
-  const newLength = newState.length;
-
-  // If states are very similar in size (within 20%), try to find a delta
-  if (Math.abs(oldLength - newLength) / Math.max(oldLength, newLength) < 0.2) {
-    try {
-      const oldObj = JSON.parse(oldState);
-      const newObj = JSON.parse(newState);
-
-      // Simple object comparison for small deltas
-      const delta = computeObjectDelta(oldObj, newObj);
-      const deltaStr = JSON.stringify(delta);
-
-      // Only use delta if it's smaller than full state
-      if (deltaStr.length < newLength * 0.7) {
-        return { delta: deltaStr, isKeyFrame: false };
-      }
-    } catch {
-      // If delta computation fails, use full state
-    }
-  }
-
-  return { delta: newState, isKeyFrame: true };
-};
-
-/**
- * Compute a delta between two objects
- */
-const computeObjectDelta = (oldObj: any, newObj: any): any => {
-  if (typeof oldObj !== 'object' || typeof newObj !== 'object') {
-    return newObj;
-  }
-
-  if (Array.isArray(oldObj) && Array.isArray(newObj)) {
-    // For arrays (like objects list), compute per-item changes
-    if (oldObj.length !== newObj.length) {
-      return { _type: 'array_replace', value: newObj };
-    }
-
-    const changes: any[] = [];
-    let hasChanges = false;
-
-    for (let i = 0; i < newObj.length; i++) {
-      if (JSON.stringify(oldObj[i]) !== JSON.stringify(newObj[i])) {
-        changes.push({ index: i, value: newObj[i] });
-        hasChanges = true;
-      }
-    }
-
-    if (!hasChanges) return null;
-    return { _type: 'array_patch', changes };
-  }
-
-  // For objects, find changed keys
-  const delta: any = { _type: 'object_patch', changes: {} };
-  let hasChanges = false;
-
-  const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
-
-  for (const key of allKeys) {
-    if (JSON.stringify(oldObj[key]) !== JSON.stringify(newObj[key])) {
-      delta.changes[key] = newObj[key];
-      hasChanges = true;
-    }
-  }
-
-  if (!hasChanges) return null;
-  return delta;
-};
-
-/**
- * Apply a delta to reconstruct state
- */
-const applyDelta = (baseState: string, delta: string): string => {
-  try {
-    const deltaObj = JSON.parse(delta);
-
-    // If delta is a full state (no _type), return as-is
-    if (!deltaObj._type) {
-      return delta;
-    }
-
-    const baseObj = JSON.parse(baseState);
-
-    if (deltaObj._type === 'array_replace') {
-      return JSON.stringify(deltaObj.value);
-    }
-
-    if (deltaObj._type === 'array_patch' && Array.isArray(baseObj.objects)) {
-      const result = { ...baseObj };
-      result.objects = [...baseObj.objects];
-
-      for (const change of deltaObj.changes) {
-        result.objects[change.index] = change.value;
-      }
-
-      return JSON.stringify(result);
-    }
-
-    if (deltaObj._type === 'object_patch') {
-      const result = { ...baseObj, ...deltaObj.changes };
-      return JSON.stringify(result);
-    }
-
-    return delta;
-  } catch {
-    return delta;
-  }
-};
-
-/**
- * Generate a unique ID for history entries
- */
-const generateId = (): string => {
-  return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-};
-
-export const useHistoryOptimized = (
-  canvas: Canvas | null,
-  options: UseHistoryOptimizedOptions = {},
-) => {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
-
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [historyIndex, setHistoryIndex] = useState<number>(-1);
-  const [isHistoryProcessing, setIsHistoryProcessing] = useState<boolean>(false);
-
-  const lastSavedStateRef = useRef<string>('');
-  const keyFrameCounterRef = useRef<number>(0);
-
-  const generateThumbnail = useCallback(
-    (canvasInstance: Canvas): string | undefined => {
-      if (!opts.enableThumbnails) return undefined;
-
-      try {
-        return canvasInstance.toDataURL({
-          format: 'png',
-          multiplier: opts.thumbnailSize! / Math.max(canvasInstance.width!, canvasInstance.height!),
-        });
-      } catch {
-        return undefined;
-      }
-    },
-    [opts.enableThumbnails, opts.thumbnailSize],
-  );
-
+// Independent snapshots make eviction safe. Synchronous refs prevent stale closures
+// and a microtask coalesces add/remove/path events into one complete command.
+export const useHistoryOptimized = (canvas: Canvas | null, options: Options = {}) => {
+  const state = useRef<HistoryState>({ entries: [], currentIndex: -1, isProcessing: false });
+  const [view, setView] = useState(state.current);
+  const pending = useRef(false);
+  const generation = useRef(0);
+  const thumbnails = options.enableThumbnails ?? false;
+  const thumbnailSize = options.thumbnailSize ?? 64;
+  const maxEntries = options.maxEntries ?? 50;
+  const publish = useCallback(() => setView({ ...state.current }), []);
   const saveState = useCallback(
     (description?: string) => {
-      if (!canvas || isHistoryProcessing) return;
-
-      const json = JSON.stringify(canvas.toJSON());
-
-      // Avoid saving duplicate states
-      if (lastSavedStateRef.current === json) {
+      pending.current = false;
+      if (!canvas || canvas.disposed || state.current.isProcessing || isDocumentLoading(canvas))
         return;
-      }
-
-      // Calculate delta from last state
-      const isFirstEntry = history.length === 0 || historyIndex < 0;
-      const forceKeyFrame = isFirstEntry || keyFrameCounterRef.current >= opts.keyFrameInterval!;
-
-      let entry: HistoryEntry;
-
-      if (forceKeyFrame) {
-        // Save full snapshot
-        entry = {
-          id: generateId(),
-          timestamp: Date.now(),
-          snapshot: json,
-          description,
-          thumbnail: generateThumbnail(canvas),
-        };
-        keyFrameCounterRef.current = 0;
-      } else {
-        // Save delta from previous state
-        const { delta, isKeyFrame } = calculateDelta(lastSavedStateRef.current, json);
-
-        entry = {
-          id: generateId(),
-          timestamp: Date.now(),
-          snapshot: isKeyFrame ? json : '',
-          delta: isKeyFrame ? undefined : delta,
-          description,
-          thumbnail: generateThumbnail(canvas),
-        };
-
-        if (isKeyFrame) {
-          keyFrameCounterRef.current = 0;
-        } else {
-          keyFrameCounterRef.current++;
+      const snapshot = JSON.stringify(serializeDocument(canvas));
+      const current = state.current;
+      if (current.entries[current.currentIndex]?.snapshot === snapshot) return;
+      const entries = current.entries.slice(0, current.currentIndex + 1);
+      let thumbnail: string | undefined;
+      if (thumbnails) {
+        try {
+          const data = JSON.parse(snapshot);
+          thumbnail = renderDocument(
+            canvas,
+            thumbnailSize / Math.max(data.documentWidth, data.documentHeight),
+          ).toDataURL();
+        } catch {
+          /* History remains usable when preview rendering fails. */
         }
       }
-
-      lastSavedStateRef.current = json;
-
-      // If we are in the middle of the history, discard the future
-      const newHistory = history.slice(0, historyIndex + 1);
-      newHistory.push(entry);
-
-      // Limit history size
-      while (newHistory.length > opts.maxEntries!) {
-        newHistory.shift();
+      entries.push({
+        id: `${Date.now()}-${Math.random()}`,
+        timestamp: Date.now(),
+        snapshot,
+        description,
+        thumbnail,
+      });
+      let bytes = entries.reduce((sum, entry) => sum + entry.snapshot.length * 2, 0);
+      while (entries.length > 2 && (entries.length > maxEntries || bytes > 64 * 1024 * 1024)) {
+        bytes -= entries.shift()!.snapshot.length * 2;
       }
-
-      setHistory(newHistory);
-      setHistoryIndex(newHistory.length - 1);
+      state.current = { entries, currentIndex: entries.length - 1, isProcessing: false };
+      publish();
     },
-    [
-      canvas,
-      history,
-      historyIndex,
-      isHistoryProcessing,
-      opts.keyFrameInterval,
-      opts.maxEntries,
-      generateThumbnail,
-    ],
+    [canvas, maxEntries, thumbnails, thumbnailSize, publish],
   );
 
-  /**
-   * Reconstruct state at a given index by applying deltas from the nearest key frame
-   */
-  const reconstructState = useCallback(
-    (targetIndex: number): string | null => {
-      if (targetIndex < 0 || targetIndex >= history.length) return null;
-
-      // Find the nearest key frame before or at targetIndex
-      let keyFrameIndex = targetIndex;
-      while (keyFrameIndex >= 0 && !history[keyFrameIndex].snapshot) {
-        keyFrameIndex--;
-      }
-
-      if (keyFrameIndex < 0) return null;
-
-      let state = history[keyFrameIndex].snapshot;
-
-      // Apply deltas forward to reach target index
-      for (let i = keyFrameIndex + 1; i <= targetIndex; i++) {
-        const entry = history[i];
-        if (entry.snapshot) {
-          state = entry.snapshot;
-        } else if (entry.delta) {
-          state = applyDelta(state, entry.delta);
+  const restore = useCallback(
+    async (index: number) => {
+      if (!canvas || canvas.disposed || state.current.isProcessing || isDocumentLoading(canvas))
+        return;
+      const entry = state.current.entries[index];
+      if (!entry || index === state.current.currentIndex) return;
+      pending.current = false;
+      state.current.isProcessing = true;
+      publish();
+      const epoch = generation.current;
+      try {
+        await loadDocument(canvas, entry.snapshot);
+        if (epoch === generation.current) state.current.currentIndex = index;
+      } catch {
+        message.error('Unable to restore this history entry. The current document was retained.');
+      } finally {
+        if (epoch === generation.current) {
+          state.current.isProcessing = false;
+          publish();
         }
       }
-
-      return state;
     },
-    [history],
+    [canvas, publish],
   );
 
   const undo = useCallback(() => {
-    if (!canvas || historyIndex <= 0 || isHistoryProcessing) return;
-
-    setIsHistoryProcessing(true);
-    const newIndex = historyIndex - 1;
-    const state = reconstructState(newIndex);
-
-    if (state) {
-      canvas
-        .loadFromJSON(JSON.parse(state))
-        .then(() => {
-          canvas.renderAll();
-          setHistoryIndex(newIndex);
-          lastSavedStateRef.current = state;
-          setIsHistoryProcessing(false);
-        })
-        .catch(() => {
-          setIsHistoryProcessing(false);
-        });
-    } else {
-      setIsHistoryProcessing(false);
-    }
-  }, [canvas, historyIndex, isHistoryProcessing, reconstructState]);
-
+    if (pending.current) saveState();
+    void restore(state.current.currentIndex - 1);
+  }, [restore, saveState]);
   const redo = useCallback(() => {
-    if (!canvas || historyIndex >= history.length - 1 || isHistoryProcessing) return;
-
-    setIsHistoryProcessing(true);
-    const newIndex = historyIndex + 1;
-    const state = reconstructState(newIndex);
-
-    if (state) {
-      canvas
-        .loadFromJSON(JSON.parse(state))
-        .then(() => {
-          canvas.renderAll();
-          setHistoryIndex(newIndex);
-          lastSavedStateRef.current = state;
-          setIsHistoryProcessing(false);
-        })
-        .catch(() => {
-          setIsHistoryProcessing(false);
-        });
-    } else {
-      setIsHistoryProcessing(false);
-    }
-  }, [canvas, history.length, historyIndex, isHistoryProcessing, reconstructState]);
-
-  /**
-   * Jump to a specific history entry
-   */
+    if (pending.current) saveState();
+    void restore(state.current.currentIndex + 1);
+  }, [restore, saveState]);
   const goToEntry = useCallback(
-    (entryId: string) => {
-      if (!canvas || isHistoryProcessing) return;
-
-      const targetIndex = history.findIndex((e) => e.id === entryId);
-      if (targetIndex < 0 || targetIndex === historyIndex) return;
-
-      setIsHistoryProcessing(true);
-      const state = reconstructState(targetIndex);
-
-      if (state) {
-        canvas
-          .loadFromJSON(JSON.parse(state))
-          .then(() => {
-            canvas.renderAll();
-            setHistoryIndex(targetIndex);
-            lastSavedStateRef.current = state;
-            setIsHistoryProcessing(false);
-          })
-          .catch(() => {
-            setIsHistoryProcessing(false);
-          });
-      } else {
-        setIsHistoryProcessing(false);
-      }
+    (id: string) => {
+      if (pending.current) saveState();
+      void restore(state.current.entries.findIndex((e) => e.id === id));
     },
-    [canvas, history, historyIndex, isHistoryProcessing, reconstructState],
+    [restore, saveState],
   );
-
-  // Auto-save on canvas events
   useEffect(() => {
+    generation.current++;
+    state.current = { entries: [], currentIndex: -1, isProcessing: false };
+    publish();
     if (!canvas) return;
-
-    const handleSave = () => {
-      saveState();
+    saveState('Initial document');
+    const epoch = generation.current;
+    const schedule = () => {
+      if (pending.current || state.current.isProcessing || isDocumentLoading(canvas)) return;
+      pending.current = true;
+      queueMicrotask(() => {
+        if (pending.current && epoch === generation.current) saveState();
+      });
     };
-
-    canvas.on('object:modified', handleSave);
-    canvas.on('object:added', handleSave);
-    canvas.on('object:removed', handleSave);
-    canvas.on('path:created', handleSave);
-
+    const disposers = [
+      canvas.on('object:modified', schedule),
+      canvas.on('object:added', schedule),
+      canvas.on('object:removed', schedule),
+      canvas.on('path:created', schedule),
+      canvas.on('text:editing:exited', schedule),
+    ];
     return () => {
-      canvas.off('object:modified', handleSave);
-      canvas.off('object:added', handleSave);
-      canvas.off('object:removed', handleSave);
-      canvas.off('path:created', handleSave);
+      generation.current++;
+      pending.current = false;
+      disposers.forEach((dispose) => dispose());
     };
-  }, [canvas, saveState]);
-
+  }, [canvas, saveState, publish]);
   return {
     saveState,
     undo,
     redo,
     goToEntry,
-    canUndo: historyIndex > 0,
-    canRedo: historyIndex < history.length - 1,
-    entries: history,
-    currentIndex: historyIndex,
-    isProcessing: isHistoryProcessing,
+    entries: view.entries,
+    currentIndex: view.currentIndex,
+    isProcessing: view.isProcessing,
+    canUndo: !view.isProcessing && view.currentIndex > 0,
+    canRedo: !view.isProcessing && view.currentIndex < view.entries.length - 1,
   };
 };
-
 export default useHistoryOptimized;

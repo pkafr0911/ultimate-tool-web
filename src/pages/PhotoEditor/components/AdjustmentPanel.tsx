@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Slider, Typography, Space, Collapse } from 'antd';
+import { isEditable } from '../utils/document';
 import { usePhotoEditor } from '../context';
 import { filters, FabricImage } from 'fabric';
 
@@ -106,6 +107,7 @@ FilterPreview.displayName = 'FilterPreview';
 
 const AdjustmentPanel: React.FC = () => {
   const { canvas, selectedObject, history } = usePhotoEditor();
+  const [, refresh] = useState(0);
   const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
 
   useEffect(() => {
@@ -129,10 +131,14 @@ const AdjustmentPanel: React.FC = () => {
   }, [selectedObject]);
 
   const applyFilter = (index: number, filter: any) => {
-    if (!selectedObject || !selectedObject.isType('image')) return;
-    const img = selectedObject as any;
-    img.filters[index] = filter;
+    if (!isEditable(selectedObject) || !selectedObject?.isType('image')) return;
+    const img = selectedObject as FabricImage;
+    const type = ['Brightness', 'Contrast', 'Saturation', 'Noise', 'Pixelate', 'Blur', 'Gamma', 'Vibrance', 'HueRotation', ...FILTER_LIST.map(f => f.filter.type)][index];
+    img.filters = img.filters.filter(f => f && f.type !== type);
+    if (filter) img.filters.push(filter);
+    img.filters.sort((a, b) => filterOrder.indexOf(a.type) - filterOrder.indexOf(b.type));
     img.applyFilters();
+    refresh(v => v + 1);
     canvas?.requestRenderAll();
   };
 
@@ -187,6 +193,8 @@ const AdjustmentPanel: React.FC = () => {
     history.saveState();
   };
 
+  const filterOrder = ['Brightness', 'Contrast', 'Saturation', 'Noise', 'Pixelate', 'Blur', 'Gamma', 'Vibrance', 'HueRotation', ...FILTER_LIST.map(f => f.filter.type)];
+  const valueOf = (type: string, key: string, fallback: number) => { const f = (selectedObject as FabricImage)?.filters?.find(f => f?.type === type) as any; return f?.[key] ?? fallback; };
   if (!selectedObject || !selectedObject.isType('image')) {
     return <div style={{ padding: 10 }}>Select an image to adjust</div>;
   }
@@ -203,7 +211,8 @@ const AdjustmentPanel: React.FC = () => {
                 min={-1}
                 max={1}
                 step={0.01}
-                defaultValue={0}
+                value={valueOf('Brightness', 'brightness', 0)}
+                disabled={!isEditable(selectedObject)}
                 onChange={handleBrightness}
                 onChangeComplete={() => history.saveState()}
               />
@@ -214,7 +223,8 @@ const AdjustmentPanel: React.FC = () => {
                 min={-1}
                 max={1}
                 step={0.01}
-                defaultValue={0}
+                value={valueOf('Contrast', 'contrast', 0)}
+                disabled={!isEditable(selectedObject)}
                 onChange={handleContrast}
                 onChangeComplete={() => history.saveState()}
               />
@@ -225,7 +235,8 @@ const AdjustmentPanel: React.FC = () => {
                 min={-1}
                 max={1}
                 step={0.01}
-                defaultValue={0}
+                value={valueOf('Saturation', 'saturation', 0)}
+                disabled={!isEditable(selectedObject)}
                 onChange={handleSaturation}
                 onChangeComplete={() => history.saveState()}
               />
@@ -236,7 +247,8 @@ const AdjustmentPanel: React.FC = () => {
                 min={-1}
                 max={1}
                 step={0.01}
-                defaultValue={0}
+                value={valueOf('Vibrance', 'vibrance', 0)}
+                disabled={!isEditable(selectedObject)}
                 onChange={handleVibrance}
                 onChangeComplete={() => history.saveState()}
               />
@@ -247,7 +259,8 @@ const AdjustmentPanel: React.FC = () => {
                 min={0.1}
                 max={2.2}
                 step={0.1}
-                defaultValue={1}
+                value={(valueOf('Gamma', 'gamma', 1) as any)?.[0] ?? 1}
+                disabled={!isEditable(selectedObject)}
                 onChange={handleGamma}
                 onChangeComplete={() => history.saveState()}
               />
@@ -258,7 +271,8 @@ const AdjustmentPanel: React.FC = () => {
                 min={-1}
                 max={1}
                 step={0.01}
-                defaultValue={0}
+                value={valueOf('HueRotation', 'rotation', 0)}
+                disabled={!isEditable(selectedObject)}
                 onChange={handleHueRotation}
                 onChangeComplete={() => history.saveState()}
               />
@@ -274,7 +288,8 @@ const AdjustmentPanel: React.FC = () => {
                 min={0}
                 max={1}
                 step={0.01}
-                defaultValue={0}
+                value={valueOf('Blur', 'blur', 0)}
+                disabled={!isEditable(selectedObject)}
                 onChange={handleBlur}
                 onChangeComplete={() => history.saveState()}
               />
@@ -284,7 +299,8 @@ const AdjustmentPanel: React.FC = () => {
               <Slider
                 min={0}
                 max={1000}
-                defaultValue={0}
+                value={valueOf('Noise', 'noise', 0)}
+                disabled={!isEditable(selectedObject)}
                 onChange={handleNoise}
                 onChangeComplete={() => history.saveState()}
               />
@@ -294,7 +310,8 @@ const AdjustmentPanel: React.FC = () => {
               <Slider
                 min={1}
                 max={20}
-                defaultValue={1}
+                value={valueOf('Pixelate', 'blocksize', 1)}
+                disabled={!isEditable(selectedObject)}
                 onChange={handlePixelate}
                 onChangeComplete={() => history.saveState()}
               />
@@ -305,7 +322,7 @@ const AdjustmentPanel: React.FC = () => {
         <Panel header="Filters" key="3">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
             {FILTER_LIST.map((item) => {
-              const isActive = !!(selectedObject as any)?.filters?.[item.index];
+              const isActive = !!(selectedObject as FabricImage).filters.find(f => f?.type === item.filter.type);
               return (
                 <FilterPreview
                   key={item.name}

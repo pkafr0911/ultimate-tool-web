@@ -56,7 +56,7 @@ export const useProgressivePreview = (
 
   const getPreviewScale = useCallback(
     (width: number, height: number): number => {
-      const cacheKey = `${width}x${height}`;
+      const cacheKey = `${width}x${height}:${maxPreviewSize}:${qualityThreshold}`;
       if (scaleCache.current.has(cacheKey)) {
         return scaleCache.current.get(cacheKey)!;
       }
@@ -98,8 +98,8 @@ export const useProgressivePreview = (
         return copy;
       }
 
-      const previewWidth = Math.round(source.width * scale);
-      const previewHeight = Math.round(source.height * scale);
+      const previewWidth = Math.max(1, Math.round(source.width * scale));
+      const previewHeight = Math.max(1, Math.round(source.height * scale));
 
       const preview = document.createElement('canvas');
       preview.width = previewWidth;

@@ -69,8 +69,8 @@ export const getCanvasCoords = (
 ) => {
   if (!canvasRef.current) return null;
   const rect = canvasRef.current.getBoundingClientRect();
-  const x = (e.clientX - rect.left - offset.x) / zoom;
-  const y = (e.clientY - rect.top - offset.y) / zoom;
+  const x = ((e.clientX - rect.left) * canvasRef.current.width / rect.width - offset.x) / zoom;
+  const y = ((e.clientY - rect.top) * canvasRef.current.height / rect.height - offset.y) / zoom;
   return { x, y };
 };
 

@@ -32,8 +32,8 @@ export const saveProjectToDB = async (project: SavedProject): Promise<void> => {
     const store = transaction.objectStore(STORE_PROJECTS);
     const request = store.put(project);
 
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject('Error saving project');
+    transaction.oncomplete = () => { db.close(); resolve(); };
+    transaction.onabort = transaction.onerror = () => { db.close(); reject(new Error('Error saving project')); };
   });
 };
 
@@ -50,7 +50,8 @@ export const getAllProjectsFromDB = async (): Promise<SavedProject[]> => {
       projects.sort((a, b) => b.updatedAt - a.updatedAt);
       resolve(projects);
     };
-    request.onerror = () => reject('Error fetching projects');
+    transaction.oncomplete = () => db.close();
+    transaction.onabort = transaction.onerror = () => { db.close(); reject(new Error('Error fetching projects')); };
   });
 };
 
@@ -61,7 +62,7 @@ export const deleteProjectFromDB = async (id: string): Promise<void> => {
     const store = transaction.objectStore(STORE_PROJECTS);
     const request = store.delete(id);
 
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject('Error deleting project');
+    transaction.oncomplete = () => { db.close(); resolve(); };
+    transaction.onabort = transaction.onerror = () => { db.close(); reject(new Error('Error deleting project')); };
   });
 };

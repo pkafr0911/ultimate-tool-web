@@ -160,7 +160,7 @@ const PhotoEditor: React.FC = () => {
           </span>
           <Paragraph type="secondary" style={{ marginBottom: 0 }}>
             <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> for
-            undo/redo, <kbd>V</kbd> select, <kbd>B</kbd> brush, <kbd>E</kbd> eraser.
+            undo/redo, <kbd>V</kbd> select, <kbd>B</kbd> brush, <kbd>H</kbd> hand. Eraser is not supported.
           </Paragraph>
         </div>
         <div className="guideItem">
@@ -347,6 +347,7 @@ const PhotoEditor: React.FC = () => {
           ) : (
             <div className="panel editorPanel">
               <PhotoEditorProvider
+                importFile={handleUpload}
                 imageUrl={preview}
                 initialProject={initialProject}
                 addOnFile={addOnFile}

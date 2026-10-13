@@ -25,7 +25,10 @@ export interface CameraRawSettings {
 // Monotone Cubic Spline interpolation helps avoid overshooting
 export const calculateSpline = (points: CurvePoint[]): number[] => {
   // Sort points by X
-  const sorted = [...points].sort((a, b) => a.x - b.x);
+  const unique = new Map<number, number>();
+  points.filter(p => Number.isFinite(p.x) && Number.isFinite(p.y)).forEach(p => unique.set(clamp(Math.round(p.x)), clamp(Math.round(p.y))));
+  if (!unique.size) return Array.from({ length: 256 }, (_, i) => i);
+  const sorted = [...unique].map(([x, y]) => ({ x, y })).sort((a, b) => a.x - b.x);
   // Ensure 0 and 255 exist
   if (sorted[0].x > 0) sorted.unshift({ x: 0, y: sorted[0].y });
   if (sorted[sorted.length - 1].x < 255) sorted.push({ x: 255, y: sorted[sorted.length - 1].y });

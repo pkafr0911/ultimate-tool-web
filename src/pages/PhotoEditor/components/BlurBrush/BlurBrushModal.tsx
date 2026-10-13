@@ -1,3 +1,4 @@
+import { documentSize, renderDocument } from '../../utils/document';
 import React, { useEffect, useRef, useState } from 'react';
 import { Modal, Slider, Button, Space, Typography, Spin, Radio, Tooltip } from 'antd';
 import { Canvas as FabricCanvas, FabricImage, PencilBrush } from 'fabric';
@@ -58,8 +59,8 @@ const BlurBrushModal: React.FC<BlurBrushModalProps> = ({ visible, onCancel, canv
     ) {
       // 1. Setup Preview (Background) Canvas
       // For performance, we could use a static image of the current canvas state
-      const width = canvas.getWidth();
-      const height = canvas.getHeight();
+      const width = documentSize(canvas).width;
+      const height = documentSize(canvas).height;
 
       const previewCtx = previewCanvasRef.current.getContext('2d');
       if (previewCtx) {
@@ -67,7 +68,7 @@ const BlurBrushModal: React.FC<BlurBrushModalProps> = ({ visible, onCancel, canv
         previewCanvasRef.current.height = height;
 
         // Use toDataURL to capture the absolute canvas state (ignoring zoom/viewport)
-        const dataURL = canvas.toDataURL({ format: 'png', multiplier: 1 });
+        const dataURL = renderDocument(canvas).toDataURL();
         const img = new Image();
         img.onload = () => {
           previewCtx.drawImage(img, 0, 0, width, height);
@@ -293,7 +294,7 @@ const BlurBrushModal: React.FC<BlurBrushModalProps> = ({ visible, onCancel, canv
     setIsProcessing(true);
     try {
       const maskCanvas = await getMaskImage();
-      const sourceCanvas = previewCanvasRef.current; // Currently holds original image
+      const sourceCanvas = renderDocument(canvas);
 
       // Perform Blur
       // For preview, we might want to downscale if large.
@@ -325,7 +326,10 @@ const BlurBrushModal: React.FC<BlurBrushModalProps> = ({ visible, onCancel, canv
       // Because we have been accumulating blurs on it
 
       history.saveState();
-      await applyBlurResultToCanvas(canvas, previewCanvasRef.current, applyMode);
+      const mask = await getMaskImage();
+      const result = await applyBlurWithMask(renderDocument(canvas), mask, blurAmount, feather);
+      if (canvas.disposed) return;
+      await applyBlurResultToCanvas(canvas, result, applyMode);
       history.saveState();
 
       photoEditorMessages.filterApplied('Blur');
@@ -355,9 +359,9 @@ const BlurBrushModal: React.FC<BlurBrushModalProps> = ({ visible, onCancel, canv
           style={{
             position: 'relative',
             border: '1px solid #d9d9d9',
-            width: canvas?.getWidth() || 800,
-            height: canvas?.getHeight() || 600,
-            overflow: 'hidden',
+            width: canvas ? documentSize(canvas).width : 800,
+            height: canvas ? documentSize(canvas).height : 600,
+            overflow: 'auto',
           }}
         >
           {/* Background / Preview Layer */}
@@ -412,7 +416,7 @@ const BlurBrushModal: React.FC<BlurBrushModalProps> = ({ visible, onCancel, canv
           <Space direction="vertical" style={{ marginTop: 16 }}>
             <Text strong>Apply Mode:</Text>
             <Radio.Group value={applyMode} onChange={(e) => setApplyMode(e.target.value)}>
-              <Radio value="overlay">Overlay (Non-destructive)</Radio>
+              <Radio value="overlay">Composite snapshot (keeps layers)</Radio>
               <Radio value="flatten">Flatten (Permanent)</Radio>
             </Radio.Group>
           </Space>

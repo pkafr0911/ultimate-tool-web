@@ -4125,11 +4125,6 @@
     "@types/qs" "*"
     "@types/serve-static" "*"
 
-"@types/fabric@^5.3.10":
-  version "5.3.11"
-  resolved "https://registry.npmjs.org/@types/fabric/-/fabric-5.3.11.tgz"
-  integrity sha512-dvicyfS0rDW2KGnwXGz+t+ckMGZUtHzhp8XvaM99R1TsYVsIenf96PbEWCNMHknR6a3/lyYwh1APxxm+DqRkpw==
-
 "@types/geojson@*":
   version "7946.0.16"
   resolved "https://registry.npmjs.org/@types/geojson/-/geojson-7946.0.16.tgz"
@@ -16345,7 +16340,7 @@ punycode@^2.1.0, punycode@^2.1.1, punycode@^2.3.1:
   resolved "https://registry.npmjs.org/punycode/-/punycode-2.3.1.tgz"
   integrity sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==
 
-puppeteer-core@~1.12.0:
+puppeteer-core@1.12.2, puppeteer-core@~1.12.0:
   version "1.12.2"
   resolved "https://registry.npmjs.org/puppeteer-core/-/puppeteer-core-1.12.2.tgz"
   integrity sha512-M+atMV5e+MwJdR+OwQVZ1xqAIwh3Ou4nUxNuf334GwpcLG+LDj5BwIph4J9y8YAViByRtWGL+uF8qX2Ggzb+Fg==

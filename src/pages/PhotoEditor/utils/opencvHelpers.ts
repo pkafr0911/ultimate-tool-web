@@ -91,8 +91,14 @@ export const applyBlurWithMask = async (
   // Composition
   const dst = src.clone();
 
-  // Use mask to copy blurred to dst
-  blurred.copyTo(dst, mask);
+  // Preserve source alpha and blend continuously across feathered boundaries.
+  for (let i = 0; i < mask.data.length; i++) {
+    const amount = mask.data[i] / 255;
+    for (let channel = 0; channel < 3; channel++) {
+      const index = i * 4 + channel;
+      dst.data[index] = Math.round(src.data[index] * (1 - amount) + blurred.data[index] * amount);
+    }
+  }
 
   const out = document.createElement('canvas');
   out.width = dst.cols;

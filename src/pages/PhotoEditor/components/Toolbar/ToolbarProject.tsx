@@ -16,6 +16,8 @@ import { Canvas, FabricObject, ActiveSelection } from 'fabric';
 import { photoEditorMessages } from '../../hooks/useNotification';
 import ExportModal from '../ExportModal';
 import ProjectModal from '../ProjectModal';
+import { serializeDocument, loadDocument } from '../../utils/document';
+import { usePhotoEditor } from '../../context';
 import { SavedProject } from '../../types';
 import { getOrRequestToken } from '@/components/GoogleDrive/DriveButtons';
 
@@ -52,6 +54,7 @@ const ToolbarProject: React.FC<ToolbarProjectProps> = ({
   projectModalVisible,
   setProjectModalVisible,
 }) => {
+  const { importFile } = usePhotoEditor();
   const projectImportRef = useRef<HTMLInputElement>(null);
   const imageUploadRef = useRef<HTMLInputElement>(null);
 
@@ -83,7 +86,7 @@ const ToolbarProject: React.FC<ToolbarProjectProps> = ({
     }
     setDriveSaving(true);
     try {
-      const json = canvas.toJSON();
+      const json = serializeDocument(canvas);
       const blob = new Blob([JSON.stringify(json)], { type: 'application/json' });
       const metadata = { name: driveSaveName || 'project.json', mimeType: 'application/json' };
       const form = new FormData();
@@ -195,11 +198,9 @@ const ToolbarProject: React.FC<ToolbarProjectProps> = ({
       if (!res.ok) throw new Error('Download failed');
       const text = await res.text();
       const json = JSON.parse(text);
-      canvas.loadFromJSON(json, () => {
-        canvas.renderAll();
-        saveState();
-        photoEditorMessages.projectLoaded();
-      });
+      await loadDocument(canvas, json);
+      saveState();
+      photoEditorMessages.projectLoaded();
       setDriveLoadVisible(false);
       message.success(`Loaded "${file.name}" from Drive`);
     } catch {
@@ -240,11 +241,13 @@ const ToolbarProject: React.FC<ToolbarProjectProps> = ({
       left: (clonedObj.left || 0) + 10,
       top: (clonedObj.top || 0) + 10,
       evented: true,
+      uid: crypto.randomUUID(),
     });
 
     if (clonedObj instanceof ActiveSelection) {
       clonedObj.canvas = canvas;
       clonedObj.forEachObject((obj) => {
+        obj.set('uid' as any, crypto.randomUUID());
         canvas.add(obj);
       });
       clonedObj.setCoords();
@@ -264,15 +267,13 @@ const ToolbarProject: React.FC<ToolbarProjectProps> = ({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
         const text = ev.target?.result as string;
         const json = JSON.parse(text);
-        canvas.loadFromJSON(json, () => {
-          canvas.renderAll();
-          saveState();
-          photoEditorMessages.projectLoaded();
-        });
+        await loadDocument(canvas, json);
+        saveState();
+        photoEditorMessages.projectLoaded();
       } catch (err) {
         console.error('Failed to import project JSON', err);
         photoEditorMessages.projectImportFailed();
@@ -283,22 +284,8 @@ const ToolbarProject: React.FC<ToolbarProjectProps> = ({
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!canvas || !e.target.files || !e.target.files[0]) return;
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = async (f) => {
-      const data = f.target?.result as string;
-      const { FabricImage } = await import('fabric');
-      FabricImage.fromURL(data).then((img) => {
-        img.scaleToWidth(200);
-        canvas.add(img);
-        canvas.centerObject(img);
-        canvas.setActiveObject(img);
-        saveState();
-        photoEditorMessages.imageAdded();
-      });
-    };
-    reader.readAsDataURL(file);
+    const file = e.target.files?.[0];
+    if (file) importFile?.(file);
     e.currentTarget.value = '';
   };
 

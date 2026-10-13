@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button, Space } from 'antd';
+import { isEditable } from '../utils/document';
 import { usePhotoEditor } from '../context';
 
 const AlignControls: React.FC = () => {
@@ -27,7 +28,7 @@ const AlignControls: React.FC = () => {
   };
 
   const apply = (patch: Record<string, any>) => {
-    if (!selectedObject) return;
+    if (!selectedObject || !isEditable(selectedObject)) return;
     selectedObject.set(patch);
     selectedObject.setCoords && selectedObject.setCoords();
     canvas && canvas.requestRenderAll();
@@ -49,7 +50,7 @@ const AlignControls: React.FC = () => {
       left = target.left + target.width - objRect.width;
     }
 
-    apply({ left });
+    apply({ left: selectedObject.left + left - objRect.left });
   };
 
   const alignVertical = (mode: 'top' | 'middle' | 'bottom') => {
@@ -67,7 +68,7 @@ const AlignControls: React.FC = () => {
       top = target.top + target.height - objRect.height;
     }
 
-    apply({ top });
+    apply({ top: selectedObject.top + top - objRect.top });
   };
 
   return (

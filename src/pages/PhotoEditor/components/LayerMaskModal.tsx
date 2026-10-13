@@ -17,7 +17,7 @@ import {
   drawBrushCursor,
   getCanvasCoords,
 } from '../utils/brushHelpers';
-import { calculateColorRemovalAlphaMap } from '../utils/effectsHelpers';
+import { calculateColorRemovalAlphaMap, combineMaskAlpha } from '../utils/effectsHelpers';
 
 const { Option } = Select;
 
@@ -117,7 +117,7 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
       ctx.drawImage(sourceCanvas, 0, 0);
 
       const maskCtx = maskCanvasRef.current.getContext('2d')!;
-      maskCtx.fillStyle = 'white';
+      maskCtx.fillStyle = 'rgb(128,128,128)';
       maskCtx.fillRect(0, 0, w, h);
 
       saveHistory();
@@ -192,7 +192,7 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
       const manualAlpha = manualMaskData.data[i * 4]; // Red channel of white mask
 
       // Combine alphas (multiply)
-      const finalAlpha = a * (autoAlpha / 255) * (manualAlpha / 255);
+      const finalAlpha = a * combineMaskAlpha(autoAlpha, manualAlpha) / 255;
 
       finalImageData.data[i * 4] = r;
       finalImageData.data[i * 4 + 1] = g;
@@ -394,7 +394,7 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
       const a = imageData.data[i * 4 + 3];
       const autoAlpha = alphaMap[i];
       const manualAlpha = manualMaskData.data[i * 4];
-      const finalAlpha = Math.round(a * (autoAlpha / 255) * (manualAlpha / 255));
+      const finalAlpha = combineMaskAlpha(autoAlpha, manualAlpha);
 
       // Store as both RGB and Alpha so consumers can read either channel
       finalImageData.data[i * 4] = finalAlpha;
@@ -418,6 +418,7 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
       maskClosable={false}
       getContainer={() => (typeof document !== 'undefined' && document.fullscreenElement as HTMLElement) || document.body}
     >
+      <p>Apply replaces the current mask. Use Undo to restore an earlier mask. Reopening prior mask strokes is not supported.</p>
       <div style={{ display: 'flex', gap: 16 }}>
         <div style={{ width: 300 }}>
           <Space direction="vertical" style={{ width: '100%' }}>

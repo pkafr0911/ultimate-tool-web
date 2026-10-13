@@ -231,7 +231,7 @@ const Toolbar: React.FC = () => {
         <Button icon={<LineOutlined />} onClick={() => addAndSelect(makeLine(defaults()))} />
       </Tooltip>
 
-      <Dropdown menu={polygonMenu} placement="rightTop" trigger={['contextMenu']}>
+      <Dropdown menu={polygonMenu} placement="topRight" trigger={['contextMenu']}>
         <Tooltip title="Polygon — right-click for sides" placement="right">
           <Button
             icon={<PolygonIcon />}
@@ -240,7 +240,7 @@ const Toolbar: React.FC = () => {
         </Tooltip>
       </Dropdown>
 
-      <Dropdown menu={starMenu} placement="rightTop" trigger={['contextMenu']}>
+      <Dropdown menu={starMenu} placement="topRight" trigger={['contextMenu']}>
         <Tooltip title="Star — right-click for points" placement="right">
           <Button
             icon={<StarOutlined />}

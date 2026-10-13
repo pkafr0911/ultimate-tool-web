@@ -1,6 +1,6 @@
 import { message } from 'antd';
 import { createCanvas } from './ImageEditorEngine';
-import { Tool } from '../components/ImageEditor';
+import { Tool } from '../components/ImageEditor/types';
 
 export const addOverlayImage = (
   file: File,

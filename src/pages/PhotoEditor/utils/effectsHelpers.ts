@@ -60,62 +60,20 @@ export const applyMaskToFabricObject = (
 ) => {
   if (!(object instanceof FabricImage)) return;
 
-  const imgElement = object.getElement() as HTMLImageElement | HTMLCanvasElement;
-  const width = imgElement.width;
-  const height = imgElement.height;
-
-  const tempCanvas = document.createElement('canvas');
-  tempCanvas.width = width;
-  tempCanvas.height = height;
-  const ctx = tempCanvas.getContext('2d')!;
-
-  // Draw original image
-  ctx.drawImage(imgElement, 0, 0, width, height);
-
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const data = imageData.data;
-
-  const maskCtx = maskCanvas.getContext('2d')!;
-
-  const tempMaskCanvas = document.createElement('canvas');
-  tempMaskCanvas.width = width;
-  tempMaskCanvas.height = height;
-  const tempMaskCtx = tempMaskCanvas.getContext('2d')!;
-  tempMaskCtx.drawImage(maskCanvas, 0, 0, width, height);
-  const maskData = tempMaskCtx.getImageData(0, 0, width, height).data;
-
-  for (let i = 0; i < data.length; i += 4) {
-    const maskVal = maskData[i]; // Red channel
-    data[i + 3] = maskVal;
+  // A clipPath multiplies the source alpha; original pixels and filters survive.
+  const alpha = document.createElement('canvas');
+  alpha.width = object.width;
+  alpha.height = object.height;
+  const ctx = alpha.getContext('2d')!;
+  ctx.drawImage(maskCanvas, 0, 0, alpha.width, alpha.height);
+  const pixels = ctx.getImageData(0, 0, alpha.width, alpha.height);
+  for (let i = 0; i < pixels.data.length; i += 4) {
+    pixels.data[i + 3] = Math.round(pixels.data[i] * pixels.data[i + 3] / 255);
   }
-
-  ctx.putImageData(imageData, 0, 0);
-
-  // Create new FabricImage
-  const newImg = new FabricImage(tempCanvas);
-
-  // Copy properties
-  newImg.set({
-    left: object.left,
-    top: object.top,
-    scaleX: object.scaleX,
-    scaleY: object.scaleY,
-    angle: object.angle,
-    skewX: object.skewX,
-    skewY: object.skewY,
-    flipX: object.flipX,
-    flipY: object.flipY,
-    originX: object.originX,
-    originY: object.originY,
-    opacity: object.opacity,
-  });
-
-  // Replace in canvas
-  const index = canvas.getObjects().indexOf(object);
-  canvas.remove(object);
-  canvas.add(newImg);
-  canvas.moveObjectTo(newImg, index);
-  canvas.setActiveObject(newImg);
+  ctx.putImageData(pixels, 0, 0);
+  object.clipPath = new FabricImage(alpha, { originX: 'center', originY: 'center' });
+  object.set('maskSource' as any, maskCanvas.toDataURL());
+  object.dirty = true;
   canvas.requestRenderAll();
 };
 
@@ -137,7 +95,7 @@ export const applyMaskToCanvas = (
 
   for (let i = 0; i < data.length; i += 4) {
     const maskAlpha = maskData.data[i];
-    data[i + 3] = maskAlpha;
+    data[i + 3] = Math.round(data[i + 3] * maskAlpha / 255);
   }
 
   ctx.putImageData(imageData, 0, 0);
@@ -175,6 +133,13 @@ export const applyBlurResultToCanvas = async (
       originY: 'top',
       selectable: false,
       evented: false,
+      lockMovementX: true,
+      lockMovementY: true,
+      lockRotation: true,
+      lockScalingX: true,
+      lockScalingY: true,
+      // This is a complete composite snapshot; replace lower pixels including alpha.
+      globalCompositeOperation: 'copy',
       opacity: 1,
     });
     canvas.add(resultImg);
@@ -182,3 +147,8 @@ export const applyBlurResultToCanvas = async (
 
   canvas.requestRenderAll();
 };
+
+/** Neutral manual value 128 leaves automatic alpha unchanged; white restores it. */
+export const combineMaskAlpha = (automatic: number, manual: number): number => Math.round(
+  manual >= 128 ? automatic + (255 - automatic) * (manual - 128) / 127 : automatic * manual / 128,
+);

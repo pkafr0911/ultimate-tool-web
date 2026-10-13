@@ -177,6 +177,7 @@ function isLightColor(hex: string): boolean {
 const BrushPanel: React.FC = () => {
   const {
     canvas,
+    brushType, setBrushType, brushShadow: shadowWidth, setBrushShadow: setShadowWidth,
     brushSize,
     setBrushSize,
     brushColor,
@@ -184,8 +185,6 @@ const BrushPanel: React.FC = () => {
     brushOpacity,
     setBrushOpacity,
   } = usePhotoEditor();
-  const [shadowWidth, setShadowWidth] = useState<number>(0);
-  const [brushType, setBrushType] = useState<string>('Pencil');
   const [selectedTone, setSelectedTone] = useState<ToneName | null>(null);
 
   const recommendedColors = useMemo(() => {

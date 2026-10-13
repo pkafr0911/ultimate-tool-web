@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { Canvas, FabricImage, PencilBrush, IText, Point } from 'fabric';
+import { Canvas, FabricImage, PencilBrush, IText, Point, Color } from 'fabric';
+import { message } from 'antd';
+import { documentSize, setDocumentSize, loadDocument, isDocumentLoading } from '../utils/document';
 import { usePhotoEditor } from '../context';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useSnappingGuides } from '../hooks/useSnappingGuides';
@@ -19,11 +21,15 @@ const CanvasArea: React.FC = () => {
     addOnFile,
     setAddOnFile,
     setActiveTool,
+    brushOpacity,
     brushSize,
     setBrushSize,
     brushColor,
     setBrushColor,
   } = usePhotoEditor();
+
+  const latestHistory = useRef(history);
+  latestHistory.current = history;
 
   const isEditingRef = useRef(false);
 
@@ -45,28 +51,33 @@ const CanvasArea: React.FC = () => {
   useEffect(() => {
     if (!canvas || !addOnFile) return;
 
+    const controller = new AbortController();
     const reader = new FileReader();
+    reader.onerror = () => message.error('Unable to read image');
     reader.onload = (f) => {
       const data = f.target?.result as string;
-      FabricImage.fromURL(data).then((img) => {
-        img.scaleToWidth(200);
+      FabricImage.fromURL(data, { signal: controller.signal }).then((img) => {
+        if (controller.signal.aborted || canvas.disposed) return;
+        const size = documentSize(canvas);
+        img.scale(Math.min(1, 200 / img.width, size.width / img.width, size.height / img.height));
+        img.setPositionByOrigin(new Point(size.width / 2, size.height / 2), 'center', 'center');
         canvas.add(img);
-        canvas.centerObject(img);
         canvas.setActiveObject(img);
         history.saveState();
         if (setAddOnFile) setAddOnFile(null);
-      });
+      }).catch(() => { if (!controller.signal.aborted) { message.error('Unable to decode image'); setAddOnFile?.(null); } });
     };
     reader.readAsDataURL(addOnFile);
+    return () => { controller.abort(); if (reader.readyState === FileReader.LOADING) reader.abort(); };
   }, [addOnFile, canvas]);
 
   // Sync brush settings
   useEffect(() => {
     if (canvas && canvas.freeDrawingBrush && activeTool === 'brush') {
       canvas.freeDrawingBrush.width = brushSize;
-      canvas.freeDrawingBrush.color = brushColor;
+      canvas.freeDrawingBrush.color = new Color(brushColor).setAlpha(brushOpacity).toRgba();
     }
-  }, [canvas, activeTool, brushSize, brushColor]);
+  }, [canvas, activeTool, brushSize, brushColor, brushOpacity]);
 
   // Alt+hover preview, Alt+click to pick color, Alt+RightClick drag to resize
   useEffect(() => {
@@ -110,8 +121,8 @@ const CanvasArea: React.FC = () => {
       const showOverlay = activeTool === 'brush' && (size > 10 || isResizingBrushRef.current);
 
       if (showOverlay) {
-        brushOverlayRef.current.style.width = `${size}px`;
-        brushOverlayRef.current.style.height = `${size}px`;
+        brushOverlayRef.current.style.width = `${size * canvas.getZoom()}px`;
+        brushOverlayRef.current.style.height = `${size * canvas.getZoom()}px`;
         brushOverlayRef.current.style.left = `${x}px`;
         brushOverlayRef.current.style.top = `${y}px`;
         brushOverlayRef.current.style.display = 'block';
@@ -173,9 +184,9 @@ const CanvasArea: React.FC = () => {
       // Alt + Left Click -> Color Pick
       if (e.altKey && e.button === 0) {
         try {
-          const rect = container.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
+          const rect = lower!.getBoundingClientRect();
+          const x = (e.clientX - rect.left) * lower!.width / rect.width;
+          const y = (e.clientY - rect.top) * lower!.height / rect.height;
 
           if (!lower) return;
           const ctx = lower.getContext('2d');
@@ -230,7 +241,8 @@ const CanvasArea: React.FC = () => {
             return;
           }
 
-          const pixel = ctx.getImageData(x, y, 1, 1).data;
+          const pixelRect = lower.getBoundingClientRect();
+          const pixel = ctx.getImageData((e.clientX - pixelRect.left) * lower.width / pixelRect.width, (e.clientY - pixelRect.top) * lower.height / pixelRect.height, 1, 1).data;
           const hex =
             '#' +
             [pixel[0], pixel[1], pixel[2]].map((v) => v.toString(16).padStart(2, '0')).join('');
@@ -307,26 +319,33 @@ const CanvasArea: React.FC = () => {
 
     setCanvas(fabricCanvas);
 
-    if (initialProject) {
-      fabricCanvas.loadFromJSON(initialProject.json).then(() => {
-        fabricCanvas.renderAll();
-        history.saveState();
-      });
-    } else if (imageUrl) {
-      FabricImage.fromURL(imageUrl).then((img) => {
-        const containerWidth = containerRef.current!.clientWidth;
-        const containerHeight = containerRef.current!.clientHeight;
-
-        if (img.width! > containerWidth || img.height! > containerHeight) {
-          img.scaleToWidth(containerWidth * 0.8);
+    const controller = new AbortController();
+    const container = containerRef.current;
+    const fitDocument = () => {
+      const { width, height } = documentSize(fabricCanvas);
+      const zoom = Math.min(1, container.clientWidth * 0.9 / width, container.clientHeight * 0.9 / height);
+      fabricCanvas.setViewportTransform([zoom, 0, 0, zoom, (container.clientWidth - width * zoom) / 2, (container.clientHeight - height * zoom) / 2]);
+    };
+    const initialize = async () => {
+      try {
+        if (initialProject) {
+          await loadDocument(fabricCanvas, initialProject.json, controller.signal);
+        } else if (imageUrl) {
+          const img = await FabricImage.fromURL(imageUrl, { signal: controller.signal });
+          if (controller.signal.aborted) return;
+          setDocumentSize(fabricCanvas, img.width, img.height);
+          fabricCanvas.backgroundColor = '';
+          fabricCanvas.add(img);
+          fabricCanvas.setActiveObject(img);
         }
-
-        fabricCanvas.add(img);
-        fabricCanvas.centerObject(img);
-        fabricCanvas.setActiveObject(img);
-        history.saveState();
-      });
-    }
+        fitDocument();
+        // Notify the current history subscription, not the mount-time null-canvas closure.
+        latestHistory.current.saveState('Open document');
+      } catch (error) {
+        if (!controller.signal.aborted) message.error('Unable to open image or project. The file may be invalid or too large.');
+      }
+    };
+    void initialize();
 
     const updateSelection = () => {
       const activeObjects = fabricCanvas.getActiveObjects();
@@ -346,7 +365,7 @@ const CanvasArea: React.FC = () => {
       isEditingRef.current = true;
       setActiveTool && setActiveTool('text');
     };
-    const onTextExit = () => setActiveTool && setActiveTool('select');
+    const onTextExit = () => { isEditingRef.current = false; setActiveTool('select'); };
 
     fabricCanvas.on('text:editing:entered', onTextEnter);
     fabricCanvas.on('text:editing:exited', onTextExit);
@@ -371,7 +390,7 @@ const CanvasArea: React.FC = () => {
 
         // Get pointer in canvas coordinates
         // fabricCanvas.getPointer works with native events too
-        const pointer = (fabricCanvas as any).getPointer(ev) as { x: number; y: number };
+        const pointer = fabricCanvas.getViewportPoint(ev);
         if (pointer && typeof pointer.x === 'number' && typeof pointer.y === 'number') {
           fabricCanvas.zoomToPoint(new Point(pointer.x, pointer.y), newZoom);
         } else {
@@ -400,11 +419,13 @@ const CanvasArea: React.FC = () => {
       }
     };
 
-    window.addEventListener('resize', handleResize);
+    const observer = new ResizeObserver(handleResize);
+    observer.observe(container);
 
     return () => {
-      fabricCanvas.dispose();
-      window.removeEventListener('resize', handleResize);
+      controller.abort();
+      void fabricCanvas.dispose();
+      observer.disconnect();
       if (containerRef.current) {
         try {
           containerRef.current.removeEventListener('wheel', onWheel as EventListener);
@@ -435,10 +456,12 @@ const CanvasArea: React.FC = () => {
         canvas.freeDrawingBrush = new PencilBrush(canvas);
       }
       canvas.freeDrawingBrush.width = brushSize;
-      canvas.freeDrawingBrush.color = brushColor;
+      canvas.freeDrawingBrush.color = new Color(brushColor).setAlpha(brushOpacity).toRgba();
     } else {
       canvas.isDrawingMode = false;
     }
+    canvas.selection = activeTool === 'select';
+    canvas.skipTargetFind = activeTool === 'hand' || activeTool === 'brush';
   }, [activeTool, canvas]); // brushSize and brushColor are handled by the sync effect
 
   // Place text on first mouse click when activeTool === 'text'
@@ -449,9 +472,9 @@ const CanvasArea: React.FC = () => {
     const handleMouseDown = (opt: any) => {
       try {
         // If a text object is currently being edited, do not create a new text object
-        if (isEditingRef.current) return;
+        if (isEditingRef.current || isDocumentLoading(canvas) || opt.target instanceof IText) return;
 
-        const pointer = canvas.getViewportPoint(opt.e);
+        const pointer = canvas.getScenePoint(opt.e);
         const txt = new IText('Text', {
           left: pointer.x,
           top: pointer.y,
@@ -478,7 +501,7 @@ const CanvasArea: React.FC = () => {
   }, [canvas, activeTool, history, setSelectedObject, setActiveTool]);
 
   return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+    <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
       <canvas ref={canvasRef} />
     </div>
   );

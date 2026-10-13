@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Modal, Tabs, Row, Col, Typography, Button, Tooltip } from 'antd';
+import { Modal, Tabs, Row, Col, Typography, Button, Tooltip, message } from 'antd';
 import { EyeOutlined, EyeInvisibleOutlined, AimOutlined } from '@ant-design/icons';
 import { CameraRawSettings, applyCameraRawPipeline } from '../../utils/cameraRawHelpers';
 import HslPanel from './HslPanel';
@@ -24,6 +24,8 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
   onApply,
   sourceCanvas,
 }) => {
+  const applyTimer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => { clearTimeout(applyTimer.current); }, []);
   const [loading, setLoading] = useState(false);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const [showBefore, setShowBefore] = useState(false);
@@ -163,7 +165,8 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
     if (!sourceCanvas) return;
     setLoading(true);
 
-    setTimeout(() => {
+    applyTimer.current = setTimeout(() => {
+      try {
       const tempCanvas = document.createElement('canvas');
       tempCanvas.width = sourceCanvas.width;
       tempCanvas.height = sourceCanvas.height;
@@ -180,7 +183,8 @@ const CameraRawModal: React.FC<CameraRawModalProps> = ({
       ctx.putImageData(imageData, 0, 0);
 
       onApply(tempCanvas);
-      setLoading(false);
+      } catch { message.error('Unable to apply Camera Raw'); }
+      finally { setLoading(false); }
     }, 100);
   };
 

@@ -58,6 +58,8 @@ class ImageProcessingService {
           task.reject(new Error('Worker error'));
         });
         this.pendingTasks.clear();
+        this.worker?.terminate();
+        this.worker = null;
       };
     }
 
@@ -208,6 +210,7 @@ class ImageProcessingService {
     if (this.worker) {
       this.worker.terminate();
       this.worker = null;
+      this.pendingTasks.forEach(task => task.reject(new Error('Processing cancelled')));
       this.pendingTasks.clear();
     }
   }

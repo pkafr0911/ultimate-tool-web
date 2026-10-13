@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Space, Divider } from 'antd';
-import { IText, FabricImage, Point } from 'fabric';
+import { Space, Divider, message } from 'antd';
+import { IText, FabricImage, Point, Rect } from 'fabric';
+import { serializeDocument, renderDocument, loadDocument, documentSize, setDocumentSize, isTypingTarget, isEditable, isDocumentLoading } from '../../utils/document';
 import { usePhotoEditor } from '../../context';
 import { useProjects } from '../../hooks/useProjects';
 import { photoEditorMessages } from '../../hooks/useNotification';
@@ -11,7 +12,7 @@ import ToolbarHistory from './ToolbarHistory';
 import ToolbarProject from './ToolbarProject';
 
 const Toolbar: React.FC = () => {
-  const { canvas, setActiveTool, activeTool, history, selectedObject, clipboard, setClipboard } =
+  const { canvas, isBusy, initialProject, setActiveTool, activeTool, history, selectedObject, clipboard, setClipboard } =
     usePhotoEditor();
   const prevToolRef = useRef<string | null>(null);
   const spacePressedRef = useRef(false);
@@ -24,32 +25,36 @@ const Toolbar: React.FC = () => {
   const [cropModalVisible, setCropModalVisible] = useState(false);
   const [blurBrushVisible, setBlurBrushVisible] = useState(false);
 
-  const { savedProjects, saveProject, deleteProject, loadProjectIntoEditor, clearCurrentProject } =
+  const { savedProjects, saveProject, deleteProject, loadProjectIntoEditor, clearCurrentProject, setCurrentProject } =
     useProjects();
+
+  useEffect(() => { if (initialProject) setCurrentProject(initialProject); }, [initialProject]);
 
   const handleSaveProject = () => {
     if (!canvas) return;
-    const json = canvas.toJSON();
-    const preview = canvas.toDataURL({ format: 'png', multiplier: 0.5 });
+    const json = serializeDocument(canvas);
+    const preview = renderDocument(canvas, Math.min(1, 256 / Math.max(json.documentWidth, json.documentHeight))).toDataURL();
     saveProject(preview, json);
-    photoEditorMessages.projectSaved();
+
   };
 
   const handleLoadProject = (project: any) => {
     if (!canvas) return;
-    canvas.loadFromJSON(project.json).then(() => {
+    loadDocument(canvas, project.json).then(() => {
       canvas.renderAll();
       loadProjectIntoEditor(project);
       setProjectModalVisible(false);
       history.saveState();
       photoEditorMessages.projectLoaded();
-    });
+    }).catch(() => message.error('Unable to load project'));
   };
 
   const newProject = () => {
     if (!canvas) return;
     canvas.discardActiveObject();
     canvas.clear();
+    const size = documentSize(canvas);
+    setDocumentSize(canvas, size.width, size.height);
     history.saveState();
     clearCurrentProject();
     photoEditorMessages.canvasCleared();
@@ -58,6 +63,7 @@ const Toolbar: React.FC = () => {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isBusy || isTypingTarget(e.target) || (e.target as HTMLElement)?.closest('.ant-modal') || (canvas && isDocumentLoading(canvas))) return;
       // Ignore if typing in an input or textarea
       if (
         (e.target as HTMLElement).tagName === 'INPUT' ||
@@ -85,23 +91,27 @@ const Toolbar: React.FC = () => {
         return;
       }
 
-      if (e.key === 'v' || e.key === 'V') setActiveTool('select');
-      if (e.key === 'h' || e.key === 'H') setActiveTool('hand');
-      if (e.key === 'b' || e.key === 'B') setActiveTool('brush');
+      const plain = !e.ctrlKey && !e.metaKey && !e.altKey;
+      if (plain && (e.key === 'v' || e.key === 'V')) setActiveTool('select');
+      if (plain && (e.key === 'h' || e.key === 'H')) setActiveTool('hand');
+      if (plain && (e.key === 'b' || e.key === 'B')) setActiveTool('brush');
       if (e.key === 'c' || e.key === 'C') {
         if (!(e.ctrlKey || e.metaKey)) {
           setCropModalVisible(true);
         }
       }
-      if (e.key === 'm' || e.key === 'M') {
+      if (plain && (e.key === 'm' || e.key === 'M')) {
         if (selectedObject instanceof FabricImage) setMaskModalVisible(true);
       }
-      if (e.key === 't' || e.key === 'T') setActiveTool('text');
+      if (plain && e.key.toLowerCase() === 'r' && canvas) { const rect = new Rect({ left: 100, top: 100, width: 100, height: 100, fill: '#ff0000' }); canvas.add(rect); canvas.setActiveObject(rect); history.saveState(); }
+      if (plain && (e.key === 't' || e.key === 'T')) setActiveTool('text');
 
+      if (e.key === 'Escape') { canvas?.discardActiveObject(); setActiveTool('select'); canvas?.requestRenderAll(); }
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (!canvas) return;
-        const activeObjects = canvas.getActiveObjects();
+        const activeObjects = canvas.getActiveObjects().filter(isEditable);
         if (activeObjects.length) {
+          e.preventDefault();
           canvas.discardActiveObject();
           activeObjects.forEach((obj) => {
             canvas.remove(obj);
@@ -123,12 +133,12 @@ const Toolbar: React.FC = () => {
         history.redo();
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 's') {
         e.preventDefault();
         handleSaveProject();
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 's') {
         e.preventDefault();
         setExportModalVisible(true);
       }
@@ -151,13 +161,16 @@ const Toolbar: React.FC = () => {
       }
     };
 
+    const resetPan = () => { if (spacePressedRef.current) { spacePressedRef.current = false; setActiveTool(prevToolRef.current || 'select'); prevToolRef.current = null; } };
+    window.addEventListener('blur', resetPan);
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     return () => {
+      window.removeEventListener('blur', resetPan);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [canvas, selectedObject, history, activeTool, clipboard]);
+  }, [canvas, isBusy, selectedObject, history, activeTool, clipboard]);
 
   // Hand/pan tool effect
   useEffect(() => {
@@ -170,9 +183,9 @@ const Toolbar: React.FC = () => {
     const startPan = (opt: any) => {
       if (activeTool !== 'hand') return;
       isPanning = true;
-      const e = opt.e as MouseEvent;
-      lastX = e.clientX;
-      lastY = e.clientY;
+      const point = canvas.getViewportPoint(opt.e);
+      lastX = point.x;
+      lastY = point.y;
       try {
         canvas.discardActiveObject();
       } catch (err) {
@@ -181,16 +194,16 @@ const Toolbar: React.FC = () => {
       canvas.requestRenderAll();
       canvas.defaultCursor = 'grabbing';
       document.body.style.cursor = 'grabbing';
-      canvas.forEachObject((o) => (o.evented = false));
+
     };
 
     const movePan = (opt: any) => {
       if (!isPanning || activeTool !== 'hand') return;
-      const e = opt.e as MouseEvent;
-      const dx = e.clientX - lastX;
-      const dy = e.clientY - lastY;
-      lastX = e.clientX;
-      lastY = e.clientY;
+      const point = canvas.getViewportPoint(opt.e);
+      const dx = point.x - lastX;
+      const dy = point.y - lastY;
+      lastX = point.x;
+      lastY = point.y;
       canvas.relativePan(new Point(dx, dy));
       canvas.requestRenderAll();
     };
@@ -200,7 +213,7 @@ const Toolbar: React.FC = () => {
       isPanning = false;
       canvas.defaultCursor = 'default';
       document.body.style.cursor = 'default';
-      canvas.forEachObject((o) => (o.evented = true));
+
     };
 
     canvas.on('mouse:down', startPan);
@@ -211,11 +224,6 @@ const Toolbar: React.FC = () => {
       canvas.off('mouse:down', startPan);
       canvas.off('mouse:move', movePan);
       canvas.off('mouse:up', endPan);
-      try {
-        canvas.forEachObject((o) => (o.evented = true));
-      } catch (err) {
-        // ignore
-      }
       canvas.defaultCursor = 'default';
       document.body.style.cursor = 'default';
     };

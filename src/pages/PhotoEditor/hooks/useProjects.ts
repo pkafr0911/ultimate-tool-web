@@ -15,6 +15,8 @@ export const useProjects = () => {
 
   useEffect(() => {
     loadProjects();
+    window.addEventListener('photo-projects-changed', loadProjects);
+    return () => window.removeEventListener('photo-projects-changed', loadProjects);
   }, [loadProjects]);
 
   const saveProject = useCallback(
@@ -32,6 +34,7 @@ export const useProjects = () => {
 
       try {
         await saveProjectToDB(newProject);
+        window.dispatchEvent(new Event('photo-projects-changed'));
 
         // Update local state
         setSavedProjects((prev) => {
@@ -57,6 +60,7 @@ export const useProjects = () => {
   const deleteProject = useCallback(async (id: string) => {
     try {
       await deleteProjectFromDB(id);
+      window.dispatchEvent(new Event('photo-projects-changed'));
       setSavedProjects((prev) => prev.filter((p) => p.id !== id));
       // If the deleted project is currently loaded, clear it so editor doesn't reference it
       setCurrentProject((cur) => (cur && cur.id === id ? null : cur));

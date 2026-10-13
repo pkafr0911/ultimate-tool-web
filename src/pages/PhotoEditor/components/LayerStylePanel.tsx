@@ -1,6 +1,7 @@
 import React from 'react';
 import { ColorPicker, Slider, InputNumber, Typography, Space, Row, Col } from 'antd';
 import { usePhotoEditor } from '../context';
+import { isEditable } from '../utils/document';
 import { FabricObject } from 'fabric';
 
 const { Title, Text } = Typography;
@@ -12,7 +13,9 @@ const LayerStylePanel: React.FC = () => {
 
   // Helper to update object properties
   const updateProperty = (key: keyof FabricObject, value: any) => {
+    if (!isEditable(selectedObject)) return;
     selectedObject.set(key, value);
+    selectedObject.setCoords();
     canvas.requestRenderAll();
     history.saveState();
   };

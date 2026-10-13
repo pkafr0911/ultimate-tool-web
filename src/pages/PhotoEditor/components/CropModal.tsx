@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Modal, InputNumber, Button, Space, Select, Checkbox, message } from 'antd';
+import { cropDocument, documentSize, renderDocument } from '../utils/document';
 import { Canvas as FabricCanvas } from 'fabric';
 import { photoEditorMessages } from '../hooks/useNotification';
 
@@ -24,8 +25,8 @@ const CropModal: React.FC<CropModalProps> = ({ visible, onCancel, canvas, histor
   useEffect(() => {
     if (visible && canvas) {
       // Initialize crop area to full canvas
-      const width = canvas.getWidth();
-      const height = canvas.getHeight();
+      const width = documentSize(canvas).width;
+      const height = documentSize(canvas).height;
       setCropArea({ x: 0, y: 0, width, height });
       setAspectRatio(null);
       setLockRatio(false);
@@ -40,13 +41,13 @@ const CropModal: React.FC<CropModalProps> = ({ visible, onCancel, canvas, histor
     if (!ctx) return;
 
     // Set preview canvas size
-    const canvasWidth = canvas.getWidth();
-    const canvasHeight = canvas.getHeight();
+    const canvasWidth = documentSize(canvas).width;
+    const canvasHeight = documentSize(canvas).height;
     previewCanvas.width = canvasWidth;
     previewCanvas.height = canvasHeight;
 
     // Draw the current canvas state - use lowerCanvasEl for Fabric.js 6
-    const canvasElement = canvas.lowerCanvasEl as HTMLCanvasElement;
+    const canvasElement = renderDocument(canvas);
     ctx.drawImage(canvasElement, 0, 0);
 
     // Draw crop overlay
@@ -123,8 +124,8 @@ const CropModal: React.FC<CropModalProps> = ({ visible, onCancel, canvas, histor
     const rect = previewCanvasRef.current?.getBoundingClientRect();
     if (!rect) return;
 
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) * previewCanvasRef.current!.width / rect.width;
+    const y = (e.clientY - rect.top) * previewCanvasRef.current!.height / rect.height;
 
     const handle = getHandleAtPosition(x, y);
     if (handle) {
@@ -141,8 +142,8 @@ const CropModal: React.FC<CropModalProps> = ({ visible, onCancel, canvas, histor
     const rect = previewCanvasRef.current?.getBoundingClientRect();
     if (!rect) return;
 
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) * previewCanvasRef.current!.width / rect.width;
+    const y = (e.clientY - rect.top) * previewCanvasRef.current!.height / rect.height;
 
     if (resizeHandle) {
       const dx = x - dragStart.x;
@@ -201,18 +202,18 @@ const CropModal: React.FC<CropModalProps> = ({ visible, onCancel, canvas, histor
 
       // Ensure minimum size and bounds
       if (newCrop.width > 10 && newCrop.height > 10) {
-        newCrop.x = Math.max(0, Math.min(newCrop.x, canvas.getWidth() - newCrop.width));
-        newCrop.y = Math.max(0, Math.min(newCrop.y, canvas.getHeight() - newCrop.height));
+        newCrop.x = Math.max(0, Math.min(newCrop.x, documentSize(canvas).width - newCrop.width));
+        newCrop.y = Math.max(0, Math.min(newCrop.y, documentSize(canvas).height - newCrop.height));
 
         // Ensure width and height don't exceed canvas bounds
-        if (newCrop.x + newCrop.width > canvas.getWidth()) {
-          newCrop.width = canvas.getWidth() - newCrop.x;
+        if (newCrop.x + newCrop.width > documentSize(canvas).width) {
+          newCrop.width = documentSize(canvas).width - newCrop.x;
           if (lockRatio && aspectRatio) {
             newCrop.height = newCrop.width / aspectRatio;
           }
         }
-        if (newCrop.y + newCrop.height > canvas.getHeight()) {
-          newCrop.height = canvas.getHeight() - newCrop.y;
+        if (newCrop.y + newCrop.height > documentSize(canvas).height) {
+          newCrop.height = documentSize(canvas).height - newCrop.y;
           if (lockRatio && aspectRatio) {
             newCrop.width = newCrop.height * aspectRatio;
           }
@@ -229,8 +230,8 @@ const CropModal: React.FC<CropModalProps> = ({ visible, onCancel, canvas, histor
       let newY = cropArea.y + dy;
 
       // Keep within bounds
-      newX = Math.max(0, Math.min(newX, canvas.getWidth() - cropArea.width));
-      newY = Math.max(0, Math.min(newY, canvas.getHeight() - cropArea.height));
+      newX = Math.max(0, Math.min(newX, documentSize(canvas).width - cropArea.width));
+      newY = Math.max(0, Math.min(newY, documentSize(canvas).height - cropArea.height));
 
       setCropArea({ ...cropArea, x: newX, y: newY });
       setDragStart({ x, y });
@@ -257,47 +258,10 @@ const CropModal: React.FC<CropModalProps> = ({ visible, onCancel, canvas, histor
     history.saveState();
 
     try {
-      // Get all objects with their full data including custom properties
-      const canvasJSON = canvas.toJSON();
-      const objects = canvasJSON.objects || [];
-
-      // Get canvas background color
-      const bgColor = canvas.backgroundColor || '#ffffff';
-
-      // Clear the canvas
-      canvas.clear();
-      canvas.setDimensions({ width: cropArea.width, height: cropArea.height });
-      canvas.set('backgroundColor', bgColor);
-
-      // Adjust all objects' positions relative to the crop
-      objects.forEach((objData: any) => {
-        // Offset positions
-        if (objData.left !== undefined) objData.left -= cropArea.x;
-        if (objData.top !== undefined) objData.top -= cropArea.y;
-
-        // For groups and active selections, offset the objects inside
-        if (objData.objects && Array.isArray(objData.objects)) {
-          objData.objects.forEach((innerObj: any) => {
-            if (innerObj.left !== undefined) innerObj.left -= cropArea.x;
-            if (innerObj.top !== undefined) innerObj.top -= cropArea.y;
-          });
-        }
-      });
-
-      // Reload objects into canvas with proper custom properties
-      canvas.loadFromJSON(
-        {
-          version: canvasJSON.version || '5.3.0',
-          objects,
-        },
-        () => {
-          canvas.renderAll();
-          // Save state after cropping
-          history.saveState();
-          message.success('Canvas cropped successfully');
-          onCancel();
-        },
-      );
+      cropDocument(canvas, cropArea);
+      history.saveState('Crop document');
+      message.success('Canvas cropped successfully');
+      onCancel();
     } catch (error) {
       console.error('Crop error:', error);
       photoEditorMessages.operationFailed('Crop');
@@ -340,7 +304,7 @@ const CropModal: React.FC<CropModalProps> = ({ visible, onCancel, canvas, histor
 
       // Adjust current crop area to match ratio
       const newHeight = cropArea.width / ratio;
-      if (newHeight <= (canvas?.getHeight() || 0)) {
+      if (newHeight <= (canvas ? documentSize(canvas).height : 0)) {
         setCropArea({ ...cropArea, height: newHeight });
       } else {
         const newWidth = cropArea.height * ratio;
@@ -401,7 +365,7 @@ const CropModal: React.FC<CropModalProps> = ({ visible, onCancel, canvas, histor
               <Option value="3:4">3:4 (Portrait)</Option>
               <Option value="2:3">2:3 (Portrait)</Option>
             </Select>
-            <Checkbox checked={lockRatio} onChange={(e) => setLockRatio(e.target.checked)}>
+            <Checkbox checked={lockRatio} onChange={(e) => { setLockRatio(e.target.checked); if (e.target.checked && !aspectRatio) setAspectRatio(cropArea.width / cropArea.height); }}>
               Lock
             </Checkbox>
           </Space>
@@ -409,21 +373,21 @@ const CropModal: React.FC<CropModalProps> = ({ visible, onCancel, canvas, histor
             <span>X:</span>
             <InputNumber
               min={0}
-              max={canvas?.getWidth() || 0}
+              max={canvas ? documentSize(canvas).width : 0}
               value={Math.round(cropArea.x)}
               onChange={(val) => setCropArea({ ...cropArea, x: val || 0 })}
             />
             <span>Y:</span>
             <InputNumber
               min={0}
-              max={canvas?.getHeight() || 0}
+              max={canvas ? documentSize(canvas).height : 0}
               value={Math.round(cropArea.y)}
               onChange={(val) => setCropArea({ ...cropArea, y: val || 0 })}
             />
             <span>Width:</span>
             <InputNumber
               min={1}
-              max={canvas?.getWidth() || 0}
+              max={canvas ? documentSize(canvas).width : 0}
               value={Math.round(cropArea.width)}
               onChange={(val) => {
                 const newWidth = val || 1;
@@ -437,7 +401,7 @@ const CropModal: React.FC<CropModalProps> = ({ visible, onCancel, canvas, histor
             <span>Height:</span>
             <InputNumber
               min={1}
-              max={canvas?.getHeight() || 0}
+              max={canvas ? documentSize(canvas).height : 0}
               value={Math.round(cropArea.height)}
               onChange={(val) => {
                 const newHeight = val || 1;
