@@ -1728,3 +1728,306 @@
   padding-block: 0px;
   padding-inline: 0px;
 }
+
+// Neural Core: retain the supporting homepage content in a compact editorial layout.
+.container {
+  .statsSection,
+  .howItWorksSection {
+    padding: 64px 5%;
+    max-width: 1440px;
+  }
+  .statsSectionTitle,
+  .howItWorksHeader h2,
+  .quickAccessHeader h2,
+  .horizontalHeader h2 {
+    font-size: clamp(26px, 3vw, 40px);
+    font-weight: 550;
+    letter-spacing: -0.04em;
+  }
+  .statsSectionSubtitle,
+  .howItWorksHeader p,
+  .quickAccessHeader p {
+    font-size: 14px;
+  }
+  .statsGrid {
+    gap: 14px;
+  }
+  .statCard,
+  .stepCard {
+    border-radius: 10px;
+    padding: 28px 24px;
+    backdrop-filter: none;
+  }
+  .statNumber {
+    font-size: 42px;
+    background-image: linear-gradient(120deg, #63bdcf, #8579d8) !important;
+  }
+  .statLabel {
+    font-size: 13px;
+  }
+  .statDesc {
+    font-size: 11px;
+  }
+  .sectionEyebrow {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--nc-accent);
+    font:
+      10px Consolas,
+      monospace;
+    letter-spacing: 0.12em;
+  }
+  .scrollRevealSection {
+    min-height: 0;
+    padding: 65px 8%;
+  }
+  .scrollRevealText {
+    font-size: clamp(25px, 3vw, 42px);
+    font-weight: 550;
+    letter-spacing: -0.035em;
+  }
+  .featureHighlightSection {
+    min-height: 0;
+    margin: 0;
+    padding: 50px 5%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    border-radius: 0;
+    backdrop-filter: none;
+  }
+  .featureTextBlock {
+    min-height: 0;
+    opacity: 1;
+    justify-content: start;
+    padding: 24px;
+    border: 1px solid var(--nc-line);
+    border-radius: 10px;
+    background: var(--nc-surface);
+  }
+  .featureTextBlock h2 {
+    font-size: 21px;
+    margin: 20px 0 14px;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--nc-text);
+  }
+  .featureTextBlock p {
+    font-size: 12px;
+    line-height: 1.9;
+    flex: 1;
+  }
+  .featureTextBlock img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-top: 18px;
+    filter: saturate(0.45);
+  }
+  .stepsContainer {
+    gap: 16px;
+  }
+  .howItWorksHeader {
+    margin-bottom: 32px;
+  }
+  .stepCard h3 {
+    font-size: 18px;
+  }
+  .stepCard p {
+    font-size: 12px;
+  }
+  .stepIcon {
+    font-size: 26px;
+  }
+  .velocitySection {
+    padding: 35px 5%;
+    gap: 8px;
+    border-block: 1px solid var(--nc-line);
+  }
+  .velocityText {
+    font-size: clamp(16px, 3vw, 36px);
+    letter-spacing: -0.02em;
+    font-weight: 550;
+    animation: none;
+    background-image: linear-gradient(90deg, #72bfd0, #9384cf);
+  }
+  .velocityTextOutline {
+    background: none;
+    opacity: 0.6;
+    -webkit-text-stroke: 0;
+    -webkit-text-fill-color: var(--nc-muted);
+  }
+  .horizontalSection {
+    height: auto;
+    padding: 60px 5%;
+  }
+  .horizontalWrapper {
+    height: auto;
+    position: static;
+    padding: 0;
+    overflow: visible;
+  }
+  .horizontalHeader {
+    margin-bottom: 28px;
+  }
+  .horizontalTrack {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding: 0;
+    gap: 12px;
+  }
+  .horizontalCard {
+    width: auto;
+    min-height: 220px;
+    padding: 24px 18px;
+    border-radius: 10px;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  .horizontalCardIcon {
+    font-size: 28px;
+    margin-bottom: 15px;
+  }
+  .horizontalCardName {
+    font-size: 13px;
+  }
+  .horizontalCardDesc {
+    font-size: 11px;
+  }
+  .horizontalCardAccentBar {
+    opacity: 0.5;
+    height: 1px;
+  }
+  .quickAccessSection {
+    max-width: none;
+    padding: 40px 5% 70px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .quickAccessHeader {
+    grid-column: 1 / -1;
+    margin-bottom: 15px;
+  }
+  .cardContainer {
+    position: static;
+    height: auto;
+    margin: 0;
+  }
+  .folderGrip {
+    padding: 0;
+  }
+  .folderTab,
+  .fileEar,
+  .folderLines,
+  .fileRulings {
+    display: none;
+  }
+  .card {
+    border-radius: 10px;
+    padding: 28px 20px;
+    background: var(--nc-surface) !important;
+    border: 1px solid var(--nc-line);
+    color: var(--nc-text);
+    box-shadow: none;
+  }
+  .card h2 {
+    font-size: 19px;
+    color: var(--nc-text);
+  }
+  .card p {
+    font-size: 12px;
+    color: var(--nc-muted);
+  }
+  .cardIcon {
+    font-size: 26px;
+  }
+  .footer {
+    border-radius: 0;
+    background: var(--nc-bg);
+    border-top: 1px solid var(--nc-line);
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .footer h2 {
+    font-size: clamp(30px, 4vw, 52px);
+    color: var(--nc-text);
+    font-weight: 550;
+    letter-spacing: -0.04em;
+  }
+  .footerSubtitle,
+  .footerNote {
+    color: var(--nc-muted);
+  }
+  .footerSubtitle {
+    font-size: 14px;
+  }
+  .toolsMarqueeSection {
+    padding: 55px 0;
+    gap: 12px;
+  }
+  .marqueeHeader h2 {
+    font-size: 30px;
+    background: none;
+    -webkit-text-fill-color: var(--nc-text);
+    letter-spacing: -0.03em;
+  }
+  .marqueeHeader p {
+    font-size: 12px;
+  }
+  .marqueeRow {
+    overflow-x: auto;
+    mask-image: none;
+    -webkit-mask-image: none;
+    scrollbar-width: thin;
+    padding-inline: 5%;
+  }
+  .marqueeTrack {
+    gap: 12px;
+    padding: 4px 0 12px;
+  }
+  .marqueeCard {
+    border-radius: 8px;
+    backdrop-filter: none;
+  }
+  .catBtn {
+    background: #b8eff5;
+    color: #102231;
+    border: 0;
+    box-shadow: none;
+    font-size: 14px;
+    padding: 15px 30px;
+    border-radius: 7px;
+  }
+  .catPawLeft,
+  .catPawRight {
+    display: none;
+  }
+  @media (max-width: 900px) {
+    .featureHighlightSection {
+      grid-template-columns: 1fr;
+    }
+    .horizontalTrack {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .quickAccessSection {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 480px) {
+    .statsGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .statCard {
+      padding: 24px 12px;
+    }
+    .statNumber {
+      font-size: 32px;
+    }
+    .horizontalTrack,
+    .quickAccessSection {
+      grid-template-columns: 1fr;
+    }
+  }
+}

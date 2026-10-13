@@ -1,5 +1,5 @@
-import React, { useMemo, useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import React, { useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { history } from 'umi';
 import styles from '../styles.less';
 import { pages } from '@/constants';
@@ -14,14 +14,6 @@ const FEATURED_PATHS = [
 ];
 
 const HorizontalShowcase: React.FC = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start start', 'end end'],
-  });
-
-  const x = useTransform(scrollYProgress, [0, 1], ['2%', '-55%']);
-
   const featuredTools = useMemo(
     () =>
       FEATURED_PATHS.map((p) => pages.find((page) => page.path === p)).filter(Boolean) as Array<
@@ -31,13 +23,13 @@ const HorizontalShowcase: React.FC = () => {
   );
 
   return (
-    <section ref={containerRef} className={styles.horizontalSection} aria-label="Featured tools">
+    <section className={styles.horizontalSection} aria-label="Featured tools">
       <div className={styles.horizontalWrapper}>
         <div className={styles.horizontalHeader}>
           <span className={styles.sectionEyebrow}>Featured tools</span>
           <h2>Explore the Collection</h2>
         </div>
-        <motion.div className={styles.horizontalTrack} style={{ x, willChange: 'transform' }}>
+        <motion.div className={styles.horizontalTrack}>
           {featuredTools.map((tool, i) => {
             const accent = getToolAccent(tool.path);
             const go = () => history.push(tool.path);

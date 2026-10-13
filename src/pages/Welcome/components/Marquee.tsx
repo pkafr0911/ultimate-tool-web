@@ -61,7 +61,7 @@ export const MarqueeCard = ({ item }: { item: any }) => {
             <h3>{item.title}</h3>
             {item.desc && <p>{item.desc}</p>}
             {item.button && (
-              <button className={styles.marqueeBtn} tabIndex={-1}>
+              <button type="button" className={styles.marqueeBtn} tabIndex={-1}>
                 {item.button}
               </button>
             )}
@@ -74,32 +74,18 @@ export const MarqueeCard = ({ item }: { item: any }) => {
 
 export const MarqueeRow = ({
   items,
-  direction = 'left',
-  speed = 20,
 }: {
   items: any[];
   direction?: 'left' | 'right';
   speed?: number;
 }) => {
-  const duplicatedItems = [...items, ...items, ...items];
-
   return (
-    <div className={styles.marqueeRow}>
-      <motion.div
-        className={styles.marqueeTrack}
-        initial={{ x: direction === 'left' ? '0%' : '-33.33%' }}
-        animate={{ x: direction === 'left' ? ['0%', '-33.33%'] : ['-33.33%', '0%'] }}
-        transition={{
-          duration: speed,
-          ease: 'linear',
-          repeat: Infinity,
-        }}
-        style={{ willChange: 'transform' }}
-      >
-        {duplicatedItems.map((item, index) => (
+    <div className={styles.marqueeRow} tabIndex={0} aria-label="Scroll to browse more tools">
+      <div className={styles.marqueeTrack}>
+        {items.map((item, index) => (
           <MarqueeCard key={`${index}-${item.title}`} item={item} />
         ))}
-      </motion.div>
+      </div>
     </div>
   );
 };

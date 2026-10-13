@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
+import { motion, useScroll, useTransform, MotionValue, useReducedMotion } from 'framer-motion';
 import styles from '../styles.less';
 
 interface ScrollTextRevealProps {
@@ -15,11 +15,15 @@ const Word = ({
   progress: MotionValue<number>;
   range: [number, number];
 }) => {
+  const reducedMotion = useReducedMotion();
   const opacity = useTransform(progress, range, [0.12, 1]);
   const y = useTransform(progress, range, [8, 0]);
 
   return (
-    <motion.span className={styles.scrollRevealWord} style={{ opacity, y }}>
+    <motion.span
+      className={styles.scrollRevealWord}
+      style={reducedMotion ? { opacity: 1 } : { opacity, y }}
+    >
       {children}
     </motion.span>
   );

@@ -1,4 +1,5 @@
 import { disable, enable, setFetchMethod } from 'darkreader';
+import { neuralThemeFixes } from '@/pages/Welcome/themeFixes';
 import { useEffect, useState } from 'react';
 
 setFetchMethod(window.fetch);
@@ -15,11 +16,14 @@ export const useDarkMode = () => {
     localStorage.setItem('dark-mode', String(darkMode));
 
     if (darkMode) {
-      enable({
-        brightness: 100,
-        contrast: 90,
-        sepia: 10,
-      });
+      enable(
+        {
+          brightness: 100,
+          contrast: 90,
+          sepia: 10,
+        },
+        neuralThemeFixes,
+      );
       document.body.classList.add('dark-mode');
     } else {
       disable();
