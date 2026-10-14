@@ -179,6 +179,12 @@ export default [
     icon: '🎮',
     routes: [
       {
+        path: '/game/pocket-mini-golf',
+        name: 'pocket-mini-golf',
+        icon: '⛳',
+        component: './PocketGolf',
+      },
+      {
         path: '/game/tic-tac-toe',
         name: 'tic-tac-toe',
         icon: '❌',

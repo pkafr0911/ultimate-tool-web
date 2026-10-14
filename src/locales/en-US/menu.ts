@@ -45,6 +45,7 @@ export default {
 
   // Game
   'menu.game': 'Game',
+  'menu.game.pocket-mini-golf': 'Pocket Mini Golf',
   'menu.game.tic-tac-toe': 'Tic-Tac-Toe',
   'menu.game.snake-xenzia': 'Snake Xenzia',
   'menu.game.minesweeper': 'Minesweeper',

@@ -38,7 +38,8 @@
     "test:update": "npm run jest -- -u",
     "tsc": "tsc --noEmit",
     "test:photo-editor": "jest --config jest.photo-editor.config.cjs --runInBand",
-    "test:photo-editor:browser": "node tests/photo-editor/browser.cjs"
+    "test:photo-editor:browser": "node tests/photo-editor/browser.cjs",
+    "test:pocket-golf": "ts-node --project src/pages/PocketGolf/tsconfig.test.json src/pages/PocketGolf/physics.test.ts"
   },
   "browserslist": [
     "defaults"

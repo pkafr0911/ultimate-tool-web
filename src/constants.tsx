@@ -304,6 +304,16 @@ export const pages = [
 
   // Game
   {
+    name: 'Pocket Mini Golf',
+    path: '/game/pocket-mini-golf',
+    icon: (
+      <span role="img" aria-label="Golf">
+        ⛳
+      </span>
+    ),
+    desc: 'Play six handcrafted garden holes with 3D putting, bank shots, and saved scores.',
+  },
+  {
     name: 'Tic-Tac-Toe',
     path: '/game/tic-tac-toe',
     icon: <TicTacToeIcon />,
