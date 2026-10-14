@@ -101,22 +101,81 @@ test.each([
 
 test('pointer conversion accounts for CSS scaling, preview zoom and offset', () => {
   const { getCanvasCoords } = require('../utils/brushHelpers');
-  const ref = { current: { width: 1000, height: 500, getBoundingClientRect: () => ({ left: 10, top: 20, width: 500, height: 250 }) } };
-  expect(getCanvasCoords({ clientX: 160, clientY: 120 }, ref, 2, { x: 100, y: 40 })).toEqual({ x: 100, y: 80 });
+  const ref = {
+    current: {
+      width: 1000,
+      height: 500,
+      getBoundingClientRect: () => ({ left: 10, top: 20, width: 500, height: 250 }),
+    },
+  };
+  expect(getCanvasCoords({ clientX: 160, clientY: 120 }, ref, 2, { x: 100, y: 40 })).toEqual({
+    x: 100,
+    y: 80,
+  });
 });
 test('neutral Camera Raw preserves pixels including fractional alpha', () => {
   const { applyCameraRawPipeline } = require('../utils/cameraRawHelpers');
-  const curves = [{x:0,y:0},{x:255,y:255}];
-  const data = { data: new Uint8ClampedArray([128,64,32,128,0,0,0,0,255,255,255,255]), width:3,height:1 };
+  const curves = [
+    { x: 0, y: 0 },
+    { x: 255, y: 255 },
+  ];
+  const data = {
+    data: new Uint8ClampedArray([128, 64, 32, 128, 0, 0, 0, 0, 255, 255, 255, 255]),
+    width: 3,
+    height: 1,
+  };
   const before = [...data.data];
-  applyCameraRawPipeline(data, { hsl:{},curves:{master:curves,red:curves,green:curves,blue:curves},colorGrading:{shadows:{h:0,s:0,l:0},midtones:{h:0,s:0,l:0},highlights:{h:0,s:0,l:0},blending:.5,balance:0,temperature:0,tint:0}});
+  applyCameraRawPipeline(data, {
+    hsl: {},
+    curves: { master: curves, red: curves, green: curves, blue: curves },
+    colorGrading: {
+      shadows: { h: 0, s: 0, l: 0 },
+      midtones: { h: 0, s: 0, l: 0 },
+      highlights: { h: 0, s: 0, l: 0 },
+      blending: 0.5,
+      balance: 0,
+      temperature: 0,
+      tint: 0,
+    },
+  });
   expect([...data.data]).toEqual(before);
 });
 
 test('manual mask Keep overrides automatic removal; neutral does not alter alpha', () => {
   const { combineMaskAlpha } = require('../utils/effectsHelpers');
-  expect(combineMaskAlpha(0,255)).toBe(255);
-  expect(combineMaskAlpha(100,128)).toBe(100);
-  expect(combineMaskAlpha(255,0)).toBe(0);
-  expect(combineMaskAlpha(0,192)).toBe(129);
+  expect(combineMaskAlpha(0, 255)).toBe(255);
+  expect(combineMaskAlpha(100, 128)).toBe(100);
+  expect(combineMaskAlpha(255, 0)).toBe(0);
+  expect(combineMaskAlpha(0, 192)).toBe(129);
+});
+
+test('failed asset decoding restores automatic rendering and loading state', async () => {
+  const { isDocumentLoading } = require('../utils/document');
+  const canvas = mockCanvas();
+  canvas.fire = jest.fn() as any;
+  canvas.renderOnAddRemove = true;
+  canvas.loadFromJSON = jest.fn(async () => {
+    canvas.renderOnAddRemove = false;
+    throw new Error('bad image');
+  });
+  await expect(loadDocument(canvas, { objects: [] })).rejects.toThrow('bad image');
+  expect(canvas.renderOnAddRemove).toBe(true);
+  expect(isDocumentLoading(canvas)).toBe(false);
+  expect(canvas.fire).toHaveBeenLastCalledWith('document:loading', { loading: false });
+});
+test('project data cannot replace viewport or canvas configuration', async () => {
+  const canvas = mockCanvas();
+  canvas.fire = jest.fn() as any;
+  canvas.loadFromJSON = jest.fn(async () => canvas);
+  await loadDocument(canvas, {
+    objects: [],
+    documentWidth: 320,
+    documentHeight: 180,
+    width: 0,
+    viewportTransform: [0, 0, 0, 0, 0, 0],
+    renderOnAddRemove: false,
+  });
+  expect(canvas.loadFromJSON).toHaveBeenCalledWith({ objects: [] }, undefined, expect.anything());
+  expect(canvas.viewportTransform).toEqual([2, 0, 0, 2, 35, 47]);
+  expect(documentSize(canvas)).toEqual({ width: 320, height: 180 });
 });

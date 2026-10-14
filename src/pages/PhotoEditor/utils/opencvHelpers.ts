@@ -64,53 +64,55 @@ export const applyBlurWithMask = async (
     maskCanvas = tempMask;
   }
 
-  const src = cv.imread(sourceCanvas); // CV_8UC4
-  const maskColor = cv.imread(maskCanvas); // CV_8UC4 (white painted areas)
-  const mask = new cv.Mat();
+  const resources: { delete: () => void }[] = [];
+  const track = <T extends { delete: () => void }>(resource: T): T => {
+    resources.push(resource);
+    return resource;
+  };
+  try {
+    const src = track(cv.imread(sourceCanvas)); // CV_8UC4
+    const maskColor = track(cv.imread(maskCanvas)); // CV_8UC4 (white painted areas)
+    const mask = track(new cv.Mat());
 
-  // grayscale and threshold mask
-  cv.cvtColor(maskColor, mask, cv.COLOR_RGBA2GRAY);
-  cv.threshold(mask, mask, 10, 255, cv.THRESH_BINARY);
+    // grayscale and threshold mask
+    cv.cvtColor(maskColor, mask, cv.COLOR_RGBA2GRAY);
+    cv.threshold(mask, mask, 10, 255, cv.THRESH_BINARY);
 
-  // optional feather mask for smooth edges
-  if (maskFeather && maskFeather > 1) {
-    let f = Math.round(maskFeather);
-    if (f % 2 === 0) f += 1;
-    const kf = new cv.Size(f, f);
-    cv.GaussianBlur(mask, mask, kf, 0);
-  }
-
-  // ensure odd kernel for image blur
-  let k = Math.max(1, Math.floor(blurAmount));
-  if (k % 2 === 0) k += 1;
-  const ksize = new cv.Size(k, k);
-
-  const blurred = new cv.Mat();
-  cv.GaussianBlur(src, blurred, ksize, 0);
-
-  // Composition
-  const dst = src.clone();
-
-  // Preserve source alpha and blend continuously across feathered boundaries.
-  for (let i = 0; i < mask.data.length; i++) {
-    const amount = mask.data[i] / 255;
-    for (let channel = 0; channel < 3; channel++) {
-      const index = i * 4 + channel;
-      dst.data[index] = Math.round(src.data[index] * (1 - amount) + blurred.data[index] * amount);
+    // optional feather mask for smooth edges
+    if (maskFeather && maskFeather > 1) {
+      let f = Math.round(maskFeather);
+      if (f % 2 === 0) f += 1;
+      const kf = new cv.Size(f, f);
+      cv.GaussianBlur(mask, mask, kf, 0);
     }
+
+    // ensure odd kernel for image blur
+    let k = Math.max(1, Math.floor(blurAmount));
+    if (k % 2 === 0) k += 1;
+    const ksize = new cv.Size(k, k);
+
+    const blurred = track(new cv.Mat());
+    cv.GaussianBlur(src, blurred, ksize, 0);
+
+    // Composition
+    const dst = track(src.clone());
+
+    // Preserve source alpha and blend continuously across feathered boundaries.
+    for (let i = 0; i < mask.data.length; i++) {
+      const amount = mask.data[i] / 255;
+      for (let channel = 0; channel < 3; channel++) {
+        const index = i * 4 + channel;
+        dst.data[index] = Math.round(src.data[index] * (1 - amount) + blurred.data[index] * amount);
+      }
+    }
+
+    const out = document.createElement('canvas');
+    out.width = dst.cols;
+    out.height = dst.rows;
+    cv.imshow(out, dst);
+
+    return out;
+  } finally {
+    resources.reverse().forEach((resource) => resource.delete());
   }
-
-  const out = document.createElement('canvas');
-  out.width = dst.cols;
-  out.height = dst.rows;
-  cv.imshow(out, dst);
-
-  // cleanup
-  src.delete();
-  maskColor.delete();
-  mask.delete();
-  blurred.delete();
-  dst.delete();
-
-  return out;
 };

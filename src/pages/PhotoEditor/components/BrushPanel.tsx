@@ -1,5 +1,6 @@
+import { CustomSlider } from './CustomSlider';
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { ColorPicker, Slider, Typography, Space, Select, InputNumber, Tooltip, Tag } from 'antd';
+import { ColorPicker, Typography, Space, Select, Tooltip, Tag } from 'antd';
 import { CheckOutlined } from '@ant-design/icons';
 import { usePhotoEditor } from '../context';
 import { PencilBrush, CircleBrush, SprayBrush, PatternBrush, Shadow } from 'fabric';
@@ -177,7 +178,10 @@ function isLightColor(hex: string): boolean {
 const BrushPanel: React.FC = () => {
   const {
     canvas,
-    brushType, setBrushType, brushShadow: shadowWidth, setBrushShadow: setShadowWidth,
+    brushType,
+    setBrushType,
+    brushShadow: shadowWidth,
+    setBrushShadow: setShadowWidth,
     brushSize,
     setBrushSize,
     brushColor,
@@ -459,55 +463,32 @@ const BrushPanel: React.FC = () => {
             ))}
           </div>
         </div>
-        <div>
-          <Typography.Text
-            onMouseDown={handleWidthLabelMouseDown}
-            style={{ cursor: 'ew-resize', userSelect: 'none' }}
-          >
-            Width
-          </Typography.Text>
-          <br />
-          <InputNumber
-            min={1}
-            max={2000}
-            value={brushSize}
-            onChange={(v) => setBrushSize(Number(v || 1))}
-            style={{ width: '100%' }}
-          />
-        </div>
-        <div>
-          <Typography.Text
-            onMouseDown={handleOpacityLabelMouseDown}
-            style={{ cursor: 'ew-resize', userSelect: 'none' }}
-          >
-            Opacity
-          </Typography.Text>
-          <br />
-          <InputNumber
-            min={0}
-            max={1}
-            step={0.01}
-            value={brushOpacity}
-            onChange={(v) => setBrushOpacity(Number(v || 1))}
-            style={{ width: '100%' }}
-          />
-        </div>
-        <div>
-          <Typography.Text
-            onMouseDown={handleShadowLabelMouseDown}
-            style={{ cursor: 'ew-resize', userSelect: 'none' }}
-          >
-            Shadow Blur
-          </Typography.Text>
-          <br />
-          <InputNumber
-            min={0}
-            max={500}
-            value={shadowWidth}
-            onChange={(v) => setShadowWidth(Number(v || 0))}
-            style={{ width: '100%' }}
-          />
-        </div>
+        <CustomSlider
+          label="Width"
+          min={1}
+          max={2000}
+          value={brushSize}
+          onChange={setBrushSize}
+          onLabelMouseDown={handleWidthLabelMouseDown}
+        />
+        <CustomSlider
+          label="Opacity"
+          min={0}
+          max={1}
+          step={0.01}
+          value={brushOpacity}
+          onChange={setBrushOpacity}
+          onLabelMouseDown={handleOpacityLabelMouseDown}
+          gradient={`linear-gradient(to right, ${brushColor}00, ${brushColor})`}
+        />
+        <CustomSlider
+          label="Shadow Blur"
+          min={0}
+          max={500}
+          value={shadowWidth}
+          onChange={setShadowWidth}
+          onLabelMouseDown={handleShadowLabelMouseDown}
+        />
       </Space>
     </div>
   );

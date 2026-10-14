@@ -1,7 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { Canvas, FabricImage, PencilBrush, IText, Point, Color } from 'fabric';
 import { message } from 'antd';
-import { documentSize, setDocumentSize, loadDocument, isDocumentLoading } from '../utils/document';
+import {
+  documentSize,
+  setDocumentSize,
+  loadDocument,
+  cancelDocumentLoad,
+  isDocumentLoading,
+} from '../utils/document';
 import { usePhotoEditor } from '../context';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useSnappingGuides } from '../hooks/useSnappingGuides';
@@ -56,19 +62,29 @@ const CanvasArea: React.FC = () => {
     reader.onerror = () => message.error('Unable to read image');
     reader.onload = (f) => {
       const data = f.target?.result as string;
-      FabricImage.fromURL(data, { signal: controller.signal }).then((img) => {
-        if (controller.signal.aborted || canvas.disposed) return;
-        const size = documentSize(canvas);
-        img.scale(Math.min(1, 200 / img.width, size.width / img.width, size.height / img.height));
-        img.setPositionByOrigin(new Point(size.width / 2, size.height / 2), 'center', 'center');
-        canvas.add(img);
-        canvas.setActiveObject(img);
-        history.saveState();
-        if (setAddOnFile) setAddOnFile(null);
-      }).catch(() => { if (!controller.signal.aborted) { message.error('Unable to decode image'); setAddOnFile?.(null); } });
+      FabricImage.fromURL(data, { signal: controller.signal })
+        .then((img) => {
+          if (controller.signal.aborted || canvas.disposed) return;
+          const size = documentSize(canvas);
+          img.scale(Math.min(1, 200 / img.width, size.width / img.width, size.height / img.height));
+          img.setPositionByOrigin(new Point(size.width / 2, size.height / 2), 'center', 'center');
+          canvas.add(img);
+          canvas.setActiveObject(img);
+          history.saveState();
+          if (setAddOnFile) setAddOnFile(null);
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) {
+            message.error('Unable to decode image');
+            setAddOnFile?.(null);
+          }
+        });
     };
     reader.readAsDataURL(addOnFile);
-    return () => { controller.abort(); if (reader.readyState === FileReader.LOADING) reader.abort(); };
+    return () => {
+      controller.abort();
+      if (reader.readyState === FileReader.LOADING) reader.abort();
+    };
   }, [addOnFile, canvas]);
 
   // Sync brush settings
@@ -185,8 +201,8 @@ const CanvasArea: React.FC = () => {
       if (e.altKey && e.button === 0) {
         try {
           const rect = lower!.getBoundingClientRect();
-          const x = (e.clientX - rect.left) * lower!.width / rect.width;
-          const y = (e.clientY - rect.top) * lower!.height / rect.height;
+          const x = ((e.clientX - rect.left) * lower!.width) / rect.width;
+          const y = ((e.clientY - rect.top) * lower!.height) / rect.height;
 
           if (!lower) return;
           const ctx = lower.getContext('2d');
@@ -242,7 +258,12 @@ const CanvasArea: React.FC = () => {
           }
 
           const pixelRect = lower.getBoundingClientRect();
-          const pixel = ctx.getImageData((e.clientX - pixelRect.left) * lower.width / pixelRect.width, (e.clientY - pixelRect.top) * lower.height / pixelRect.height, 1, 1).data;
+          const pixel = ctx.getImageData(
+            ((e.clientX - pixelRect.left) * lower.width) / pixelRect.width,
+            ((e.clientY - pixelRect.top) * lower.height) / pixelRect.height,
+            1,
+            1,
+          ).data;
           const hex =
             '#' +
             [pixel[0], pixel[1], pixel[2]].map((v) => v.toString(16).padStart(2, '0')).join('');
@@ -323,8 +344,19 @@ const CanvasArea: React.FC = () => {
     const container = containerRef.current;
     const fitDocument = () => {
       const { width, height } = documentSize(fabricCanvas);
-      const zoom = Math.min(1, container.clientWidth * 0.9 / width, container.clientHeight * 0.9 / height);
-      fabricCanvas.setViewportTransform([zoom, 0, 0, zoom, (container.clientWidth - width * zoom) / 2, (container.clientHeight - height * zoom) / 2]);
+      const zoom = Math.min(
+        1,
+        (container.clientWidth * 0.9) / width,
+        (container.clientHeight * 0.9) / height,
+      );
+      fabricCanvas.setViewportTransform([
+        zoom,
+        0,
+        0,
+        zoom,
+        (container.clientWidth - width * zoom) / 2,
+        (container.clientHeight - height * zoom) / 2,
+      ]);
     };
     const initialize = async () => {
       try {
@@ -342,7 +374,8 @@ const CanvasArea: React.FC = () => {
         // Notify the current history subscription, not the mount-time null-canvas closure.
         latestHistory.current.saveState('Open document');
       } catch (error) {
-        if (!controller.signal.aborted) message.error('Unable to open image or project. The file may be invalid or too large.');
+        if (!controller.signal.aborted)
+          message.error('Unable to open image or project. The file may be invalid or too large.');
       }
     };
     void initialize();
@@ -365,7 +398,10 @@ const CanvasArea: React.FC = () => {
       isEditingRef.current = true;
       setActiveTool && setActiveTool('text');
     };
-    const onTextExit = () => { isEditingRef.current = false; setActiveTool('select'); };
+    const onTextExit = () => {
+      isEditingRef.current = false;
+      setActiveTool('select');
+    };
 
     fabricCanvas.on('text:editing:entered', onTextEnter);
     fabricCanvas.on('text:editing:exited', onTextExit);
@@ -424,6 +460,7 @@ const CanvasArea: React.FC = () => {
 
     return () => {
       controller.abort();
+      cancelDocumentLoad(fabricCanvas);
       void fabricCanvas.dispose();
       observer.disconnect();
       if (containerRef.current) {
@@ -472,7 +509,8 @@ const CanvasArea: React.FC = () => {
     const handleMouseDown = (opt: any) => {
       try {
         // If a text object is currently being edited, do not create a new text object
-        if (isEditingRef.current || isDocumentLoading(canvas) || opt.target instanceof IText) return;
+        if (isEditingRef.current || isDocumentLoading(canvas) || opt.target instanceof IText)
+          return;
 
         const pointer = canvas.getScenePoint(opt.e);
         const txt = new IText('Text', {

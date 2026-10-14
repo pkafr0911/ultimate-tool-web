@@ -1,5 +1,6 @@
+import { CustomSlider } from './CustomSlider';
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { Button, Tooltip, Radio, Slider, Space, Divider } from 'antd';
+import { Button, Tooltip, Radio, Space, Divider } from 'antd';
 import {
   BorderOutlined,
   RadiusSettingOutlined,
@@ -396,15 +397,12 @@ const SelectionTools: React.FC<SelectionToolsProps> = ({
             <Divider style={{ margin: '8px 0' }} />
 
             <div>
-              <div style={{ marginBottom: 4, fontSize: 12, color: '#666' }}>
-                Feather: {feather}px
-              </div>
-              <Slider
+              <CustomSlider
+                label="Feather (px)"
                 min={0}
                 max={50}
                 value={feather}
                 onChange={setFeather}
-                style={{ margin: '0 4px' }}
               />
             </div>
 

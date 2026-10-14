@@ -1,5 +1,6 @@
+import { CustomSlider } from './CustomSlider';
 import React, { useEffect, useState, useRef } from 'react';
-import { List, Button, Typography, Space, InputNumber, Select } from 'antd';
+import { List, Button, Typography, Space, Select } from 'antd';
 import {
   EyeOutlined,
   EyeInvisibleOutlined,
@@ -113,7 +114,7 @@ const LayersPanel: React.FC = () => {
 
     canvas.discardActiveObject();
 
-    const index = Math.max(...activeObjects.map(obj => canvas.getObjects().indexOf(obj)));
+    const index = Math.max(...activeObjects.map((obj) => canvas.getObjects().indexOf(obj)));
     const group = new Group(activeObjects);
     if (!(group as any).uid) (group as any).uid = Math.random().toString(36).substr(2, 9);
 
@@ -142,7 +143,7 @@ const LayersPanel: React.FC = () => {
       const restoredItems = group.removeAll();
       canvas.remove(group);
       canvas.insertAt(index, ...restoredItems);
-      restoredItems.forEach(item => item.setCoords());
+      restoredItems.forEach((item) => item.setCoords());
 
       // Create selection
       const activeSelection = new ActiveSelection(restoredItems, { canvas });
@@ -241,7 +242,14 @@ const LayersPanel: React.FC = () => {
   const toggleLock = (obj: FabricObject, e: React.MouseEvent) => {
     e.stopPropagation();
     const locked = !obj.lockMovementX;
-    obj.set({ lockMovementX: locked, lockMovementY: locked, lockRotation: locked, lockScalingX: locked, lockScalingY: locked, evented: !locked });
+    obj.set({
+      lockMovementX: locked,
+      lockMovementY: locked,
+      lockRotation: locked,
+      lockScalingX: locked,
+      lockScalingY: locked,
+      evented: !locked,
+    });
     obj.selectable = !obj.lockMovementX;
 
     if (!obj.selectable) {
@@ -327,15 +335,6 @@ const LayersPanel: React.FC = () => {
     // history.saveState(); // Maybe debounce this or save onAfterChange
   };
 
-  const handleOpacityNumberChange = (v: number | undefined | null) => {
-    if (!canvas || !isEditable(selectedObject) || !selectedObject) return;
-    const value = Number(v || 0);
-    selectedObject.set('opacity', Math.max(0, Math.min(100, value)) / 100);
-    canvas.requestRenderAll();
-    setObjects([...objects]);
-    history.saveState();
-  };
-
   const handleOpacityLabelMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
     e.preventDefault();
@@ -404,31 +403,17 @@ const LayersPanel: React.FC = () => {
 
       {selectedObject && (
         <div style={{ marginBottom: 16, padding: 8, background: '#fafafa', borderRadius: 4 }}>
-          <div style={{ marginBottom: 8 }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                fontSize: 12,
-                cursor: 'ew-resize',
-                userSelect: 'none',
-              }}
-              onMouseDown={handleOpacityLabelMouseDown}
-            >
-              <div style={{ marginRight: 8 }}>Opacity:</div>
-              <InputNumber
-                size="small"
-                min={0}
-                max={100}
-                step={1}
-                value={Math.round((selectedObject.opacity ?? 1) * 100)}
-                onChange={(v) => handleOpacityNumberChange(v)}
-                onBlur={() => handleOpacityAfterChange()}
-                style={{ flex: 1 }}
-              />
-            </div>
-          </div>
+          <CustomSlider
+            label="Layer Opacity (%)"
+            min={0}
+            max={100}
+            value={Math.round((selectedObject.opacity ?? 1) * 100)}
+            disabled={!isEditable(selectedObject)}
+            onChange={(value) => handleOpacityChange(value / 100)}
+            onChangeComplete={handleOpacityAfterChange}
+            onLabelMouseDown={handleOpacityLabelMouseDown}
+            gradient="linear-gradient(to right, transparent, #1677ff)"
+          />
           <div>
             <div
               style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, width: '100%' }}

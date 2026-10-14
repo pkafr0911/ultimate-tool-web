@@ -1,5 +1,12 @@
-import { InputNumber, Slider, Space } from 'antd';
+import { InputNumber, Slider } from 'antd';
 import React from 'react';
+
+export const SLIDER_GRADIENTS = {
+  amount: 'linear-gradient(to right, #555, #ddd)',
+  luminance: 'linear-gradient(to right, #000, #888, #fff)',
+  saturation: 'linear-gradient(to right, #888, #ff4d4f)',
+  hue: 'linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)',
+};
 
 type CustomSliderProps = {
   label: string;
@@ -9,7 +16,9 @@ type CustomSliderProps = {
   step?: number;
   onChange: (v: number) => void;
   onChangeComplete?: () => void;
-  gradient?: string; // 👈 dynamic CSS gradient for track
+  gradient?: string;
+  disabled?: boolean;
+  onLabelMouseDown?: React.MouseEventHandler<HTMLSpanElement>;
 };
 
 export const CustomSlider = ({
@@ -18,7 +27,9 @@ export const CustomSlider = ({
   min,
   max,
   step = 1,
-  gradient,
+  gradient = SLIDER_GRADIENTS.amount,
+  disabled = false,
+  onLabelMouseDown,
   onChange,
   onChangeComplete,
 }: CustomSliderProps) => (
@@ -31,7 +42,14 @@ export const CustomSlider = ({
         alignItems: 'center',
       }}
     >
-      <span className="custom-label" style={{ fontSize: 12 }}>
+      <span
+        className="custom-label"
+        onMouseDown={disabled ? undefined : onLabelMouseDown}
+        style={{
+          fontSize: 12,
+          ...(onLabelMouseDown && !disabled ? { cursor: 'ew-resize', userSelect: 'none' } : {}),
+        }}
+      >
         {label}
       </span>
       <InputNumber
@@ -39,11 +57,15 @@ export const CustomSlider = ({
         max={max}
         step={step}
         value={value}
-        onChange={(v) => onChange(Number(v))}
+        disabled={disabled}
+        aria-label={label}
+        onChange={(v) => {
+          if (v !== null && Number.isFinite(Number(v))) onChange(Number(v));
+        }}
         onBlur={() => onChangeComplete?.()}
         className="custom-number"
         size="small"
-        style={{ width: 50, fontSize: 12 }}
+        style={{ width: 64, fontSize: 12 }}
       />
     </div>
 
@@ -52,13 +74,17 @@ export const CustomSlider = ({
       max={max}
       step={step}
       value={value}
+      disabled={disabled}
+      ariaLabelForHandle={label}
       onChange={onChange}
       onChangeComplete={onChangeComplete}
       className="custom-slider"
-      style={
-        { '--custom-slider-gradient': gradient, margin: '6px 0 16px 0' } as React.CSSProperties
-      }
-      handleStyle={{ opacity: 1 }}
+      style={{ margin: '6px 0 16px 0' }}
+      styles={{
+        rail: gradient ? { background: gradient } : undefined,
+        track: gradient ? { background: 'transparent' } : undefined,
+        handle: { opacity: 1 },
+      }}
     />
   </div>
 );

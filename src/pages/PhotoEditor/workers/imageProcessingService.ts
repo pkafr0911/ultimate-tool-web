@@ -51,7 +51,7 @@ class ImageProcessingService {
         }
       };
 
-      this.worker.onerror = (error) => {
+      const failPending = (error: Event) => {
         console.error('Worker error:', error);
         // Reject all pending tasks
         this.pendingTasks.forEach((task) => {
@@ -61,6 +61,8 @@ class ImageProcessingService {
         this.worker?.terminate();
         this.worker = null;
       };
+      this.worker.onerror = failPending;
+      this.worker.onmessageerror = failPending;
     }
 
     return this.worker;
@@ -88,10 +90,11 @@ class ImageProcessingService {
         transferables.push(payload.maskData.data.buffer);
       }
 
-      if (transferables.length > 0) {
+      try {
         worker.postMessage(message, transferables);
-      } else {
-        worker.postMessage(message);
+      } catch (error) {
+        this.pendingTasks.delete(id);
+        reject(error instanceof Error ? error : new Error('Unable to send image to worker'));
       }
     });
   }
@@ -210,7 +213,7 @@ class ImageProcessingService {
     if (this.worker) {
       this.worker.terminate();
       this.worker = null;
-      this.pendingTasks.forEach(task => task.reject(new Error('Processing cancelled')));
+      this.pendingTasks.forEach((task) => task.reject(new Error('Processing cancelled')));
       this.pendingTasks.clear();
     }
   }

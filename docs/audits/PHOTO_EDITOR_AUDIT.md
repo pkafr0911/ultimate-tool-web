@@ -64,3 +64,14 @@ All files under `src/pages/PhotoEditor` were inventoried. Active surfaces are `i
 - Default `npm test` remains blocked by pre-existing Umi Jest setup. `npm run test:photo-editor` is the verified independent regression command.
 
 These remaining issues mean the complete mission's definition of done is **not yet met**. No unsupported feature is represented as verified. Further work is scoped in `../roadmaps/PHOTO_EDITOR_ROADMAP.md`.
+
+## Follow-up failure-path audit — 2026-10-14
+
+| Severity | Reproduction / expected vs actual | Root cause and correction | Evidence |
+|---|---|---|---|
+| P1 | Import JSON containing an undecodable image; later additions should still render automatically, but automatic rendering remained disabled | Fabric 6 restores `renderOnAddRemove` only after successful enlivening; shared loader now restores the prior value in `finally` | Jest rejection regression and real-browser corrupt-image import; existing scene/history retained |
+| P1 | Import project with top-level viewport/canvas settings; document data should not alter editor configuration | Fabric passes remaining JSON fields to canvas setters; loader now allows only scene fields | Jest checks the exact forwarded scene fields |
+| P2 | Throw during OpenCV blur or output rendering; native allocations should be released, but cleanup was success-only | Track each allocated Mat and release in `finally` | Three Jest cases: success, blur throw, render throw |
+| P2 | Worker posting or message decoding fails; pending requests should settle | Synchronous post failure retained a pending task; message errors lacked a handler | Pending task removal and shared worker failure handler; source reviewed |
+
+Editor teardown now aborts the active shared document load. Browser coverage additionally confirms fractional source alpha is applied once through masks and blur snapshots, JPEG transparent pixels become white, PNG/WebP retain transparency, and Ctrl-S commits editable project data to IndexedDB.

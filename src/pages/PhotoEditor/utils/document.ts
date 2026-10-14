@@ -21,6 +21,8 @@ const sizes = new WeakMap<Canvas, { width: number; height: number }>();
 const exporting = new WeakSet<Canvas>();
 export const isRenderingDocument = (canvas: Canvas) => exporting.has(canvas);
 const loading = new WeakSet<Canvas>();
+const loadControllers = new WeakMap<Canvas, AbortController>();
+export const cancelDocumentLoad = (canvas: Canvas) => loadControllers.get(canvas)?.abort();
 export const isDocumentLoading = (canvas: Canvas) => loading.has(canvas);
 export const isEditable = (object: FabricObject | null | undefined) =>
   !!object && object.visible && !object.lockMovementX && !object.lockMovementY;
@@ -64,14 +66,31 @@ export const loadDocument = async (canvas: Canvas, input: any, signal?: AbortSig
   const height = data.documentHeight ?? canvas.height;
   if (![width, height].every((v) => Number.isFinite(v) && v >= 1) || width * height > 64_000_000)
     throw new Error('Invalid document dimensions.');
+  if (canvas.disposed) throw new Error('The editor has been closed.');
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  if (signal?.aborted) controller.abort();
+  signal?.addEventListener('abort', abort, { once: true });
+  loadControllers.set(canvas, controller);
+  // A project contains scene data, not arbitrary mutable Canvas configuration.
+  const scene = Object.fromEntries(
+    ['version', 'objects', 'background', 'backgroundImage', 'overlay', 'overlayImage', 'clipPath']
+      .filter((key) => Object.prototype.hasOwnProperty.call(data, key))
+      .map((key) => [key, data[key]]),
+  );
+  const renderOnAddRemove = canvas.renderOnAddRemove;
   loading.add(canvas);
   (canvas as any).fire('document:loading', { loading: true });
   try {
-    await canvas.loadFromJSON(data, undefined, { signal });
+    await canvas.loadFromJSON(scene, undefined, { signal: controller.signal });
     canvas.discardActiveObject();
     setDocumentSize(canvas, width, height);
     canvas.requestRenderAll();
   } finally {
+    // Fabric 6 restores this flag only on successful decoding.
+    canvas.renderOnAddRemove = renderOnAddRemove;
+    signal?.removeEventListener('abort', abort);
+    loadControllers.delete(canvas);
     loading.delete(canvas);
     if (!canvas.disposed) (canvas as any).fire('document:loading', { loading: false });
   }

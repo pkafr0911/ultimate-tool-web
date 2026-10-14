@@ -1,6 +1,7 @@
+import { CustomSlider } from '../CustomSlider';
 import { documentSize, renderDocument } from '../../utils/document';
 import React, { useEffect, useRef, useState } from 'react';
-import { Modal, Slider, Button, Space, Typography, Spin, Radio, Tooltip } from 'antd';
+import { Modal, Button, Space, Typography, Spin, Radio, Tooltip } from 'antd';
 import { Canvas as FabricCanvas, FabricImage, PencilBrush } from 'fabric';
 import { DeleteOutlined, UndoOutlined, EyeOutlined } from '@ant-design/icons';
 import { loadOpenCv, applyBlurWithMask } from '../../utils/opencvHelpers';
@@ -350,7 +351,10 @@ const BlurBrushModal: React.FC<BlurBrushModalProps> = ({ visible, onCancel, canv
       width={1000}
       footer={null}
       destroyOnClose
-      getContainer={() => (typeof document !== 'undefined' && document.fullscreenElement as HTMLElement) || document.body}
+      getContainer={() =>
+        (typeof document !== 'undefined' && (document.fullscreenElement as HTMLElement)) ||
+        document.body
+      }
     >
       <div style={{ display: 'flex', gap: 16 }}>
         {/* Left: Canvas Area */}
@@ -390,18 +394,33 @@ const BlurBrushModal: React.FC<BlurBrushModalProps> = ({ visible, onCancel, canv
         {/* Right: Controls */}
         <div style={{ width: 300, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
-            <Text strong>Brush Size: {brushSize}px</Text>
-            <Slider min={5} max={200} value={brushSize} onChange={setBrushSize} />
+            <CustomSlider
+              label="Brush Size (px)"
+              min={5}
+              max={200}
+              value={brushSize}
+              onChange={setBrushSize}
+            />
           </div>
 
           <div>
-            <Text strong>Blur Amount: {blurAmount}</Text>
-            <Slider min={1} max={100} value={blurAmount} onChange={setBlurAmount} />
+            <CustomSlider
+              label="Blur Amount"
+              min={1}
+              max={100}
+              value={blurAmount}
+              onChange={setBlurAmount}
+            />
           </div>
 
           <div>
-            <Text strong>Feather: {feather}px</Text>
-            <Slider min={0} max={50} value={feather} onChange={setFeather} />
+            <CustomSlider
+              label="Feather (px)"
+              min={0}
+              max={50}
+              value={feather}
+              onChange={setFeather}
+            />
           </div>
 
           <Space>

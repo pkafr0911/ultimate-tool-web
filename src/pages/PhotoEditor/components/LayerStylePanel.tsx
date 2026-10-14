@@ -1,5 +1,6 @@
+import { CustomSlider } from './CustomSlider';
 import React from 'react';
-import { ColorPicker, Slider, InputNumber, Typography, Space, Row, Col } from 'antd';
+import { ColorPicker, Typography, Space } from 'antd';
 import { usePhotoEditor } from '../context';
 import { isEditable } from '../utils/document';
 import { FabricObject } from 'fabric';
@@ -54,28 +55,14 @@ const LayerStylePanel: React.FC = () => {
         </div>
 
         {/* Border Thickness */}
-        <div>
-          <Text strong>Border Thickness</Text>
-          <Row gutter={16} align="middle">
-            <Col span={16}>
-              <Slider
-                min={0}
-                max={50}
-                value={strokeWidth}
-                onChange={(val) => updateProperty('strokeWidth', val)}
-              />
-            </Col>
-            <Col span={8}>
-              <InputNumber
-                min={0}
-                max={50}
-                value={strokeWidth}
-                onChange={(val) => updateProperty('strokeWidth', Number(val))}
-                style={{ width: '100%' }}
-              />
-            </Col>
-          </Row>
-        </div>
+        <CustomSlider
+          label="Border Thickness"
+          min={0}
+          max={50}
+          value={strokeWidth}
+          disabled={!isEditable(selectedObject)}
+          onChange={(val) => updateProperty('strokeWidth', val)}
+        />
       </Space>
     </div>
   );

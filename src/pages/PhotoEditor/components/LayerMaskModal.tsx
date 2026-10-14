@@ -1,15 +1,6 @@
+import { CustomSlider } from './CustomSlider';
 import React, { useEffect, useState, useRef } from 'react';
-import {
-  Modal,
-  Slider,
-  Radio,
-  Space,
-  Button,
-  Select,
-  InputNumber,
-  Tooltip,
-  ColorPicker,
-} from 'antd';
+import { Modal, Radio, Space, Button, Select, InputNumber, Tooltip, ColorPicker } from 'antd';
 import { UndoOutlined, RedoOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import {
   BrushSettings,
@@ -192,7 +183,7 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
       const manualAlpha = manualMaskData.data[i * 4]; // Red channel of white mask
 
       // Combine alphas (multiply)
-      const finalAlpha = a * combineMaskAlpha(autoAlpha, manualAlpha) / 255;
+      const finalAlpha = (a * combineMaskAlpha(autoAlpha, manualAlpha)) / 255;
 
       finalImageData.data[i * 4] = r;
       finalImageData.data[i * 4 + 1] = g;
@@ -416,9 +407,15 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
       width={1000}
       style={{ top: 20 }}
       maskClosable={false}
-      getContainer={() => (typeof document !== 'undefined' && document.fullscreenElement as HTMLElement) || document.body}
+      getContainer={() =>
+        (typeof document !== 'undefined' && (document.fullscreenElement as HTMLElement)) ||
+        document.body
+      }
     >
-      <p>Apply replaces the current mask. Use Undo to restore an earlier mask. Reopening prior mask strokes is not supported.</p>
+      <p>
+        Apply replaces the current mask. Use Undo to restore an earlier mask. Reopening prior mask
+        strokes is not supported.
+      </p>
       <div style={{ display: 'flex', gap: 16 }}>
         <div style={{ width: 300 }}>
           <Space direction="vertical" style={{ width: '100%' }}>
@@ -434,12 +431,22 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
               </div>
             </div>
             <div>
-              <span>Tolerance: {tolerance}%</span>
-              <Slider value={tolerance} onChange={setTolerance} />
+              <CustomSlider
+                label="Tolerance (%)"
+                min={0}
+                max={100}
+                value={tolerance}
+                onChange={setTolerance}
+              />
             </div>
             <div>
-              <span>Feather: {feather}%</span>
-              <Slider value={feather} onChange={setFeather} />
+              <CustomSlider
+                label="Feather (%)"
+                min={0}
+                max={100}
+                value={feather}
+                onChange={setFeather}
+              />
             </div>
             <div>
               <Space>
@@ -474,12 +481,17 @@ const ColorRemovalModal: React.FC<ColorRemovalModalProps> = ({
                 </Button>
               </Space>
               <div>
-                <span>Size: {brushSize}</span>
-                <Slider min={1} max={100} value={brushSize} onChange={setBrushSize} />
+                <CustomSlider
+                  label="Brush Size"
+                  min={1}
+                  max={100}
+                  value={brushSize}
+                  onChange={setBrushSize}
+                />
               </div>
               <div>
-                <span>Opacity: {brushOpacity}</span>
-                <Slider
+                <CustomSlider
+                  label="Brush Opacity"
                   min={0}
                   max={1}
                   step={0.1}

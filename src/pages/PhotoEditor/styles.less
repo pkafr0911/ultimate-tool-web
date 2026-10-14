@@ -446,48 +446,47 @@
   border-color: #1677ff;
 }
 
-/* === Custom slider (preserved global hooks) === */
-:global(.custom-slider-container) {
+/* === Camera Raw custom sliders === */
+.custom-slider-container {
   align-items: center;
   gap: 8px;
 }
-:global(.custom-label) {
+.custom-label {
   font-size: 12px;
 }
-:global(.custom-slider) {
+.custom-slider {
   flex: 1;
   margin: 2px;
 }
-:global(.custom-slider .ant-slider-rail),
-:global(.custom-slider .ant-slider-track) {
+.custom-slider .ant-slider-rail,
+.custom-slider .ant-slider-track {
   height: 2px;
   border-radius: 0;
 }
-:global(.custom-slider .ant-slider-handle) {
+.custom-slider .ant-slider-handle {
   width: 4px;
   height: 4px;
   background: #ddd;
   border: none;
   box-shadow: 0 0 3px rgba(255, 255, 255, 0.6);
 }
-:global(.custom-slider .ant-slider-step) {
+.custom-slider .ant-slider-step {
   height: 2px;
   border-radius: 0;
-  background: var(--custom-slider-gradient) !important;
 }
-:global(.custom-number) {
+.custom-number {
   background: transparent;
 }
-:global(.custom-number input) {
+.custom-number input {
   text-align: right;
   border: none;
 }
-:global(.custom-number.ant-input-number) {
+.custom-number.ant-input-number {
   height: 22px;
   padding: 0 6px;
   font-size: 12px;
 }
-:global(.custom-number .ant-input-number-input) {
+.custom-number .ant-input-number-input {
   height: 20px;
   line-height: 20px;
   padding: 0;

@@ -1,5 +1,6 @@
+import { CustomSlider, SLIDER_GRADIENTS } from './CustomSlider';
 import React, { useEffect, useRef, useState } from 'react';
-import { Slider, Typography, Space, Collapse } from 'antd';
+import { Typography, Space, Collapse } from 'antd';
 import { isEditable } from '../utils/document';
 import { usePhotoEditor } from '../context';
 import { filters, FabricImage } from 'fabric';
@@ -133,12 +134,23 @@ const AdjustmentPanel: React.FC = () => {
   const applyFilter = (index: number, filter: any) => {
     if (!isEditable(selectedObject) || !selectedObject?.isType('image')) return;
     const img = selectedObject as FabricImage;
-    const type = ['Brightness', 'Contrast', 'Saturation', 'Noise', 'Pixelate', 'Blur', 'Gamma', 'Vibrance', 'HueRotation', ...FILTER_LIST.map(f => f.filter.type)][index];
-    img.filters = img.filters.filter(f => f && f.type !== type);
+    const type = [
+      'Brightness',
+      'Contrast',
+      'Saturation',
+      'Noise',
+      'Pixelate',
+      'Blur',
+      'Gamma',
+      'Vibrance',
+      'HueRotation',
+      ...FILTER_LIST.map((f) => f.filter.type),
+    ][index];
+    img.filters = img.filters.filter((f) => f && f.type !== type);
     if (filter) img.filters.push(filter);
     img.filters.sort((a, b) => filterOrder.indexOf(a.type) - filterOrder.indexOf(b.type));
     img.applyFilters();
-    refresh(v => v + 1);
+    refresh((v) => v + 1);
     canvas?.requestRenderAll();
   };
 
@@ -193,8 +205,22 @@ const AdjustmentPanel: React.FC = () => {
     history.saveState();
   };
 
-  const filterOrder = ['Brightness', 'Contrast', 'Saturation', 'Noise', 'Pixelate', 'Blur', 'Gamma', 'Vibrance', 'HueRotation', ...FILTER_LIST.map(f => f.filter.type)];
-  const valueOf = (type: string, key: string, fallback: number) => { const f = (selectedObject as FabricImage)?.filters?.find(f => f?.type === type) as any; return f?.[key] ?? fallback; };
+  const filterOrder = [
+    'Brightness',
+    'Contrast',
+    'Saturation',
+    'Noise',
+    'Pixelate',
+    'Blur',
+    'Gamma',
+    'Vibrance',
+    'HueRotation',
+    ...FILTER_LIST.map((f) => f.filter.type),
+  ];
+  const valueOf = (type: string, key: string, fallback: number) => {
+    const f = (selectedObject as FabricImage)?.filters?.find((f) => f?.type === type) as any;
+    return f?.[key] ?? fallback;
+  };
   if (!selectedObject || !selectedObject.isType('image')) {
     return <div style={{ padding: 10 }}>Select an image to adjust</div>;
   }
@@ -206,8 +232,9 @@ const AdjustmentPanel: React.FC = () => {
         <Panel header="Basic" key="1">
           <Space direction="vertical" style={{ width: '100%' }}>
             <div>
-              <Typography.Text>Brightness</Typography.Text>
-              <Slider
+              <CustomSlider
+                label="Brightness"
+                gradient={SLIDER_GRADIENTS.luminance}
                 min={-1}
                 max={1}
                 step={0.01}
@@ -218,8 +245,9 @@ const AdjustmentPanel: React.FC = () => {
               />
             </div>
             <div>
-              <Typography.Text>Contrast</Typography.Text>
-              <Slider
+              <CustomSlider
+                label="Contrast"
+                gradient={SLIDER_GRADIENTS.luminance}
                 min={-1}
                 max={1}
                 step={0.01}
@@ -230,8 +258,9 @@ const AdjustmentPanel: React.FC = () => {
               />
             </div>
             <div>
-              <Typography.Text>Saturation</Typography.Text>
-              <Slider
+              <CustomSlider
+                label="Saturation"
+                gradient={SLIDER_GRADIENTS.saturation}
                 min={-1}
                 max={1}
                 step={0.01}
@@ -242,8 +271,9 @@ const AdjustmentPanel: React.FC = () => {
               />
             </div>
             <div>
-              <Typography.Text>Vibrance</Typography.Text>
-              <Slider
+              <CustomSlider
+                label="Vibrance"
+                gradient={SLIDER_GRADIENTS.saturation}
                 min={-1}
                 max={1}
                 step={0.01}
@@ -254,8 +284,9 @@ const AdjustmentPanel: React.FC = () => {
               />
             </div>
             <div>
-              <Typography.Text>Gamma</Typography.Text>
-              <Slider
+              <CustomSlider
+                label="Gamma"
+                gradient={SLIDER_GRADIENTS.luminance}
                 min={0.1}
                 max={2.2}
                 step={0.1}
@@ -266,8 +297,9 @@ const AdjustmentPanel: React.FC = () => {
               />
             </div>
             <div>
-              <Typography.Text>Hue Rotation</Typography.Text>
-              <Slider
+              <CustomSlider
+                label="Hue Rotation"
+                gradient={SLIDER_GRADIENTS.hue}
                 min={-1}
                 max={1}
                 step={0.01}
@@ -283,8 +315,8 @@ const AdjustmentPanel: React.FC = () => {
         <Panel header="Effects" key="2">
           <Space direction="vertical" style={{ width: '100%' }}>
             <div>
-              <Typography.Text>Blur</Typography.Text>
-              <Slider
+              <CustomSlider
+                label="Blur"
                 min={0}
                 max={1}
                 step={0.01}
@@ -295,8 +327,8 @@ const AdjustmentPanel: React.FC = () => {
               />
             </div>
             <div>
-              <Typography.Text>Noise</Typography.Text>
-              <Slider
+              <CustomSlider
+                label="Noise"
                 min={0}
                 max={1000}
                 value={valueOf('Noise', 'noise', 0)}
@@ -306,8 +338,8 @@ const AdjustmentPanel: React.FC = () => {
               />
             </div>
             <div>
-              <Typography.Text>Pixelate</Typography.Text>
-              <Slider
+              <CustomSlider
+                label="Pixelate"
                 min={1}
                 max={20}
                 value={valueOf('Pixelate', 'blocksize', 1)}
@@ -322,7 +354,9 @@ const AdjustmentPanel: React.FC = () => {
         <Panel header="Filters" key="3">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
             {FILTER_LIST.map((item) => {
-              const isActive = !!(selectedObject as FabricImage).filters.find(f => f?.type === item.filter.type);
+              const isActive = !!(selectedObject as FabricImage).filters.find(
+                (f) => f?.type === item.filter.type,
+              );
               return (
                 <FilterPreview
                   key={item.name}
