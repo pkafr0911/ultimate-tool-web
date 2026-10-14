@@ -304,6 +304,16 @@ export const pages = [
 
   // Game
   {
+    name: 'Stack Tower',
+    path: '/game/stack-tower',
+    icon: (
+      <span role="img" aria-label="Stacked blocks">
+        ▱
+      </span>
+    ),
+    desc: 'Stack moving blocks, trim the overhang, and build your tallest tower in 3D.',
+  },
+  {
     name: 'Pocket Mini Golf',
     path: '/game/pocket-mini-golf',
     icon: (

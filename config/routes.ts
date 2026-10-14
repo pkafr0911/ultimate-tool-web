@@ -178,6 +178,7 @@ export default [
     name: 'game',
     icon: '🎮',
     routes: [
+      { path: '/game/stack-tower', name: 'stack-tower', icon: '▱', component: './StackTower' },
       {
         path: '/game/pocket-mini-golf',
         name: 'pocket-mini-golf',

@@ -39,7 +39,8 @@
     "tsc": "tsc --noEmit",
     "test:photo-editor": "jest --config jest.photo-editor.config.cjs --runInBand",
     "test:photo-editor:browser": "node tests/photo-editor/browser.cjs",
-    "test:pocket-golf": "ts-node --project src/pages/PocketGolf/tsconfig.test.json src/pages/PocketGolf/physics.test.ts"
+    "test:pocket-golf": "ts-node --project src/pages/PocketGolf/tsconfig.test.json src/pages/PocketGolf/physics.test.ts",
+    "test:stack-tower": "ts-node --project src/pages/StackTower/tsconfig.test.json src/pages/StackTower/model.test.ts"
   },
   "browserslist": [
     "defaults"
