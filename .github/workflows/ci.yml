@@ -35,3 +35,6 @@ jobs:
 
       - name: Build
         run: yarn build
+      
+      - name: Deploy
+        run: npm run build-pre && cp -f dist/index.html dist/404.html && npm run gh-pages
