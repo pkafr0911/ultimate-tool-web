@@ -41,7 +41,9 @@
     "test:photo-editor:browser": "node tests/photo-editor/browser.cjs",
     "test:pocket-golf": "ts-node --project src/pages/PocketGolf/tsconfig.test.json src/pages/PocketGolf/physics.test.ts",
     "test:stack-tower": "ts-node --project src/pages/StackTower/tsconfig.test.json src/pages/StackTower/model.test.ts",
-    "test:neon-breakout": "ts-node --project src/pages/NeonBreakout/tsconfig.test.json src/pages/NeonBreakout/model.test.ts"
+    "test:neon-breakout": "ts-node --project src/pages/NeonBreakout/tsconfig.test.json src/pages/NeonBreakout/model.test.ts",
+    "test:crystal-stack": "ts-node --project src/pages/CrystalStack/tsconfig.test.json src/pages/CrystalStack/model.test.ts",
+    "test:classic-stack": "ts-node --project src/pages/CrystalStack/classic/tsconfig.test.json src/pages/CrystalStack/classic/model.test.ts"
   },
   "browserslist": [
     "defaults"

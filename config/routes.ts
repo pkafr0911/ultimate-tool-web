@@ -179,6 +179,12 @@ export default [
     icon: '🎮',
     routes: [
       {
+        path: '/game/crystal-stack',
+        name: 'crystal-stack',
+        icon: '◈',
+        component: './CrystalStack',
+      },
+      {
         path: '/game/neon-breakout',
         name: 'neon-breakout',
         icon: '⚡',

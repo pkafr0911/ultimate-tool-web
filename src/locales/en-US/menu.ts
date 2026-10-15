@@ -45,6 +45,7 @@ export default {
 
   // Game
   'menu.game': 'Game',
+  'menu.game.crystal-stack': 'Crystal Stack 3D',
   'menu.game.neon-breakout': 'Neon Breakout',
   'menu.game.stack-tower': 'Stack Tower',
   'menu.game.pocket-mini-golf': 'Pocket Mini Golf',

@@ -304,6 +304,16 @@ export const pages = [
 
   // Game
   {
+    name: 'Crystal Stack 3D',
+    path: '/game/crystal-stack',
+    icon: (
+      <span role="img" aria-label="3D blocks">
+        ◈
+      </span>
+    ),
+    desc: 'Play a 3D block well or classic 2D rows with sculpted blocks, Practice, and four difficulty presets.',
+  },
+  {
     name: 'Neon Breakout',
     path: '/game/neon-breakout',
     icon: (
