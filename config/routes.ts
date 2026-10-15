@@ -178,6 +178,12 @@ export default [
     name: 'game',
     icon: '🎮',
     routes: [
+      {
+        path: '/game/neon-breakout',
+        name: 'neon-breakout',
+        icon: '⚡',
+        component: './NeonBreakout',
+      },
       { path: '/game/stack-tower', name: 'stack-tower', icon: '▱', component: './StackTower' },
       {
         path: '/game/pocket-mini-golf',

@@ -304,6 +304,16 @@ export const pages = [
 
   // Game
   {
+    name: 'Neon Breakout',
+    path: '/game/neon-breakout',
+    icon: (
+      <span role="img" aria-label="Neon Breakout">
+        ⚡
+      </span>
+    ),
+    desc: 'Break luminous brick formations across six arcade arenas with power-ups and saved progress.',
+  },
+  {
     name: 'Stack Tower',
     path: '/game/stack-tower',
     icon: (
